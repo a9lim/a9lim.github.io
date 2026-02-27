@@ -152,7 +152,7 @@ body {
     align-items: center;
     justify-content: center;
     background: var(--bg-canvas);
-    overflow-y: auto;
+    overflow: hidden;
     transition: opacity 0.85s var(--ease-out), transform 0.85s var(--ease-out);
 }
 
@@ -314,10 +314,10 @@ body {
 
 .stats-title {
     font-family: var(--font-body);
-    font-size: 0.72rem;
+    font-size: 0.82rem;
     font-weight: 600;
     text-transform: uppercase;
-    letter-spacing: 0.12em;
+    letter-spacing: 0.10em;
     color: var(--text);
 }
 
@@ -580,6 +580,30 @@ body {
     margin: 0 4px;
     flex-shrink: 0;
     opacity: 0.6;
+}
+
+/* Home logo link */
+.sim-home {
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.sim-home img {
+    height: 28px;
+    width: auto;
+    transition: opacity 0.2s var(--ease-out);
+}
+
+.sim-home:hover img {
+    opacity: 0.7;
+}
+
+/* Ensure brand wrapper is a flex row when logo is present */
+.sim-toolbar :has(> .sim-home) {
+    display: flex;
+    align-items: center;
+    gap: 10px;
 }
 
 /* Brand title with accent gradient */
@@ -896,6 +920,11 @@ input[type="checkbox"]:checked::after {
     outline-offset: 2px;
 }
 
+/* ─── Sheet Handle (mobile bottom sheet drag handle) ─── */
+.sheet-handle {
+    display: none;
+}
+
 /* ─── Responsive: Primary Mobile ─── */
 @media (max-width: 900px) {
     :root {
@@ -916,6 +945,34 @@ input[type="checkbox"]:checked::after {
     .tool-sep {
         height: 14px;
         margin: 0 2px;
+    }
+
+    /* Bottom sheet touch optimizations */
+    .sim-panel {
+        will-change: transform;
+        overscroll-behavior: contain;
+    }
+
+    /* Sheet handle — visible on mobile */
+    .sheet-handle {
+        display: flex;
+        justify-content: center;
+        padding: 10px 0 4px;
+        cursor: grab;
+        flex-shrink: 0;
+        touch-action: none;
+    }
+
+    .sheet-handle::after {
+        content: '';
+        width: 36px;
+        height: 4px;
+        background: var(--border-strong);
+        border-radius: 2px;
+    }
+
+    .sheet-handle:active {
+        cursor: grabbing;
     }
 }
 
