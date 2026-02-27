@@ -1,15 +1,291 @@
 <!DOCTYPE html>
-<html lang="en">
-
+<html lang="en" data-theme="light">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HayashiNet</title>
+    <title>a9l.im</title>
+    <meta name="description" content="Interactive simulations exploring physics, biology, and political science.">
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@300;400;500;600;700&family=Instrument+Serif:ital@0;1&family=Sora:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Colors & tokens (injected before CSS) -->
+    <script src="shared-tokens.js"></script>
+    <link rel="stylesheet" href="shared-base.css">
+    <link rel="stylesheet" href="styles.css">
+
+    <!-- Favicon -->
+    <link rel="icon" href="favicon.ico">
 </head>
-
 <body>
-Coming Soon
+    <!-- ═══ WebGL Shader Background ═══ -->
+    <canvas id="shader-bg" aria-hidden="true"></canvas>
+
+    <!-- ═══ Navigation ═══ -->
+    <nav id="navbar" class="glass" role="navigation" aria-label="Main navigation">
+        <div class="nav-left">
+            <a href="#home" aria-label="Home">
+                <img src="logo.svg" alt="a9l.im logo" class="nav-logo" width="26" height="26">
+            </a>
+            <a href="#home" class="nav-brand">a9l<em>.im</em></a>
+        </div>
+
+        <div class="nav-center">
+            <a href="#home" class="nav-link active" data-page="home">Home</a>
+            <a href="#projects" class="nav-link" data-page="projects">Projects</a>
+            <a href="#blog" class="nav-link" data-page="blog">Blog</a>
+            <a href="#about" class="nav-link" data-page="about">About</a>
+        </div>
+
+        <div class="nav-right">
+            <!-- Theme toggle -->
+            <button class="tool-btn" id="theme-toggle" aria-label="Toggle theme">
+                <svg class="icon-sun" width="18" height="18" viewBox="0 0 24 24">
+                    <circle cx="12" cy="12" r="5"/>
+                    <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
+                </svg>
+                <svg class="icon-moon" width="18" height="18" viewBox="0 0 24 24">
+                    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+                </svg>
+            </button>
+
+            <div class="tool-sep" aria-hidden="true"></div>
+
+            <!-- GitHub -->
+            <a class="tool-btn" href="https://github.com/a9lim" target="_blank" rel="noopener noreferrer" aria-label="GitHub">
+                <svg width="18" height="18" viewBox="0 0 24 24">
+                    <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/>
+                </svg>
+            </a>
+
+            <!-- Twitter / X -->
+            <a class="tool-btn" href="https://twitter.com/a9_lim" target="_blank" rel="noopener noreferrer" aria-label="Twitter">
+                <svg width="18" height="18" viewBox="0 0 24 24">
+                    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+                </svg>
+            </a>
+
+            <!-- LinkedIn -->
+            <a class="tool-btn" href="https://linkedin.com/in/a9lim" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn">
+                <svg width="18" height="18" viewBox="0 0 24 24">
+                    <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6zM2 9h4v12H2z"/><circle cx="4" cy="4" r="2"/>
+                </svg>
+            </a>
+
+            <!-- Mobile menu toggle -->
+            <button class="tool-btn menu-toggle" id="menu-toggle" aria-label="Open menu" aria-expanded="false">
+                <svg width="18" height="18" viewBox="0 0 24 24">
+                    <path d="M3 12h18M3 6h18M3 18h18"/>
+                </svg>
+            </button>
+        </div>
+    </nav>
+
+    <!-- ═══ Mobile Nav Overlay ═══ -->
+    <div class="mobile-nav" id="mobile-nav" role="dialog" aria-label="Mobile navigation">
+        <a href="#home" class="nav-link" data-page="home">Home</a>
+        <a href="#projects" class="nav-link" data-page="projects">Projects</a>
+        <a href="#blog" class="nav-link" data-page="blog">Blog</a>
+        <a href="#about" class="nav-link" data-page="about">About</a>
+    </div>
+
+    <!-- ═══════════════════════════════════
+         Page: Home
+         ═══════════════════════════════════ -->
+    <section id="page-home" class="page-section active" aria-label="Home">
+        <div class="hero">
+            <h1 class="hero-tagline fade-in">
+                Building <em>interactive</em> simulations
+            </h1>
+            <p class="hero-sub fade-in">
+                Exploring physics, biology, and political science through code. Open-source tools for understanding complex systems.
+            </p>
+            <a href="#projects" class="hero-cta fade-in" data-page="projects">
+                View Projects
+                <svg width="16" height="16" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </a>
+        </div>
+    </section>
+
+    <!-- ═══════════════════════════════════
+         Page: Projects
+         ═══════════════════════════════════ -->
+    <section id="page-projects" class="page-section" aria-label="Projects">
+        <div class="page-container">
+            <p class="section-label fade-in">Projects</p>
+
+            <div class="projects-grid">
+                <!-- physsim -->
+                <a href="/physsim" class="project-card glass fade-in">
+                    <div class="project-card-top">
+                        <div class="project-icon">
+                            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2a10 10 0 0 1 0 20M12 2a10 10 0 0 0 0 20M2 12h20"/></svg>
+                        </div>
+                        <span class="project-arrow"><svg viewBox="0 0 24 24"><path d="M7 17L17 7M17 7H7M17 7v10"/></svg></span>
+                    </div>
+                    <h3 class="project-title">Relativistic N-Body</h3>
+                    <p class="project-desc">Interactive physics simulation with Barnes-Hut algorithm, relativistic momentum, and real-time force visualization. Gravitational, electromagnetic, and magnetic interactions at O(N log N).</p>
+                    <div class="project-tags">
+                        <span class="project-tag">physics</span>
+                        <span class="project-tag">canvas</span>
+                        <span class="project-tag">barnes-hut</span>
+                    </div>
+                </a>
+
+                <!-- biosim -->
+                <a href="/biosim" class="project-card glass fade-in">
+                    <div class="project-card-top">
+                        <div class="project-icon">
+                            <svg viewBox="0 0 24 24"><path d="M12 22c-4.97 0-9-2.69-9-6v-4c0-3.31 4.03-6 9-6s9 2.69 9 6v4c0 3.31-4.03 6-9 6z"/><path d="M3 12c0 3.31 4.03 6 9 6s9-2.69 9-6"/><ellipse cx="12" cy="6" rx="9" ry="6"/></svg>
+                        </div>
+                        <span class="project-arrow"><svg viewBox="0 0 24 24"><path d="M7 17L17 7M17 7H7M17 7v10"/></svg></span>
+                    </div>
+                    <h3 class="project-title">Cellular Metabolism</h3>
+                    <p class="project-desc">Simulate metabolic pathways in a living cell. Enzyme kinetics, substrate diffusion, and energy production visualized as an interactive cellular dashboard.</p>
+                    <div class="project-tags">
+                        <span class="project-tag">biology</span>
+                        <span class="project-tag">simulation</span>
+                        <span class="project-tag">metabolism</span>
+                    </div>
+                </a>
+
+                <!-- gerry -->
+                <a href="/gerry" class="project-card glass fade-in">
+                    <div class="project-card-top">
+                        <div class="project-icon">
+                            <svg viewBox="0 0 24 24"><path d="M3 3h7v7H3zM14 3h7v7h-7zM3 14h7v7H3zM14 14h7v7h-7z"/></svg>
+                        </div>
+                        <span class="project-arrow"><svg viewBox="0 0 24 24"><path d="M7 17L17 7M17 7H7M17 7v10"/></svg></span>
+                    </div>
+                    <h3 class="project-title">Redistricting Simulator</h3>
+                    <p class="project-desc">Paint congressional districts on a hex-tile map and see how boundaries shape electoral outcomes. Real-time efficiency gap, compactness, and contiguity analysis.</p>
+                    <div class="project-tags">
+                        <span class="project-tag">politics</span>
+                        <span class="project-tag">svg</span>
+                        <span class="project-tag">gerrymandering</span>
+                    </div>
+                </a>
+
+                <!-- Raiko -->
+                <a href="https://github.com/a9lim/Raiko" class="project-card glass fade-in" target="_blank" rel="noopener noreferrer">
+                    <div class="project-card-top">
+                        <div class="project-icon">
+                            <svg viewBox="0 0 24 24"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+                        </div>
+                        <span class="project-arrow"><svg viewBox="0 0 24 24"><path d="M7 17L17 7M17 7H7M17 7v10"/></svg></span>
+                    </div>
+                    <h3 class="project-title">Raiko</h3>
+                    <p class="project-desc">Discord music and chat bot. Plays audio from YouTube, SoundCloud, and other sources with queue management, playlists, and conversational AI features.</p>
+                    <div class="project-tags">
+                        <span class="project-tag">discord</span>
+                        <span class="project-tag">java</span>
+                        <span class="project-tag">music</span>
+                    </div>
+                </a>
+
+                <!-- Faithful -->
+                <a href="https://github.com/a9lim/faithful" class="project-card glass fade-in" target="_blank" rel="noopener noreferrer">
+                    <div class="project-card-top">
+                        <div class="project-icon">
+                            <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                        </div>
+                        <span class="project-arrow"><svg viewBox="0 0 24 24"><path d="M7 17L17 7M17 7H7M17 7v10"/></svg></span>
+                    </div>
+                    <h3 class="project-title">Faithful</h3>
+                    <p class="project-desc">Discord chatbot that emulates given messages. Feed it a corpus of text and it generates responses in the style of the source material.</p>
+                    <div class="project-tags">
+                        <span class="project-tag">discord</span>
+                        <span class="project-tag">chatbot</span>
+                        <span class="project-tag">nlp</span>
+                    </div>
+                </a>
+
+                <!-- Catppuccin SDDM -->
+                <a href="https://github.com/catppuccin/sddm" class="project-card glass fade-in" target="_blank" rel="noopener noreferrer">
+                    <div class="project-card-top">
+                        <div class="project-icon">
+                            <svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+                        </div>
+                        <span class="project-arrow"><svg viewBox="0 0 24 24"><path d="M7 17L17 7M17 7H7M17 7v10"/></svg></span>
+                    </div>
+                    <h3 class="project-title">Catppuccin for SDDM</h3>
+                    <p class="project-desc">Soothing pastel theme for the SDDM display manager. Brings the Catppuccin color palette to the Linux login screen with all four flavor variants.</p>
+                    <div class="project-tags">
+                        <span class="project-tag">linux</span>
+                        <span class="project-tag">theme</span>
+                        <span class="project-tag">catppuccin</span>
+                    </div>
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- ═══════════════════════════════════
+         Page: Blog
+         ═══════════════════════════════════ -->
+    <section id="page-blog" class="page-section" aria-label="Blog">
+        <div class="page-container">
+            <!-- Blog listing view -->
+            <div id="blog-listing">
+                <p class="section-label fade-in">Blog</p>
+                <div id="blog-list-container" class="blog-list fade-in"></div>
+            </div>
+
+            <!-- Blog post view (hidden by default) -->
+            <div id="blog-post" style="display:none;">
+                <a href="#blog" class="blog-back fade-in">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+                    Back to posts
+                </a>
+                <article id="blog-post-content" class="fade-in"></article>
+            </div>
+        </div>
+    </section>
+
+    <!-- ═══════════════════════════════════
+         Page: About
+         ═══════════════════════════════════ -->
+    <section id="page-about" class="page-section" aria-label="About">
+        <div class="page-container">
+            <p class="section-label fade-in">About</p>
+
+            <div class="about-layout">
+                <div class="about-bio fade-in">
+                    <h2>I build tools for understanding <em style="font-family:var(--font-display);background:linear-gradient(135deg,var(--accent),var(--accent-light));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">complex systems</em>.</h2>
+                    <p>
+                        I'm interested in simulations that make abstract ideas tangible — from relativistic gravity to cellular biology to the mechanics of democracy.
+                    </p>
+                    <p>
+                        All projects are open-source, zero-dependency, and built with vanilla HTML, CSS, and JavaScript. No frameworks, no build steps — just code that runs in any browser.
+                    </p>
+
+                    <div class="about-links">
+                        <a href="mailto:hello@a9l.im" class="about-link">
+                            <svg viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                            Email
+                        </a>
+                    </div>
+                </div>
+
+                <div class="contact-section glass fade-in">
+                    <h3>Get in touch</h3>
+                    <p>Have a question about a project or want to collaborate? Feel free to reach out.</p>
+                    <a href="mailto:hello@a9l.im" class="contact-email">hello@a9l.im</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ═══ Footer ═══ -->
+    <footer class="site-footer">
+        <p>&copy; 2025 a9l.im</p>
+    </footer>
+
+    <!-- ═══ Markdown Parser ═══ -->
+    <script src="markdown.js"></script>
+    <!-- ═══ Main Script ═══ -->
+    <script src="main.js"></script>
 </body>
-
-</html><!DOCTYPE html>
-
+</html>
