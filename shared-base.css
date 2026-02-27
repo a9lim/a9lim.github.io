@@ -1,0 +1,963 @@
+/* ═══════════════════════════════════════════════
+   shared-base.css — Shared styles for all a9l.im sites
+   ═══════════════════════════════════════════════ */
+
+/* ─── Reset ─── */
+*, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+/* ─── Layout Tokens ─── */
+:root {
+    --radius-sm: 8px;
+    --radius-md: 14px;
+    --radius-lg: 20px;
+    --radius-pill: 9999px;
+
+    --toolbar-h: 52px;
+    --panel-w: 350px;
+
+    --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+    --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+    --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ─── Body Base ─── */
+body {
+    background: var(--bg-canvas);
+    color: var(--text);
+    font-family: var(--font-body);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    transition: background-color 0.5s var(--ease-out), color 0.4s var(--ease-out);
+}
+
+/* ─── Glass Panel ─── */
+.glass {
+    background: var(--bg-panel);
+    backdrop-filter: blur(24px) saturate(1.3);
+    -webkit-backdrop-filter: blur(24px) saturate(1.3);
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow-md);
+}
+
+/* ─── Tool Buttons ─── */
+.tool-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: var(--radius-sm);
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 0;
+    flex-shrink: 0;
+    outline: none;
+    -webkit-appearance: none;
+    transition: color 0.2s, background 0.2s, border-color 0.2s, opacity 0.2s, box-shadow 0.2s;
+}
+
+.tool-btn svg {
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+}
+
+.tool-btn:hover {
+    color: var(--text);
+    background: var(--bg-hover);
+    border-color: var(--border);
+}
+
+.tool-btn:active {
+    background: var(--border-strong);
+    transition-duration: 0.05s;
+}
+
+.tool-btn:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+
+.tool-btn.active {
+    color: var(--accent);
+    background: var(--accent-subtle);
+    border-color: var(--accent-glow);
+}
+
+.tool-btn:disabled,
+.tool-btn[disabled] {
+    opacity: 0.22;
+    cursor: default;
+    pointer-events: none;
+}
+
+/* ─── Keyframes ─── */
+@keyframes slideDown {
+    from { opacity: 0; transform: translateY(-16px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideInLeft {
+    from { opacity: 0; transform: translateX(-24px); }
+    to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes slideInRight {
+    from { opacity: 0; transform: translateX(24px); }
+    to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes paletteEnter {
+    from { opacity: 0; transform: translateX(-50%) translateY(12px); }
+    to { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+
+@keyframes introBgPulse {
+    0% { opacity: 0.5; transform: scale(1); }
+    100% { opacity: 1; transform: scale(1.05); }
+}
+
+@keyframes introContentIn {
+    from { opacity: 0; transform: translateY(30px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeUp {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ─── Intro Screen ─── */
+#intro-screen {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg-canvas);
+    overflow-y: auto;
+    transition: opacity 0.85s var(--ease-out), transform 0.85s var(--ease-out);
+}
+
+#intro-screen.hidden {
+    opacity: 0;
+    transform: scale(1.02);
+    pointer-events: none;
+}
+
+.intro-bg {
+    position: absolute;
+    inset: 0;
+    background:
+        radial-gradient(ellipse at 25% 35%, var(--intro-warm) 0%, transparent 55%),
+        radial-gradient(ellipse at 75% 65%, var(--intro-cool) 0%, transparent 45%);
+    animation: introBgPulse 10s ease-in-out infinite alternate;
+}
+
+.intro-content {
+    text-align: center;
+    max-width: 620px;
+    padding: 2.5rem;
+    position: relative;
+    z-index: 1;
+    animation: introContentIn 1s var(--ease-out) 0.15s both;
+}
+
+.intro-overline {
+    display: block;
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    font-weight: 500;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 1.2rem;
+}
+
+.intro-title {
+    font-family: var(--font-display);
+    font-size: clamp(3.2rem, 8vw, 5.5rem);
+    font-weight: 400;
+    color: var(--text);
+    line-height: 0.92;
+    letter-spacing: -0.03em;
+    margin-bottom: 1.5rem;
+}
+
+.intro-desc {
+    font-family: var(--font-body);
+    color: var(--text-secondary);
+    font-size: clamp(0.88rem, 1.4vw, 1rem);
+    line-height: 1.7;
+    margin-bottom: 2.8rem;
+    font-weight: 400;
+}
+
+.intro-cards {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 3rem;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.intro-card {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.7rem 1rem;
+    background: var(--bg-hover);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    text-align: left;
+    transition: background 0.25s;
+}
+
+.intro-card:hover {
+    background: var(--border-strong);
+}
+
+.intro-card-icon {
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 10px;
+    background: var(--accent-subtle);
+    color: var(--accent);
+    flex-shrink: 0;
+}
+
+.intro-card-text {
+    display: flex;
+    flex-direction: column;
+}
+
+.intro-card-text strong {
+    color: var(--text);
+    font-size: 0.82rem;
+    font-weight: 600;
+    line-height: 1.2;
+}
+
+.intro-card-text span {
+    color: var(--text-muted);
+    font-size: 0.72rem;
+    line-height: 1.4;
+}
+
+#intro-start {
+    font-family: var(--font-body);
+    font-size: 0.92rem;
+    font-weight: 500;
+    color: #FDFBF5;
+    background: var(--accent);
+    border: none;
+    border-radius: var(--radius-pill);
+    padding: 0.8rem 2.8rem;
+    cursor: pointer;
+    letter-spacing: 0.02em;
+    transition: all 0.3s var(--ease-out);
+    box-shadow: 0 0 40px var(--accent-glow), 0 0 80px var(--intro-warm);
+}
+
+#intro-start:hover {
+    background: var(--accent-light);
+    transform: translateY(-2px);
+    box-shadow: 0 0 50px var(--accent-glow), 0 0 100px var(--intro-warm-hover);
+}
+
+#intro-start:active {
+    transform: translateY(0);
+    box-shadow: 0 0 30px var(--accent-glow);
+}
+
+/* ─── Sidebar Patterns ─── */
+.group-label {
+    font-family: var(--font-body);
+    font-weight: 600;
+    font-size: 0.68rem;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--text-muted);
+    margin-bottom: 0.65rem;
+    padding-bottom: 0.4rem;
+    border-bottom: 1px solid var(--border);
+}
+
+.stats-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 16px 10px;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+}
+
+.stats-title {
+    font-family: var(--font-body);
+    font-size: 0.72rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--text);
+}
+
+.stat-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 6px 8px;
+    margin-bottom: 1px;
+    border-radius: 6px;
+    transition: background 0.15s ease;
+}
+
+.stat-row:hover {
+    background: var(--bg-hover);
+}
+
+.stat-label {
+    font-size: 0.78rem;
+    color: var(--text-secondary);
+    font-weight: 400;
+}
+
+.stat-value {
+    font-family: var(--font-mono);
+    font-weight: 600;
+    font-size: 0.78rem;
+    color: var(--text);
+    min-width: 2em;
+    text-align: right;
+    display: inline-block;
+    font-variant-numeric: tabular-nums;
+}
+
+.stat-group {
+    margin-bottom: 0.6rem;
+}
+.stat-group:last-child {
+    margin-bottom: 0;
+}
+
+/* ─── Tab System ─── */
+.tabs-wrap {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    animation: fadeUp 0.4s ease 0.15s both;
+}
+
+.tab-bar {
+    display: flex;
+    gap: 0;
+    border-bottom: 1px solid var(--border);
+    padding: 0 16px;
+    flex-shrink: 0;
+    position: sticky;
+    top: 0;
+    z-index: 5;
+}
+
+.tab-btn {
+    flex: 1;
+    padding: 0.6rem 0.4rem 0.5rem;
+    background: transparent;
+    border: none;
+    border-bottom: 2px solid transparent;
+    font-family: var(--font-body);
+    font-weight: 500;
+    font-size: clamp(0.62rem, 0.95vw, 0.7rem);
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.28s ease;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    text-align: center;
+}
+
+.tab-btn:hover {
+    color: var(--text-secondary);
+}
+
+.tab-btn.active {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
+}
+
+.tab-panels {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+.tab-panel {
+    display: none;
+    padding: 10px 16px;
+}
+
+.tab-panel.active {
+    display: block;
+    animation: fadeIn 0.2s ease both;
+}
+
+/* ─── Control Group + Row ─── */
+.ctrl-group {
+    margin-bottom: 0.7rem;
+}
+
+.ctrl-group:last-child {
+    margin-bottom: 0;
+}
+
+.ctrl-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.3rem 0;
+}
+
+.ctrl-row > label {
+    font-size: 0.78rem;
+    color: var(--text);
+    font-weight: 400;
+}
+
+/* ─── Slider Value ─── */
+.slider-value {
+    font-family: var(--font-mono);
+    color: var(--text);
+    font-weight: 600;
+    font-size: 0.78rem;
+    font-variant-numeric: tabular-nums;
+}
+
+/* ─── Preset / Modal Dialog ─── */
+.preset-dialog {
+    position: fixed;
+    inset: 0;
+    z-index: 200;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 300ms var(--ease-in-out);
+}
+
+.preset-dialog.open {
+    pointer-events: auto;
+    opacity: 1;
+}
+
+.preset-backdrop {
+    position: absolute;
+    inset: 0;
+    background: var(--backdrop);
+}
+
+.preset-content {
+    position: relative;
+    padding: 32px;
+    border-radius: var(--radius-lg);
+    max-width: 560px;
+    width: calc(100% - 32px);
+    transform: scale(0.96) translateY(8px);
+    transition: transform 300ms var(--ease-out);
+}
+
+.preset-dialog.open .preset-content {
+    transform: scale(1) translateY(0);
+}
+
+.preset-title {
+    font-family: var(--font-display);
+    font-size: 1.5rem;
+    font-style: italic;
+    font-weight: 400;
+    color: var(--text);
+    margin-bottom: 24px;
+    letter-spacing: -0.01em;
+}
+
+.preset-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+}
+
+.preset-card {
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 20px 16px;
+    cursor: pointer;
+    text-align: left;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    transition: border-color 180ms var(--ease-in-out),
+                background 180ms var(--ease-in-out);
+    font-family: var(--font-body);
+}
+
+.preset-card:hover {
+    border-color: var(--accent);
+    background: var(--accent-subtle);
+}
+
+.preset-name {
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--text);
+}
+
+.preset-desc {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    line-height: 1.4;
+}
+
+/* ─── Sim Layout Components ─── */
+
+/* Floating toolbar */
+.sim-toolbar {
+    position: fixed;
+    top: 12px;
+    left: 12px;
+    right: 12px;
+    height: var(--toolbar-h);
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 12px 0 20px;
+    gap: 1rem;
+    border-radius: var(--radius-lg);
+    opacity: 0;
+    pointer-events: none;
+    transition: background-color 0.4s var(--ease-out), border-color 0.3s var(--ease-out);
+}
+
+.app-ready .sim-toolbar {
+    animation: slideDown 0.55s var(--ease-out) 0.08s both;
+    pointer-events: auto;
+}
+
+/* Toolbar right-side button group */
+.sim-toolbar-actions {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    flex-shrink: 0;
+}
+
+/* Vertical separator */
+.tool-sep {
+    width: 1px;
+    height: 18px;
+    background: var(--border-strong);
+    margin: 0 4px;
+    flex-shrink: 0;
+    opacity: 0.6;
+}
+
+/* Brand title with accent gradient */
+.sim-brand {
+    font-family: var(--font-display);
+    font-size: clamp(1.1rem, 2vw, 1.5rem);
+    font-weight: 400;
+    color: var(--text);
+    letter-spacing: -0.025em;
+    line-height: 1.1;
+    white-space: nowrap;
+}
+
+.sim-brand em {
+    font-style: italic;
+    background: linear-gradient(135deg, var(--accent-light) 20%, var(--accent) 80%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+/* Right-side floating panel */
+.sim-panel {
+    position: fixed;
+    top: calc(12px + var(--toolbar-h) + 12px);
+    right: 12px;
+    bottom: 12px;
+    width: var(--panel-w);
+    z-index: 90;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-lg);
+    transform: translateX(calc(100% + 24px));
+    transition: background-color 0.4s, border-color 0.3s;
+}
+
+.app-ready .sim-panel {
+    transition: transform 0.55s var(--ease-out), background-color 0.4s, border-color 0.3s;
+}
+
+.sim-panel.open {
+    transform: translateX(0);
+}
+
+/* Floating bottom pill */
+.sim-bar {
+    position: fixed;
+    bottom: 12px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 8px;
+    border-radius: var(--radius-pill);
+    z-index: 100;
+    opacity: 0;
+    pointer-events: none;
+    transition: background-color 0.4s var(--ease-out), border-color 0.3s var(--ease-out);
+}
+
+.app-ready .sim-bar {
+    animation: paletteEnter 0.5s var(--ease-out) 0.2s both;
+    pointer-events: auto;
+}
+
+/* Floating left control stack */
+.sim-controls {
+    position: absolute;
+    bottom: 12px;
+    left: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    border-radius: var(--radius-md);
+    padding: 3px;
+    z-index: 20;
+    align-items: center;
+    font-variant-numeric: tabular-nums;
+    opacity: 0;
+    pointer-events: none;
+    transition: background-color 0.4s var(--ease-out), border-color 0.3s var(--ease-out);
+}
+
+.app-ready .sim-controls {
+    animation: slideInLeft 0.4s var(--ease-out) 0.35s both;
+    pointer-events: auto;
+}
+
+/* ─── Small Utilities ─── */
+
+/* Zoom percentage text */
+.zoom-level {
+    font-family: var(--font-mono);
+    font-size: 0.56rem;
+    font-weight: 500;
+    color: var(--text-muted);
+    padding: 0 4px;
+    text-align: center;
+    min-width: 34px;
+    font-variant-numeric: tabular-nums;
+    user-select: none;
+    line-height: 1.5;
+    letter-spacing: -0.02em;
+}
+
+/* Horizontal control separator */
+.ctrl-sep {
+    width: 20px;
+    height: 1px;
+    background: var(--border);
+    margin: 2px auto;
+}
+
+/* Thin scrollbar */
+.scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: var(--border-strong) transparent;
+}
+
+.scrollbar-thin::-webkit-scrollbar { width: 4px; }
+.scrollbar-thin::-webkit-scrollbar-track { background: transparent; }
+.scrollbar-thin::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 4px; }
+
+/* Hint text box */
+.panel-hint {
+    color: var(--text-muted);
+    font-size: clamp(0.62rem, 0.9vw, 0.7rem);
+    line-height: 1.5;
+    font-style: italic;
+    margin-top: 0.5rem;
+    padding: 0.4rem 0.55rem;
+    border-radius: var(--radius-sm);
+    background: var(--accent-subtle);
+    border: 1px solid var(--accent-glow);
+}
+
+.hidden {
+    display: none !important;
+}
+
+/* ─── Proactive Form Controls ─── */
+
+/* Range sliders */
+input[type=range] {
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    width: 100%;
+    background: transparent;
+    cursor: pointer;
+    height: 20px;
+}
+
+input[type=range]::-webkit-slider-runnable-track {
+    width: 100%;
+    height: 2px;
+    background: var(--slider-track);
+    border-radius: 1px;
+}
+
+input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    height: 16px;
+    width: 16px;
+    border-radius: 50%;
+    background: var(--accent);
+    margin-top: -7px;
+    border: none;
+    transition: box-shadow 180ms var(--ease-in-out), transform 180ms var(--ease-in-out);
+}
+
+input[type=range]:focus::-webkit-slider-thumb {
+    box-shadow: 0 0 0 4px var(--accent-subtle);
+}
+
+input[type=range]:active::-webkit-slider-thumb {
+    transform: scale(1.15);
+}
+
+input[type=range]::-moz-range-track {
+    width: 100%;
+    height: 2px;
+    background: var(--slider-track);
+    border-radius: 1px;
+    border: none;
+}
+
+input[type=range]::-moz-range-thumb {
+    height: 16px;
+    width: 16px;
+    border-radius: 50%;
+    background: var(--accent);
+    border: none;
+}
+
+/* Segmented control */
+.mode-toggles {
+    display: grid;
+    grid-auto-columns: 1fr;
+    grid-auto-flow: column;
+    gap: 1px;
+    background: var(--border);
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+}
+
+.mode-btn {
+    background: var(--bg-panel-solid);
+    border: none;
+    padding: 8px 12px;
+    font-family: var(--font-body);
+    font-size: 0.78rem;
+    font-weight: 400;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 0;
+    line-height: 1;
+}
+
+.mode-btn:hover {
+    color: var(--text);
+}
+
+.mode-btn.active {
+    background: var(--accent-subtle);
+    color: var(--accent);
+    font-weight: 500;
+}
+
+/* Checkbox toggle */
+.checkbox-label {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+}
+
+input[type="checkbox"] {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 36px;
+    height: 20px;
+    background: var(--slider-track);
+    border-radius: 10px;
+    position: relative;
+    cursor: pointer;
+    transition: background 180ms var(--ease-in-out);
+    flex-shrink: 0;
+}
+
+input[type="checkbox"]::after {
+    content: '';
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 14px;
+    height: 14px;
+    background: var(--text-muted);
+    border-radius: 50%;
+    transition: all 180ms var(--ease-in-out);
+}
+
+input[type="checkbox"]:checked {
+    background: var(--accent-subtle);
+}
+
+input[type="checkbox"]:checked::after {
+    left: 19px;
+    background: var(--accent);
+}
+
+/* Ghost button */
+.ghost-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-secondary);
+    padding: 8px 16px;
+    border-radius: var(--radius-pill);
+    cursor: pointer;
+    font-family: var(--font-body);
+    font-weight: 400;
+    font-size: 0.78rem;
+    letter-spacing: 0.01em;
+    transition: color 0.2s, border-color 0.2s, background 0.2s;
+    white-space: nowrap;
+    line-height: 1;
+}
+
+.ghost-btn:hover {
+    color: var(--text);
+    border-color: var(--border-strong);
+    background: var(--accent-subtle);
+}
+
+/* ─── Global Focus & Selection ─── */
+::selection {
+    background: var(--accent-glow);
+    color: var(--text);
+}
+
+:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+
+/* ─── Responsive: Primary Mobile ─── */
+@media (max-width: 900px) {
+    :root {
+        --toolbar-h: 48px;
+    }
+
+    .sim-toolbar {
+        top: 8px;
+        left: 8px;
+        right: 8px;
+        padding: 0 8px 0 14px;
+    }
+
+    .sim-brand {
+        font-size: 1.05rem;
+    }
+
+    .tool-sep {
+        height: 14px;
+        margin: 0 2px;
+    }
+}
+
+/* ─── Responsive: Small Phone ─── */
+@media (max-width: 600px) {
+    .sim-brand {
+        font-size: 0.92rem;
+    }
+
+    .sim-toolbar-actions {
+        gap: 2px;
+    }
+
+    .tool-sep {
+        margin: 0 1px;
+    }
+
+    .preset-content {
+        padding: 24px;
+    }
+}
+
+/* ─── Responsive: Minimal UI ─── */
+@media (max-width: 440px) {
+    .hide-sm {
+        display: none !important;
+    }
+
+    .preset-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .preset-content {
+        padding: 20px;
+    }
+}
+
+/* ─── Reduced Motion ─── */
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}
