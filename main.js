@@ -230,6 +230,15 @@
   });
 
   // ═══════════════════════════════════
+  //  Scroll tracking (shared across shader + stripe)
+  // ═══════════════════════════════════
+  let scrollNorm = 0; // 0–1, how far down the page
+  function updateScrollNorm() {
+    const maxScroll = Math.max(1, document.documentElement.scrollHeight - window.innerHeight);
+    scrollNorm = window.scrollY / maxScroll;
+  }
+
+  // ═══════════════════════════════════
   //  WebGL Shader Background
   // ═══════════════════════════════════
   function initShader() {
@@ -248,8 +257,8 @@
       uniform vec2  u_res;
       uniform vec3  u_accent;
       uniform float u_dark;
+      uniform float u_scroll;
 
-      // Simplex-ish noise
       vec3 mod289(vec3 x) { return x - floor(x / 289.0) * 289.0; }
       vec2 mod289(vec2 x) { return x - floor(x / 289.0) * 289.0; }
       vec3 permute(vec3 x) { return mod289((x * 34.0 + 1.0) * x); }
@@ -281,24 +290,37 @@
       void main() {
         vec2 uv = gl_FragCoord.xy / u_res;
         float t = u_time * 0.04;
+        float sc = u_scroll * 0.5;
 
-        // Layered noise
-        float n1 = snoise(uv * 1.8 + vec2(t * 0.7, t * 0.3)) * 0.5 + 0.5;
-        float n2 = snoise(uv * 3.5 + vec2(-t * 0.5, t * 0.8)) * 0.5 + 0.5;
-        float n3 = snoise(uv * 0.8 + vec2(t * 0.2, -t * 0.4)) * 0.5 + 0.5;
+        // Layered noise — scroll offsets create reactive movement
+        float n1 = snoise(uv * 1.8 + vec2(t * 0.7 + sc, t * 0.3)) * 0.5 + 0.5;
+        float n2 = snoise(uv * 3.5 + vec2(-t * 0.5, t * 0.8 + sc * 0.7)) * 0.5 + 0.5;
+        float n3 = snoise(uv * 0.8 + vec2(t * 0.2 + sc * 0.3, -t * 0.4)) * 0.5 + 0.5;
 
         float noise = n1 * 0.5 + n2 * 0.3 + n3 * 0.2;
 
-        // Warm accent hue blended with canvas
-        vec3 warm   = u_accent * 0.3;
-        vec3 cool   = vec3(0.2, 0.15, 0.1);
-        vec3 color  = mix(cool, warm, noise);
+        // Splotchy accent layer — concentrated red spots that shift with scroll
+        float splotch = snoise(uv * 2.4 + vec2(t * 0.12 + sc * 0.9, -t * 0.08));
+        splotch = smoothstep(0.25, 0.65, splotch);
 
-        // Radial vignette to focus center
-        float vig = 1.0 - length(uv - 0.5) * 1.1;
-        vig = smoothstep(0.0, 0.7, vig);
+        // Second splotch layer — larger blobs that drift with scroll
+        float splotch2 = snoise(uv * 1.2 + vec2(-t * 0.06 + sc * 1.4, t * 0.1));
+        splotch2 = smoothstep(0.3, 0.7, splotch2);
 
-        float alpha = noise * vig * mix(0.12, 0.08, u_dark);
+        // Color mixing
+        vec3 warm = u_accent * 0.4;
+        vec3 cool = vec3(0.22, 0.16, 0.1);
+        vec3 base = mix(cool, warm, noise);
+        vec3 color = mix(base, u_accent * 0.6, splotch * 0.5);
+        color = mix(color, u_accent * 0.45, splotch2 * 0.3);
+
+        // Radial vignette
+        float vig = 1.0 - length(uv - 0.5) * 1.0;
+        vig = smoothstep(0.0, 0.8, vig);
+
+        float alpha = noise * vig * mix(0.18, 0.12, u_dark)
+                     + splotch * vig * 0.1
+                     + splotch2 * vig * 0.06;
         gl_FragColor = vec4(color, alpha);
       }
     `;
@@ -337,6 +359,7 @@
     const uRes    = gl.getUniformLocation(prog, 'u_res');
     const uAccent = gl.getUniformLocation(prog, 'u_accent');
     const uDark   = gl.getUniformLocation(prog, 'u_dark');
+    const uScroll = gl.getUniformLocation(prog, 'u_scroll');
 
     // Parse accent color
     const accent = _PALETTE.accent;
@@ -374,6 +397,7 @@
       gl.uniform2f(uRes, canvas.width, canvas.height);
       gl.uniform3f(uAccent, ar, ag, ab);
       gl.uniform1f(uDark, isDark);
+      gl.uniform1f(uScroll, scrollNorm);
       gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
 
       raf = requestAnimationFrame(frame);
@@ -392,9 +416,358 @@
   }
 
   // ═══════════════════════════════════
+  //  Scroll-triggered Reveal + Stripe
+  // ═══════════════════════════════════
+  function initScrollReveal() {
+    const revealEls = document.querySelectorAll('.scroll-reveal');
+
+    if (revealEls.length) {
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('visible');
+            observer.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.15, rootMargin: '0px 0px -40px 0px' });
+      revealEls.forEach(el => observer.observe(el));
+    }
+
+    // Scroll-driven rectangular stripe band
+    const stripeBand = document.querySelector('.stripe-band');
+    const stripeSection = document.querySelector('.stripe-section');
+    let stripeTicking = false;
+
+    // ── Paginated carousel (2 cards per page, 3 dots) ──
+    const carouselTrack = document.querySelector('.carousel-track');
+    const dotsContainer = document.querySelector('.carousel-dots');
+    const cards = document.querySelectorAll('.carousel-card');
+
+    if (carouselTrack && dotsContainer && cards.length) {
+      const CARDS_PER_PAGE = 2;
+      const totalPages = Math.ceil(cards.length / CARDS_PER_PAGE);
+      let currentPage = 0;
+      const isMobile = () => window.innerWidth <= 900;
+
+      // Create page dots (one per page)
+      for (let i = 0; i < totalPages; i++) {
+        const dot = document.createElement('button');
+        dot.className = 'carousel-dot' + (i === 0 ? ' active' : '');
+        dot.setAttribute('aria-label', 'Page ' + (i + 1));
+        dot.addEventListener('click', () => goToPage(i));
+        dotsContainer.appendChild(dot);
+      }
+      const dots = dotsContainer.querySelectorAll('.carousel-dot');
+
+      function updateDots() {
+        dots.forEach((d, i) => d.classList.toggle('active', i === currentPage));
+      }
+
+      function goToPage(n) {
+        currentPage = Math.max(0, Math.min(totalPages - 1, n));
+        if (isMobile()) {
+          const target = cards[currentPage * CARDS_PER_PAGE];
+          if (target) target.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+        } else {
+          if (currentPage === 0) {
+            carouselTrack.style.transform = 'translateX(0)';
+          } else {
+            const offset = cards[currentPage * CARDS_PER_PAGE].offsetLeft - cards[0].offsetLeft;
+            carouselTrack.style.transform = 'translateX(-' + offset + 'px)';
+          }
+        }
+        updateDots();
+      }
+
+      // Wheel: debounced page advance (desktop only)
+      let wheelCooldown = false;
+      carouselTrack.addEventListener('wheel', (e) => {
+        if (isMobile()) return;
+        if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
+          e.preventDefault();
+          if (wheelCooldown) return;
+          wheelCooldown = true;
+          goToPage(currentPage + (e.deltaY > 0 ? 1 : -1));
+          setTimeout(() => { wheelCooldown = false; }, 600);
+        }
+      }, { passive: false });
+
+      // Touch swipe (desktop mode — mobile uses native scroll)
+      let touchStartX = 0, touchCurrentX = 0, touchDragging = false, baseOffset = 0;
+
+      carouselTrack.addEventListener('touchstart', (e) => {
+        if (isMobile()) return;
+        touchStartX = e.touches[0].clientX;
+        touchCurrentX = touchStartX;
+        touchDragging = true;
+        carouselTrack.style.transition = 'none';
+        baseOffset = currentPage === 0 ? 0
+          : cards[currentPage * CARDS_PER_PAGE].offsetLeft - cards[0].offsetLeft;
+      }, { passive: true });
+
+      carouselTrack.addEventListener('touchmove', (e) => {
+        if (!touchDragging || isMobile()) return;
+        e.preventDefault();
+        touchCurrentX = e.touches[0].clientX;
+        const delta = touchCurrentX - touchStartX;
+        carouselTrack.style.transform = 'translateX(' + (-baseOffset + delta) + 'px)';
+      }, { passive: false });
+
+      carouselTrack.addEventListener('touchend', () => {
+        if (!touchDragging || isMobile()) return;
+        touchDragging = false;
+        carouselTrack.style.transition = '';
+        const delta = touchCurrentX - touchStartX;
+        if (delta < -50) goToPage(currentPage + 1);
+        else if (delta > 50) goToPage(currentPage - 1);
+        else goToPage(currentPage);
+      });
+
+      // Mobile: native scroll → update dots
+      let dotTicking = false;
+      carouselTrack.addEventListener('scroll', () => {
+        if (!isMobile()) return;
+        if (!dotTicking) {
+          dotTicking = true;
+          requestAnimationFrame(() => {
+            const scrollLeft = carouselTrack.scrollLeft;
+            const cardW = cards[0].offsetWidth + 24;
+            const cardIdx = Math.round(scrollLeft / cardW);
+            currentPage = Math.min(totalPages - 1, Math.floor(cardIdx / CARDS_PER_PAGE));
+            updateDots();
+            dotTicking = false;
+          });
+        }
+      }, { passive: true });
+
+      // 3D tilt + shimmer tracking (non-touch devices only)
+      if (!('ontouchstart' in window)) {
+        cards.forEach(card => {
+          card.addEventListener('mousemove', (e) => {
+            if (isMobile()) return;
+            const rect = card.getBoundingClientRect();
+            const x = (e.clientX - rect.left) / rect.width;
+            const y = (e.clientY - rect.top) / rect.height;
+            const rx = (0.5 - y) * 12;
+            const ry = (x - 0.5) * 12;
+            card.style.transform = 'perspective(800px) rotateX(' + rx + 'deg) rotateY(' + ry + 'deg) scale(1.03)';
+            card.style.setProperty('--mouse-x', (x * 100) + '%');
+            card.style.setProperty('--mouse-y', (y * 100) + '%');
+          });
+          card.addEventListener('mouseleave', () => {
+            card.style.transform = '';
+          });
+        });
+      }
+
+      // Recalculate on resize
+      let resizeTimer;
+      window.addEventListener('resize', () => {
+        clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(() => {
+          if (isMobile()) {
+            carouselTrack.style.transform = '';
+            carouselTrack.style.transition = '';
+          } else {
+            goToPage(currentPage);
+          }
+        }, 150);
+      });
+
+      // Force all cards visible (scroll-reveal can't detect overflow:hidden cards)
+      // Also eagerly load all images (lazy loading fails inside overflow:hidden)
+      cards.forEach(card => {
+        card.classList.add('visible');
+        const img = card.querySelector('img');
+        if (img) {
+          img.loading = 'eager';
+          if (!img.complete) img.src = img.src;
+        }
+      });
+    }
+
+    function onScroll() {
+      updateScrollNorm();
+      if (stripeBand && stripeSection && !stripeTicking) {
+        stripeTicking = true;
+        requestAnimationFrame(() => {
+          const rect = stripeSection.getBoundingClientRect();
+          const vh = window.innerHeight;
+          const progress = 1 - (rect.top / vh);
+          // Slide in from -120% to 0% as the section enters view
+          const tx = Math.max(-120, Math.min(10, (progress - 0.15) * 180 - 120));
+          stripeBand.style.transform = `translateX(${tx}%) rotate(-3deg)`;
+          stripeTicking = false;
+        });
+      }
+    }
+
+    window.addEventListener('scroll', onScroll, { passive: true });
+  }
+
+  // ═══════════════════════════════════
+  //  World Map SVG (About Page)
+  // ═══════════════════════════════════
+  function initWorldMap() {
+    const container = document.getElementById('world-map-container');
+    if (!container) return;
+
+    const NS = 'http://www.w3.org/2000/svg';
+
+    // Singapore: 1.35°N, 103.82°E  |  San Diego: 32.72°N, -117.16°W
+    const SG = { lat: 1.35, lon: 103.82 };
+    const SD = { lat: 32.72, lon: -117.16 };
+
+    // Load the SVG map
+    fetch('world-map.svg')
+      .then(r => r.text())
+      .then(svgText => {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(svgText, 'image/svg+xml');
+        const svg = doc.querySelector('svg');
+        if (!svg) return;
+
+        const vb = svg.getAttribute('viewBox');
+        const [vbX, vbY, vbW, vbH] = vb.split(/\s+/).map(Number);
+
+        svg.removeAttribute('width');
+        svg.removeAttribute('height');
+        svg.setAttribute('preserveAspectRatio', 'xMidYMid slice');
+        svg.style.width = '100%';
+        svg.style.height = '100%';
+        container.appendChild(svg);
+
+        // Project lat/lon to SVG viewBox coordinates
+        // Calibrated from 18 country centroids in world-map.svg
+        function project(lat, lon) {
+          const x = 2.3638 * lon + 411.0;
+          const y = -2.8979 * lat + 530.0;
+          return [x, y];
+        }
+
+        // ── Separate overlay SVG (above the fade gradient) ──
+        const overlaySvg = document.createElementNS(NS, 'svg');
+        overlaySvg.setAttribute('viewBox', vb);
+        overlaySvg.setAttribute('preserveAspectRatio', 'xMidYMid slice');
+        overlaySvg.setAttribute('class', 'map-overlay-svg');
+        container.parentElement.appendChild(overlaySvg);
+
+        // Direct arc between the two cities (quadratic bezier)
+        const [sdX, sdY] = project(SD.lat, SD.lon);
+        const [sgX, sgY] = project(SG.lat, SG.lon);
+        // Control point: midpoint shifted upward for a clean arc
+        const cpX = (sdX + sgX) / 2;
+        const cpY = Math.min(sdY, sgY) - vbH * 0.15;
+        const fullArcD = `M${sdX},${sdY} Q${cpX},${cpY} ${sgX},${sgY}`;
+
+        // Arc element (single thin line, no glow)
+        const arcLine = document.createElementNS(NS, 'path');
+        arcLine.setAttribute('class', 'map-arc');
+        overlaySvg.appendChild(arcLine);
+
+        // City dots
+        const dotR = vbW * 0.004;
+        const glowR = vbW * 0.014;
+
+        [SD, SG].forEach(city => {
+          const [cx, cy] = project(city.lat, city.lon);
+          const glow = document.createElementNS(NS, 'circle');
+          glow.setAttribute('cx', cx);
+          glow.setAttribute('cy', cy);
+          glow.setAttribute('r', glowR);
+          glow.setAttribute('class', 'map-dot-glow');
+          overlaySvg.appendChild(glow);
+
+          const dot = document.createElementNS(NS, 'circle');
+          dot.setAttribute('cx', cx);
+          dot.setAttribute('cy', cy);
+          dot.setAttribute('r', dotR);
+          dot.setAttribute('class', 'map-dot');
+          overlaySvg.appendChild(dot);
+        });
+
+        const glows = overlaySvg.querySelectorAll('.map-dot-glow');
+
+        // ── Animation state ──
+        let arcDrawn = false;
+        let animFrame = null;
+
+        function drawFullArc() {
+          arcLine.setAttribute('d', fullArcD);
+          arcLine.style.strokeDasharray = 'none';
+          arcDrawn = true;
+        }
+
+        // Measure path length for progressive draw
+        function setupArcDash() {
+          arcLine.setAttribute('d', fullArcD);
+          const len = arcLine.getTotalLength();
+          arcLine.style.strokeDasharray = len;
+          arcLine.style.strokeDashoffset = len;
+          return len;
+        }
+
+        let arcLen = 0;
+        let animProgress = 0;
+        function animate() {
+          // Progressive arc draw via dash offset
+          if (!arcDrawn) {
+            if (!arcLen) arcLen = setupArcDash();
+            animProgress = Math.min(1, animProgress + 0.025);
+            const offset = arcLen * (1 - animProgress);
+            arcLine.style.strokeDashoffset = offset;
+            if (animProgress >= 1) arcDrawn = true;
+          }
+
+          // Pulse glow dots
+          const pulse = 0.5 + 0.5 * Math.sin(performance.now() * 0.003);
+          const r = glowR * (0.8 + pulse * 0.5);
+          const op = 0.15 + pulse * 0.2;
+          glows.forEach(g => {
+            g.setAttribute('r', r);
+            g.setAttribute('opacity', op);
+          });
+
+          animFrame = requestAnimationFrame(animate);
+        }
+
+        // Start when scrolled into view
+        let started = false;
+        const mapSection = document.querySelector('.map-section');
+        const mapObs = new IntersectionObserver((entries) => {
+          entries.forEach(entry => {
+            if (entry.isIntersecting && !started) {
+              started = true;
+              animate();
+              // Fallback: ensure arc completes even if rAF gets throttled
+              setTimeout(() => { if (!arcDrawn) drawFullArc(); }, 2500);
+              mapObs.disconnect();
+            }
+          });
+        }, { threshold: 0.1 });
+
+        if (mapSection) mapObs.observe(mapSection);
+
+        // Pause/resume on visibility change
+        document.addEventListener('visibilitychange', () => {
+          if (!started) return;
+          if (document.hidden) {
+            if (animFrame) { cancelAnimationFrame(animFrame); animFrame = null; }
+          } else {
+            if (!arcDrawn) drawFullArc(); // ensure arc is complete when returning
+            if (!animFrame) animFrame = requestAnimationFrame(animate);
+          }
+        });
+      })
+      .catch(() => { /* SVG load failed — silent fallback */ });
+  }
+
+  // ═══════════════════════════════════
   //  Init
   // ═══════════════════════════════════
   onHashChange();
   initShader();
+  initScrollReveal();
+  initWorldMap();
 
 })();

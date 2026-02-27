@@ -47,15 +47,24 @@ This site's `colors.js` is minimal — it does not add project-specific palette 
 ## UI & Layout
 
 - **Traditional page layout** — uses `page-container` / `page-section` pattern, not floating panels over a canvas
-- **No intro screen** — root site uses a hero section instead
-- **WebGL shader background**: `#shader-bg` canvas provides animated noise texture. Opacity varies by theme (0.4 light, 0.3 dark).
-- **Scroll-triggered fade-ins**: `.fade-in` + `.visible` with staggered `transition-delay` via `:nth-child`
+- **No intro screen** — root site uses a hero section with scroll hint instead
+- **WebGL shader background**: `#shader-bg` canvas provides animated noise texture with scroll-reactive splotchy accent effects. Opacity: 0.6 light, 0.5 dark. Shader has `u_scroll` uniform that offsets noise layers as user scrolls, plus two splotch layers (`smoothstep` thresholds) that create drifting red accent spots.
+- **Scroll-triggered reveals**: Two systems coexist — `.fade-in` + `.visible` (CSS-driven, staggered `transition-delay` via `:nth-child`) for page content, and `.scroll-reveal` + `.visible` (JS `IntersectionObserver`, threshold 0.15) for carousel cards and section labels.
+- **Accent stripe**: `.stripe-section` between hero and carousel. Flat red rectangular band (`.stripe-band`) slides in from left on scroll via JS `requestAnimationFrame` transform. Rotated -3deg.
+- **Project carousel** (home page): Paginated 2-cards-per-page system with 3 pill dots. Desktop: JS-driven `translateX` on `.carousel-track` inside `.carousel-viewport` (overflow wrapper). Wheel scroll advances pages (600ms debounce). Touch swipe with 1:1 drag. 3D tilt on hover (`perspective(800px) rotateX/Y`, max ~6deg from cursor position). Shimmer highlight via `--mouse-x`/`--mouse-y` CSS vars. Mobile ≤900px: reverts to native `overflow-x: auto` + `scroll-snap-type: x mandatory`. Cards eagerly loaded (lazy loading fails inside `overflow: hidden`).
+- **Inspirational quote**: Centered blockquote between carousel and projects page.
+- **World map** (about page): SVG world map in `.map-section` with brown fill (`#9e6842` from `extended.brown`). Two city dots (Singapore, San Diego) connected by a red accent arc. Top/bottom CSS mask fades (`map-fade-top`, `map-fade-bottom`) blend into canvas color.
+- **Project screenshots**: `img/` directory contains PNG/WebP screenshots for carousel cards (physsim.png, biosim.png, gerry.png, raiko.png, faithful.png, catppuccin.webp).
 - **Blog**: Renders markdown from fetched `.md` files. Blog content typography in `.blog-content` styles.
 
 ### Root Site Overrides (styles.css)
 
 - **`--toolbar-h: 56px`** (shared default is 52px) — taller navbar for the portfolio site
 - **`.tool-btn`**: overridden to 36×36, `inline-flex`, `border: none`, `color: var(--text-secondary)` (shared base is 34×34 sim-style)
+- **`.section-label`**: uses `var(--font-mono)` (not body font) for uppercase section headers
+- **`.scroll-hint`**: also uses `var(--font-mono)`
+- **Project card hover**: `.project-card.visible:hover` selector needed for specificity over `.fade-in.visible` transform — lifts card `translateY(-6px) scale(1.03)` with `box-shadow: var(--shadow-lg)`
+- **Carousel card hover**: whole card lifts (`translateY(-6px) scale(1.03)`), not just inner image
 
 ## Key Patterns
 
@@ -69,3 +78,7 @@ This site's `colors.js` is minimal — it does not add project-specific palette 
 - **Do not delete `CNAME`** — it configures the `a9l.im` custom domain.
 - **Shared files are critical** — `shared-tokens.js` and `shared-base.css` are loaded by all four projects. Breaking changes here break everything.
 - **Root site uses relative paths** for shared files (`shared-base.css`, `shared-tokens.js`) — sub-projects use absolute paths (`/shared-base.css`, `/shared-tokens.js`).
+- **Carousel viewport/track architecture**: `.carousel-viewport` has `overflow: hidden`, `.carousel-track` must NOT have `overflow: hidden` — otherwise `translateX` moves the clipping boundary with the track and hides later pages.
+- **Lazy loading fails in overflow:hidden**: Images inside the carousel must use `loading="eager"` (or omit the attribute). The JS also force-sets `img.loading = 'eager'` as a fallback.
+- **`.fade-in.visible` specificity**: Has specificity 0,2,0 which overrides `.project-card:hover` (0,1,1). The `.project-card.visible:hover` selector exists specifically to win this specificity battle. The `.fade-in.visible` transition also includes `transform` and `box-shadow` for hover animation compatibility.
+- **Hero title `white-space: nowrap`**: Title and quote are forced single-line. The italic `<em>` in `.hero-tagline` has `padding-right: 0.05em` to prevent the italic "e" glyph from clipping.

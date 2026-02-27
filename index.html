@@ -100,10 +100,116 @@
             <p class="hero-sub fade-in">
                 Exploring physics, biology, and political science through code. Open-source tools for understanding complex systems.
             </p>
-            <a href="#projects" class="hero-cta fade-in" data-page="projects">
-                View Projects
-                <svg width="16" height="16" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-            </a>
+            <div class="scroll-hint fade-in">
+                <span>Scroll</span>
+                <div class="scroll-hint-line"></div>
+            </div>
+        </div>
+
+        <!-- ─── Accent Stripe Transition ─── -->
+        <div class="stripe-section" aria-hidden="true">
+            <div class="stripe-band"></div>
+        </div>
+
+        <!-- ─── Featured Project Carousel ─── -->
+        <div class="carousel-section">
+            <p class="section-label carousel-label scroll-reveal">Featured</p>
+            <div class="carousel-viewport">
+            <div class="carousel-track">
+                <a href="/physsim" class="carousel-card scroll-reveal">
+                    <div class="carousel-card-visual">
+                        <img class="carousel-card-img" src="img/physsim.png" alt="" onerror="this.remove()">
+                    </div>
+                    <div class="carousel-card-overlay"></div>
+                    <div class="carousel-card-info">
+                        <h3>Relativistic N-Body</h3>
+                        <p>Gravitational, electromagnetic, and magnetic interactions at relativistic speeds.</p>
+                        <div class="carousel-card-tags">
+                            <span>physics</span><span>canvas</span><span>barnes-hut</span>
+                        </div>
+                    </div>
+                </a>
+
+                <a href="/biosim" class="carousel-card scroll-reveal">
+                    <div class="carousel-card-visual">
+                        <img class="carousel-card-img" src="img/biosim.png" alt="" onerror="this.remove()">
+                    </div>
+                    <div class="carousel-card-overlay"></div>
+                    <div class="carousel-card-info">
+                        <h3>Cellular Metabolism</h3>
+                        <p>Enzyme kinetics, substrate diffusion, and energy production in a living cell.</p>
+                        <div class="carousel-card-tags">
+                            <span>biology</span><span>simulation</span><span>metabolism</span>
+                        </div>
+                    </div>
+                </a>
+
+                <a href="/gerry" class="carousel-card scroll-reveal">
+                    <div class="carousel-card-visual">
+                        <img class="carousel-card-img" src="img/gerry.png" alt="" onerror="this.remove()">
+                    </div>
+                    <div class="carousel-card-overlay"></div>
+                    <div class="carousel-card-info">
+                        <h3>Redistricting Simulator</h3>
+                        <p>Paint congressional districts and see how boundaries shape electoral outcomes.</p>
+                        <div class="carousel-card-tags">
+                            <span>politics</span><span>svg</span><span>gerrymandering</span>
+                        </div>
+                    </div>
+                </a>
+
+                <a href="https://github.com/a9lim/Raiko" class="carousel-card scroll-reveal" target="_blank" rel="noopener noreferrer">
+                    <div class="carousel-card-visual">
+                        <img class="carousel-card-img" src="img/raiko.png" alt="" onerror="this.remove()">
+                    </div>
+                    <div class="carousel-card-overlay"></div>
+                    <div class="carousel-card-info">
+                        <h3>Raiko</h3>
+                        <p>Discord music and chat bot with queue management and conversational AI.</p>
+                        <div class="carousel-card-tags">
+                            <span>discord</span><span>java</span><span>music</span>
+                        </div>
+                    </div>
+                </a>
+
+                <a href="https://github.com/a9lim/faithful" class="carousel-card scroll-reveal" target="_blank" rel="noopener noreferrer">
+                    <div class="carousel-card-visual">
+                        <img class="carousel-card-img" src="img/faithful.png" alt="" onerror="this.remove()">
+                    </div>
+                    <div class="carousel-card-overlay"></div>
+                    <div class="carousel-card-info">
+                        <h3>Faithful</h3>
+                        <p>Discord chatbot that emulates given messages in the style of source material.</p>
+                        <div class="carousel-card-tags">
+                            <span>discord</span><span>chatbot</span><span>nlp</span>
+                        </div>
+                    </div>
+                </a>
+
+                <a href="https://github.com/catppuccin/sddm" class="carousel-card scroll-reveal" target="_blank" rel="noopener noreferrer">
+                    <div class="carousel-card-visual">
+                        <img class="carousel-card-img" src="img/catppuccin.webp" alt="" onerror="this.remove()">
+                    </div>
+                    <div class="carousel-card-overlay"></div>
+                    <div class="carousel-card-info">
+                        <h3>Catppuccin for SDDM</h3>
+                        <p>Soothing pastel theme for the SDDM display manager with all four flavor variants.</p>
+                        <div class="carousel-card-tags">
+                            <span>linux</span><span>theme</span><span>catppuccin</span>
+                        </div>
+                    </div>
+                </a>
+            </div>
+            </div>
+            <div class="carousel-dots" aria-label="Carousel navigation"></div>
+        </div>
+
+        <!-- ─── Inspirational Message ─── -->
+        <div class="inspire-section scroll-reveal">
+            <blockquote class="inspire-quote">
+                The purpose of computation is <em>insight</em>, not numbers.
+            </blockquote>
+            <cite class="inspire-cite">&mdash; Richard Hamming</cite>
         </div>
     </section>
 
@@ -273,6 +379,13 @@
                     <a href="mailto:hello@a9l.im" class="contact-email">hello@a9l.im</a>
                 </div>
             </div>
+        </div>
+
+        <!-- ─── World Map Background ─── -->
+        <div class="map-section" aria-hidden="true">
+            <div class="map-fade-top"></div>
+            <div id="world-map-container" class="world-map-wrap"></div>
+            <div class="map-fade-bottom"></div>
         </div>
     </section>
 
