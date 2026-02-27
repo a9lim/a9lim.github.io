@@ -39,4 +39,4 @@ No build step, no dependencies. Static files served directly.
 
 ## License
 
-MIT
+[AGPL-3.0](LICENSE)

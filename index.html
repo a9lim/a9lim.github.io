@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>a9l.im</title>
+    <title>HayashiNet</title>
     <meta name="description" content="Interactive simulations exploring physics, biology, and political science.">
 
     <!-- Fonts -->
@@ -19,17 +19,15 @@
     <!-- Favicon -->
     <link rel="icon" href="favicon.ico">
 </head>
-<body>
+<body class="app-ready">
     <!-- ═══ WebGL Shader Background ═══ -->
     <canvas id="shader-bg" aria-hidden="true"></canvas>
 
     <!-- ═══ Navigation ═══ -->
-    <nav id="navbar" class="glass" role="navigation" aria-label="Main navigation">
+    <nav id="navbar" class="sim-toolbar glass" role="navigation" aria-label="Main navigation">
         <div class="nav-left">
-            <a href="#home" aria-label="Home">
-                <img src="logo.svg" alt="a9l.im logo" class="nav-logo" width="26" height="26">
-            </a>
-            <a href="#home" class="nav-brand">a9l<em>.im</em></a>
+            <a href="#home" class="sim-home"><img src="logo.svg" alt="HayashiNet" height="28"></a>
+            <h1 class="sim-brand">Hayashi<em>Net</em></h1>
         </div>
 
         <div class="nav-center">

@@ -50,19 +50,10 @@ a:hover { color: var(--accent-light); }
 /* ═══════════════════════════════════
    Navigation Bar
    ═══════════════════════════════════ */
+/* .sim-toolbar from shared-base.css provides position, height, flex, glass, animation */
 #navbar {
-    position: fixed;
-    top: 12px;
-    left: 12px;
-    right: 12px;
-    height: var(--toolbar-h);
-    z-index: 100;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 0 20px;
-    border-radius: var(--radius-md);
-    transition: transform 0.4s var(--ease-out), opacity 0.4s var(--ease-out);
+    border-radius: var(--radius-lg);
+    padding: 0 12px 0 20px;
 }
 
 #navbar.scrolled {
@@ -72,35 +63,7 @@ a:hover { color: var(--accent-light); }
 .nav-left {
     display: flex;
     align-items: center;
-    gap: 14px;
-}
-
-.nav-logo {
-    width: 26px;
-    height: 26px;
-    flex-shrink: 0;
-    transform: translateY(1px);
-    transition: transform 0.3s var(--ease-spring);
-}
-
-.nav-logo:hover {
-    transform: translateY(1px) rotate(-8deg) scale(1.08);
-}
-
-.nav-brand {
-    font-family: var(--font-display);
-    font-size: 1.35rem;
-    color: var(--text);
-    letter-spacing: -0.02em;
-    white-space: nowrap;
-}
-
-.nav-brand em {
-    font-style: italic;
-    background: linear-gradient(135deg, var(--accent), var(--accent-light));
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+    gap: 10px;
 }
 
 .nav-center {
@@ -152,10 +115,10 @@ a:hover { color: var(--accent-light); }
 .tool-btn[aria-label="LinkedIn"] svg { fill: currentColor; stroke: none; }
 
 /* ─── Theme Icons ─── */
-[data-theme="light"] .icon-sun { display: none; }
-[data-theme="light"] .icon-moon { display: block; }
-[data-theme="dark"] .icon-sun { display: block; }
-[data-theme="dark"] .icon-moon { display: none; }
+[data-theme="light"] .icon-sun { display: block; }
+[data-theme="light"] .icon-moon { display: none; }
+[data-theme="dark"] .icon-sun { display: none; }
+[data-theme="dark"] .icon-moon { display: block; }
 
 /* ─── Mobile Menu Toggle ─── */
 .menu-toggle {
@@ -819,12 +782,6 @@ a:hover { color: var(--accent-light); }
         font-size: clamp(2.2rem, 8vw, 3.5rem);
     }
 
-    #navbar {
-        top: 8px;
-        left: 8px;
-        right: 8px;
-    }
-
     .page-container {
         padding: 0 16px;
     }
@@ -835,7 +792,7 @@ a:hover { color: var(--accent-light); }
         --toolbar-h: 48px;
     }
 
-    .nav-brand { display: none; }
+    .sim-brand { display: none; }
 
     .hero {
         padding-top: 15vh;
