@@ -441,13 +441,13 @@
     const stripeSection = document.querySelector('.stripe-section');
     let stripeTicking = false;
 
-    // ── Paginated carousel (2 cards per page, 3 dots) ──
+    // ── Paginated carousel (3 cards per page) ──
     const carouselTrack = document.querySelector('.carousel-track');
     const dotsContainer = document.querySelector('.carousel-dots');
     const cards = document.querySelectorAll('.carousel-card');
 
     if (carouselTrack && dotsContainer && cards.length) {
-      const CARDS_PER_PAGE = 2;
+      const CARDS_PER_PAGE = 3;
       const totalPages = Math.ceil(cards.length / CARDS_PER_PAGE);
       let currentPage = 0;
       const isMobile = () => window.innerWidth <= 900;
@@ -593,6 +593,30 @@
       });
     }
 
+    // ── Project card 3D tilt + shimmer (non-touch devices only) ──
+    const projectCards = document.querySelectorAll('.project-card');
+    if (projectCards.length && !('ontouchstart' in window)) {
+      projectCards.forEach(card => {
+        card.addEventListener('mousemove', (e) => {
+          const rect = card.getBoundingClientRect();
+          const x = (e.clientX - rect.left) / rect.width;
+          const y = (e.clientY - rect.top) / rect.height;
+          const rx = (0.5 - y) * 12;
+          const ry = (x - 0.5) * 12;
+          card.style.transform = 'perspective(800px) rotateX(' + rx + 'deg) rotateY(' + ry + 'deg) scale(1.03)';
+          card.style.setProperty('--mouse-x', (x * 100) + '%');
+          card.style.setProperty('--mouse-y', (y * 100) + '%');
+        });
+        card.addEventListener('mouseleave', () => {
+          card.style.transition = 'transform 0.4s var(--ease-spring), box-shadow 0.3s var(--ease-out)';
+          card.style.transform = '';
+        });
+        card.addEventListener('mouseenter', () => {
+          card.style.transition = 'transform 0.15s var(--ease-out), box-shadow 0.3s var(--ease-out)';
+        });
+      });
+    }
+
     function onScroll() {
       updateScrollNorm();
       if (stripeBand && stripeSection && !stripeTicking) {
@@ -665,7 +689,7 @@
         // Control point: midpoint shifted upward for a clean arc
         const cpX = (sdX + sgX) / 2;
         const cpY = Math.min(sdY, sgY) - vbH * 0.15;
-        const fullArcD = `M${sdX},${sdY} Q${cpX},${cpY} ${sgX},${sgY}`;
+        const fullArcD = `M${sgX},${sgY} Q${cpX},${cpY} ${sdX},${sdY}`;
 
         // Arc element (single thin line, no glow)
         const arcLine = document.createElementNS(NS, 'path');

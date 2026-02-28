@@ -326,18 +326,16 @@ a:hover { color: var(--accent-light); }
     content: '';
     position: absolute;
     inset: 0;
-    background: #00000000;
-    transition: background 0.3s var(--ease-out);
+    background: radial-gradient(600px circle at var(--mouse-x, 50%) var(--mouse-y, 50%), #ffffff10, transparent 40%);
+    opacity: 0;
+    transition: opacity 0.3s var(--ease-out);
     pointer-events: none;
     border-radius: inherit;
+    z-index: 3;
 }
 
 .project-card:hover::after {
-    background: #00000012;
-}
-
-[data-theme="dark"] .project-card:hover::after {
-    background: #00000030;
+    opacity: 1;
 }
 
 .project-card-top {
@@ -791,7 +789,7 @@ a:hover { color: var(--accent-light); }
 .carousel-track::-webkit-scrollbar { display: none; }
 
 .carousel-card {
-    flex: 0 0 calc((100% - 24px) / 2);
+    flex: 0 0 calc((100% - 48px) / 3);
     position: relative;
     border-radius: var(--radius-lg);
     overflow: hidden;
@@ -822,16 +820,31 @@ a:hover { color: var(--accent-light); }
 .carousel-card-overlay {
     position: absolute;
     inset: 0;
-    background: linear-gradient(to bottom, transparent 0%, transparent 30%, var(--overlay-60) 60%, var(--overlay-87) 82%, var(--overlay-full) 100%);
+    background: linear-gradient(to bottom,
+        transparent 0%,
+        color-mix(in srgb, var(--overlay-base) 4%, transparent) 20%,
+        color-mix(in srgb, var(--overlay-base) 12%, transparent) 35%,
+        color-mix(in srgb, var(--overlay-base) 28%, transparent) 50%,
+        color-mix(in srgb, var(--overlay-base) 50%, transparent) 65%,
+        color-mix(in srgb, var(--overlay-base) 75%, transparent) 80%,
+        color-mix(in srgb, var(--overlay-base) 92%, transparent) 92%,
+        var(--overlay-full) 100%
+    );
     pointer-events: none;
 }
 
-/* Hover darkening layer — opacity-based for smooth animation */
+/* Hover darkening layer — soft bell-curve */
 .carousel-card-overlay::after {
     content: '';
     position: absolute;
     inset: 0;
-    background: linear-gradient(to bottom, transparent 0%, var(--overlay-hover-12) 30%, var(--overlay-hover-25) 55%, var(--overlay-hover-19) 80%, transparent 100%);
+    background: linear-gradient(to bottom,
+        transparent 0%,
+        color-mix(in srgb, var(--overlay-base) 6%, transparent) 25%,
+        color-mix(in srgb, var(--overlay-base) 12%, transparent) 50%,
+        color-mix(in srgb, var(--overlay-base) 8%, transparent) 75%,
+        transparent 100%
+    );
     opacity: 0;
     transition: opacity 0.4s var(--ease-out);
 }
@@ -921,7 +934,7 @@ a:hover { color: var(--accent-light); }
     content: '';
     position: absolute;
     inset: 0;
-    background: radial-gradient(600px circle at var(--mouse-x, 50%) var(--mouse-y, 50%), #ffffff10, transparent 40%);
+    background: radial-gradient(800px circle at var(--mouse-x, 50%) var(--mouse-y, 50%), #ffffff0d, transparent 50%);
     opacity: 0;
     transition: opacity 0.3s var(--ease-out);
     pointer-events: none;
