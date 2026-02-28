@@ -23,7 +23,20 @@ No build step, no dependencies. Static files served directly via GitHub Pages.
 
 ## Architecture
 
-Traditional page layout (not floating panels over canvas like the simulation sub-projects). WebGL shader background provides animated noise texture.
+Traditional page layout (not floating panels over canvas like the simulation sub-projects). WebGL shader background provides animated noise texture. ES6 modules loaded via `<script type="module" src="main.js">`.
+
+```
+main.js (entry point)
+  ├── src/router.js       — parseHash, navigateTo, onHashChange
+  ├── src/theme.js        — theme toggle + localStorage
+  ├── src/mobile-menu.js  — menu toggle
+  ├── src/animations.js   — scroll reveals, fade-ins, stripe band, getScrollNorm()
+  ├── src/shader.js       — WebGL init, GLSL source, render loop, visibility pause
+  ├── src/carousel.js     — pagination, dots, wheel, touch, 3D tilt
+  ├── src/blog.js         — listing/post rendering, caches, formatDate, escapeHtml
+  ├── src/world-map.js    — SVG load, projection, arc animation
+  └── src/markdown.js     — markdown parser (imported by blog.js)
+```
 
 ### Deployment
 
