@@ -43,21 +43,21 @@ const _darken = (hex) => {
 // ---------- Font Constants ----------
 // Not frozen here — biosim extends with `emoji`
 const _FONT = {
-  display: "'Instrument Serif', Georgia, 'Times New Roman', serif",
-  body:    "'Geist', system-ui, -apple-system, sans-serif",
-  mono:    "'Geist Mono', 'SF Mono', 'Menlo', monospace",
+  display: "'Noto Serif', Georgia, 'Times New Roman', serif",
+  body:    "'Noto Sans', system-ui, -apple-system, sans-serif",
+  mono:    "'Noto Sans Mono', 'SF Mono', 'Menlo', monospace",
 };
 
 // ---------- Palette ----------
 // Not frozen here — sub-projects extend with project-specific keys
 const _PALETTE = {
   accent:      '#FE3B01',
-  accentLight: '#FF6B3D',
+  accentLight: '#FF7642',
 
   light: {
-    canvas:        '#F0EDE4',
-    panelSolid:    '#FCFAF4',
-    elevated:      '#FDFBF5',
+    canvas:        '#F0EBE4',
+    panelSolid:    '#FCF7F2',
+    elevated:      '#FDF8F3',
     text:          '#1A1612',
     textSecondary: '#78706A',
     textMuted:     '#A8A098',
@@ -65,9 +65,9 @@ const _PALETTE = {
 
   dark: {
     canvas:        '#0C0B09',
-    panelSolid:    '#181612',
-    elevated:      '#1E1C18',
-    text:          '#E8E2D4',
+    panelSolid:    '#1A1510',
+    elevated:      '#201B16',
+    text:          '#E8DED4',
     textSecondary: '#8A8278',
     textMuted:     '#5A544C',
   },
@@ -75,16 +75,16 @@ const _PALETTE = {
   // Extended palette — shared across biosim/gerry/physsim
   // Not frozen here — sub-projects freeze in their colors.js
   extended: {
-    blue:   '#5898ba',
-    green:  '#52a87a',
-    slate:  '#847a70',
-    orange: '#d9924c',
-    rose:   '#c85c74',
-    purple: '#a882bc',
-    brown:  '#9e6842',
-    red:    '#cc4c3c',
-    cyan:   '#48b4aa',
-    yellow: '#dbb850',
+    blue:   '#5C92A8',
+    green:  '#509878',
+    slate:  '#8A7E72',
+    orange: '#CC8E4E',
+    rose:   '#C46272',
+    purple: '#9C7EB0',
+    brown:  '#9C6840',
+    red:    '#C05048',
+    cyan:   '#4AACA0',
+    yellow: '#CCA84C',
   },
 };
 
@@ -133,8 +133,18 @@ ${gen(L, false)}
 
   --intro-warm:       ${_r(P.accentLight, 0.08)};
   --intro-warm-hover: ${_r(P.accentLight, 0.12)};
-  --intro-cool:       ${_r('#5898ba', 0.04)};
+  --intro-cool:       ${_r(P.extended.blue, 0.04)};
   --backdrop:         #0000004d;
+
+  --overlay-base:     ${L.text};
+  --overlay-60:       ${_r(L.text, 0.376)};
+  --overlay-87:       ${_r(L.text, 0.867)};
+  --overlay-full:     ${L.text};
+  --overlay-hover-12: ${_r(L.text, 0.125)};
+  --overlay-hover-25: ${_r(L.text, 0.25)};
+  --overlay-hover-19: ${_r(L.text, 0.188)};
+  --card-bg-end:      ${L.panelSolid};
+  --ext-brown:        ${P.extended.brown};
   color-scheme: light;
 }
 [data-theme="dark"] {
@@ -145,6 +155,14 @@ ${gen(D, true)}
   --shadow-lg: 0 12px 48px #00000066, 0 0 0 1px #ffffff08;
 
   --backdrop: #00000080;
+  --overlay-base:     ${D.canvas};
+  --overlay-60:       ${_r(D.canvas, 0.314)};
+  --overlay-87:       ${_r(D.canvas, 0.8)};
+  --overlay-full:     ${D.canvas};
+  --overlay-hover-12: ${_r(D.canvas, 0.125)};
+  --overlay-hover-25: ${_r(D.canvas, 0.25)};
+  --overlay-hover-19: ${_r(D.canvas, 0.188)};
+  --card-bg-end:      ${D.elevated};
   color-scheme: dark;
 }`;
   document.head.appendChild(style);

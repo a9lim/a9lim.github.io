@@ -256,6 +256,8 @@
       uniform float u_time;
       uniform vec2  u_res;
       uniform vec3  u_accent;
+      uniform vec3  u_canvasLight;
+      uniform vec3  u_canvasDark;
       uniform float u_dark;
       uniform float u_scroll;
 
@@ -289,7 +291,7 @@
 
       void main() {
         vec2 uv = gl_FragCoord.xy / u_res;
-        float t = u_time * 0.04;
+        float t = u_time * 0.18;
         float sc = u_scroll * 0.5;
 
         // Layered noise — scroll offsets create reactive movement
@@ -299,28 +301,26 @@
 
         float noise = n1 * 0.5 + n2 * 0.3 + n3 * 0.2;
 
-        // Splotchy accent layer — concentrated red spots that shift with scroll
-        float splotch = snoise(uv * 2.4 + vec2(t * 0.12 + sc * 0.9, -t * 0.08));
-        splotch = smoothstep(0.25, 0.65, splotch);
+        // Splotchy accent layer — morphs in place, scroll pushes upward
+        float warpX = snoise(uv * 3.0 + vec2(t * 0.8, t * -0.5)) * 0.4;
+        float warpY = snoise(uv * 2.5 + vec2(t * -0.6, t * 0.9)) * 0.4;
+        vec2 splotchUV = uv * 2.4 + vec2(warpX, warpY - sc * 3.0);
+        float splotch = snoise(splotchUV);
+        splotch = smoothstep(-0.2, 0.7, splotch);
 
-        // Second splotch layer — larger blobs that drift with scroll
-        float splotch2 = snoise(uv * 1.2 + vec2(-t * 0.06 + sc * 1.4, t * 0.1));
-        splotch2 = smoothstep(0.3, 0.7, splotch2);
+        // Canvas-tinted base that blends into the page background
+        vec3 canvasBg = mix(u_canvasLight, u_canvasDark, u_dark);
 
-        // Color mixing
-        vec3 warm = u_accent * 0.4;
-        vec3 cool = vec3(0.22, 0.16, 0.1);
-        vec3 base = mix(cool, warm, noise);
-        vec3 color = mix(base, u_accent * 0.6, splotch * 0.5);
-        color = mix(color, u_accent * 0.45, splotch2 * 0.3);
+        // Color mixing — splotch uses pure accent, subtle blend
+        vec3 base = mix(canvasBg, u_accent * 0.3, noise * 0.15);
+        vec3 color = mix(base, u_accent, splotch * 0.3);
 
         // Radial vignette
-        float vig = 1.0 - length(uv - 0.5) * 1.0;
+        float vig = 1.0 - length(uv - 0.5) * 0.85;
         vig = smoothstep(0.0, 0.8, vig);
 
         float alpha = noise * vig * mix(0.18, 0.12, u_dark)
-                     + splotch * vig * 0.1
-                     + splotch2 * vig * 0.06;
+                     + splotch * vig * 0.08;
         gl_FragColor = vec4(color, alpha);
       }
     `;
@@ -355,17 +355,18 @@
     gl.enableVertexAttribArray(posLoc);
     gl.vertexAttribPointer(posLoc, 2, gl.FLOAT, false, 0, 0);
 
-    const uTime   = gl.getUniformLocation(prog, 'u_time');
-    const uRes    = gl.getUniformLocation(prog, 'u_res');
-    const uAccent = gl.getUniformLocation(prog, 'u_accent');
-    const uDark   = gl.getUniformLocation(prog, 'u_dark');
-    const uScroll = gl.getUniformLocation(prog, 'u_scroll');
+    const uTime        = gl.getUniformLocation(prog, 'u_time');
+    const uRes         = gl.getUniformLocation(prog, 'u_res');
+    const uAccent      = gl.getUniformLocation(prog, 'u_accent');
+    const uCanvasLight = gl.getUniformLocation(prog, 'u_canvasLight');
+    const uCanvasDark  = gl.getUniformLocation(prog, 'u_canvasDark');
+    const uDark        = gl.getUniformLocation(prog, 'u_dark');
+    const uScroll      = gl.getUniformLocation(prog, 'u_scroll');
 
-    // Parse accent color
-    const accent = _PALETTE.accent;
-    const ar = parseInt(accent.slice(1, 3), 16) / 255;
-    const ag = parseInt(accent.slice(3, 5), 16) / 255;
-    const ab = parseInt(accent.slice(5, 7), 16) / 255;
+    // Parse palette colors
+    const [ar, ag, ab] = _parseHex(_PALETTE.accent);
+    const [clr, clg, clb] = _parseHex(_PALETTE.light.canvas);
+    const [cdr, cdg, cdb] = _parseHex(_PALETTE.dark.canvas);
 
     gl.enable(gl.BLEND);
     gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
@@ -396,6 +397,8 @@
       gl.uniform1f(uTime, t);
       gl.uniform2f(uRes, canvas.width, canvas.height);
       gl.uniform3f(uAccent, ar, ag, ab);
+      gl.uniform3f(uCanvasLight, clr, clg, clb);
+      gl.uniform3f(uCanvasDark, cdr, cdg, cdb);
       gl.uniform1f(uDark, isDark);
       gl.uniform1f(uScroll, scrollNorm);
       gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
@@ -555,7 +558,11 @@
             card.style.setProperty('--mouse-y', (y * 100) + '%');
           });
           card.addEventListener('mouseleave', () => {
+            card.style.transition = 'transform 0.4s var(--ease-spring), box-shadow 0.3s var(--ease-out)';
             card.style.transform = '';
+          });
+          card.addEventListener('mouseenter', () => {
+            card.style.transition = 'transform 0.15s var(--ease-out), box-shadow 0.3s var(--ease-out)';
           });
         });
       }
