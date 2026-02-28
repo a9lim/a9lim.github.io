@@ -53,7 +53,7 @@ This site's `colors.js` is minimal — it does not add project-specific palette 
 - **Accent stripe**: `.stripe-section` between hero and carousel. Flat red rectangular band (`.stripe-band`) slides in from left on scroll via JS `requestAnimationFrame` transform. Rotated -3deg.
 - **Project carousel** (home page): Paginated 2-cards-per-page system with 3 pill dots. Desktop: JS-driven `translateX` on `.carousel-track` inside `.carousel-viewport` (overflow wrapper). Wheel scroll advances pages (600ms debounce). Touch swipe with 1:1 drag. 3D tilt on hover (`perspective(800px) rotateX/Y`, max ~6deg from cursor position). Shimmer highlight via `--mouse-x`/`--mouse-y` CSS vars. Mobile ≤900px: reverts to native `overflow-x: auto` + `scroll-snap-type: x mandatory`. Cards eagerly loaded (lazy loading fails inside `overflow: hidden`).
 - **Inspirational quote**: Centered blockquote between carousel and projects page.
-- **World map** (about page): SVG world map in `.map-section` with brown fill (`#9e6842` from `extended.brown`). Two city dots (Singapore, San Diego) connected by a red accent arc. Top/bottom CSS mask fades (`map-fade-top`, `map-fade-bottom`) blend into canvas color.
+- **World map** (about page): SVG world map in `.map-section` with brown fill (`#9C6840` from `extended.brown`). Two city dots (Singapore, San Diego) connected by a red accent arc. Top/bottom CSS mask fades (`map-fade-top`, `map-fade-bottom`) blend into canvas color.
 - **Project screenshots**: `img/` directory contains PNG/WebP screenshots for carousel cards (physsim.png, biosim.png, gerry.png, raiko.png, faithful.png, catppuccin.webp).
 - **Blog**: Renders markdown from fetched `.md` files. Blog content typography in `.blog-content` styles.
 
