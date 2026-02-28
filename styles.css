@@ -1098,6 +1098,7 @@ a:hover { color: var(--accent-light); }
 .carousel-card.scroll-reveal:nth-child(4) { transition-delay: 0.24s; }
 .carousel-card.scroll-reveal:nth-child(5) { transition-delay: 0.32s; }
 .carousel-card.scroll-reveal:nth-child(6) { transition-delay: 0.40s; }
+.carousel-card.scroll-reveal:nth-child(7) { transition-delay: 0.48s; }
 
 /* ═══════════════════════════════════
    Entrance Animations
@@ -1121,6 +1122,7 @@ a:hover { color: var(--accent-light); }
 .fade-in:nth-child(4) { transition-delay: 0.24s; }
 .fade-in:nth-child(5) { transition-delay: 0.32s; }
 .fade-in:nth-child(6) { transition-delay: 0.40s; }
+.fade-in:nth-child(7) { transition-delay: 0.48s; }
 
 /* ═══════════════════════════════════
    Responsive
