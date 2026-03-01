@@ -5,9 +5,7 @@ import { triggerFadeIns } from './animations.js';
 let postsCache = null;
 const mdCache = {};
 
-function escapeHtmlBasic(s) {
-    return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-}
+const FETCH_TIMEOUT = 10000;
 
 function formatDate(iso) {
     const d = new Date(iso + 'T00:00:00');
@@ -15,17 +13,39 @@ function formatDate(iso) {
     return months[d.getMonth()] + ' ' + d.getDate() + ', ' + d.getFullYear();
 }
 
+function skeletonEntries(n) {
+    let html = '';
+    for (let i = 0; i < n; i++) {
+        html += '<div class="skeleton-entry">'
+            + '<span class="skeleton skeleton-date"></span>'
+            + '<span class="skeleton skeleton-title" style="max-width:' + (200 + Math.random() * 200) + 'px"></span>'
+            + '<span class="skeleton skeleton-tag"></span>'
+            + '</div>';
+    }
+    return html;
+}
+
+function fetchWithTimeout(url, ms) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), ms);
+    return fetch(url, { signal: controller.signal })
+        .finally(() => clearTimeout(timer));
+}
+
 export async function showBlogListing($) {
     $.blogListing.style.display = '';
     $.blogPost.style.display = 'none';
 
     if (!postsCache) {
-        $.blogListCt.innerHTML = '<p class="blog-loading">Loading&hellip;</p>';
+        $.blogListCt.innerHTML = skeletonEntries(5);
         try {
-            const res = await fetch('posts.json');
+            const res = await fetchWithTimeout('posts.json', FETCH_TIMEOUT);
             postsCache = await res.json();
         } catch (e) {
-            $.blogListCt.innerHTML = '<div class="blog-empty"><p>Could not load posts.</p></div>';
+            const msg = e.name === 'AbortError'
+                ? 'Request timed out. Please try again.'
+                : 'Could not load posts.';
+            $.blogListCt.innerHTML = '<div class="blog-error"><p>' + escapeHtml(msg) + '</p></div>';
             triggerFadeIns(document.getElementById('page-blog'));
             return;
         }
@@ -38,10 +58,10 @@ export async function showBlogListing($) {
     }
 
     $.blogListCt.innerHTML = postsCache.map(function (p) {
-        return '<a href="#blog/' + escapeHtmlBasic(p.slug) + '" class="blog-entry">'
+        return '<a href="#blog/' + escapeHtml(p.slug) + '" class="blog-entry">'
             + '<span class="blog-date">' + formatDate(p.date) + '</span>'
-            + '<span class="blog-title">' + escapeHtmlBasic(p.title) + '</span>'
-            + (p.tag ? '<span class="blog-tag">' + escapeHtmlBasic(p.tag) + '</span>' : '')
+            + '<span class="blog-title">' + escapeHtml(p.title) + '</span>'
+            + (p.tag ? '<span class="blog-tag">' + escapeHtml(p.tag) + '</span>' : '')
             + '</a>';
     }).join('');
 
@@ -51,16 +71,24 @@ export async function showBlogListing($) {
 export async function showBlogPost(slug, $) {
     $.blogListing.style.display = 'none';
     $.blogPost.style.display = '';
-    $.blogContent.innerHTML = '<p class="blog-loading">Loading&hellip;</p>';
+    $.blogContent.innerHTML = '<div class="skeleton" style="height:24px;width:120px;margin-bottom:12px"></div>'
+        + '<div class="skeleton" style="height:36px;width:80%;margin-bottom:40px"></div>'
+        + '<div class="skeleton" style="height:14px;width:100%;margin-bottom:10px"></div>'
+        + '<div class="skeleton" style="height:14px;width:90%;margin-bottom:10px"></div>'
+        + '<div class="skeleton" style="height:14px;width:95%;margin-bottom:10px"></div>'
+        + '<div class="skeleton" style="height:14px;width:70%"></div>';
     triggerFadeIns(document.getElementById('page-blog'));
 
     if (!mdCache[slug]) {
         try {
-            const res = await fetch('posts/' + encodeURIComponent(slug) + '.md');
+            const res = await fetchWithTimeout('posts/' + encodeURIComponent(slug) + '.md', FETCH_TIMEOUT);
             if (!res.ok) throw new Error(res.status);
             mdCache[slug] = await res.text();
         } catch (e) {
-            $.blogContent.innerHTML = '<p class="blog-empty">Post not found.</p>';
+            const msg = e.name === 'AbortError'
+                ? 'Request timed out. Please try again.'
+                : 'Post not found.';
+            $.blogContent.innerHTML = '<p class="blog-error">' + escapeHtml(msg) + '</p>';
             triggerFadeIns(document.getElementById('page-blog'));
             return;
         }
@@ -68,7 +96,7 @@ export async function showBlogPost(slug, $) {
 
     if (!postsCache) {
         try {
-            const res = await fetch('posts.json');
+            const res = await fetchWithTimeout('posts.json', FETCH_TIMEOUT);
             postsCache = await res.json();
         } catch (e) { /* continue without metadata */ }
     }
@@ -78,8 +106,8 @@ export async function showBlogPost(slug, $) {
     let header = '<div class="blog-post-header">';
     if (meta) {
         header += '<span class="blog-post-date">' + formatDate(meta.date)
-            + (meta.tag ? ' &middot; ' + escapeHtmlBasic(meta.tag) : '') + '</span>';
-        header += '<h1 class="blog-post-title">' + escapeHtmlBasic(meta.title) + '</h1>';
+            + (meta.tag ? ' &middot; ' + escapeHtml(meta.tag) : '') + '</span>';
+        header += '<h1 class="blog-post-title">' + escapeHtml(meta.title) + '</h1>';
     }
     header += '</div>';
 

@@ -29,13 +29,14 @@ Traditional page layout (not floating panels over canvas like the simulation sub
 main.js (entry point)
   ├── src/projects.js     — PROJECTS data array (single source of truth for carousel + projects page)
   ├── src/projects-page.js— renderProjectCards() — generates project grid from PROJECTS
-  ├── src/router.js       — parseHash, navigateTo, onHashChange
+  ├── src/card-effects.js — initCardTilt() — 3D tilt + shimmer hover effects for cards
+  ├── src/router.js       — parseHash, navigateTo, onHashChange, page transitions
   ├── src/theme.js        — theme toggle + localStorage
   ├── src/mobile-menu.js  — menu toggle
   ├── src/animations.js   — scroll reveals, fade-ins, stripe band, getScrollNorm()
-  ├── src/shader.js       — WebGL init, GLSL source, render loop, visibility pause
+  ├── src/shader.js       — WebGL init, GLSL source, on-demand render (scroll/theme), visibility pause
   ├── src/carousel.js     — renderCarouselCards() + pagination, dots, wheel, touch, 3D tilt
-  ├── src/blog.js         — listing/post rendering, caches, formatDate, escapeHtml
+  ├── src/blog.js         — listing/post rendering, loading skeletons, caches, formatDate
   ├── src/world-map.js    — SVG load, projection, arc animation
   └── src/markdown.js     — markdown parser (imported by blog.js)
 ```
@@ -48,10 +49,12 @@ main.js (entry point)
 
 ### Shared Files (hosted here, consumed by all projects)
 
-This repo hosts two shared files that all sub-projects load:
+This repo hosts four shared files that all sub-projects load:
 
 - **`shared-tokens.js`**: Color math helpers (`_r`, `_parseHex`, `_rgb2hsl`, `_hsl2hex`, `_darken`), `_FONT`, `_PALETTE` with shared design tokens (surfaces, text, accent, shadows, `extended` sub-object with 10 cross-project colors). Sub-projects load via `<script src="/shared-tokens.js">` then extend with project-specific keys in their own `colors.js`.
-- **`shared-base.css`**: Reset, layout tokens, body base, `.glass`, `.tool-btn` (34×34 sim-style), shared keyframes, intro screen, sidebar stat patterns, tab system, control group/row, slider value, preset dialog, shared responsive blocks (900px/600px/440px), form controls, `prefers-reduced-motion`. Sub-projects load via `<link href="/shared-base.css">`.
+- **`shared-utils.js`**: Utility functions: `escapeHtml()`, `debounce()`, `throttle()`, `clamp()`, `lerp()`, `cubicBezier()`, `showToast()`. Loaded by all 4 projects after `shared-tokens.js`.
+- **`shared-camera.js`**: Viewport/camera module via `createCamera(opts)`. Supports zoom/pan with mouse/touch, coordinate transforms, Canvas 2D and SVG integration. `bindZoomButtons(opts)` wires zoom-in/out/reset buttons and zoom display to the camera with animated zoom. Loaded by 3 sim projects (not root site).
+- **`shared-base.css`**: Reset, layout tokens, body base, `.glass`, `.tool-btn` (34×34 sim-style), shared keyframes, intro screen, sidebar stat patterns, sim layout components (`.sim-toolbar`, `.sim-panel`, `.sim-bar`, `.sim-controls`), small utilities, toast notifications, shared responsive blocks (900px/600px/440px), `prefers-reduced-motion`. Sub-projects load via `<link href="/shared-base.css">`. Note: tab system, preset dialog, form controls (range sliders, checkboxes, etc.) were moved to the consuming project's `styles.css`.
 
 **Do not break these files** — all four projects depend on them.
 
