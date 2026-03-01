@@ -138,10 +138,12 @@ export function initShader($) {
         }
     }
 
-    let raf;
     const start = performance.now();
+    let raf = 0;
+    let rendering = false;
+    let idleTimer = 0;
 
-    function frame() {
+    function render() {
         resize();
         const t = (performance.now() - start) / 1000;
         const isDark = getTheme() === 'dark' ? 1.0 : 0.0;
@@ -156,17 +158,57 @@ export function initShader($) {
         gl.uniform1f(uDark, isDark);
         gl.uniform1f(uScroll, getScrollNorm());
         gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
-
-        raf = requestAnimationFrame(frame);
     }
 
-    frame();
+    function startLoop() {
+        if (rendering) return;
+        rendering = true;
+        function loop() {
+            if (!rendering) return;
+            render();
+            raf = requestAnimationFrame(loop);
+        }
+        raf = requestAnimationFrame(loop);
+    }
 
+    function stopLoop() {
+        rendering = false;
+        cancelAnimationFrame(raf);
+    }
+
+    function scheduleIdle() {
+        clearTimeout(idleTimer);
+        idleTimer = setTimeout(stopLoop, 1000);
+    }
+
+    function requestRender() {
+        startLoop();
+        scheduleIdle();
+    }
+
+    // Render on scroll
+    window.addEventListener('scroll', requestRender, { passive: true });
+
+    // Render on resize
+    window.addEventListener('resize', requestRender, { passive: true });
+
+    // Render on theme change (observed via data-theme attribute)
+    const themeObs = new MutationObserver(requestRender);
+    themeObs.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+
+    // Visibility pause
     document.addEventListener('visibilitychange', () => {
         if (document.hidden) {
-            cancelAnimationFrame(raf);
+            stopLoop();
+            clearTimeout(idleTimer);
         } else {
-            raf = requestAnimationFrame(frame);
+            requestRender();
         }
     });
+
+    // Initial render: run for ~2s for entrance animation, then idle
+    startLoop();
+    setTimeout(() => {
+        if (rendering) scheduleIdle();
+    }, 2000);
 }

@@ -1,18 +1,20 @@
 // ─── Project Carousel ───
 
+import { initCardTilt } from './card-effects.js';
+
 export function renderCarouselCards(container, projects) {
     container.innerHTML = projects.map(p => {
         const ext = p.external ? ' target="_blank" rel="noopener noreferrer"' : '';
-        return `<a href="${p.href}" class="carousel-card scroll-reveal"${ext}>
+        return `<a href="${escapeHtml(p.href)}" class="carousel-card scroll-reveal"${ext}>
             <div class="carousel-card-visual">
-                <img class="carousel-card-img" src="${p.image}" alt="" onerror="this.remove()">
+                <img class="carousel-card-img" data-src="${escapeHtml(p.image)}" alt="" onerror="this.remove()">
             </div>
             <div class="carousel-card-overlay"></div>
             <div class="carousel-card-info">
-                <h3>${p.title}</h3>
-                <p>${p.shortDesc}</p>
+                <h3>${escapeHtml(p.title)}</h3>
+                <p>${escapeHtml(p.shortDesc)}</p>
                 <div class="carousel-card-tags">
-                    ${p.tags.map(t => `<span>${t}</span>`).join('')}
+                    ${p.tags.map(t => `<span>${escapeHtml(t)}</span>`).join('')}
                 </div>
             </div>
         </a>`;
@@ -22,8 +24,6 @@ export function renderCarouselCards(container, projects) {
 const CARDS_PER_PAGE = 3;
 const SWIPE_THRESHOLD = 50;
 const WHEEL_COOLDOWN_MS = 600;
-const TILT_PERSPECTIVE = 800;
-const TILT_MAX_DEG = 12;
 
 export function initCarousel() {
     const carouselTrack = document.querySelector('.carousel-track');
@@ -127,29 +127,9 @@ export function initCarousel() {
         }
     }, { passive: true });
 
-    // 3D tilt (non-touch devices)
-    if (!('ontouchstart' in window)) {
-        cards.forEach(card => {
-            card.addEventListener('mousemove', (e) => {
-                if (isMobile()) return;
-                const rect = card.getBoundingClientRect();
-                const x = (e.clientX - rect.left) / rect.width;
-                const y = (e.clientY - rect.top) / rect.height;
-                const rx = (0.5 - y) * TILT_MAX_DEG;
-                const ry = (x - 0.5) * TILT_MAX_DEG;
-                card.style.transform = `perspective(${TILT_PERSPECTIVE}px) rotateX(${rx}deg) rotateY(${ry}deg) scale(1.03)`;
-                card.style.setProperty('--mouse-x', (x * 100) + '%');
-                card.style.setProperty('--mouse-y', (y * 100) + '%');
-            });
-            card.addEventListener('mouseleave', () => {
-                card.style.transition = 'transform 0.4s var(--ease-spring), box-shadow 0.3s var(--ease-out)';
-                card.style.transform = '';
-            });
-            card.addEventListener('mouseenter', () => {
-                card.style.transition = 'transform 0.15s var(--ease-out), box-shadow 0.3s var(--ease-out)';
-            });
-        });
-    }
+    // 3D tilt on carousel cards and project cards
+    initCardTilt('.carousel-card');
+    initCardTilt('.project-card');
 
     // Resize handler
     let resizeTimer;
@@ -165,37 +145,24 @@ export function initCarousel() {
         }, 150);
     });
 
-    // Force all cards visible + eager load images
+    // Force all cards visible
     cards.forEach(card => {
         card.classList.add('visible');
-        const img = card.querySelector('img');
-        if (img) {
-            img.loading = 'eager';
-            if (!img.complete) img.src = img.src;
-        }
     });
 
-    // Project card 3D tilt + shimmer (non-touch devices)
-    const projectCards = document.querySelectorAll('.project-card');
-    if (projectCards.length && !('ontouchstart' in window)) {
-        projectCards.forEach(card => {
-            card.addEventListener('mousemove', (e) => {
-                const rect = card.getBoundingClientRect();
-                const x = (e.clientX - rect.left) / rect.width;
-                const y = (e.clientY - rect.top) / rect.height;
-                const rx = (0.5 - y) * TILT_MAX_DEG;
-                const ry = (x - 0.5) * TILT_MAX_DEG;
-                card.style.transform = `perspective(${TILT_PERSPECTIVE}px) rotateX(${rx}deg) rotateY(${ry}deg) scale(1.03)`;
-                card.style.setProperty('--mouse-x', (x * 100) + '%');
-                card.style.setProperty('--mouse-y', (y * 100) + '%');
+    // Lazy-load carousel images via IntersectionObserver
+    const images = carouselTrack.querySelectorAll('img[data-src]');
+    if (images.length && 'IntersectionObserver' in window) {
+        const imgObserver = new IntersectionObserver((entries, obs) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const img = entry.target;
+                    img.src = img.dataset.src;
+                    img.removeAttribute('data-src');
+                    obs.unobserve(img);
+                }
             });
-            card.addEventListener('mouseleave', () => {
-                card.style.transition = 'transform 0.4s var(--ease-spring), box-shadow 0.3s var(--ease-out)';
-                card.style.transform = '';
-            });
-            card.addEventListener('mouseenter', () => {
-                card.style.transition = 'transform 0.15s var(--ease-out), box-shadow 0.3s var(--ease-out)';
-            });
-        });
+        }, { rootMargin: '200px' });
+        images.forEach(img => imgObserver.observe(img));
     }
 }
