@@ -27,12 +27,14 @@ Traditional page layout (not floating panels over canvas like the simulation sub
 
 ```
 main.js (entry point)
+  ├── src/projects.js     — PROJECTS data array (single source of truth for carousel + projects page)
+  ├── src/projects-page.js— renderProjectCards() — generates project grid from PROJECTS
   ├── src/router.js       — parseHash, navigateTo, onHashChange
   ├── src/theme.js        — theme toggle + localStorage
   ├── src/mobile-menu.js  — menu toggle
   ├── src/animations.js   — scroll reveals, fade-ins, stripe band, getScrollNorm()
   ├── src/shader.js       — WebGL init, GLSL source, render loop, visibility pause
-  ├── src/carousel.js     — pagination, dots, wheel, touch, 3D tilt
+  ├── src/carousel.js     — renderCarouselCards() + pagination, dots, wheel, touch, 3D tilt
   ├── src/blog.js         — listing/post rendering, caches, formatDate, escapeHtml
   ├── src/world-map.js    — SVG load, projection, arc animation
   └── src/markdown.js     — markdown parser (imported by blog.js)
@@ -64,7 +66,9 @@ This site's `colors.js` is minimal — it does not add project-specific palette 
 - **WebGL shader background**: `#shader-bg` canvas provides animated noise texture with scroll-reactive splotchy accent effects. Opacity: 0.6 light, 0.5 dark. Shader has `u_scroll` uniform that offsets noise layers as user scrolls, plus two splotch layers (`smoothstep` thresholds) that create drifting red accent spots.
 - **Scroll-triggered reveals**: Two systems coexist — `.fade-in` + `.visible` (CSS-driven, staggered `transition-delay` via `:nth-child`) for page content, and `.scroll-reveal` + `.visible` (JS `IntersectionObserver`, threshold 0.15) for carousel cards and section labels.
 - **Accent stripe**: `.stripe-section` between hero and carousel. Flat red rectangular band (`.stripe-band`) slides in from left on scroll via JS `requestAnimationFrame` transform. Rotated -3deg.
-- **Project carousel** (home page): Paginated 2-cards-per-page system with 3 pill dots. Desktop: JS-driven `translateX` on `.carousel-track` inside `.carousel-viewport` (overflow wrapper). Wheel scroll advances pages (600ms debounce). Touch swipe with 1:1 drag. 3D tilt on hover (`perspective(800px) rotateX/Y`, max ~6deg from cursor position). Shimmer highlight via `--mouse-x`/`--mouse-y` CSS vars. Mobile ≤900px: reverts to native `overflow-x: auto` + `scroll-snap-type: x mandatory`. Cards eagerly loaded (lazy loading fails inside `overflow: hidden`).
+- **Project data**: `src/projects.js` exports a `PROJECTS` array — the single source of truth for both the carousel and projects page. Each entry has `href`, `title`, `shortDesc` (carousel), `longDesc` (projects page), `tags`, `image`, `icon` (SVG string), and `external` (boolean). `main.js` calls `renderCarouselCards()` and `renderProjectCards()` to populate empty `.carousel-track` and `.projects-grid` containers before the init chain runs.
+- **Project carousel** (home page): Paginated 3-cards-per-page system with pill dots. Cards rendered dynamically from `PROJECTS` via `renderCarouselCards()` in `src/carousel.js`. Desktop: JS-driven `translateX` on `.carousel-track` inside `.carousel-viewport` (overflow wrapper). Wheel scroll advances pages (600ms debounce). Touch swipe with 1:1 drag. 3D tilt on hover (`perspective(800px) rotateX/Y`, max ~12deg from cursor position). Shimmer highlight via `--mouse-x`/`--mouse-y` CSS vars. Mobile ≤900px: reverts to native `overflow-x: auto` + `scroll-snap-type: x mandatory`. Cards eagerly loaded (lazy loading fails inside `overflow: hidden`).
+- **Projects page grid**: Cards rendered dynamically from `PROJECTS` via `renderProjectCards()` in `src/projects-page.js`. Each card has an SVG icon, arrow, title, long description, and tags. Uses `.project-card.glass.fade-in` classes for styling and stagger animation.
 - **Inspirational quote**: Centered blockquote between carousel and projects page.
 - **World map** (about page): SVG world map in `.map-section` with brown fill (`#9C6840` from `extended.brown`). Two city dots (Singapore, San Diego) connected by a red accent arc. Top/bottom CSS mask fades (`map-fade-top`, `map-fade-bottom`) blend into canvas color.
 - **Project screenshots**: `img/` directory contains PNG/WebP screenshots for carousel cards (physsim.png, biosim.png, gerry.png, raiko.png, faithful.png, catppuccin.webp).

@@ -1,5 +1,24 @@
 // ─── Project Carousel ───
 
+export function renderCarouselCards(container, projects) {
+    container.innerHTML = projects.map(p => {
+        const ext = p.external ? ' target="_blank" rel="noopener noreferrer"' : '';
+        return `<a href="${p.href}" class="carousel-card scroll-reveal"${ext}>
+            <div class="carousel-card-visual">
+                <img class="carousel-card-img" src="${p.image}" alt="" onerror="this.remove()">
+            </div>
+            <div class="carousel-card-overlay"></div>
+            <div class="carousel-card-info">
+                <h3>${p.title}</h3>
+                <p>${p.shortDesc}</p>
+                <div class="carousel-card-tags">
+                    ${p.tags.map(t => `<span>${t}</span>`).join('')}
+                </div>
+            </div>
+        </a>`;
+    }).join('');
+}
+
 const CARDS_PER_PAGE = 3;
 const SWIPE_THRESHOLD = 50;
 const WHEEL_COOLDOWN_MS = 600;
