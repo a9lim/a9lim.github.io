@@ -167,3 +167,12 @@ ${gen(D, true)}
 }`;
   document.head.appendChild(style);
 })();
+
+// Expose on window so ES6 modules can access via `window._PALETTE` etc.
+window._r = _r;
+window._parseHex = _parseHex;
+window._rgb2hsl = _rgb2hsl;
+window._hsl2hex = _hsl2hex;
+window._darken = _darken;
+window._FONT = _FONT;
+window._PALETTE = _PALETTE;
