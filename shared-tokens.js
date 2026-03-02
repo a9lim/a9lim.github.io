@@ -144,7 +144,22 @@ ${gen(L, false)}
   --overlay-hover-25: ${_r(L.text, 0.25)};
   --overlay-hover-19: ${_r(L.text, 0.188)};
   --card-bg-end:      ${L.panelSolid};
+  --ext-blue:         ${P.extended.blue};
+  --ext-green:        ${P.extended.green};
+  --ext-slate:        ${P.extended.slate};
+  --ext-orange:       ${P.extended.orange};
+  --ext-rose:         ${P.extended.rose};
+  --ext-purple:       ${P.extended.purple};
   --ext-brown:        ${P.extended.brown};
+  --ext-red:          ${P.extended.red};
+  --ext-cyan:         ${P.extended.cyan};
+  --ext-yellow:       ${P.extended.yellow};
+  --overlay-text:     #FFFFFF;
+  --overlay-text-dim: ${_r('#FFFFFF', 0.8)};
+  --overlay-tint:     ${_r('#FFFFFF', 0.133)};
+  --overlay-tint-dim: ${_r('#FFFFFF', 0.733)};
+  --shimmer:          ${_r('#FFFFFF', 0.063)};
+  --shimmer-subtle:   ${_r('#FFFFFF', 0.05)};
   color-scheme: light;
 }
 [data-theme="dark"] {
