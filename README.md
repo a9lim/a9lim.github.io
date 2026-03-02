@@ -14,12 +14,16 @@ Hosted via GitHub Pages with custom domain. Multi-page site with landing, projec
 
 ## Shared Design System
 
-This repo hosts two files consumed by all sub-projects:
+This repo hosts six files consumed by all sub-projects:
 
 - **`shared-tokens.js`** — `_PALETTE` (surfaces, text, accent, extended cross-project colors), `_FONT`, color math helpers (`_r`, `_darken`, HSL conversion), CSS custom property injection
-- **`shared-base.css`** — Reset, layout tokens, `.glass` panels, `.tool-btn`, intro screen, keyframes, sidebar stats, tab system, control groups, slider values, preset dialog, form controls, shared responsive breakpoints (900/600/440px), `prefers-reduced-motion`
+- **`shared-utils.js`** — Utility functions: `clamp`, `lerp`, `debounce`, `throttle`, `showToast`, `escapeHtml`, `cubicBezier`
+- **`shared-camera.js`** — Viewport/camera module (`createCamera`) with zoom/pan, coordinate transforms, Canvas 2D and SVG integration; `bindZoomButtons` for zoom controls
+- **`shared-base.css`** — Reset, layout tokens, `.glass` panels, `.tool-btn`, toggle switches, intro screen, keyframes, sidebar stats, form controls, shared responsive breakpoints (900/600/440px), accessibility utilities (`.skip-link`, `.sr-only`), `prefers-reduced-motion`
+- **`shared-info.js`** — Info tip popover system (`createInfoTip`) — hover on desktop, tap-to-toggle on mobile with close button, auto-positions above/below based on viewport
+- **`shared-shortcuts.js`** — Keyboard shortcut registry (`initShortcuts`) with `?` help overlay modal, grouped shortcut display, ignores input when focused in form fields
 
-Sub-projects load these via absolute paths (`/shared-tokens.js`, `/shared-base.css`) and extend with project-specific tokens in their own `colors.js`.
+Sub-projects load these via absolute paths (`/shared-tokens.js`, `/shared-base.css`, etc.) and extend with project-specific tokens in their own `colors.js`.
 
 ## Running Locally
 

@@ -49,12 +49,14 @@ main.js (entry point)
 
 ### Shared Files (hosted here, consumed by all projects)
 
-This repo hosts four shared files that all sub-projects load:
+This repo hosts six shared files that all sub-projects load:
 
 - **`shared-tokens.js`**: Color math helpers (`_r`, `_parseHex`, `_rgb2hsl`, `_hsl2hex`, `_darken`), `_FONT`, `_PALETTE` with shared design tokens (surfaces, text, accent, shadows, `extended` sub-object with 10 cross-project colors). Sub-projects load via `<script src="/shared-tokens.js">` then extend with project-specific keys in their own `colors.js`.
 - **`shared-utils.js`**: Utility functions: `escapeHtml()`, `debounce()`, `throttle()`, `clamp()`, `lerp()`, `cubicBezier()`, `showToast()`. Loaded by all 4 projects after `shared-tokens.js`.
 - **`shared-camera.js`**: Viewport/camera module via `createCamera(opts)`. Supports zoom/pan with mouse/touch, coordinate transforms, Canvas 2D and SVG integration. `bindZoomButtons(opts)` wires zoom-in/out/reset buttons and zoom display to the camera with animated zoom. Loaded by 3 sim projects (not root site).
-- **`shared-base.css`**: Reset, layout tokens, body base, `.glass`, `.tool-btn` (34×34 sim-style), shared keyframes, intro screen, sidebar stat patterns, sim layout components (`.sim-toolbar`, `.sim-panel`, `.sim-bar`, `.sim-controls`), small utilities, toast notifications, shared responsive blocks (900px/600px/440px), `prefers-reduced-motion`. Sub-projects load via `<link href="/shared-base.css">`. Note: tab system, preset dialog, form controls (range sliders, checkboxes, etc.) were moved to the consuming project's `styles.css`.
+- **`shared-base.css`**: Reset, layout tokens, body base, `.glass`, `.tool-btn` (34×34 sim-style), toggle switches (`.tog-wrap`, `.tog`, `.tog-thumb`), shared keyframes, intro screen, sidebar stat patterns, sim layout components (`.sim-toolbar`, `.sim-panel`, `.sim-bar`, `.sim-controls`), small utilities, toast notifications, info tip CSS, shortcut overlay CSS, accessibility utilities (`.skip-link`, `.sr-only`), shared responsive blocks (900px/600px/440px), `prefers-reduced-motion`. Sub-projects load via `<link href="/shared-base.css">`. Note: tab system, preset dialog, form controls (range sliders, checkboxes, etc.) were moved to the consuming project's `styles.css`.
+- **`shared-info.js`**: Info tip popover system via `createInfoTip(triggerEl, { title, body, maxWidth })`. Creates `[role="tooltip"]` popovers — hover on desktop, tap-to-toggle on mobile with close button. Auto-positions above/below based on viewport space. CSS classes: `.info-trigger`, `.info-popover`, `.info-popover-title`, `.info-popover-body`, `.info-popover-close`. Loaded by all 3 sim projects.
+- **`shared-shortcuts.js`**: Keyboard shortcut registry via `initShortcuts(shortcuts, { helpTitle })`. Registers `keydown` listener, ignores when focused in `<input>`/`<textarea>`/`<select>`. `?` key opens help overlay (`.shortcut-overlay` modal). CSS classes: `.shortcut-overlay`, `.shortcut-group`, `.shortcut-row`, `.shortcut-key`, `.shortcut-label`. Loaded by all 3 sim projects.
 
 **Do not break these files** — all four projects depend on them.
 
