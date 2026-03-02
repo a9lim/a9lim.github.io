@@ -108,6 +108,10 @@ const _PALETTE = {
     ['slider-track',   'text',          0.06,  0.06],
   ];
 
+  // Compute toggle track background from textMuted
+  const [tH, tS] = _rgb2hsl(..._parseHex(L.textMuted));
+  const togBg = _hsl2hex(tH, tS * 0.5, 0.80);
+
   const gen = (T, dark) => themed.map(([name, key, lA, dA]) => {
     const a = dark ? (dA ?? lA) : lA;
     return `  --${name}: ${a != null ? _r(T[key], a) : T[key]};`;
@@ -130,6 +134,13 @@ ${gen(L, false)}
   --shadow-sm: 0 1px 4px #0000000a, 0 0 0 1px #00000005;
   --shadow-md: 0 4px 20px #0000000f, 0 0 0 1px #00000005;
   --shadow-lg: 0 12px 48px #0000001a, 0 0 0 1px #00000005;
+
+  --tog-bg:             ${togBg};
+  --tog-thumb-on:       ${L.elevated};
+  --tog-border:         ${_r(L.text, 0.059)};
+  --tog-shadow:         none;
+  --tog-thumb-shadow:   transparent;
+  --tog-checked-inset:  transparent;
 
   --intro-warm:       ${_r(P.accentLight, 0.08)};
   --intro-warm-hover: ${_r(P.accentLight, 0.12)};
@@ -170,6 +181,14 @@ ${gen(D, true)}
   --shadow-lg: 0 12px 48px #00000066, 0 0 0 1px #ffffff08;
 
   --backdrop: #00000080;
+
+  --tog-bg:             ${D.panelSolid};
+  --tog-thumb-on:       var(--text);
+  --tog-border:         ${_r(D.text, 0.059)};
+  --tog-shadow:         none;
+  --tog-thumb-shadow:   ${_r(L.text, 0.451)};
+  --tog-checked-inset:  ${_r(L.text, 0.2)};
+
   --overlay-base:     ${D.canvas};
   --overlay-60:       ${_r(D.canvas, 0.314)};
   --overlay-87:       ${_r(D.canvas, 0.8)};
