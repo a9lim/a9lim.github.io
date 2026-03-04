@@ -1,31 +1,37 @@
 /* ═══════════════════════════════════════════════
-   shared-shortcuts.js — Keyboard shortcut registry
-   for all a9l.im sites.
-   Loaded after shared-utils.js, before colors.js.
+   shared-shortcuts.js — Keyboard shortcut registry and
+   help overlay for the three a9l.im simulation projects.
+   "?" opens the help modal; Escape closes it.
    ═══════════════════════════════════════════════ */
 
 /**
- * Initialize keyboard shortcut system.
+ * Initialize a keyboard shortcut system with a help overlay.
  *
- * @param {Array} shortcuts  Array of { key, label, group, action, when }
- *   - key:    Key name (e.g. 'Space', 'T', '?', 'Escape', 'Ctrl+Z')
- *   - label:  Human-readable description for help overlay
- *   - group:  Group name for help overlay (e.g. 'Simulation', 'View')
- *   - action: Function to call when shortcut is triggered
- *   - when:   Optional predicate function; shortcut fires only if when() returns true
+ * @param {Array<Object>} shortcuts  Shortcut definitions:
+ *   - key:    Key name matching KeyboardEvent.key, with optional Ctrl+/Shift+ prefix
+ *   - label:  Human-readable description shown in help overlay
+ *   - group:  Category for grouping in help overlay (e.g. "Simulation", "View")
+ *   - action: Handler function
+ *   - when:   Optional predicate — shortcut only fires if when() returns true
  * @param {Object} [opts]
- * @param {string} [opts.helpTitle='Keyboard Shortcuts']  Title for help overlay
- * @returns {{ destroy: Function }}  Cleanup object
+ * @param {string} [opts.helpTitle='Keyboard Shortcuts']
+ * @returns {{ destroy: Function }}
  */
 function initShortcuts(shortcuts, opts) {
     if (!opts) opts = {};
     var helpTitle = opts.helpTitle || 'Keyboard Shortcuts';
     var overlay = null;
 
+    /** Normalize key strings for lookup: lowercase, no whitespace. */
     function normalizeKey(key) {
         return key.toLowerCase().replace(/\s+/g, '');
     }
 
+    /**
+     * Convert a KeyboardEvent to its normalized key string.
+     * Combines modifiers (ctrl/shift/alt) with the key name.
+     * Uses Ctrl for both Ctrl and Meta (Cmd) for cross-platform support.
+     */
     function eventToKey(e) {
         var parts = [];
         if (e.ctrlKey || e.metaKey) parts.push('ctrl');
@@ -37,7 +43,7 @@ function initShortcuts(shortcuts, opts) {
         else if (key === '+' || key === '=') key = e.shiftKey ? '+' : key;
         else key = key.toLowerCase();
 
-        // Don't duplicate modifier in the key name
+        // Avoid "ctrl+ctrl" when only a modifier key is pressed
         if (key !== 'control' && key !== 'meta' && key !== 'shift' && key !== 'alt') {
             parts.push(key);
         }
@@ -45,6 +51,7 @@ function initShortcuts(shortcuts, opts) {
         return parts.join('+');
     }
 
+    /** True if focus is in a text-editable element (suppress shortcuts). */
     function isInputFocused() {
         var el = document.activeElement;
         if (!el) return false;
@@ -68,13 +75,14 @@ function initShortcuts(shortcuts, opts) {
         var closeBtn = document.createElement('button');
         closeBtn.className = 'tool-btn shortcut-close';
         closeBtn.setAttribute('aria-label', 'Close');
+        // Static SVG X icon — not user-provided content
         closeBtn.innerHTML = '<svg viewBox="0 0 24 24" width="18" height="18"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
         closeBtn.addEventListener('click', hideOverlay);
         header.appendChild(title);
         header.appendChild(closeBtn);
         content.appendChild(header);
 
-        // Group shortcuts
+        // Preserve registration order within each group
         var groups = {};
         var groupOrder = [];
         shortcuts.forEach(function(s) {
@@ -117,7 +125,7 @@ function initShortcuts(shortcuts, opts) {
 
         el.appendChild(content);
 
-        // Click backdrop to close
+        // Backdrop click closes
         el.addEventListener('click', function(e) {
             if (e.target === el) hideOverlay();
         });
@@ -125,6 +133,7 @@ function initShortcuts(shortcuts, opts) {
         return el;
     }
 
+    /** Format a key string for display (e.g. "ctrl+z" -> "Ctrl + Z"). */
     function formatKey(key) {
         return key
             .replace(/ctrl\+/i, 'Ctrl + ')
@@ -148,19 +157,19 @@ function initShortcuts(shortcuts, opts) {
         overlay.classList.remove('shortcut-overlay-visible');
         var el = overlay;
         overlay = null;
+        // 200ms matches CSS fade-out transition
         setTimeout(function() {
             if (el.parentNode) el.parentNode.removeChild(el);
         }, 200);
     }
 
-    // Build lookup map
     var keyMap = {};
     shortcuts.forEach(function(s) {
         keyMap[normalizeKey(s.key)] = s;
     });
 
     function onKeyDown(e) {
-        // ? key for help overlay
+        // "?" toggles the help overlay (even when another shortcut is bound to "?")
         if (e.key === '?' && !isInputFocused()) {
             e.preventDefault();
             if (overlay) hideOverlay();
@@ -168,14 +177,13 @@ function initShortcuts(shortcuts, opts) {
             return;
         }
 
-        // Esc closes overlay (and any open dialogs)
+        // Escape gets priority: close overlay first, then fall through to registered handlers
         if (e.key === 'Escape') {
             if (overlay) {
                 hideOverlay();
                 e.preventDefault();
                 return;
             }
-            // Still fire registered Escape shortcuts
             var escEntry = keyMap['escape'];
             if (escEntry && (!escEntry.when || escEntry.when())) {
                 e.preventDefault();
@@ -184,7 +192,6 @@ function initShortcuts(shortcuts, opts) {
             return;
         }
 
-        // Skip if input is focused
         if (isInputFocused()) return;
 
         var evKey = eventToKey(e);

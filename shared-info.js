@@ -1,26 +1,29 @@
 /* ═══════════════════════════════════════════════
-   shared-info.js — Info tip popover system
-   for all a9l.im sites.
-   Loaded after shared-utils.js, before colors.js.
+   shared-info.js — Info tip popover system for the
+   three a9l.im simulation projects.
+   Desktop: hover/focus to show. Mobile: tap to toggle.
+   Renders KaTeX math in body if KaTeX is loaded.
    ═══════════════════════════════════════════════ */
 
 /**
- * Create an info tip popover attached to a trigger element.
+ * Attach an info tip popover to a trigger element (typically a "?" button).
  *
- * Desktop (fine pointer): show on mouseenter/focus, hide on mouseleave/blur.
- * Mobile (coarse pointer): show on click/tap, include close button, dismiss on outside click.
+ * On desktop (fine pointer): show on mouseenter/focus, hide on mouseleave/blur.
+ * On mobile (coarse pointer): tap toggles visibility; includes a close button
+ * and dismisses on outside tap.
  *
- * @param {HTMLElement} triggerEl  The element that triggers the popover (typically a ? button)
+ * @param {HTMLElement} triggerEl  Element that opens the popover
  * @param {Object} opts
- * @param {string} opts.title     Popover title text
- * @param {string} opts.body      Popover body text (supports HTML)
- * @param {number} [opts.maxWidth=280]  Max width in pixels
- * @returns {Function} Cleanup function to remove event listeners and popover
+ * @param {string} opts.title        Popover heading
+ * @param {string} opts.body         HTML body (KaTeX-rendered if available)
+ * @param {number} [opts.maxWidth=280]
+ * @returns {Function} Cleanup function (removes listeners and popover DOM)
  */
 function createInfoTip(triggerEl, opts) {
     if (!opts) opts = {};
     var maxWidth = opts.maxWidth || 280;
     var popover = null;
+    // Checked once at init — pointer type doesn't change mid-session in practice
     var isCoarse = window.matchMedia('(pointer: coarse)').matches;
     var outsideHandler = null;
 
@@ -44,7 +47,8 @@ function createInfoTip(triggerEl, opts) {
         if (opts.body) {
             var bodyEl = document.createElement('div');
             bodyEl.className = 'info-popover-body';
-            bodyEl.innerHTML = opts.body;
+            bodyEl.innerHTML = opts.body; // trusted project-defined HTML, not user input
+            // KaTeX is only loaded by projects that need it; guard avoids ReferenceError
             if (typeof renderMathInElement === 'function') {
                 renderMathInElement(bodyEl, {
                     delimiters: [
@@ -72,28 +76,30 @@ function createInfoTip(triggerEl, opts) {
         return el;
     }
 
+    /**
+     * Position the popover relative to the trigger.
+     * Prefers above; falls back to below if insufficient space.
+     * Clamps horizontally and vertically to keep 8px viewport margin.
+     */
     function position(el) {
         var rect = triggerEl.getBoundingClientRect();
         var vw = window.innerWidth;
         var vh = window.innerHeight;
 
-        // Temporarily add to DOM to measure
+        // Append hidden to measure actual dimensions before final placement
         el.style.visibility = 'hidden';
         el.style.display = '';
         document.body.appendChild(el);
         var pw = el.offsetWidth;
         var ph = el.offsetHeight;
 
-        // Prefer above, fall back to below
         var above = rect.top - ph - 8 > 0;
         var top = above ? rect.top - ph - 8 : rect.bottom + 8;
+        // Center horizontally on trigger
         var left = rect.left + rect.width / 2 - pw / 2;
 
-        // Clamp horizontal
         if (left < 8) left = 8;
         if (left + pw > vw - 8) left = vw - 8 - pw;
-
-        // Clamp vertical
         if (top < 8) top = 8;
         if (top + ph > vh - 8) top = vh - 8 - ph;
 
@@ -101,6 +107,7 @@ function createInfoTip(triggerEl, opts) {
         el.style.top = top + 'px';
         el.style.left = left + 'px';
         el.style.visibility = '';
+        // CSS class controls arrow direction
         el.classList.toggle('info-popover-below', !above);
     }
 
@@ -108,6 +115,7 @@ function createInfoTip(triggerEl, opts) {
         if (popover) return;
         popover = buildPopover();
         position(popover);
+        // rAF ensures initial state is painted before transition class triggers fade-in
         requestAnimationFrame(function() {
             if (popover) popover.classList.add('info-popover-visible');
         });
@@ -118,6 +126,7 @@ function createInfoTip(triggerEl, opts) {
                     hide();
                 }
             };
+            // Deferred to next tick so the opening tap doesn't immediately dismiss
             setTimeout(function() {
                 document.addEventListener('click', outsideHandler, true);
             }, 0);
@@ -130,6 +139,7 @@ function createInfoTip(triggerEl, opts) {
         popover.classList.remove('info-popover-visible');
         var el = popover;
         popover = null;
+        // 200ms matches CSS fade-out transition before DOM removal
         setTimeout(function() {
             if (el.parentNode) el.parentNode.removeChild(el);
         }, 200);
@@ -140,7 +150,6 @@ function createInfoTip(triggerEl, opts) {
         }
     }
 
-    // Bind events
     if (isCoarse) {
         triggerEl.addEventListener('click', function(e) {
             e.preventDefault();
@@ -155,11 +164,11 @@ function createInfoTip(triggerEl, opts) {
         triggerEl.addEventListener('blur', hide);
     }
 
-    // Return cleanup function
     return function cleanup() {
         hide();
         if (isCoarse) {
-            // Listeners are anonymous, but popover is removed
+            // Anonymous click listener on triggerEl can't be removed, but the
+            // popover is destroyed and outsideHandler is cleaned up — safe to leak
         } else {
             triggerEl.removeEventListener('mouseenter', show);
             triggerEl.removeEventListener('mouseleave', hide);

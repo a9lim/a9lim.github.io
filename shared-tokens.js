@@ -1,21 +1,37 @@
 /* ===================================================================
-   shared-tokens.js — Shared design tokens for all a9l.im sites
-   Loads in <head> before project-specific colors.js.
-   Injects CSS custom properties for shared surfaces, text, and accent.
-
-   Sub-projects extend _FONT / _PALETTE with project-specific keys,
-   then freeze both objects in their own colors.js.
+   shared-tokens.js — Design token source of truth for all a9l.im sites.
+   Loaded in <head> before each project's colors.js, which extends
+   _FONT/_PALETTE with project-specific keys then freezes both.
    =================================================================== */
 
-// ---------- Alpha helper (appends alpha byte to hex) ----------
+// ─── Color helpers ───
+
+/**
+ * Append an alpha byte to a 6-digit hex color.
+ * @param {string} hex  "#RRGGBB"
+ * @param {number} a    Alpha in [0, 1]
+ * @returns {string} "#RRGGBBAA"
+ */
 const _r = (hex, a) => hex + Math.round(a * 255).toString(16).padStart(2, '0');
 
-// ---------- Color Math Helpers ----------
+/**
+ * Parse a 6-digit hex color into normalized [r, g, b] in [0, 1].
+ * @param {string} hex  "#RRGGBB"
+ * @returns {number[]}
+ */
 const _parseHex = (hex) => [
   parseInt(hex.slice(1, 3), 16) / 255,
   parseInt(hex.slice(3, 5), 16) / 255,
   parseInt(hex.slice(5, 7), 16) / 255
 ];
+
+/**
+ * Convert normalized RGB to HSL.
+ * @param {number} r  Red   [0, 1]
+ * @param {number} g  Green [0, 1]
+ * @param {number} b  Blue  [0, 1]
+ * @returns {number[]} [h (0-360), s (0-1), l (0-1)]
+ */
 function _rgb2hsl(r, g, b) {
   const max = Math.max(r, g, b), min = Math.min(r, g, b), d = max - min;
   const l = (max + min) / 2;
@@ -29,27 +45,43 @@ function _rgb2hsl(r, g, b) {
   }
   return [h, s, l];
 }
+
+/**
+ * Convert HSL to 6-digit hex.
+ * Uses the CSS Color Level 4 algorithm (direct channel computation).
+ * @param {number} h  Hue [0, 360]
+ * @param {number} s  Saturation [0, 1]
+ * @param {number} l  Lightness [0, 1]
+ * @returns {string} "#RRGGBB"
+ */
 function _hsl2hex(h, s, l) {
   const a = s * Math.min(l, 1 - l);
   const f = n => { const k = (n + h / 30) % 12; return l - a * Math.max(-1, Math.min(k - 3, 9 - k, 1)); };
   const toHex = v => Math.round(v * 255).toString(16).padStart(2, '0');
   return '#' + toHex(f(0)) + toHex(f(8)) + toHex(f(4));
 }
+
+/**
+ * Darken a hex color by reducing saturation to 92% and lightness to 75%.
+ * Used by project colors.js files to derive dark-mode variants.
+ * @param {string} hex  "#RRGGBB"
+ * @returns {string} "#RRGGBB"
+ */
 const _darken = (hex) => {
   const [h, s, l] = _rgb2hsl(..._parseHex(hex));
   return _hsl2hex(h, s * 0.92, l * 0.75);
 };
 
-// ---------- Font Constants ----------
-// Not frozen here — biosim extends with `emoji`
+// ─── Font stacks ───
+// Left mutable — biosim extends with `emoji` before freezing
 const _FONT = {
   display: "'Noto Serif', Georgia, 'Times New Roman', serif",
   body:    "'Noto Sans', system-ui, -apple-system, sans-serif",
   mono:    "'Noto Sans Mono', 'SF Mono', 'Menlo', monospace",
 };
 
-// ---------- Palette ----------
-// Not frozen here — sub-projects extend with project-specific keys
+// ─── Palette ───
+// Left mutable — each project's colors.js adds keys then freezes
 const _PALETTE = {
   accent:      '#FE3B01',
   accentLight: '#FF7642',
@@ -72,8 +104,7 @@ const _PALETTE = {
     textMuted:     '#5A544C',
   },
 
-  // Extended palette — shared across biosim/gerry/physsim
-  // Not frozen here — sub-projects freeze in their colors.js
+  // Cross-project semantic colors (biosim pathways, gerry parties, physsim particles)
   extended: {
     blue:   '#5C92A8',
     green:  '#509878',
@@ -88,10 +119,13 @@ const _PALETTE = {
   },
 };
 
-// ---------- CSS Custom Property Injection ----------
+// ─── CSS custom property injection ───
+// Generates light-mode vars at :root and dark-mode overrides at [data-theme="dark"].
+// Entries with alpha values (lA/dA) produce 8-digit hex; others pass through raw.
 (function injectPaletteVars() {
   const P = _PALETTE, L = P.light, D = P.dark;
 
+  // [css-prop-name, palette-key, light-alpha?, dark-alpha?]
   const themed = [
     ['bg-canvas',      'canvas'],
     ['bg-panel',       'panelSolid',    0.55,  0.58],
@@ -108,7 +142,7 @@ const _PALETTE = {
     ['slider-track',   'text',          0.06,  0.06],
   ];
 
-  // Compute toggle track background from textMuted
+  // Derive toggle track bg: desaturated, lightened version of textMuted
   const [tH, tS] = _rgb2hsl(..._parseHex(L.textMuted));
   const togBg = _hsl2hex(tH, tS * 0.5, 0.80);
 
@@ -202,7 +236,7 @@ ${gen(D, true)}
   document.head.appendChild(style);
 })();
 
-// Expose on window so ES6 modules can access via `window._PALETTE` etc.
+// Expose as globals — ES6 modules in each project read these from window
 window._r = _r;
 window._parseHex = _parseHex;
 window._rgb2hsl = _rgb2hsl;
