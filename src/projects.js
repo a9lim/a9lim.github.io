@@ -3,9 +3,9 @@
 export const PROJECTS = [
     {
         href: '/physsim',
-        title: 'Relativistic N-Body',
-        shortDesc: 'Gravitational, electromagnetic, and magnetic interactions at relativistic speeds.',
-        longDesc: 'Interactive physics simulation with Barnes-Hut algorithm, relativistic momentum, and real-time force visualization. Gravitational, electromagnetic, and magnetic interactions at O(N log N).',
+        title: 'No-Hair',
+        shortDesc: 'Mass, charge, and spin — the only properties that matter.',
+        longDesc: 'N-body simulation where particles interact through gravity, electromagnetism, and relativistic corrections. Boris integration, Barnes-Hut acceleration, radiation reaction, and signal delay.',
         tags: ['physics', 'canvas', 'barnes-hut'],
         image: 'img/physsim.png',
         icon: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2a10 10 0 0 1 0 20M12 2a10 10 0 0 0 0 20M2 12h20"/></svg>',
@@ -14,8 +14,8 @@ export const PROJECTS = [
     {
         href: '/biosim',
         title: 'Cellular Metabolism',
-        shortDesc: 'Enzyme kinetics, substrate diffusion, and energy production in a living cell.',
-        longDesc: 'Simulate metabolic pathways in a living cell. Enzyme kinetics, substrate diffusion, and energy production visualized as an interactive cellular dashboard.',
+        shortDesc: 'Glycolysis, Krebs, Calvin, and more — watch a cell produce and spend energy.',
+        longDesc: 'Animated metabolic pathway simulation with allosteric regulation, cofactor tracking, and enzyme kinetics. Watch ATP, NADH, and FADH\u2082 flow through glycolysis, the Krebs cycle, and photosynthesis.',
         tags: ['biology', 'simulation', 'metabolism'],
         image: 'img/biosim.png',
         icon: '<svg viewBox="0 0 24 24"><path d="M12 22c-4.97 0-9-2.69-9-6v-4c0-3.31 4.03-6 9-6s9 2.69 9 6v4c0 3.31-4.03 6-9 6z"/><path d="M3 12c0 3.31 4.03 6 9 6s9-2.69 9-6"/><ellipse cx="12" cy="6" rx="9" ry="6"/></svg>',
@@ -24,8 +24,8 @@ export const PROJECTS = [
     {
         href: '/gerry',
         title: 'Redistricting Simulator',
-        shortDesc: 'Paint congressional districts and see how boundaries shape electoral outcomes.',
-        longDesc: 'Paint congressional districts on a hex-tile map and see how boundaries shape electoral outcomes. Real-time efficiency gap, compactness, and contiguity analysis.',
+        shortDesc: 'Draw district boundaries on a hex map and watch fairness metrics update live.',
+        longDesc: 'Redistricting sandbox on a procedural hex-tile map. Paint districts for up to three parties, then evaluate with efficiency gap, partisan symmetry, and competitive-district metrics.',
         tags: ['politics', 'svg', 'gerrymandering'],
         image: 'img/gerry.png',
         icon: '<svg viewBox="0 0 24 24"><path d="M3 3h7v7H3zM14 3h7v7h-7zM3 14h7v7H3zM14 14h7v7h-7z"/></svg>',

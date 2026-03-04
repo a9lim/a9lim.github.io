@@ -8,7 +8,7 @@ Hosted via GitHub Pages with custom domain. Multi-page site with landing, projec
 
 | Project | Path | Description |
 |---------|------|-------------|
-| [Relativistic N-Body](https://github.com/a9lim/physsim) | [/physsim](https://a9l.im/physsim) | Barnes-Hut physics simulation |
+| [No-Hair](https://github.com/a9lim/physsim) | [/physsim](https://a9l.im/physsim) | N-body simulation with relativistic corrections |
 | [Cellular Metabolism](https://github.com/a9lim/biosim) | [/biosim](https://a9l.im/biosim) | Interactive metabolic pathway visualization |
 | [Redistricting Sim](https://github.com/a9lim/gerry) | [/gerry](https://a9l.im/gerry) | Gerrymandering simulator on a hex-tile map |
 
