@@ -45,6 +45,15 @@ function createInfoTip(triggerEl, opts) {
             var bodyEl = document.createElement('div');
             bodyEl.className = 'info-popover-body';
             bodyEl.innerHTML = opts.body;
+            if (typeof renderMathInElement === 'function') {
+                renderMathInElement(bodyEl, {
+                    delimiters: [
+                        { left: '$$', right: '$$', display: true },
+                        { left: '$', right: '$', display: false }
+                    ],
+                    throwOnError: false
+                });
+            }
             el.appendChild(bodyEl);
         }
 

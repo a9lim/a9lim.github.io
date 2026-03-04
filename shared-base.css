@@ -869,6 +869,15 @@ body {
     color: var(--text-secondary);
 }
 
+.info-popover-body .katex {
+    font-size: 1.05em;
+}
+
+.info-popover-body .katex-display {
+    overflow-x: auto;
+    margin: 0.4em 0;
+}
+
 .info-popover-close {
     position: absolute;
     top: 6px;
