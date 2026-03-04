@@ -8,7 +8,7 @@ Portfolio site for **a9l.im**, hosted via GitHub Pages at `a9lim.github.io`. Cus
 
 | Sibling Project | Repo | Path |
 |----------------|------|------|
-| Relativistic N-Body Sim | `a9lim/physsim` | `/physsim` |
+| No-Hair | `a9lim/physsim` | `/physsim` |
 | Cellular Metabolism Sim | `a9lim/biosim` | `/biosim` |
 | Gerrymandering Simulator | `a9lim/gerry` | `/gerry` |
 
