@@ -1,4 +1,6 @@
-// ─── Entry Point ───
+// Entry point for a9l.im portfolio. Wires DOM cache, renders dynamic cards,
+// and boots all subsystems (router, shader, carousel, etc.).
+
 import { initRouter } from './src/router.js';
 import { initTheme } from './src/theme.js';
 import { initMobileMenu } from './src/mobile-menu.js';
@@ -11,6 +13,7 @@ import { PROJECTS } from './src/projects.js';
 import { renderProjectCards } from './src/projects-page.js';
 
 // ─── DOM Cache ───
+// Passed into subsystem init functions so they never call getElementById themselves
 const $ = {
     navbar:      document.getElementById('navbar'),
     themeToggle: document.getElementById('theme-toggle'),
@@ -26,7 +29,7 @@ const $ = {
 const navLinks = document.querySelectorAll('.nav-link');
 const pages    = document.querySelectorAll('.page-section');
 
-// ─── Render dynamic content ───
+// Both carousel (home) and project grid share the PROJECTS data array
 renderCarouselCards(document.querySelector('.carousel-track'), PROJECTS);
 renderProjectCards(document.querySelector('.projects-grid'), PROJECTS);
 

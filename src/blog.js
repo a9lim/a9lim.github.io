@@ -1,18 +1,23 @@
 // ─── Blog Listing & Post Rendering ───
+// Fetches posts.json for the listing and individual .md files from posts/.
+// Caches both in memory. Shows shimmer skeletons during loads.
+
 import { parseMarkdown } from './markdown.js';
 import { triggerFadeIns } from './animations.js';
 
-let postsCache = null;
-const mdCache = {};
+let postsCache = null;   // posts.json result (fetched once)
+const mdCache = {};      // slug -> raw markdown text
 
 const FETCH_TIMEOUT = 10000;
 
 function formatDate(iso) {
+    // Append time to avoid timezone-shift date drift
     const d = new Date(iso + 'T00:00:00');
     const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
     return months[d.getMonth()] + ' ' + d.getDate() + ', ' + d.getFullYear();
 }
 
+/** Shimmer skeleton placeholders matching blog-entry layout. */
 function skeletonEntries(n) {
     let html = '';
     for (let i = 0; i < n; i++) {
@@ -94,6 +99,7 @@ export async function showBlogPost(slug, $) {
         }
     }
 
+    // Metadata is optional for rendering — post body works without it
     if (!postsCache) {
         try {
             const res = await fetchWithTimeout('posts.json', FETCH_TIMEOUT);

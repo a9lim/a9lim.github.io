@@ -1,4 +1,5 @@
-// ─── Project Data (Single Source of Truth) ───
+// Single source of truth for all project cards. Consumed by both the home
+// carousel (renderCarouselCards) and the projects grid (renderProjectCards).
 
 export const PROJECTS = [
     {

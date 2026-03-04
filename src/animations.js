@@ -1,7 +1,11 @@
 // ─── Scroll Animations & Fade-Ins ───
+// Two independent reveal systems: `.fade-in` (page-nav triggered) and
+// `.scroll-reveal` (IntersectionObserver, one-shot). Also drives the
+// accent stripe slide-in and exposes scrollNorm for the shader.
 
 let scrollNorm = 0;
 
+/** Normalized scroll position [0..1], consumed by the shader uniform u_scroll. */
 export function getScrollNorm() {
     return scrollNorm;
 }
@@ -11,6 +15,11 @@ function updateScrollNorm() {
     scrollNorm = window.scrollY / maxScroll;
 }
 
+/**
+ * Replay entrance animations on all `.fade-in` children of container.
+ * Double-rAF ensures the browser flushes the class removal before re-adding,
+ * so the CSS transition fires even when navigating to the same page twice.
+ */
 export function triggerFadeIns(container) {
     if (!container) return;
     const els = container.querySelectorAll('.fade-in');
@@ -22,6 +31,7 @@ export function triggerFadeIns(container) {
     });
 }
 
+/** Add `.scrolled` shadow class to navbar on scroll (rAF-throttled). */
 export function initNavbarScroll($) {
     let ticking = false;
     window.addEventListener('scroll', () => {
@@ -35,9 +45,11 @@ export function initNavbarScroll($) {
     });
 }
 
+/** Wire up scroll-reveal observer and accent stripe animation. */
 export function initScrollReveal() {
     const revealEls = document.querySelectorAll('.scroll-reveal');
 
+    // One-shot reveal: unobserved after first intersection
     if (revealEls.length) {
         const observer = new IntersectionObserver((entries) => {
             entries.forEach(entry => {
@@ -50,7 +62,7 @@ export function initScrollReveal() {
         revealEls.forEach(el => observer.observe(el));
     }
 
-    // Scroll-driven stripe band
+    // Accent stripe slides from left as its section scrolls into view
     const stripeBand = document.querySelector('.stripe-band');
     const stripeSection = document.querySelector('.stripe-section');
     let stripeTicking = false;
@@ -63,6 +75,7 @@ export function initScrollReveal() {
                 const rect = stripeSection.getBoundingClientRect();
                 const vh = window.innerHeight;
                 const progress = 1 - (rect.top / vh);
+                // Clamp translateX between -120% (offscreen left) and 10% (slight overshoot right)
                 const tx = Math.max(-120, Math.min(10, (progress - 0.15) * 180 - 120));
                 stripeBand.style.transform = `translateX(${tx}%) rotate(-3deg)`;
                 stripeTicking = false;

@@ -6,18 +6,16 @@
     <title>Hayashinet</title>
     <meta name="description" content="Interactive simulations exploring physics, biology, and political science.">
 
-    <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Noto+Sans+Mono:wght@300;400;500;600;700&family=Noto+Serif:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
 
-    <!-- Colors & tokens (injected before CSS) -->
+    <!-- Shared tokens inject CSS vars and expose _PALETTE/_FONT before CSS loads -->
     <script src="shared-tokens.js"></script>
     <script src="shared-utils.js"></script>
     <link rel="stylesheet" href="shared-base.css">
     <link rel="stylesheet" href="styles.css">
 
-    <!-- Favicon -->
     <link rel="icon" href="favicon.ico">
 </head>
 <body class="app-ready">
@@ -39,7 +37,6 @@
         </div>
 
         <div class="nav-right">
-            <!-- Theme toggle -->
             <button class="tool-btn" id="theme-toggle" aria-label="Toggle theme">
                 <svg class="icon-sun" width="18" height="18" viewBox="0 0 24 24">
                     <circle cx="12" cy="12" r="5"/>
@@ -52,28 +49,24 @@
 
             <div class="tool-sep" aria-hidden="true"></div>
 
-            <!-- GitHub -->
             <a class="tool-btn" href="https://github.com/a9lim" target="_blank" rel="noopener noreferrer" aria-label="GitHub">
                 <svg width="18" height="18" viewBox="0 0 24 24">
                     <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"/>
                 </svg>
             </a>
 
-            <!-- Twitter / X -->
             <a class="tool-btn" href="https://twitter.com/a9_lim" target="_blank" rel="noopener noreferrer" aria-label="Twitter">
                 <svg width="18" height="18" viewBox="0 0 24 24">
                     <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
                 </svg>
             </a>
 
-            <!-- LinkedIn -->
             <a class="tool-btn" href="https://linkedin.com/in/a9lim" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn">
                 <svg width="18" height="18" viewBox="0 0 24 24">
                     <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6zM2 9h4v12H2z"/><circle cx="4" cy="4" r="2"/>
                 </svg>
             </a>
 
-            <!-- Mobile menu toggle -->
             <button class="tool-btn menu-toggle" id="menu-toggle" aria-label="Open menu" aria-expanded="false">
                 <svg width="18" height="18" viewBox="0 0 24 24">
                     <path d="M3 12h18M3 6h18M3 18h18"/>
@@ -146,13 +139,12 @@
          ═══════════════════════════════════ -->
     <section id="page-blog" class="page-section" aria-label="Blog">
         <div class="page-container">
-            <!-- Blog listing view -->
+            <!-- Listing / post views toggled by blog.js -->
             <div id="blog-listing">
                 <p class="section-label fade-in">Blog</p>
                 <div id="blog-list-container" class="blog-list fade-in"></div>
             </div>
 
-            <!-- Blog post view (hidden by default) -->
             <div id="blog-post" style="display:none;">
                 <a href="#blog" class="blog-back fade-in">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>

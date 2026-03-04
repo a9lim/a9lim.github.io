@@ -1,18 +1,15 @@
-// ─── Card Effects — 3D tilt and shimmer hover effects ───
+// ─── Card Effects ───
+// 3D perspective tilt + shimmer hover for carousel and project cards.
+// Skipped on touch devices (no mousemove). The shimmer radial gradient
+// follows --mouse-x/--mouse-y CSS custom properties set here.
 
 const TILT_PERSPECTIVE = 800;
 const TILT_MAX_DEG = 12;
 
 /**
- * Attach 3D tilt + shimmer hover effects to all elements matching selector.
- * Skips on touch devices. Sets --mouse-x/--mouse-y CSS vars for shimmer.
- *
- * @param {string} selector CSS selector for target cards
- * @param {Object} [opts]
- * @param {number} [opts.maxTilt=12] Maximum tilt angle in degrees
- * @param {number} [opts.scale=1.03] Scale on hover
- * @param {number} [opts.perspective=800] CSS perspective value
- * @returns {Function|null} Cleanup function, or null if touch device
+ * @param {string} selector  CSS selector for target cards
+ * @param {Object} [opts]    maxTilt (deg), scale, perspective overrides
+ * @returns {Function|null}  Cleanup function, or null on touch devices
  */
 export function initCardTilt(selector, opts) {
     if ('ontouchstart' in window) return null;

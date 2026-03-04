@@ -1,8 +1,10 @@
 /* ═══════════════════════════════════════════════
-   a9l.im — Portfolio Site
+   a9l.im — Portfolio Site Styles
+   Colors/fonts injected by shared-tokens.js.
+   No colors.js on root site — tokens stay mutable.
    ═══════════════════════════════════════════════ */
 
-/* ─── Layout Tokens (colors/fonts injected by colors.js) ─── */
+/* Override shared 52px toolbar for portfolio layout */
 :root {
     --toolbar-h: 56px;
 }
@@ -13,7 +15,6 @@
 ::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 3px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
 
-/* ─── Base ─── */
 html {
     scroll-behavior: smooth;
 }
@@ -22,7 +23,7 @@ body {
     font-size: 15px;
     line-height: 1.6;
     min-height: 100vh;
-    min-height: 100dvh;
+    min-height: 100dvh; /* dvh fallback for mobile address bar */
     overflow-x: hidden;
 }
 
@@ -36,6 +37,7 @@ a:hover { color: var(--accent-light); }
 /* ═══════════════════════════════════
    Shader Background Canvas
    ═══════════════════════════════════ */
+/* z-index: 0 — behind all content; reduced opacity in dark mode */
 #shader-bg {
     position: fixed;
     inset: 0;
@@ -50,7 +52,7 @@ a:hover { color: var(--accent-light); }
 /* ═══════════════════════════════════
    Navigation Bar
    ═══════════════════════════════════ */
-/* .sim-toolbar from shared-base.css provides position, height, flex, glass, animation */
+/* Extends .sim-toolbar.glass from shared-base.css */
 #navbar {
     border-radius: var(--radius-lg);
     padding: 0 12px 0 20px;
@@ -101,7 +103,7 @@ a:hover { color: var(--accent-light); }
     gap: 6px;
 }
 
-/* ─── Tool Buttons (override shared 34x34 → 36x36) ─── */
+/* Override shared 34x34 tool-btn to 36x36 for portfolio nav */
 .tool-btn {
     width: 36px;
     height: 36px;
@@ -114,18 +116,18 @@ a:hover { color: var(--accent-light); }
 .tool-btn[aria-label="Twitter"] svg,
 .tool-btn[aria-label="LinkedIn"] svg { fill: currentColor; stroke: none; }
 
-/* ─── Theme Icons ─── */
+/* Theme toggle: show sun in light, moon in dark */
 [data-theme="light"] .icon-sun { display: block; }
 [data-theme="light"] .icon-moon { display: none; }
 [data-theme="dark"] .icon-sun { display: none; }
 [data-theme="dark"] .icon-moon { display: block; }
 
-/* ─── Mobile Menu Toggle ─── */
+/* Hidden on desktop; shown at <=900px breakpoint */
 .menu-toggle {
     display: none;
 }
 
-/* ─── Mobile Nav Overlay ─── */
+/* z-index: 99 — above navbar (100 from shared-base), below nothing else on root site */
 .mobile-nav {
     display: none;
     position: fixed;
@@ -154,6 +156,7 @@ a:hover { color: var(--accent-light); }
 /* ═══════════════════════════════════
    Page Container & Sections
    ═══════════════════════════════════ */
+/* z-index: 1 lifts content above the fixed shader canvas (z:0) */
 .page-container {
     position: relative;
     z-index: 1;
@@ -181,7 +184,7 @@ a:hover { color: var(--accent-light); }
     to   { opacity: 1; transform: translateY(0); }
 }
 
-/* ─── Section Headers ─── */
+/* Uppercase mono label used on every page ("Featured", "Projects", etc.) */
 .section-label {
     font-family: var(--font-mono);
     font-size: 0.68rem;
@@ -234,7 +237,7 @@ a:hover { color: var(--accent-light); }
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
-    padding-right: 0.05em;
+    padding-right: 0.05em; /* prevent italic glyph clipping at right edge */
 }
 
 .hero-sub {
@@ -315,6 +318,7 @@ a:hover { color: var(--accent-light); }
     overflow: hidden;
 }
 
+/* ::before = accent gradient overlay on hover */
 .project-card::before {
     content: '';
     position: absolute;
@@ -325,6 +329,7 @@ a:hover { color: var(--accent-light); }
     pointer-events: none;
 }
 
+/* .visible:hover needed to beat .fade-in.visible (specificity 0,2,0) */
 .project-card:hover,
 .project-card.visible:hover {
     transform: translateY(-6px) scale(1.03);
@@ -336,6 +341,7 @@ a:hover { color: var(--accent-light); }
     opacity: 1;
 }
 
+/* ::after = shimmer highlight following --mouse-x/--mouse-y (set by card-effects.js) */
 .project-card::after {
     content: '';
     position: absolute;
@@ -519,7 +525,7 @@ a:hover { color: var(--accent-light); }
     color: var(--text-muted);
 }
 
-/* Loading skeleton placeholders */
+/* Shimmer skeleton shown while blog listing/post fetches are in-flight */
 .skeleton {
     background: linear-gradient(90deg, var(--bg-hover) 25%, var(--bg-elevated) 50%, var(--bg-hover) 75%);
     background-size: 200% 100%;
@@ -605,7 +611,7 @@ a:hover { color: var(--accent-light); }
     color: var(--text);
 }
 
-/* ─── Rendered Markdown Typography ─── */
+/* Rendered markdown from parseMarkdown() — scoped to .blog-content */
 .blog-content {
     max-width: 680px;
     line-height: 1.75;
@@ -667,7 +673,7 @@ a:hover { color: var(--accent-light); }
     color: var(--text);
 }
 
-/* Language indicator on code blocks */
+/* Language label above fenced code blocks (class set by markdown.js) */
 .blog-content pre code[class*="language-"]::before {
     content: attr(class);
     display: block;
@@ -681,7 +687,7 @@ a:hover { color: var(--accent-light); }
     border-bottom: 1px solid var(--border);
 }
 
-/* Strip "language-" prefix visually */
+/* Map class names to human-readable language labels */
 .blog-content pre code.language-js::before { content: "javascript"; }
 .blog-content pre code.language-javascript::before { content: "javascript"; }
 .blog-content pre code.language-ts::before { content: "typescript"; }
@@ -764,7 +770,6 @@ a:hover { color: var(--accent-light); }
     margin-bottom: 16px;
 }
 
-/* ─── Contact Section ─── */
 .contact-section {
     border-radius: var(--radius-lg);
     padding: 32px;
@@ -903,8 +908,9 @@ a:hover { color: var(--accent-light); }
 }
 
 /* ═══════════════════════════════════
-   Accent Stripe Transition (flat rectangular band)
+   Accent Stripe Transition
    ═══════════════════════════════════ */
+/* Slides in from left via JS transform in animations.js; starts offscreen */
 .stripe-section {
     width: 100%;
     height: 160px;
@@ -928,6 +934,7 @@ a:hover { color: var(--accent-light); }
 /* ═══════════════════════════════════
    Project Carousel (Home Page)
    ═══════════════════════════════════ */
+/* Edge fade masks prevent hard clip at carousel sides */
 .carousel-section {
     width: 100%;
     max-width: 1200px;
@@ -947,6 +954,8 @@ a:hover { color: var(--accent-light); }
     position: relative;
 }
 
+/* Desktop: JS sets translateX for pagination. Track must NOT have overflow:hidden
+   or the clipping boundary moves with the transform, hiding later pages. */
 .carousel-track {
     display: flex;
     gap: 24px;
@@ -1005,7 +1014,7 @@ a:hover { color: var(--accent-light); }
     pointer-events: none;
 }
 
-/* Hover darkening layer — soft bell-curve */
+/* Hover darkening layer: bell-curve gradient adds contrast under text */
 .carousel-card-overlay::after {
     content: '';
     position: absolute;
@@ -1071,7 +1080,6 @@ a:hover { color: var(--accent-light); }
     color: var(--overlay-tint-dim);
 }
 
-/* Carousel navigation dots */
 .carousel-dots {
     display: flex;
     justify-content: center;
@@ -1101,7 +1109,7 @@ a:hover { color: var(--accent-light); }
     transform: none;
 }
 
-/* Shimmer highlight on hover */
+/* Shimmer: radial gradient follows mouse via --mouse-x/--mouse-y from card-effects.js */
 .carousel-card::after {
     content: '';
     position: absolute;
@@ -1118,7 +1126,7 @@ a:hover { color: var(--accent-light); }
     opacity: 1;
 }
 
-/* Tag cascade on card hover */
+/* Tags slide up with staggered delay on hover */
 .carousel-card-tags span {
     transform: translateY(4px);
     opacity: 0.8;
@@ -1188,7 +1196,7 @@ a:hover { color: var(--accent-light); }
     display: none;
 }
 
-/* Overlay SVG for dots & arc — matches world-map-wrap position, above the fade */
+/* Overlay SVG for dots & arc — z-index: 2 above the masked map */
 .map-overlay-svg {
     position: absolute;
     bottom: 0;
@@ -1200,6 +1208,7 @@ a:hover { color: var(--accent-light); }
     overflow: hidden;
 }
 
+/* Wider than viewport to avoid visible edge clipping; vertical mask fades top/bottom */
 .world-map-wrap {
     width: 120%;
     margin-left: -10%;
@@ -1230,9 +1239,6 @@ a:hover { color: var(--accent-light); }
     fill-opacity: 0.15;
 }
 
-/* map fade handled by mask-image on .world-map-wrap */
-
-/* City dots */
 .map-dot {
     fill: var(--accent);
 }
@@ -1242,7 +1248,6 @@ a:hover { color: var(--accent-light); }
     opacity: 0.12;
 }
 
-/* Arc path */
 .map-arc {
     fill: none;
     stroke: var(--accent);
@@ -1253,6 +1258,7 @@ a:hover { color: var(--accent-light); }
 /* ═══════════════════════════════════
    Scroll Reveal Animation
    ═══════════════════════════════════ */
+/* IntersectionObserver in animations.js adds .visible; one-shot per element */
 .scroll-reveal {
     opacity: 0;
     transform: translateY(30px);
@@ -1264,7 +1270,6 @@ a:hover { color: var(--accent-light); }
     transform: translateY(0);
 }
 
-/* Staggered carousel card reveals */
 .carousel-card.scroll-reveal:nth-child(2) { transition-delay: 0.08s; }
 .carousel-card.scroll-reveal:nth-child(3) { transition-delay: 0.16s; }
 .carousel-card.scroll-reveal:nth-child(4) { transition-delay: 0.24s; }
@@ -1275,6 +1280,10 @@ a:hover { color: var(--accent-light); }
 /* ═══════════════════════════════════
    Entrance Animations
    ═══════════════════════════════════ */
+/* triggerFadeIns() in animations.js toggles .visible on page navigation.
+   .fade-in.visible (specificity 0,2,0) includes transform and box-shadow in
+   its transition so that hover effects on cards still animate correctly.
+   Hover selectors on .fade-in elements need .visible to beat this specificity. */
 .fade-in {
     opacity: 0;
     transform: translateY(20px);
@@ -1287,7 +1296,6 @@ a:hover { color: var(--accent-light); }
     transition: opacity 0.7s var(--ease-out), transform 0.35s var(--ease-spring), box-shadow 0.3s var(--ease-out);
 }
 
-/* Staggered delays */
 .fade-in:nth-child(1) { transition-delay: 0s; }
 .fade-in:nth-child(2) { transition-delay: 0.08s; }
 .fade-in:nth-child(3) { transition-delay: 0.16s; }
@@ -1299,6 +1307,7 @@ a:hover { color: var(--accent-light); }
 /* ═══════════════════════════════════
    Responsive
    ═══════════════════════════════════ */
+/* 768px+: two-column grids for projects and about */
 @media (min-width: 768px) {
     .projects-grid {
         grid-template-columns: 1fr 1fr;
@@ -1308,6 +1317,8 @@ a:hover { color: var(--accent-light); }
     }
 }
 
+/* 900px: primary mobile breakpoint — hamburger nav, carousel switches to
+   native scroll-snap (transform: none !important kills JS pagination) */
 @media (max-width: 900px) {
     .nav-center { display: none; }
     .menu-toggle { display: inline-flex; }
@@ -1328,7 +1339,7 @@ a:hover { color: var(--accent-light); }
     .carousel-track {
         overflow-x: auto;
         scroll-snap-type: x mandatory;
-        transform: none !important;
+        transform: none !important;  /* disable JS translateX pagination */
         transition: none;
         padding: 8px 16px 16px;
     }
@@ -1364,6 +1375,7 @@ a:hover { color: var(--accent-light); }
 
 }
 
+/* 600px: small phone — tighter spacing, stacked blog entries, full-bleed code blocks */
 @media (max-width: 600px) {
     :root {
         --toolbar-h: 48px;
@@ -1392,6 +1404,7 @@ a:hover { color: var(--accent-light); }
         font-size: 1.8rem;
     }
 
+    /* Full-bleed code blocks: negative margin pulls them to viewport edge */
     .blog-content pre {
         margin-left: -16px;
         margin-right: -16px;
