@@ -1,106 +1,252 @@
 # CLAUDE.md
 
-Part of the **a9l.im** portfolio. This is the root site — it hosts the shared design system files consumed by all sub-projects. See parent `site-meta/CLAUDE.md` for the full shared design system specification.
+Root site for the **a9l.im** portfolio. Hosted via GitHub Pages at `a9lim.github.io` with custom domain `a9l.im` (configured in `CNAME`). This repo also hosts the shared design system files consumed by all sibling projects. See the parent `site-meta/CLAUDE.md` for the full shared design system specification.
 
-## Overview
-
-Portfolio site for **a9l.im**, hosted via GitHub Pages at `a9lim.github.io`. Custom domain configured via `CNAME` file. Multi-page SPA with landing, projects, blog, and about/contact pages.
-
-| Sibling Project | Repo | Path |
-|----------------|------|------|
-| No-Hair | `a9lim/physsim` | `/physsim` |
-| Cellular Metabolism Sim | `a9lim/biosim` | `/biosim` |
-| Gerrymandering Simulator | `a9lim/gerry` | `/gerry` |
-
-## Running Locally
-
-```bash
-python -m http.server
-# Navigate to http://localhost:8000
-```
-
-No build step, no dependencies. Static files served directly via GitHub Pages.
-
-## Architecture
-
-Traditional page layout (not floating panels over canvas like the simulation sub-projects). WebGL shader background provides animated noise texture. ES6 modules loaded via `<script type="module" src="main.js">`.
+## File Map
 
 ```
-main.js (entry point)
-  ├── src/projects.js     — PROJECTS data array (single source of truth for carousel + projects page)
-  ├── src/projects-page.js— renderProjectCards() — generates project grid from PROJECTS
-  ├── src/card-effects.js — initCardTilt() — 3D tilt + shimmer hover effects for cards
-  ├── src/router.js       — parseHash, navigateTo, onHashChange, page transitions
-  ├── src/theme.js        — theme toggle + localStorage
-  ├── src/mobile-menu.js  — menu toggle
-  ├── src/animations.js   — scroll reveals, fade-ins, stripe band, getScrollNorm()
-  ├── src/shader.js       — WebGL init, GLSL source, on-demand render (scroll/theme), visibility pause
-  ├── src/carousel.js     — renderCarouselCards() + pagination, dots, wheel, touch, 3D tilt
-  ├── src/blog.js         — listing/post rendering, loading skeletons, caches, formatDate
-  ├── src/world-map.js    — SVG load, projection, arc animation
-  └── src/markdown.js     — markdown parser (imported by blog.js)
+index.html               Single HTML file; all four page <section>s live here
+main.js                  Entry point (ES6 module); imports everything, owns DOM cache $
+styles.css               All project-specific CSS (1400 lines)
+CNAME                    Custom domain: a9l.im — DO NOT DELETE
+favicon.ico              Site favicon
+logo.svg                 Navbar logo SVG
+world-map.svg            SVG world map (About page)
+posts.json               Blog post index (array of {slug, title, date, tag})
+posts/                   Blog markdown files (fetched at runtime)
+img/                     Project screenshots for carousel cards (PNG/WebP)
+docs/plans/              Design documents (not served)
+
+src/
+  router.js              Hash-based SPA router
+  theme.js               Light/dark toggle (data-theme on <html>, localStorage)
+  mobile-menu.js         Hamburger menu toggle
+  animations.js          Fade-in triggers, scroll reveal, navbar shadow, stripe band, getScrollNorm()
+  shader.js              WebGL simplex noise shader with on-demand rendering
+  projects.js            PROJECTS data array — single source of truth for carousel + projects page
+  projects-page.js       renderProjectCards() — generates project grid from PROJECTS
+  carousel.js            renderCarouselCards() + pagination, dots, wheel/touch nav
+  card-effects.js        initCardTilt() — 3D perspective tilt + shimmer hover
+  blog.js                Blog listing/post rendering, loading skeletons, fetch caching
+  markdown.js            Lightweight markdown-to-HTML parser (imported by blog.js)
+  world-map.js           SVG map loader, Mercator projection, arc draw animation
+
+Shared files (hosted here, loaded by all 4 projects):
+  shared-tokens.js       _PALETTE, _FONT, color math, CSS custom property injection
+  shared-utils.js        escapeHtml, debounce, throttle, clamp, lerp, cubicBezier, showToast
+  shared-base.css        Reset, layout tokens, .glass, .tool-btn, toggles, toasts, a11y, responsive
+  shared-camera.js       Camera/viewport module (sim projects only, not used here)
+  shared-info.js         Info tip popovers (sim projects only)
+  shared-shortcuts.js    Keyboard shortcut registry (sim projects only)
+  shared-touch.js        Swipe-to-dismiss for bottom sheets (sim projects only)
 ```
 
-### Deployment
+## Module Dependency Graph
 
-- GitHub Pages repo (`a9lim.github.io` → serves as root of `a9l.im`)
-- Custom domain: `a9l.im` (set in `CNAME` file — do not delete)
-- Sub-projects are separate repos deployed as GitHub Pages project sites (e.g. `a9l.im/physsim`)
+```
+main.js
+  ├─ src/router.js           (imports nothing)
+  ├─ src/theme.js            (imports nothing)
+  ├─ src/mobile-menu.js      (imports nothing)
+  ├─ src/animations.js       (imports nothing)
+  ├─ src/shader.js           ← imports getTheme from theme.js
+  │                          ← imports getScrollNorm from animations.js
+  ├─ src/projects.js         (imports nothing; exports PROJECTS array)
+  ├─ src/projects-page.js    (imports nothing; uses global escapeHtml from shared-utils.js)
+  ├─ src/carousel.js         ← imports initCardTilt from card-effects.js
+  │                          (uses global escapeHtml from shared-utils.js)
+  ├─ src/card-effects.js     (imports nothing)
+  ├─ src/blog.js             ← imports parseMarkdown from markdown.js
+  │                          ← imports triggerFadeIns from animations.js
+  │                          (uses global escapeHtml from shared-utils.js)
+  ├─ src/world-map.js        (imports nothing)
+  └─ src/markdown.js         (imports nothing)
 
-### Shared Files (hosted here, consumed by all projects)
-
-This repo hosts six shared files that all sub-projects load:
-
-- **`shared-tokens.js`**: Color math helpers (`_r`, `_parseHex`, `_rgb2hsl`, `_hsl2hex`, `_darken`), `_FONT`, `_PALETTE` with shared design tokens (surfaces, text, accent, shadows, `extended` sub-object with 10 cross-project colors). Sub-projects load via `<script src="/shared-tokens.js">` then extend with project-specific keys in their own `colors.js`.
-- **`shared-utils.js`**: Utility functions: `escapeHtml()`, `debounce()`, `throttle()`, `clamp()`, `lerp()`, `cubicBezier()`, `showToast()`. Loaded by all 4 projects after `shared-tokens.js`.
-- **`shared-camera.js`**: Viewport/camera module via `createCamera(opts)`. Supports zoom/pan with mouse/touch, coordinate transforms, Canvas 2D and SVG integration. `bindZoomButtons(opts)` wires zoom-in/out/reset buttons and zoom display to the camera with animated zoom. Loaded by 3 sim projects (not root site).
-- **`shared-base.css`**: Reset, layout tokens, body base, `.glass`, `.tool-btn` (34×34 sim-style), toggle switches (`.tog-wrap`, `.tog`, `.tog-thumb`), shared keyframes, intro screen, sidebar stat patterns, sim layout components (`.sim-toolbar`, `.sim-panel`, `.sim-bar`, `.sim-controls`), small utilities, toast notifications, info tip CSS, shortcut overlay CSS, accessibility utilities (`.skip-link`, `.sr-only`), shared responsive blocks (900px/600px/440px), `prefers-reduced-motion`. Sub-projects load via `<link href="/shared-base.css">`. Note: tab system, preset dialog, form controls (range sliders, checkboxes, etc.) were moved to the consuming project's `styles.css`.
-- **`shared-info.js`**: Info tip popover system via `createInfoTip(triggerEl, { title, body, maxWidth })`. Creates `[role="tooltip"]` popovers — hover on desktop, tap-to-toggle on mobile with close button. Auto-positions above/below based on viewport space. If KaTeX is loaded, renders LaTeX math in popover body via `renderMathInElement` (guarded by `typeof`, no-op without KaTeX). CSS classes: `.info-trigger`, `.info-popover`, `.info-popover-title`, `.info-popover-body`, `.info-popover-close`. Loaded by all 3 sim projects.
-- **`shared-shortcuts.js`**: Keyboard shortcut registry via `initShortcuts(shortcuts, { helpTitle })`. Registers `keydown` listener, ignores when focused in `<input>`/`<textarea>`/`<select>`. `?` key opens help overlay (`.shortcut-overlay` modal). CSS classes: `.shortcut-overlay`, `.shortcut-group`, `.shortcut-row`, `.shortcut-key`, `.shortcut-label`. Loaded by all 3 sim projects.
-
-**Do not break these files** — all four projects depend on them.
-
-## Color System
-
-This site's `colors.js` is minimal — it does not add project-specific palette colors. The root site uses only the shared tokens from `shared-tokens.js` (surfaces, text, accent, shadows).
-
-## UI & Layout
-
-- **Traditional page layout** — uses `page-container` / `page-section` pattern, not floating panels over a canvas
-- **No intro screen** — root site uses a hero section with scroll hint instead
-- **WebGL shader background**: `#shader-bg` canvas provides animated noise texture with scroll-reactive splotchy accent effects. Opacity: 0.6 light, 0.5 dark. Shader has `u_scroll` uniform that offsets noise layers as user scrolls, plus two splotch layers (`smoothstep` thresholds) that create drifting red accent spots.
-- **Scroll-triggered reveals**: Two systems coexist — `.fade-in` + `.visible` (CSS-driven, staggered `transition-delay` via `:nth-child`) for page content, and `.scroll-reveal` + `.visible` (JS `IntersectionObserver`, threshold 0.15) for carousel cards and section labels.
-- **Accent stripe**: `.stripe-section` between hero and carousel. Flat red rectangular band (`.stripe-band`) slides in from left on scroll via JS `requestAnimationFrame` transform. Rotated -3deg.
-- **Project data**: `src/projects.js` exports a `PROJECTS` array — the single source of truth for both the carousel and projects page. Each entry has `href`, `title`, `shortDesc` (carousel), `longDesc` (projects page), `tags`, `image`, `icon` (SVG string), and `external` (boolean). `main.js` calls `renderCarouselCards()` and `renderProjectCards()` to populate empty `.carousel-track` and `.projects-grid` containers before the init chain runs.
-- **Project carousel** (home page): Paginated 3-cards-per-page system with pill dots. Cards rendered dynamically from `PROJECTS` via `renderCarouselCards()` in `src/carousel.js`. Desktop: JS-driven `translateX` on `.carousel-track` inside `.carousel-viewport` (overflow wrapper). Wheel scroll advances pages (600ms debounce). Touch swipe with 1:1 drag. 3D tilt on hover (`perspective(800px) rotateX/Y`, max ~12deg from cursor position). Shimmer highlight via `--mouse-x`/`--mouse-y` CSS vars. Mobile ≤900px: reverts to native `overflow-x: auto` + `scroll-snap-type: x mandatory`. Cards eagerly loaded (lazy loading fails inside `overflow: hidden`).
-- **Projects page grid**: Cards rendered dynamically from `PROJECTS` via `renderProjectCards()` in `src/projects-page.js`. Each card has an SVG icon, arrow, title, long description, and tags. Uses `.project-card.glass.fade-in` classes for styling and stagger animation.
-- **Inspirational quote**: Centered blockquote between carousel and projects page.
-- **World map** (about page): SVG world map in `.map-section` with brown fill (`#9C6840` from `extended.brown`). Two city dots (Singapore, San Diego) connected by a red accent arc. Top/bottom CSS mask fades (`map-fade-top`, `map-fade-bottom`) blend into canvas color.
-- **Project screenshots**: `img/` directory contains PNG/WebP screenshots for carousel cards (physsim.png, biosim.png, gerry.png, raiko.png, faithful.png, catppuccin.webp).
-- **Blog**: Renders markdown from fetched `.md` files. Blog content typography in `.blog-content` styles.
-
-### Root Site Overrides (styles.css)
-
-- **`--toolbar-h: 56px`** (shared default is 52px) — taller navbar for the portfolio site
-- **`.tool-btn`**: overridden to 36×36, `inline-flex`, `border: none`, `color: var(--text-secondary)` (shared base is 34×34 sim-style)
-- **`.section-label`**: uses `var(--font-mono)` (not body font) for uppercase section headers
-- **`.scroll-hint`**: also uses `var(--font-mono)`
-- **Project card hover**: `.project-card.visible:hover` selector needed for specificity over `.fade-in.visible` transform — lifts card `translateY(-6px) scale(1.03)` with `box-shadow: var(--shadow-lg)`
-- **Carousel card hover**: whole card lifts (`translateY(-6px) scale(1.03)`), not just inner image
+Global scripts (loaded via <script> in <head>, not modules):
+  shared-tokens.js → exposes window._PALETTE, _FONT, _r, _parseHex, _rgb2hsl, _hsl2hex, _darken
+  shared-utils.js  → exposes window.escapeHtml, debounce, throttle, clamp, lerp, cubicBezier, showToast
+```
 
 ## Key Patterns
 
-- **Theme toggle**: Light/dark via `data-theme` on `<html>`. `<html data-theme="light">` in markup.
-- **`.glass`** (from shared-base.css): applied to `#navbar`.
-- **No hardcoded colors in CSS** — all via `var(--*)`.
-- **Fonts via `<link>` tags** in HTML, not `@import` in CSS.
+### DOM Cache `$`
+
+`main.js` creates a `$` object caching all frequently accessed DOM elements by ID. This is passed to `initTheme($)`, `initMobileMenu($)`, `initRouter(deps)`, `initShader($)`, and the blog functions. Modules never call `document.getElementById` themselves for shared elements.
+
+### PROJECTS Data Array
+
+`src/projects.js` exports a single `PROJECTS` array. Each entry has `href`, `title`, `shortDesc`, `longDesc`, `tags`, `image`, `icon` (inline SVG string), and `external` (boolean). Both `renderCarouselCards()` and `renderProjectCards()` consume this array to generate their respective DOM. Any project change happens in one place.
+
+### Hash Router
+
+`src/router.js` implements a hash-based SPA. Pages are `#home`, `#projects`, `#blog`, `#about`. Blog posts use `#blog/{slug}`. The router:
+1. Hides all `.page-section` elements, shows the target one
+2. Updates `.active` class on nav links
+3. Closes mobile nav overlay
+4. For blog routes, calls `showBlogPost(slug)` or `showBlogListing()`
+5. For other pages, calls `triggerFadeIns(target)` to replay entrance animations
+
+A delegated click handler on `document` intercepts all `[data-page]` link clicks and sets `location.hash`.
+
+### WebGL Shader
+
+`src/shader.js` renders a full-viewport simplex noise background on `#shader-bg`. Key details:
+- Renders at half resolution (0.5x DPR) for performance
+- **On-demand rendering**: starts a `requestAnimationFrame` loop, then auto-stops after 1 second of no scroll/resize/theme-change events. The initial page load runs the loop for 2 seconds before idling.
+- Uniforms: `u_time`, `u_res`, `u_accent`, `u_canvasLight`, `u_canvasDark`, `u_dark` (0.0 or 1.0), `u_scroll` (normalized scroll position)
+- Three simplex noise layers blended for base texture, plus two warped splotch layers creating drifting red accent spots
+- Canvas alpha blending: shader output is semi-transparent over the page background
+- Theme changes detected via MutationObserver on `<html>` `data-theme` attribute
+- Visibility API pauses/resumes the loop when the tab is hidden/shown
+
+### Carousel
+
+`src/carousel.js` implements a paginated 3-cards-per-page carousel on the home page.
+- **Desktop (>900px)**: JS-driven `translateX` on `.carousel-track`. Wheel scroll advances pages (600ms debounce). Touch swipe with 1:1 drag tracking.
+- **Mobile (<=900px)**: reverts to native `overflow-x: auto` + `scroll-snap-type: x mandatory`. The JS translateX is disabled via `!important` in CSS.
+- Pill-shaped navigation dots created dynamically
+- Card images use `data-src` + IntersectionObserver for lazy loading (rootMargin 200px)
+- 3D tilt on hover via `initCardTilt()` from `card-effects.js` (perspective 800px, max 12deg)
+- Shimmer highlight tracked via `--mouse-x`/`--mouse-y` CSS custom properties
+
+### Blog
+
+`src/blog.js` fetches `posts.json` for the listing and individual `.md` files from `posts/`. Features:
+- Loading skeletons (shimmer animation) shown during fetch
+- Fetch timeout (10 seconds) with AbortController
+- In-memory caching: `postsCache` for the listing, `mdCache` per slug for post markdown
+- Posts rendered via `parseMarkdown()` from `src/markdown.js` (a lightweight parser supporting headings, lists, code blocks with language labels, blockquotes, images, links, inline formatting)
+
+### Scroll Animations
+
+Two independent reveal systems coexist:
+1. **`.fade-in` + `.visible`**: CSS-driven, triggered by `triggerFadeIns()` on page navigation. Staggered via `:nth-child` transition-delay (0.08s increments). Used for page content.
+2. **`.scroll-reveal` + `.visible`**: JS IntersectionObserver (threshold 0.15, rootMargin -40px bottom). One-shot (unobserved after reveal). Used for carousel cards and section labels.
+
+The accent stripe (`.stripe-band`) slides in from the left on scroll via `requestAnimationFrame` transform, rotated -3deg.
+
+### World Map
+
+`src/world-map.js` fetches `world-map.svg`, injects it into the About page, and creates an overlay SVG layer with:
+- Two city dots (Singapore, San Diego) positioned via calibrated Mercator projection
+- Pulsing glow circles on each dot
+- Animated arc drawn progressively between cities (IntersectionObserver triggers, 2.5s fallback timeout)
+- Visibility API pauses/resumes the animation
+
+## Color System
+
+The root site **does not have a `colors.js`**. It uses only the shared tokens injected by `shared-tokens.js`:
+- Surfaces: `--bg-canvas`, `--bg-panel`, `--bg-panel-solid`, `--bg-elevated`, `--bg-hover`
+- Text: `--text`, `--text-secondary`, `--text-muted`
+- Borders: `--border`, `--border-strong`
+- Accent: `--accent`, `--accent-light`, `--accent-subtle`, `--accent-glow`
+- Shadows: `--shadow-sm`, `--shadow-md`, `--shadow-lg`
+- Fonts: `--font-display`, `--font-body`, `--font-mono`
+- Extended palette CSS vars: `--ext-blue` through `--ext-yellow` (10 colors, used by world map `--ext-brown`)
+- Overlay vars: `--overlay-base`, `--overlay-text`, `--overlay-tint`, etc. (carousel card overlays)
+- Shimmer vars: `--shimmer`, `--shimmer-subtle` (card hover effects)
+
+The `_PALETTE` and `_FONT` objects are **never frozen** on the root site (no `colors.js` to freeze them), so they remain mutable at runtime. This is fine since no code mutates them after `shared-tokens.js` runs.
+
+## CSS Conventions and Overrides
+
+### Root Site Overrides (in `styles.css`)
+
+| Override | Shared Default | Root Value | Why |
+|----------|---------------|------------|-----|
+| `--toolbar-h` | `52px` | `56px` | Taller navbar for portfolio layout |
+| `.tool-btn` | 34x34, sim-style | 36x36, `inline-flex`, `border: none`, `color: var(--text-secondary)` | Larger social link buttons |
+| `--toolbar-h` at 600px | `52px` | `48px` | Shrinks on small phones |
+
+### Layout
+
+- **Traditional page layout** (`page-container` / `page-section`), not floating panels over a canvas
+- **No intro screen** -- the root site uses a hero section with a scroll hint instead
+- **Navbar** (`#navbar`) reuses `.sim-toolbar.glass` from `shared-base.css` but adds `border-radius: var(--radius-lg)` and custom padding
+- **`.glass`** applied only to `#navbar` and `.contact-section`
+- **Page transitions**: pages hidden via `display: none` / `.active` toggles `display: block` with a `pageEnter` keyframe (fade + slide up)
+
+### Specificity Notes
+
+- `.fade-in.visible` has specificity 0,2,0 which overrides `.project-card:hover` (0,1,1). The selector `.project-card.visible:hover` exists to win this battle.
+- `.fade-in.visible` transition includes `transform` and `box-shadow` properties specifically so hover animations still work.
+
+### Fonts
+
+- **Noto Serif**: hero tagline, project titles, carousel card titles, blog post titles, inspire quote, contact heading
+- **Noto Sans**: body text, nav links, UI labels
+- **Noto Sans Mono**: section labels (`.section-label`), scroll hint, blog dates, project tags, blog code blocks
+- Loaded via `<link>` tags in `<head>` (Google Fonts), never `@import` in CSS
+
+## Responsive Breakpoints
+
+| Breakpoint | What changes |
+|-----------|-------------|
+| `768px` (min-width) | Projects grid 2-column, about layout 2-column |
+| **`900px`** | Desktop nav hides, mobile hamburger + overlay nav appears. Carousel switches from JS pagination to native scroll-snap. Hero title shrinks. World map shrinks. |
+| **`600px`** | `--toolbar-h` drops to 48px. `.sim-brand` hidden. Hero padding shrinks. Blog entries stack vertically. Code blocks go full-bleed. |
+
+## HTML Loading Order
+
+```
+<head>
+  Google Fonts <link> (Noto Serif, Sans, Sans Mono)
+  <script src="shared-tokens.js">    ← injects CSS vars, exposes _PALETTE/_FONT on window
+  <script src="shared-utils.js">     ← exposes escapeHtml, debounce, etc. on window
+  <link href="shared-base.css">      ← CSS reset, shared layout, glass, tool-btn, etc.
+  <link href="styles.css">           ← project-specific overrides
+  <link rel="icon" href="favicon.ico">
+</head>
+<body class="app-ready">
+  ...
+  <script type="module" src="main.js">  ← entry point, imports src/ modules
+</body>
+```
+
+Note: The root site uses **relative paths** for shared files (`shared-tokens.js`, `shared-base.css`). Sub-projects use absolute paths (`/shared-tokens.js`, `/shared-base.css`). Both resolve to the same files because this repo is the root of `a9l.im`.
+
+The root site does **not** load `shared-camera.js`, `shared-info.js`, `shared-shortcuts.js`, or `shared-touch.js` -- those are only used by the three simulation projects.
 
 ## Gotchas
 
-- **Do not delete `CNAME`** — it configures the `a9l.im` custom domain.
-- **Shared files are critical** — `shared-tokens.js` and `shared-base.css` are loaded by all four projects. Breaking changes here break everything.
-- **Root site uses relative paths** for shared files (`shared-base.css`, `shared-tokens.js`) — sub-projects use absolute paths (`/shared-base.css`, `/shared-tokens.js`).
-- **Carousel viewport/track architecture**: `.carousel-viewport` has `overflow: hidden`, `.carousel-track` must NOT have `overflow: hidden` — otherwise `translateX` moves the clipping boundary with the track and hides later pages.
-- **Lazy loading fails in overflow:hidden**: Images inside the carousel must use `loading="eager"` (or omit the attribute). The JS also force-sets `img.loading = 'eager'` as a fallback.
-- **`.fade-in.visible` specificity**: Has specificity 0,2,0 which overrides `.project-card:hover` (0,1,1). The `.project-card.visible:hover` selector exists specifically to win this specificity battle. The `.fade-in.visible` transition also includes `transform` and `box-shadow` for hover animation compatibility.
-- **Hero title `white-space: nowrap`**: Title and quote are forced single-line. The italic `<em>` in `.hero-tagline` has `padding-right: 0.05em` to prevent the italic "e" glyph from clipping.
+### Do Not Break
+
+- **`CNAME` file** -- deleting it removes the `a9l.im` custom domain
+- **`shared-tokens.js`** -- all four projects depend on it; breaking changes here break everything
+- **`shared-utils.js`** -- `escapeHtml()` is called from multiple modules via the window global; removing it breaks rendering
+- **`shared-base.css`** -- all four projects load this; class name changes affect all sims
+- **`shared-camera.js`, `shared-info.js`, `shared-shortcuts.js`, `shared-touch.js`** -- consumed by sim projects; do not rename, move, or change their public API without updating all consumers
+
+### Shader On-Demand Rendering
+
+The shader is **not** a continuous animation loop. It renders on scroll, resize, and theme change events, then stops after 1 second of inactivity. If you add UI that should trigger a visual update (e.g., a new scroll-reactive element), you need to call `requestRender()` or dispatch a scroll/resize event.
+
+### Carousel Viewport/Track Architecture
+
+- `.carousel-viewport` has `overflow: hidden`
+- `.carousel-track` must **not** have `overflow: hidden` -- otherwise `translateX` moves the clipping boundary with the track and hides later pages
+- Mobile (<=900px) CSS sets `transform: none !important` on the track and enables `overflow-x: auto` + `scroll-snap-type`
+
+### Image Loading in Carousel
+
+Carousel card images use `data-src` + IntersectionObserver for lazy loading. The `rootMargin: '200px'` ensures images load slightly before they scroll into view.
+
+### `.fade-in.visible` Specificity Trap
+
+Adding new `.fade-in` elements that also need hover effects requires the hover selector to include `.visible` (e.g., `.my-element.visible:hover`) to beat the 0,2,0 specificity of `.fade-in.visible`.
+
+### Hero Title Italic Clipping
+
+`.hero-tagline em` has `padding-right: 0.05em` to prevent the italic glyph from clipping at the edge. Removing this causes visual truncation on some fonts.
+
+### Global Script Dependencies
+
+`shared-tokens.js` and `shared-utils.js` are plain `<script>` tags (not modules). They expose globals on `window`. ES6 modules in `src/` access these globals directly (e.g., `_PALETTE`, `_parseHex`, `escapeHtml`). If you convert them to modules, you must update all consumers.
+
+### Theme Toggle Location
+
+The root site sets `data-theme` on `<html>` (consistent with physsim and gerry). Biosim sets it on `<body>`. Do not change this without checking the shader's MutationObserver, which watches `document.documentElement`.
+
+### Blog Fetch Path
+
+Blog listing fetches `posts.json` and individual posts fetch `posts/{slug}.md` using relative URLs. These paths break if the site is served from a subdirectory.
