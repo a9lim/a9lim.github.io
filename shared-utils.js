@@ -1,14 +1,26 @@
 /* ═══════════════════════════════════════════════
-   shared-utils.js — Shared utilities for all a9l.im sites
-   Loaded after shared-tokens.js, before colors.js.
+   shared-utils.js — Pure utility functions for all a9l.im sites.
+   Loaded after shared-tokens.js; exposes globals consumed by
+   ES6 modules and plain scripts across all four projects.
    ═══════════════════════════════════════════════ */
 
+/**
+ * Escape a string for safe insertion as HTML text content.
+ * Uses the browser's own text node escaping via a detached element.
+ * @param {string} str  Raw string
+ * @returns {string} HTML-safe string
+ */
 function escapeHtml(str) {
     const d = document.createElement('div');
     d.textContent = str;
     return d.innerHTML;
 }
 
+/**
+ * @param {Function} fn  Function to debounce
+ * @param {number} ms    Delay in milliseconds
+ * @returns {Function}
+ */
 function debounce(fn, ms) {
     let t;
     return function(...args) {
@@ -17,6 +29,12 @@ function debounce(fn, ms) {
     };
 }
 
+/**
+ * Leading-edge throttle: fires immediately, then suppresses for `ms`.
+ * @param {Function} fn  Function to throttle
+ * @param {number} ms    Minimum interval in milliseconds
+ * @returns {Function}
+ */
 function throttle(fn, ms) {
     let last = 0;
     return function(...args) {
@@ -28,16 +46,24 @@ function throttle(fn, ms) {
     };
 }
 
+/** @param {number} val @param {number} min @param {number} max @returns {number} */
 function clamp(val, min, max) {
     return val < min ? min : val > max ? max : val;
 }
 
+/** @param {number} a @param {number} b @param {number} t  Interpolant [0, 1] @returns {number} */
 function lerp(a, b, t) {
     return a + (b - a) * t;
 }
 
-// Attempt to create a shared cubic bezier solver (Newton-Raphson).
-// Based on proven implementation from gerry/src/config.js.
+/**
+ * Return an easing function for a CSS cubic-bezier(x1, y1, x2, y2).
+ * Inverts the x(u) Bezier to find the parameter u for a given time t,
+ * then evaluates y(u). Uses Newton-Raphson iteration (up to 8 steps)
+ * because the x->u mapping has no closed-form inverse.
+ * @param {number} x1 @param {number} y1 @param {number} x2 @param {number} y2
+ * @returns {(t: number) => number} Easing function mapping [0,1] -> [0,1]
+ */
 function cubicBezier(x1, y1, x2, y2) {
     return function(t) {
         if (t <= 0) return 0;
@@ -45,9 +71,11 @@ function cubicBezier(x1, y1, x2, y2) {
         let u = t;
         for (let i = 0; i < 8; i++) {
             const a = 1 - u;
+            // x(u) - t: residual of cubic Bezier x-component minus target time
             const xu = 3 * a * a * u * x1 + 3 * a * u * u * x2 + u * u * u - t;
+            // dx/du: derivative for Newton step
             const dxu = 3 * a * a * x1 + 6 * a * u * (x2 - x1) + 3 * u * u * (1 - x2);
-            if (Math.abs(dxu) < 1e-6) break;
+            if (Math.abs(dxu) < 1e-6) break; // near-zero derivative — avoid divergence
             u -= xu / dxu;
         }
         u = clamp(u, 0, 1);
@@ -56,7 +84,12 @@ function cubicBezier(x1, y1, x2, y2) {
     };
 }
 
-// Toast notification helper
+/**
+ * Show a brief toast notification. Creates the container on first use.
+ * Styled by `.toast` / `#toast-container` in shared-base.css.
+ * @param {string} message  Text to display
+ * @param {number} [duration=2000]  Visible time in ms before fade-out
+ */
 function showToast(message, duration) {
     if (duration === undefined) duration = 2000;
     let container = document.getElementById('toast-container');
@@ -69,9 +102,10 @@ function showToast(message, duration) {
     toast.className = 'toast';
     toast.textContent = message;
     container.appendChild(toast);
+    // rAF ensures the initial state is painted before adding .visible triggers transition
     requestAnimationFrame(() => toast.classList.add('visible'));
     setTimeout(() => {
         toast.classList.remove('visible');
-        setTimeout(() => toast.remove(), 300);
+        setTimeout(() => toast.remove(), 300); // matches CSS transition duration
     }, duration);
 }

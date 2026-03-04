@@ -1,31 +1,31 @@
 /* ═══════════════════════════════════════════════
    shared-camera.js — Reusable viewport/camera module
-   for all a9l.im simulation projects.
-   Loaded after shared-utils.js, before colors.js.
+   for the three a9l.im simulation projects (physsim, biosim, gerry).
+   Supports Canvas 2D and SVG viewBox rendering, mouse/touch/button input.
    ═══════════════════════════════════════════════ */
+
+var ZOOM_BUTTON_FACTOR = 1.25;
 
 /**
  * Create a camera/viewport controller.
  *
- * State model: (x, y) = world coordinate at viewport center, zoom = scale.
- * Works for both Canvas 2D and SVG viewBox rendering.
+ * Coordinate model: (x, y) is the world-space point at viewport center;
+ * zoom is the scale factor (world units -> screen pixels).
  *
- * @param {Object} opts
- * @param {number} opts.width       Viewport width in CSS pixels
- * @param {number} opts.height      Viewport height in CSS pixels
- * @param {number} [opts.zoom=1]    Initial zoom level
- * @param {number} [opts.minZoom=0.25]  Minimum zoom
- * @param {number} [opts.maxZoom=4]     Maximum zoom
- * @param {number} [opts.x=0]       Initial world X at center
- * @param {number} [opts.y=0]       Initial world Y at center
- * @param {Function} [opts.onUpdate]   Called after any camera state change
- * @param {Function} [opts.clamp]      Custom clamp(cam) called after moves
- * @param {number} [opts.wheelFactor=1.1]  Wheel zoom step multiplier
- * @param {number} [opts.zoomDuration=0]   Animated zoom duration in ms (0 = instant)
- * @returns {Object} camera instance
+ * @param {Object} [opts]
+ * @param {number} [opts.width=800]       Viewport width in CSS px
+ * @param {number} [opts.height=600]      Viewport height in CSS px
+ * @param {number} [opts.zoom=1]          Initial zoom
+ * @param {number} [opts.minZoom=0.25]
+ * @param {number} [opts.maxZoom=4]
+ * @param {number} [opts.x=0]             Initial world X at center
+ * @param {number} [opts.y=0]             Initial world Y at center
+ * @param {Function} [opts.onUpdate]      Called after any state change
+ * @param {Function} [opts.clamp]         Custom bounds enforcer: clamp(cam)
+ * @param {number} [opts.wheelFactor=1.1] Multiplier per wheel tick
+ * @param {number} [opts.zoomDuration=0]  Animated zoom duration (0 = instant)
+ * @returns {Object} Camera instance
  */
-var ZOOM_BUTTON_FACTOR = 1.25;
-
 function createCamera(opts) {
     if (!opts) opts = {};
 
@@ -47,11 +47,12 @@ function createCamera(opts) {
         onUpdate: opts.onUpdate || null,
         clampFn: opts.clamp || null,
 
-        // ─── Internal animation state ───
+        // Monotonic counter — incremented to cancel in-flight animations
         _animId: 0,
 
         // ─── Viewport ───
 
+        /** Update viewport dimensions (e.g. on window resize). */
         setViewport: function(w, h) {
             this.viewportW = w;
             this.viewportH = h;
@@ -60,8 +61,15 @@ function createCamera(opts) {
         },
 
         // ─── Coordinate transforms ───
+        // Convention: screen origin is top-left of viewport element;
+        // world origin is wherever (0, 0) falls in the simulation.
 
-        /** Convert screen pixel coordinates to world coordinates */
+        /**
+         * Convert screen pixel position to world coordinates.
+         * @param {number} sx  Screen X (px from viewport left)
+         * @param {number} sy  Screen Y (px from viewport top)
+         * @returns {{ x: number, y: number }}
+         */
         screenToWorld: function(sx, sy) {
             return {
                 x: this.x + (sx - this.viewportW / 2) / this.zoom,
@@ -69,7 +77,12 @@ function createCamera(opts) {
             };
         },
 
-        /** Convert world coordinates to screen pixel coordinates */
+        /**
+         * Convert world coordinates to screen pixel position.
+         * @param {number} wx  World X
+         * @param {number} wy  World Y
+         * @returns {{ x: number, y: number }}
+         */
         worldToScreen: function(wx, wy) {
             return {
                 x: (wx - this.x) * this.zoom + this.viewportW / 2,
@@ -80,21 +93,24 @@ function createCamera(opts) {
         // ─── Camera movement ───
 
         /**
-         * Zoom by a factor, preserving the world point under (cx, cy) screen coords.
-         * If cx/cy omitted, zooms from viewport center.
+         * Zoom by a multiplicative factor, keeping the world point under
+         * screen position (cx, cy) stationary — the standard "zoom toward cursor" UX.
+         * @param {number} factor       Zoom multiplier (>1 = zoom in)
+         * @param {number} [cx]         Screen X pivot (default: viewport center)
+         * @param {number} [cy]         Screen Y pivot (default: viewport center)
          */
         zoomBy: function(factor, cx, cy) {
             if (cx === undefined) cx = this.viewportW / 2;
             if (cy === undefined) cy = this.viewportH / 2;
 
-            // World point under cursor before zoom
+            // Record world point under cursor before zoom
             var wx = this.x + (cx - this.viewportW / 2) / this.zoom;
             var wy = this.y + (cy - this.viewportH / 2) / this.zoom;
 
             var newZoom = clamp(this.zoom * factor, this.minZoom, this.maxZoom);
             if (newZoom === this.zoom) return;
 
-            // Adjust camera so (cx, cy) still maps to (wx, wy)
+            // Solve for camera position that maps (cx, cy) back to (wx, wy) at new zoom
             this.x = wx - (cx - this.viewportW / 2) / newZoom;
             this.y = wy - (cy - this.viewportH / 2) / newZoom;
             this.zoom = newZoom;
@@ -103,7 +119,12 @@ function createCamera(opts) {
             this._notify();
         },
 
-        /** Set zoom directly, preserving world point under (cx, cy) */
+        /**
+         * Set zoom to an absolute value, preserving the world point under (cx, cy).
+         * @param {number} newZoom
+         * @param {number} [cx]    Screen X pivot
+         * @param {number} [cy]    Screen Y pivot
+         */
         setZoom: function(newZoom, cx, cy) {
             if (cx === undefined) cx = this.viewportW / 2;
             if (cy === undefined) cy = this.viewportH / 2;
@@ -122,7 +143,12 @@ function createCamera(opts) {
             this._notify();
         },
 
-        /** Pan by screen-space delta */
+        /**
+         * Pan by a screen-space delta. Divides by zoom so screen px translate
+         * to the correct world-space displacement regardless of zoom level.
+         * @param {number} dx  Screen px rightward
+         * @param {number} dy  Screen px downward
+         */
         panBy: function(dx, dy) {
             this.x -= dx / this.zoom;
             this.y -= dy / this.zoom;
@@ -130,7 +156,11 @@ function createCamera(opts) {
             this._notify();
         },
 
-        /** Set camera position directly */
+        /**
+         * Set camera center to an absolute world position.
+         * @param {number} wx  World X
+         * @param {number} wy  World Y
+         */
         setPosition: function(wx, wy) {
             this.x = wx;
             this.y = wy;
@@ -139,10 +169,10 @@ function createCamera(opts) {
         },
 
         /**
-         * Animate camera to fit a bounding box.
+         * Animate camera to fit a world-space bounding box with 10% padding.
          * @param {{ x: number, y: number, w: number, h: number }} bounds
-         * @param {number} [duration=300] Animation duration in ms
-         * @param {Function} [easeFn] Easing function (default: easeOutCubic)
+         * @param {number} [duration=300]
+         * @param {Function} [easeFn]  Default: easeOutCubic
          */
         zoomToFit: function(bounds, duration, easeFn) {
             if (!duration) duration = 300;
@@ -152,12 +182,18 @@ function createCamera(opts) {
             var targetY = bounds.y + bounds.h / 2;
             var zw = this.viewportW / bounds.w;
             var zh = this.viewportH / bounds.h;
+            // 0.9 factor leaves 10% padding around the bounding box
             var targetZoom = clamp(Math.min(zw, zh) * 0.9, this.minZoom, this.maxZoom);
 
             this._animateTo(targetX, targetY, targetZoom, duration, easeFn);
         },
 
-        /** Reset to initial state */
+        /**
+         * Reset to initial state (or explicit overrides).
+         * @param {number} [x]    World X (default: opts.x or 0)
+         * @param {number} [y]    World Y (default: opts.y or 0)
+         * @param {number} [zoom] Zoom (default: opts.zoom or 1)
+         */
         reset: function(x, y, zoom) {
             this._cancelAnim();
             this.x = x !== undefined ? x : (opts.x || 0);
@@ -169,7 +205,11 @@ function createCamera(opts) {
 
         // ─── Canvas 2D integration ───
 
-        /** Apply camera transform to a Canvas 2D context */
+        /**
+         * Apply camera transform to a Canvas 2D context.
+         * Translates to viewport center, scales, then offsets to camera position.
+         * @param {CanvasRenderingContext2D} ctx
+         */
         applyToCanvas: function(ctx) {
             ctx.translate(this.viewportW / 2, this.viewportH / 2);
             ctx.scale(this.zoom, this.zoom);
@@ -178,7 +218,10 @@ function createCamera(opts) {
 
         // ─── SVG integration ───
 
-        /** Get SVG viewBox values as { x, y, w, h } */
+        /**
+         * Compute the SVG viewBox that corresponds to the current camera state.
+         * @returns {{ x: number, y: number, w: number, h: number }}
+         */
         getViewBox: function() {
             var w = this.viewportW / this.zoom;
             var h = this.viewportH / this.zoom;
@@ -190,15 +233,18 @@ function createCamera(opts) {
             };
         },
 
-        /** Get SVG viewBox as a string for setAttribute */
+        /**
+         * @returns {string} viewBox as "x y w h" for setAttribute
+         */
         getViewBoxString: function() {
             var vb = this.getViewBox();
             return vb.x + ' ' + vb.y + ' ' + vb.w + ' ' + vb.h;
         },
 
         /**
-         * Set camera state from an SVG viewBox { x, y, w, h }.
-         * Useful when initializing from existing SVG dimensions.
+         * Initialize camera state from an SVG viewBox.
+         * Derives zoom from width ratio and centers on the viewBox midpoint.
+         * @param {{ x: number, y: number, w: number, h: number }} vb
          */
         setFromViewBox: function(vb) {
             this.zoom = this.viewportW / vb.w;
@@ -212,8 +258,8 @@ function createCamera(opts) {
 
         /**
          * Bind mouse wheel zoom to an element.
-         * @param {HTMLElement} el Target element
-         * @returns {Function} Cleanup function
+         * @param {HTMLElement} el
+         * @returns {Function} Cleanup function to remove listener
          */
         bindWheel: function(el) {
             var self = this;
@@ -225,18 +271,20 @@ function createCamera(opts) {
                 var factor = e.deltaY > 0 ? (1 / self.wheelFactor) : self.wheelFactor;
                 self.zoomBy(factor, cx, cy);
             }
+            // passive: false required — we call preventDefault to stop page scroll
             el.addEventListener('wheel', onWheel, { passive: false });
             return function() { el.removeEventListener('wheel', onWheel); };
         },
 
         /**
          * Bind touch gestures (pinch-zoom + two-finger pan).
-         * Single-finger behavior is NOT bound here — projects handle it
-         * (physsim: spawn particles, biosim: pan, gerry: paint).
+         * Single-finger gestures are intentionally left unbound — each project
+         * uses single-finger for different things (physsim: spawn, biosim: pan,
+         * gerry: paint hexes).
          *
-         * @param {HTMLElement} el Target element
+         * @param {HTMLElement} el
          * @param {Object} [options]
-         * @param {boolean} [options.singleFingerPan=false] Also bind single-finger pan
+         * @param {boolean} [options.singleFingerPan=false]  Also bind single-finger pan
          * @returns {Function} Cleanup function
          */
         bindTouch: function(el, options) {
@@ -283,15 +331,14 @@ function createCamera(opts) {
                     var cx = m.x - rect.left;
                     var cy = m.y - rect.top;
 
-                    // Pinch zoom
                     if (lastDist > 0) {
                         var factor = d / lastDist;
                         self.zoomBy(factor, cx, cy);
                     }
 
-                    // Two-finger pan
                     var dx = cx - lastCX;
                     var dy = cy - lastCY;
+                    // 0.5px deadzone avoids jitter from floating-point touch coords
                     if (Math.abs(dx) > 0.5 || Math.abs(dy) > 0.5) {
                         self.panBy(dx, dy);
                     }
@@ -313,6 +360,7 @@ function createCamera(opts) {
                 singleTouch = null;
             }
 
+            // passive: false — two-finger gestures call preventDefault to block page scroll
             el.addEventListener('touchstart', onTouchStart, { passive: false });
             el.addEventListener('touchmove', onTouchMove, { passive: false });
             el.addEventListener('touchend', onTouchEnd);
@@ -327,10 +375,11 @@ function createCamera(opts) {
         },
 
         /**
-         * Bind mouse-button pan (default: middle-click, button 1).
-         * @param {HTMLElement} el Target element
+         * Bind mouse-button pan (default: middle-click).
+         * Listens on `window` for move/up so dragging outside the element works.
+         * @param {HTMLElement} el
          * @param {Object} [options]
-         * @param {number} [options.button=1] Mouse button (0=left, 1=middle, 2=right)
+         * @param {number} [options.button=1]  Mouse button (0=left, 1=middle, 2=right)
          * @returns {Function} Cleanup function
          */
         bindMousePan: function(el, options) {
@@ -386,17 +435,18 @@ function createCamera(opts) {
         // ─── Zoom button binding ───
 
         /**
-         * Bind zoom-in / zoom-out / reset buttons and an optional zoom display.
+         * Wire zoom-in/out/reset buttons and an optional zoom percentage display.
+         * Wraps the original onUpdate callback to also refresh the display.
          * @param {Object} opts
-         * @param {HTMLElement} [opts.zoomIn]    Zoom-in button element
-         * @param {HTMLElement} [opts.zoomOut]   Zoom-out button element
-         * @param {HTMLElement} [opts.reset]     Reset/fit button element
-         * @param {HTMLElement} [opts.display]   Element to show zoom percentage
+         * @param {HTMLElement} [opts.zoomIn]
+         * @param {HTMLElement} [opts.zoomOut]
+         * @param {HTMLElement} [opts.reset]
+         * @param {HTMLElement} [opts.display]     Element to show zoom %
          * @param {number}     [opts.factor=1.25]  Zoom step multiplier
          * @param {number}     [opts.duration=200] Animation duration in ms
-         * @param {Function}   [opts.ease]      Easing function (default easeOutCubic)
-         * @param {Function}   [opts.onReset]   Custom reset callback
-         * @param {Function}   [opts.formatZoom] Custom display formatter (zoom) => string
+         * @param {Function}   [opts.ease]         Easing (default: easeOutCubic)
+         * @param {Function}   [opts.onReset]      Custom reset handler
+         * @param {Function}   [opts.formatZoom]   (zoom) => display string
          */
         bindZoomButtons: function(opts) {
             if (!opts) opts = {};
@@ -432,12 +482,9 @@ function createCamera(opts) {
         // ─── Animated transitions ───
 
         /**
-         * Animate camera to a target state.
-         * @param {number} tx Target world X
-         * @param {number} ty Target world Y
-         * @param {number} tz Target zoom
-         * @param {number} duration Duration in ms
-         * @param {Function} easeFn Easing function t -> t
+         * Smoothly interpolate camera to target state over `duration` ms.
+         * Uses rAF; cancelled by any subsequent _animateTo or _cancelAnim call
+         * via the monotonic _animId counter.
          */
         _animateTo: function(tx, ty, tz, duration, easeFn) {
             this._cancelAnim();
@@ -447,7 +494,7 @@ function createCamera(opts) {
             var id = ++this._animId;
 
             function tick(now) {
-                if (id !== self._animId) return;
+                if (id !== self._animId) return; // superseded by newer animation
                 var elapsed = now - start;
                 var t = Math.min(elapsed / duration, 1);
                 var e = easeFn(t);
