@@ -1,7 +1,11 @@
 // ─── Project Carousel ───
+// Desktop (>900px): JS-driven translateX pagination with wheel/touch nav.
+// Mobile (<=900px): native overflow-x scroll-snap (CSS !important disables
+// the JS transform). Dots, lazy-load images, and 3D card tilt handled here.
 
 import { initCardTilt } from './card-effects.js';
 
+/** Populate .carousel-track with card markup from PROJECTS data. */
 export function renderCarouselCards(container, projects) {
     container.innerHTML = projects.map(p => {
         const ext = p.external ? ' target="_blank" rel="noopener noreferrer"' : '';
@@ -36,7 +40,6 @@ export function initCarousel() {
     let currentPage = 0;
     const isMobile = () => window.innerWidth <= 900;
 
-    // Create dots
     for (let i = 0; i < totalPages; i++) {
         const dot = document.createElement('button');
         dot.className = 'carousel-dot' + (i === 0 ? ' active' : '');
@@ -66,7 +69,7 @@ export function initCarousel() {
         updateDots();
     }
 
-    // Wheel navigation (desktop)
+    // Wheel → page advance (desktop only, debounced to prevent rapid flipping)
     let wheelCooldown = false;
     carouselTrack.addEventListener('wheel', (e) => {
         if (isMobile()) return;
@@ -79,7 +82,7 @@ export function initCarousel() {
         }
     }, { passive: false });
 
-    // Touch swipe (desktop mode)
+    // Touch swipe with 1:1 drag tracking (desktop mode only — mobile uses native scroll)
     let touchStartX = 0, touchCurrentX = 0, touchDragging = false, baseOffset = 0;
 
     carouselTrack.addEventListener('touchstart', (e) => {
@@ -110,7 +113,7 @@ export function initCarousel() {
         else goToPage(currentPage);
     });
 
-    // Mobile native scroll → update dots
+    // Sync dot state from native scroll position on mobile
     let dotTicking = false;
     carouselTrack.addEventListener('scroll', () => {
         if (!isMobile()) return;
@@ -127,11 +130,10 @@ export function initCarousel() {
         }
     }, { passive: true });
 
-    // 3D tilt on carousel cards and project cards
     initCardTilt('.carousel-card');
     initCardTilt('.project-card');
 
-    // Resize handler
+    // Debounced resize: reset transform mode when crossing the 900px breakpoint
     let resizeTimer;
     window.addEventListener('resize', () => {
         clearTimeout(resizeTimer);
@@ -145,12 +147,13 @@ export function initCarousel() {
         }, 150);
     });
 
-    // Force all cards visible
+    // Cards start with scroll-reveal hidden state; mark visible immediately
+    // since the carousel manages its own viewport clipping
     cards.forEach(card => {
         card.classList.add('visible');
     });
 
-    // Lazy-load carousel images via IntersectionObserver
+    // Lazy-load: data-src → src when card nears viewport (200px lookahead)
     const images = carouselTrack.querySelectorAll('img[data-src]');
     if (images.length && 'IntersectionObserver' in window) {
         const imgObserver = new IntersectionObserver((entries, obs) => {

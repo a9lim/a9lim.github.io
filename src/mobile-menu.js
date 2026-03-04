@@ -1,4 +1,4 @@
-// ─── Mobile Menu ───
+// Hamburger toggle for the mobile nav overlay.
 
 export function initMobileMenu($) {
     $.menuToggle.addEventListener('click', () => {

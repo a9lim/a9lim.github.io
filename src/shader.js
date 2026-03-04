@@ -1,4 +1,9 @@
 // ─── WebGL Shader Background ───
+// Full-viewport simplex-noise texture rendered to #shader-bg at half resolution
+// (0.5x DPR). On-demand rendering: a rAF loop runs on scroll/resize/theme-change
+// and auto-stops after 1s of inactivity. Initial load runs 2s for entrance anim.
+// Canvas uses alpha blending so the noise is semi-transparent over the page bg.
+
 import { getTheme } from './theme.js';
 import { getScrollNorm } from './animations.js';
 
@@ -7,6 +12,14 @@ const VERT_SRC = `
   void main() { gl_Position = vec4(pos, 0.0, 1.0); }
 `;
 
+// Uniforms:
+//   u_time        - elapsed seconds (drives animation speed)
+//   u_res         - canvas pixel dimensions
+//   u_accent      - accent color RGB [0..1]
+//   u_canvasLight - light theme background RGB
+//   u_canvasDark  - dark theme background RGB
+//   u_dark        - 0.0 (light) or 1.0 (dark) — lerps canvas bg and alpha
+//   u_scroll      - normalized scroll [0..1] — shifts noise vertically
 const FRAG_SRC = `
   precision mediump float;
   uniform float u_time;
@@ -17,11 +30,15 @@ const FRAG_SRC = `
   uniform float u_dark;
   uniform float u_scroll;
 
+  // ── Simplex noise (Ashima Arts) ──
+  // mod289 avoids precision loss in the permutation hash
   vec3 mod289(vec3 x) { return x - floor(x / 289.0) * 289.0; }
   vec2 mod289(vec2 x) { return x - floor(x / 289.0) * 289.0; }
   vec3 permute(vec3 x) { return mod289((x * 34.0 + 1.0) * x); }
 
+  // 2D simplex noise, returns [-1, 1]
   float snoise(vec2 v) {
+    // C.x = (3-sqrt(3))/6, C.y = (sqrt(3)-1)/2 — skew/unskew constants
     const vec4 C = vec4(0.211324865405187, 0.366025403784439,
                        -0.577350269189626, 0.024390243902439);
     vec2 i = floor(v + dot(v, C.yy));
@@ -50,26 +67,32 @@ const FRAG_SRC = `
     float t = u_time * 0.18;
     float sc = u_scroll * 0.5;
 
-    float n1 = snoise(uv * 1.8 + vec2(t * 0.7 + sc, t * 0.3)) * 0.5 + 0.5;
-    float n2 = snoise(uv * 3.5 + vec2(-t * 0.5, t * 0.8 + sc * 0.7)) * 0.5 + 0.5;
-    float n3 = snoise(uv * 0.8 + vec2(t * 0.2 + sc * 0.3, -t * 0.4)) * 0.5 + 0.5;
+    // Three octaves at different scales/speeds for base texture
+    float n1 = snoise(uv * 1.8 + vec2(t * 0.7 + sc, t * 0.3)) * 0.5 + 0.5;   // coarse, slow
+    float n2 = snoise(uv * 3.5 + vec2(-t * 0.5, t * 0.8 + sc * 0.7)) * 0.5 + 0.5; // medium detail
+    float n3 = snoise(uv * 0.8 + vec2(t * 0.2 + sc * 0.3, -t * 0.4)) * 0.5 + 0.5; // broad variation
 
     float noise = n1 * 0.5 + n2 * 0.3 + n3 * 0.2;
 
+    // Domain-warped splotch layer: two noise passes distort the UV to create
+    // drifting accent-colored blobs that move independently of the base
     float warpX = snoise(uv * 3.0 + vec2(t * 0.8, t * -0.5)) * 0.4;
     float warpY = snoise(uv * 2.5 + vec2(t * -0.6, t * 0.9)) * 0.4;
     vec2 splotchUV = uv * 2.4 + vec2(warpX, warpY - sc * 3.0);
     float splotch = snoise(splotchUV);
-    splotch = smoothstep(-0.2, 0.7, splotch);
+    splotch = smoothstep(-0.2, 0.7, splotch);  // threshold into soft blobs
 
     vec3 canvasBg = mix(u_canvasLight, u_canvasDark, u_dark);
 
+    // Tint base texture lightly toward accent, then add stronger accent splotches
     vec3 base = mix(canvasBg, u_accent * 0.3, noise * 0.15);
     vec3 color = mix(base, u_accent, splotch * 0.3);
 
+    // Vignette darkens edges so the effect fades naturally at viewport borders
     float vig = 1.0 - length(uv - 0.5) * 0.85;
     vig = smoothstep(0.0, 0.8, vig);
 
+    // Overall alpha: subtle in dark mode (0.12) vs light (0.18), splotches add extra
     float alpha = noise * vig * mix(0.18, 0.12, u_dark)
                  + splotch * vig * 0.08;
     gl_FragColor = vec4(color, alpha);
@@ -118,14 +141,17 @@ export function initShader($) {
     const uDark        = gl.getUniformLocation(prog, 'u_dark');
     const uScroll      = gl.getUniformLocation(prog, 'u_scroll');
 
+    // Pre-parse palette colors to [0..1] floats for uniforms
     const [ar, ag, ab] = _parseHex(_PALETTE.accent);
     const [clr, clg, clb] = _parseHex(_PALETTE.light.canvas);
     const [cdr, cdg, cdb] = _parseHex(_PALETTE.dark.canvas);
 
+    // Non-premultiplied alpha — shader output blends over the page background
     gl.enable(gl.BLEND);
     gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
 
     function resize() {
+        // Render at half resolution (0.5x DPR, capped at 2x) for performance
         const dpr = Math.min(window.devicePixelRatio || 1, 2);
         const w = Math.floor(window.innerWidth * dpr * 0.5);
         const h = Math.floor(window.innerHeight * dpr * 0.5);
@@ -186,17 +212,13 @@ export function initShader($) {
         scheduleIdle();
     }
 
-    // Render on scroll
+    // Wake the render loop on any visual-state change
     window.addEventListener('scroll', requestRender, { passive: true });
-
-    // Render on resize
     window.addEventListener('resize', requestRender, { passive: true });
-
-    // Render on theme change (observed via data-theme attribute)
     const themeObs = new MutationObserver(requestRender);
     themeObs.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
 
-    // Visibility pause
+    // Pause completely when tab is hidden to save GPU cycles
     document.addEventListener('visibilitychange', () => {
         if (document.hidden) {
             stopLoop();
@@ -206,7 +228,7 @@ export function initShader($) {
         }
     });
 
-    // Initial render: run for ~2s for entrance animation, then idle
+    // Run 2s on load for the entrance animation, then let the idle timer take over
     startLoop();
     setTimeout(() => {
         if (rendering) scheduleIdle();

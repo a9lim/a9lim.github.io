@@ -1,4 +1,6 @@
 // ─── SPA Hash Router ───
+// Routes: #home, #projects, #blog, #about, #blog/{slug}.
+// A delegated click handler on document intercepts [data-page] links.
 
 export function parseHash() {
     const raw = location.hash.replace('#', '');
@@ -52,6 +54,5 @@ export function initRouter(deps) {
         }
     });
 
-    // Initial route
     onHashChange();
 }

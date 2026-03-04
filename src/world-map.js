@@ -1,23 +1,28 @@
 // ─── World Map SVG (About Page) ───
+// Fetches world-map.svg, overlays city dots with pulsing glows, and draws
+// an animated arc between Singapore and San Diego. Triggered by
+// IntersectionObserver when the map section scrolls into view.
 
 const NS = 'http://www.w3.org/2000/svg';
 
-// Geo coordinates
-const SG = { lat: 1.35, lon: 103.82 };
-const SD = { lat: 32.72, lon: -117.16 };
+const SG = { lat: 1.35, lon: 103.82 };   // Singapore
+const SD = { lat: 32.72, lon: -117.16 };  // San Diego
 
-// Calibrated from 18 country centroids in world-map.svg
+// Mercator projection constants calibrated by least-squares fit against 18
+// known country centroids in world-map.svg's coordinate space. The SVG uses
+// an equirectangular-like projection so a simple linear transform suffices.
 const PROJ_LON_SCALE = 2.3638;
 const PROJ_LON_OFFSET = 411.0;
-const PROJ_LAT_SCALE = -2.8979;
+const PROJ_LAT_SCALE = -2.8979;   // negative because SVG y-axis points down
 const PROJ_LAT_OFFSET = 530.0;
 
-const ARC_BULGE = 0.15;
-const DOT_RADIUS_RATIO = 0.004;
-const GLOW_RADIUS_RATIO = 0.014;
-const ARC_DRAW_SPEED = 0.025;
-const ARC_FALLBACK_MS = 2500;
+const ARC_BULGE = 0.15;           // quadratic control point height as fraction of viewBox height
+const DOT_RADIUS_RATIO = 0.004;   // city dot radius relative to viewBox width
+const GLOW_RADIUS_RATIO = 0.014;  // pulsing halo radius relative to viewBox width
+const ARC_DRAW_SPEED = 0.025;     // dashoffset decrement per frame (~40 frames to complete)
+const ARC_FALLBACK_MS = 2500;     // force-draw arc if animation hasn't finished
 
+/** Convert lat/lon to SVG viewBox coordinates. */
 function project(lat, lon) {
     const x = PROJ_LON_SCALE * lon + PROJ_LON_OFFSET;
     const y = PROJ_LAT_SCALE * lat + PROJ_LAT_OFFSET;
@@ -46,6 +51,7 @@ export function initWorldMap() {
             svg.style.height = '100%';
             container.appendChild(svg);
 
+            // Separate overlay SVG for dots and arc (z-index above the map's mask)
             const overlaySvg = document.createElementNS(NS, 'svg');
             overlaySvg.setAttribute('viewBox', vb);
             overlaySvg.setAttribute('preserveAspectRatio', 'xMidYMid slice');
@@ -54,6 +60,7 @@ export function initWorldMap() {
 
             const [sdX, sdY] = project(SD.lat, SD.lon);
             const [sgX, sgY] = project(SG.lat, SG.lon);
+            // Quadratic bezier control point: midpoint horizontally, bulged upward
             const cpX = (sdX + sgX) / 2;
             const cpY = Math.min(sdY, sgY) - vbH * ARC_BULGE;
             const fullArcD = `M${sgX},${sgY} Q${cpX},${cpY} ${sdX},${sdY}`;
@@ -84,6 +91,7 @@ export function initWorldMap() {
 
             const glows = overlaySvg.querySelectorAll('.map-dot-glow');
 
+            // Arc draw: progressive dashoffset animation, with fallback instant draw
             let arcDrawn = false;
             let animFrame = null;
 
@@ -104,6 +112,7 @@ export function initWorldMap() {
             let arcLen = 0;
             let animProgress = 0;
             function animate() {
+                // Progressively reveal arc via shrinking dashoffset
                 if (!arcDrawn) {
                     if (!arcLen) arcLen = setupArcDash();
                     animProgress = Math.min(1, animProgress + ARC_DRAW_SPEED);
@@ -111,6 +120,7 @@ export function initWorldMap() {
                     if (animProgress >= 1) arcDrawn = true;
                 }
 
+                // Continuous sine-wave pulse on city glow circles
                 const pulse = 0.5 + 0.5 * Math.sin(performance.now() * 0.003);
                 const r = glowR * (0.8 + pulse * 0.5);
                 const op = 0.15 + pulse * 0.2;
