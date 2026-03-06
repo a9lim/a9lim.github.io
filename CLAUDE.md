@@ -34,7 +34,9 @@ src/
 Shared files (hosted here, loaded by all 4 projects):
   shared-tokens.js       _PALETTE, _FONT, color math, CSS custom property injection
   shared-utils.js        escapeHtml, debounce, throttle, clamp, lerp, cubicBezier, showToast
-  shared-base.css        Reset, layout tokens, .glass, .tool-btn, toggles, toasts, a11y, responsive
+  shared-base.css        Reset, layout tokens, .glass, .tool-btn, ctrl-row/group, form controls,
+                         .sim-select, .sim-overlay, .ghost-btn, theme icons, toggles, toasts, a11y
+  shared-tabs.js         Tab switching IIFE for sidebar .tab-btn/.tab-panel (sim projects only)
   shared-camera.js       Camera/viewport module (sim projects only, not used here)
   shared-info.js         Info tip popovers (sim projects only)
   shared-shortcuts.js    Keyboard shortcut registry (sim projects only)
@@ -205,7 +207,7 @@ The `_PALETTE` and `_FONT` objects are **never frozen** on the root site (no `co
 
 Note: The root site uses **relative paths** for shared files (`shared-tokens.js`, `shared-base.css`). Sub-projects use absolute paths (`/shared-tokens.js`, `/shared-base.css`). Both resolve to the same files because this repo is the root of `a9l.im`.
 
-The root site does **not** load `shared-camera.js`, `shared-info.js`, `shared-shortcuts.js`, or `shared-touch.js` -- those are only used by the three simulation projects.
+The root site does **not** load `shared-tabs.js`, `shared-camera.js`, `shared-info.js`, `shared-shortcuts.js`, or `shared-touch.js` -- those are only used by the three simulation projects.
 
 ## Gotchas
 
@@ -215,6 +217,7 @@ The root site does **not** load `shared-camera.js`, `shared-info.js`, `shared-sh
 - **`shared-tokens.js`** -- all four projects depend on it; breaking changes here break everything
 - **`shared-utils.js`** -- `escapeHtml()` is called from multiple modules via the window global; removing it breaks rendering
 - **`shared-base.css`** -- all four projects load this; class name changes affect all sims
+- **`shared-tabs.js`** -- tab switching for all three sim sidebars; changing `.tab-btn`/`.tab-panel` class names or `data-tab` attribute breaks tab navigation
 - **`shared-camera.js`, `shared-info.js`, `shared-shortcuts.js`, `shared-touch.js`** -- consumed by sim projects; do not rename, move, or change their public API without updating all consumers
 
 ### Shader On-Demand Rendering
