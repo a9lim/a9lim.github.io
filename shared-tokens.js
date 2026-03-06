@@ -114,8 +114,9 @@ const _PALETTE = {
     purple: '#9C7EB0',
     brown:  '#9C6840',
     red:    '#C05048',
-    cyan:   '#4AACA0',
-    yellow: '#CCA84C',
+    cyan:    '#4AACA0',
+    yellow:  '#CCA84C',
+    magenta: '#B4689C',
   },
 };
 
@@ -199,6 +200,7 @@ ${gen(L, false)}
   --ext-red:          ${P.extended.red};
   --ext-cyan:         ${P.extended.cyan};
   --ext-yellow:       ${P.extended.yellow};
+  --ext-magenta:      ${P.extended.magenta};
   --overlay-text:     #FFFFFF;
   --overlay-text-dim: ${_r('#FFFFFF', 0.8)};
   --overlay-tint:     ${_r('#FFFFFF', 0.133)};
