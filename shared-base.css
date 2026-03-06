@@ -1233,6 +1233,7 @@ input[type=range]::-moz-range-thumb {
     flex-direction: column;
     border-radius: var(--radius-lg);
     overflow: hidden;
+    background: var(--bg-panel-solid);
 }
 
 .sim-overlay-body {
