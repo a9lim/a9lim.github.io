@@ -117,6 +117,8 @@ const _PALETTE = {
     cyan:    '#4AACA0',
     yellow:  '#CCA84C',
     magenta: '#B4689C',
+    lime:    '#82A857',
+    indigo:  '#6C79AC',
   },
 };
 
@@ -201,6 +203,8 @@ ${gen(L, false)}
   --ext-cyan:         ${P.extended.cyan};
   --ext-yellow:       ${P.extended.yellow};
   --ext-magenta:      ${P.extended.magenta};
+  --ext-lime:         ${P.extended.lime};
+  --ext-indigo:       ${P.extended.indigo};
   --overlay-text:     #FFFFFF;
   --overlay-text-dim: ${_r('#FFFFFF', 0.8)};
   --overlay-tint:     ${_r('#FFFFFF', 0.133)};
