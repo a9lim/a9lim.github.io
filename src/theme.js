@@ -13,6 +13,7 @@ export function setTheme(theme) {
 export function initTheme($) {
     $.themeToggle.addEventListener('click', () => {
         setTheme(getTheme() === 'dark' ? 'light' : 'dark');
+        if (typeof _haptics !== 'undefined') _haptics.trigger('light');
     });
 
     try {

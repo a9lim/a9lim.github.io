@@ -9,6 +9,7 @@
             panels.forEach(function (p) { p.classList.remove('active'); });
             btn.classList.add('active');
             btn.setAttribute('aria-selected', 'true');
+            if (typeof _haptics !== 'undefined') _haptics.trigger('selection');
             var target = document.getElementById('tab-' + btn.dataset.tab);
             if (target) target.classList.add('active');
         });

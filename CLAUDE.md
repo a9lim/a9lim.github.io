@@ -248,7 +248,7 @@ Adding new `.fade-in` elements that also need hover effects requires the hover s
 
 ### Theme Toggle Location
 
-The root site sets `data-theme` on `<html>` (consistent with physsim and gerry). Biosim sets it on `<body>`. Do not change this without checking the shader's MutationObserver, which watches `document.documentElement`.
+All four projects set `data-theme` on `<html>` (`document.documentElement`). Do not change this without checking the shader's MutationObserver, which watches `document.documentElement`.
 
 ### Blog Fetch Path
 

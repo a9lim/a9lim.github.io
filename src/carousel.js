@@ -54,7 +54,9 @@ export function initCarousel() {
     }
 
     function goToPage(n) {
+        const prevPage = currentPage;
         currentPage = Math.max(0, Math.min(totalPages - 1, n));
+        if (currentPage !== prevPage && typeof _haptics !== 'undefined') _haptics.trigger('selection');
         if (isMobile()) {
             const target = cards[currentPage * CARDS_PER_PAGE];
             if (target) target.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
