@@ -78,6 +78,7 @@ function initSwipeDismiss(panel, options = {}) {
         if (dy > panelH * THRESHOLD_RATIO || velocity > VELOCITY_THRESHOLD) {
             panel.style.transform = '';
             panel.classList.remove('open');
+            if (typeof _haptics !== 'undefined') _haptics.trigger('light');
             if (options.onDismiss) options.onDismiss();
         } else {
             // Below threshold — snap back to open position
