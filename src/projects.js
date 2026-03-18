@@ -33,6 +33,16 @@ export const PROJECTS = [
         external: false,
     },
     {
+        href: '/finsim',
+        title: 'Shoals',
+        shortDesc: 'Trade stocks, bonds, and American options in a simulated market with stochastic volatility.',
+        longDesc: 'Options trading simulator with GBM + Merton jumps + Heston stochastic volatility. Bjerksund-Stensland 2002 pricing, full options chain, strategy builder with payoff diagrams and Greek overlays, and a portfolio with margin.',
+        tags: ['finance', 'canvas', 'options'],
+        image: 'img/finsim.png',
+        icon: '<svg viewBox="0 0 24 24"><path d="M3 17l4-4 4 4 4-8 6 6"/><path d="M21 3v18H3"/></svg>',
+        external: false,
+    },
+    {
         href: 'https://github.com/a9lim/shannon',
         title: 'Shannon',
         shortDesc: 'Autonomous AI assistant for Discord and Signal with web browsing, command execution, and task scheduling.',
