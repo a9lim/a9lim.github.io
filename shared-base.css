@@ -540,16 +540,6 @@ body {
     transform: translateX(0);
 }
 
-/* Main content squish when sidebar opens (desktop only) */
-.app-ready > main {
-    transition: margin-right 0.55s var(--ease-out);
-}
-@media (min-width: 901px) {
-    body:has(> .sim-panel.open) > main {
-        margin-right: calc(var(--panel-w) + 24px);
-    }
-}
-
 /* Floating bottom pill */
 .sim-bar {
     position: fixed;
