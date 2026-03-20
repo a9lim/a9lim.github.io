@@ -96,11 +96,23 @@ body {
     border-color: var(--accent-glow);
 }
 
+.tool-btn.playing {
+    color: var(--accent);
+}
+
 .tool-btn:disabled,
 .tool-btn[disabled] {
     opacity: 0.22;
     cursor: default;
     pointer-events: none;
+}
+
+/* ─── Speed Button ─── */
+.speed-btn {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    font-weight: 600;
+    min-width: 34px;
 }
 
 /* ─── Keyframes ─── */
