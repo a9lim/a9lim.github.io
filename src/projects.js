@@ -4,7 +4,7 @@
 export const PROJECTS = [
     {
         href: '/physsim',
-        title: 'No-Hair',
+        title: 'Geon',
         shortDesc: 'Mass, charge, and spin — the only properties that matter.',
         longDesc: 'N-body simulation where particles interact through gravity, electromagnetism, and relativistic corrections. Boris integration, Barnes-Hut acceleration, radiation reaction, and signal delay.',
         tags: ['physics', 'canvas', 'barnes-hut'],
@@ -14,7 +14,7 @@ export const PROJECTS = [
     },
     {
         href: '/biosim',
-        title: 'Cellular Metabolism',
+        title: 'Metabolism',
         shortDesc: 'Glycolysis, Krebs, Calvin, and more — watch a cell produce and spend energy.',
         longDesc: 'Animated metabolic pathway simulation with allosteric regulation, cofactor tracking, and enzyme kinetics. Watch ATP, NADH, and FADH\u2082 flow through glycolysis, the Krebs cycle, and photosynthesis.',
         tags: ['biology', 'simulation', 'metabolism'],
@@ -24,7 +24,7 @@ export const PROJECTS = [
     },
     {
         href: '/gerry',
-        title: 'Redistricting Simulator',
+        title: 'Redistricting',
         shortDesc: 'Draw district boundaries on a hex map and watch fairness metrics update live.',
         longDesc: 'Redistricting sandbox on a procedural hex-tile map. Paint districts for up to three parties, then evaluate with efficiency gap, partisan symmetry, and competitive-district metrics.',
         tags: ['politics', 'svg', 'gerrymandering'],
