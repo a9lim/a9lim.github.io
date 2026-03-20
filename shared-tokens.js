@@ -91,7 +91,7 @@ const _PALETTE = {
     panelSolid:    '#F2F4F7',
     elevated:      '#F8F9FB',
     text:          '#181B20',
-    textSecondary: '#6B7280',
+    textSecondary: '#636B78',
     textMuted:     '#9CA3AF',
   },
 
