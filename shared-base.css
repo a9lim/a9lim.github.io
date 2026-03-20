@@ -838,6 +838,30 @@ body {
     background: var(--accent-subtle);
 }
 
+/* ─── Sim Tooltip (cursor-following) ─── */
+.sim-tooltip {
+    position: fixed;
+    z-index: 200;
+    padding: 6px 10px;
+    border-radius: var(--radius-sm);
+    background: var(--bg-panel-solid);
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow-sm);
+    font: 500 0.72rem / 1.55 var(--font-mono);
+    color: var(--text);
+    pointer-events: none;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+    opacity: 0;
+    transform: translateY(4px);
+    transition: opacity 0.12s ease, transform 0.12s ease;
+}
+
+.sim-tooltip.visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
 /* ─── Info Tip Popovers ─── */
 .info-popover {
     position: fixed;
