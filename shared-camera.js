@@ -90,6 +90,26 @@ function createCamera(opts) {
             };
         },
 
+        /**
+         * Convert a world X coordinate to screen X pixel position.
+         * Avoids object allocation when only the X component is needed.
+         * @param {number} wx  World X
+         * @returns {number} Screen X in pixels
+         */
+        worldToScreenX: function(wx) {
+            return (wx - this.x) * this.zoom + this.viewportW / 2;
+        },
+
+        /**
+         * Convert a screen X pixel position to world X coordinate.
+         * Avoids object allocation when only the X component is needed.
+         * @param {number} sx  Screen X in pixels
+         * @returns {number} World X
+         */
+        screenToWorldX: function(sx) {
+            return this.x + (sx - this.viewportW / 2) / this.zoom;
+        },
+
         // ─── Camera movement ───
 
         /**
