@@ -211,6 +211,13 @@ body {
     margin-bottom: 1.5rem;
 }
 
+.intro-subtitle {
+    font-size: 0.55em;
+    font-weight: 300;
+    display: block;
+    letter-spacing: 0.04em;
+}
+
 .intro-desc {
     font-family: var(--font-body);
     color: var(--text-secondary);
