@@ -96,9 +96,6 @@ body {
     border-color: var(--accent-glow);
 }
 
-.tool-btn.playing {
-    color: var(--accent);
-}
 
 .tool-btn:disabled,
 .tool-btn[disabled] {
