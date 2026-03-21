@@ -36,7 +36,7 @@ export const PROJECTS = [
         href: '/finsim',
         title: 'Shoals',
         shortDesc: 'Options trading simulator with stochastic volatility, strategy builder, and narrative-driven market events.',
-        longDesc: 'Full-featured trading simulator: GBM with Merton jumps, Heston stochastic volatility, Vasicek rates, and Bjerksund-Stensland 2002 American option pricing. 25-strike options chain, multi-leg strategy builder with payoff diagrams and Greek overlays, margin portfolio, and a narrative event engine with 88 curated scenarios and optional LLM-generated events.',
+        longDesc: 'Full-featured trading simulator: GBM with Merton jumps, Heston stochastic volatility, Vasicek rates, and CRR binomial tree American option pricing with discrete dividends. 25-strike options chain, multi-leg strategy builder with payoff diagrams and Greek overlays, margin portfolio, and a narrative event engine with 88 curated scenarios and optional LLM-generated events.',
         tags: ['finance', 'options pricing', 'canvas'],
         image: 'img/finsim.png',
         icon: '<svg viewBox="0 0 24 24"><path d="M4 18V14M8 18V8M12 18V11M16 18V6"/><path d="M4 12V10M8 6V4M12 9V7M16 4V2"/><path d="M3 20h18"/></svg>',
