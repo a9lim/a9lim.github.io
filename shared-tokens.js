@@ -72,6 +72,28 @@ const _darken = (hex) => {
   return _hsl2hex(h, s * 0.92, l * 0.75);
 };
 
+/**
+ * Convert OKLCH to 6-digit hex (sRGB gamut-clamped).
+ * @param {number} L  Lightness [0, 1]
+ * @param {number} C  Chroma   [0, ~0.4]
+ * @param {number} H  Hue      [0, 360]
+ * @returns {string} "#RRGGBB"
+ */
+function _oklch2hex(L, C, H) {
+  const h = H * Math.PI / 180;
+  const a = C * Math.cos(h), b = C * Math.sin(h);
+  let l = L + 0.3963377774 * a + 0.2158037573 * b;
+  let m = L - 0.1055613458 * a - 0.0638541728 * b;
+  let s = L - 0.0894841775 * a - 1.2914855480 * b;
+  l = l * l * l; m = m * m * m; s = s * s * s;
+  let R = +4.0767416621 * l - 3.3077115913 * m + 0.2309699292 * s;
+  let G = -1.2684380046 * l + 2.6097574011 * m - 0.3413193965 * s;
+  let B = -0.0041960863 * l - 0.7034186147 * m + 1.7076147010 * s;
+  const gamma = v => v <= 0.0031308 ? 12.92 * v : 1.055 * Math.pow(v, 1 / 2.4) - 0.055;
+  const toHex = v => Math.round(Math.max(0, Math.min(1, gamma(v))) * 255).toString(16).padStart(2, '0');
+  return '#' + toHex(R) + toHex(G) + toHex(B);
+}
+
 // ─── Font stacks ───
 // Left mutable — biosim extends with `emoji` before freezing
 const _FONT = {
@@ -81,44 +103,48 @@ const _FONT = {
 };
 
 // ─── Palette ───
-// Left mutable — each project's colors.js adds keys then freezes
+// Left mutable — each project's colors.js adds keys then freezes.
+//
+// OKLCH-harmonized: all neutrals share H=255 (cool blue-gray);
+// extended chromatic colors share L≈0.60–0.67, C≈0.10–0.17 for
+// perceptually uniform brightness & saturation across hues.
 const _PALETTE = {
-  accent:      '#E11107',
-  accentLight: '#F04A3E',
+  accent:      '#E11107',  // oklch(0.53  0.225  29)
+  accentLight: '#E95142',  // oklch(0.64  0.19   29)
 
   light: {
-    canvas:        '#EAECEF',
-    panelSolid:    '#F2F4F7',
-    elevated:      '#F8F9FB',
-    text:          '#181B20',
-    textSecondary: '#636B78',
-    textMuted:     '#9CA3AF',
+    canvas:        '#EBEFF4',  // oklch(0.950 0.008 255)
+    panelSolid:    '#F2F5F8',  // oklch(0.968 0.005 255)
+    elevated:      '#F9FAFC',  // oklch(0.985 0.003 255)
+    text:          '#0B1016',  // oklch(0.170 0.015 255)
+    textSecondary: '#4E545C',  // oklch(0.445 0.015 255)
+    textMuted:     '#777C83',  // oklch(0.585 0.012 255)
   },
 
   dark: {
-    canvas:        '#0B0C0F',
-    panelSolid:    '#151720',
-    elevated:      '#1C1E28',
-    text:          '#E2E4E9',
-    textSecondary: '#8B8FA0',
-    textMuted:     '#505462',
+    canvas:        '#080B11',  // oklch(0.150 0.013 255)
+    panelSolid:    '#10151C',  // oklch(0.195 0.015 255)
+    elevated:      '#191F25',  // oklch(0.235 0.015 255)
+    text:          '#E1E5E9',  // oklch(0.920 0.007 255)
+    textSecondary: '#878D94',  // oklch(0.640 0.012 255)
+    textMuted:     '#4E5359',  // oklch(0.440 0.012 255)
   },
 
-  // Cross-project semantic colors (biosim pathways, gerry parties, physsim particles)
+  // Cross-project semantic colors — OKLCH-harmonized (L≈0.60, C≈0.13)
   extended: {
-    blue:    '#3892B8',
-    green:   '#3A9C68',
-    slate:   '#848890',
-    orange:  '#B88C38',
-    rose:    '#C25478',
-    purple:  '#9472BC',
-    brown:   '#A86E3E',
-    red:     '#C25454',
-    cyan:    '#00A09C',
-    yellow:  '#A89C2E',
-    magenta: '#B460AA',
-    lime:    '#6EA840',
-    indigo:  '#6880C0',
+    blue:    '#3590BF',  // oklch(0.62 0.11 235)
+    green:   '#2CA470',  // oklch(0.64 0.13 160)
+    slate:   '#767C85',  // oklch(0.585 0.015 255)
+    orange:  '#C48225',  // oklch(0.66 0.13  70)
+    rose:    '#C5547C',  // oklch(0.60 0.15   0)
+    purple:  '#8160B5',  // oklch(0.56 0.13 300)
+    brown:   '#945D36',  // oklch(0.53 0.09  55)
+    red:     '#C84341',  // oklch(0.57 0.17  25)
+    cyan:    '#31A5A5',  // oklch(0.66 0.10 195)
+    yellow:  '#B9A624',  // oklch(0.72 0.14 100)
+    magenta: '#AA55A4',  // oklch(0.58 0.15 330)
+    lime:    '#5FAB4D',  // oklch(0.67 0.15 140)
+    indigo:  '#5C69BC',  // oklch(0.55 0.13 275)
   },
 };
 
@@ -248,5 +274,6 @@ window._parseHex = _parseHex;
 window._rgb2hsl = _rgb2hsl;
 window._hsl2hex = _hsl2hex;
 window._darken = _darken;
+window._oklch2hex = _oklch2hex;
 window._FONT = _FONT;
 window._PALETTE = _PALETTE;
