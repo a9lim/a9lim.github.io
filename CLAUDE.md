@@ -36,6 +36,7 @@ Shared files (hosted here, loaded by all projects):
   shared-utils.js        escapeHtml, debounce, throttle, clamp, lerp, cubicBezier, showToast
   shared-haptics.js      _haptics.trigger(type) -- Web Vibration API haptic feedback
   shared-toolbar.js      _toolbar -- play/pause, speed, theme toggle, sidebar toggle utilities
+  shared-forms.js        _forms -- bindModeGroup, bindSlider, bindToggle (sim projects only)
   shared-base.css        Reset, layout tokens, .glass, .tool-btn, ctrl-row/group, form controls,
                          .sim-select, .sim-overlay, .ghost-btn, theme icons, toggles, toasts, a11y
   shared-tabs.js         Tab switching IIFE for sidebar .tab-btn/.tab-panel (sim projects only)
@@ -224,6 +225,7 @@ The root site does **not** load `shared-tabs.js`, `shared-camera.js`, `shared-in
 - **`shared-base.css`** -- all four projects load this; class name changes affect all sims
 - **`shared-tabs.js`** -- tab switching for all three sim sidebars; changing `.tab-btn`/`.tab-panel` class names or `data-tab` attribute breaks tab navigation
 - **`shared-toolbar.js`** -- `_toolbar` IIFE used by all five projects for theme toggle, sidebar toggle, play/pause, and speed button updates; changing the public API breaks all consumers
+- **`shared-forms.js`** -- `_forms` IIFE used by all four sim projects for mode-toggle groups, range sliders, and toggle checkboxes; changing the public API breaks all consumers
 - **`shared-camera.js`, `shared-info.js`, `shared-shortcuts.js`, `shared-touch.js`** -- consumed by sim projects; do not rename, move, or change their public API without updating all consumers
 
 ### Shader On-Demand Rendering
