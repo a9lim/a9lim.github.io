@@ -266,6 +266,12 @@ ${gen(D, true)}
   color-scheme: dark;
 }`;
   document.head.appendChild(style);
+
+  // Set <meta name="theme-color"> to match current theme canvas color.
+  // Safari/iOS uses this for status bar tinting.
+  var tc = document.querySelector('meta[name="theme-color"]');
+  if (!tc) { tc = document.createElement('meta'); tc.name = 'theme-color'; document.head.appendChild(tc); }
+  tc.content = (document.documentElement.dataset.theme === 'dark') ? D.canvas : L.canvas;
 })();
 
 // Expose as globals — ES6 modules in each project read these from window

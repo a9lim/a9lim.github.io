@@ -81,6 +81,22 @@ var _toolbar = (function () {
 
     // ── Theme ──
 
+    /** Update <meta name="theme-color"> to match the current theme canvas color.
+     *  Creates the tag if missing. Safari/iOS uses this for the status bar tint. */
+    function _syncThemeColor() {
+        var theme = document.documentElement.dataset.theme || 'light';
+        var color = (typeof _PALETTE !== 'undefined' && _PALETTE[theme])
+            ? _PALETTE[theme].canvas
+            : (theme === 'dark' ? '#080B11' : '#EBEFF4');
+        var meta = document.querySelector('meta[name="theme-color"]');
+        if (!meta) {
+            meta = document.createElement('meta');
+            meta.name = 'theme-color';
+            document.head.appendChild(meta);
+        }
+        meta.content = color;
+    }
+
     /**
      * Read saved theme or system preference and set data-theme on <html>.
      * Wires a system-preference change listener (only fires when no explicit save).
@@ -97,12 +113,14 @@ var _toolbar = (function () {
         } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
             document.documentElement.dataset.theme = 'dark';
         }
+        _syncThemeColor();
         // Follow system preference when user hasn't made an explicit choice
         window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function (e) {
             if (storageKey) {
                 try { if (localStorage.getItem(storageKey)) return; } catch (ex) { /* ignore */ }
             }
             document.documentElement.dataset.theme = e.matches ? 'dark' : 'light';
+            _syncThemeColor();
             if (onChange) onChange(document.documentElement.dataset.theme);
         });
     }
@@ -119,6 +137,7 @@ var _toolbar = (function () {
         if (storageKey) {
             try { localStorage.setItem(storageKey, next); } catch (e) { /* ignore */ }
         }
+        _syncThemeColor();
         return next;
     }
 
