@@ -136,18 +136,14 @@ export function initCarousel() {
     initCardTilt('.project-card');
 
     // Debounced resize: reset transform mode when crossing the 900px breakpoint
-    let resizeTimer;
-    window.addEventListener('resize', () => {
-        clearTimeout(resizeTimer);
-        resizeTimer = setTimeout(() => {
-            if (isMobile()) {
-                carouselTrack.style.transform = '';
-                carouselTrack.style.transition = '';
-            } else {
-                goToPage(currentPage);
-            }
-        }, 150);
-    });
+    window.addEventListener('resize', debounce(() => {
+        if (isMobile()) {
+            carouselTrack.style.transform = '';
+            carouselTrack.style.transition = '';
+        } else {
+            goToPage(currentPage);
+        }
+    }, 150));
 
     // Cards start with scroll-reveal hidden state; mark visible immediately
     // since the carousel manages its own viewport clipping
