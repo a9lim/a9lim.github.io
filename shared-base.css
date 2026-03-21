@@ -1270,6 +1270,13 @@ input[type=range]::-moz-range-thumb {
     border-color: var(--border-strong);
 }
 
+.ghost-btn:disabled,
+.ghost-btn[disabled] {
+    opacity: 0.4;
+    cursor: default;
+    pointer-events: none;
+}
+
 /* ─── Overlay / Dialog ─── */
 .sim-overlay {
     position: fixed;
