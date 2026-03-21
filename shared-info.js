@@ -177,3 +177,96 @@ function createInfoTip(triggerEl, opts) {
         }
     };
 }
+
+/**
+ * Register info tips for all .info-trigger[data-info] elements on the page.
+ * Each trigger's data-info attribute is looked up in the data object.
+ * @param {Object} data  Map of key → { title, body } objects.
+ */
+function registerInfoTips(data) {
+    if (typeof createInfoTip !== 'function') return;
+    var triggers = document.querySelectorAll('.info-trigger[data-info]');
+    for (var i = 0; i < triggers.length; i++) {
+        var key = triggers[i].dataset.info;
+        if (data[key]) createInfoTip(triggers[i], data[key]);
+    }
+}
+
+/**
+ * Initialize a reference overlay with KaTeX rendering and dismiss controls.
+ * Caches rendered HTML per key so KaTeX cost is paid only on first open.
+ * Content is trusted static HTML from project-defined reference.js files (not user input).
+ * @param {HTMLElement} overlayEl  The overlay container.
+ * @param {HTMLElement} titleEl    Element for the reference title.
+ * @param {HTMLElement} bodyEl     Element for the reference body content.
+ * @param {HTMLElement} closeBtn   Close button.
+ * @param {Object} referenceData   Map of key → { title, body } (trusted HTML).
+ * @returns {function} openReference(key) — call to open a reference by key.
+ */
+function initReferenceOverlay(overlayEl, titleEl, bodyEl, closeBtn, referenceData) {
+    if (!overlayEl) return function() {};
+    var cache = {};
+
+    function openReference(key) {
+        var ref = referenceData[key];
+        if (!ref) return;
+        titleEl.textContent = ref.title;
+        if (cache[key]) {
+            // Trusted cached content from reference.js — not user input
+            bodyEl.innerHTML = cache[key];
+        } else {
+            // Trusted static content from reference.js — not user input
+            bodyEl.innerHTML = ref.body;
+            if (typeof renderMathInElement === 'function') {
+                renderMathInElement(bodyEl, { delimiters: [
+                    { left: '$$', right: '$$', display: true },
+                    { left: '$', right: '$', display: false }
+                ]});
+            }
+            cache[key] = bodyEl.innerHTML;
+        }
+        overlayEl.hidden = false;
+    }
+
+    if (typeof initOverlayDismiss === 'function') {
+        initOverlayDismiss(overlayEl, closeBtn);
+    } else {
+        closeBtn.addEventListener('click', function() { overlayEl.hidden = true; });
+        overlayEl.addEventListener('click', function(e) {
+            if (e.target === overlayEl) overlayEl.hidden = true;
+        });
+    }
+
+    return openReference;
+}
+
+/**
+ * Bind Shift+click (desktop) and long-press (mobile, 500ms) on all
+ * .info-trigger[data-info] elements to open a reference overlay.
+ * @param {function} openFn  The openReference(key) function from initReferenceOverlay.
+ */
+function bindReferenceTriggers(openFn) {
+    var triggers = document.querySelectorAll('.info-trigger[data-info]');
+    for (var i = 0; i < triggers.length; i++) {
+        (function(trigger) {
+            trigger.addEventListener('click', function(e) {
+                if (!e.shiftKey) return;
+                e.stopPropagation();
+                openFn(trigger.dataset.info);
+            });
+            var timer = 0;
+            trigger.addEventListener('touchstart', function() {
+                timer = setTimeout(function() {
+                    openFn(trigger.dataset.info);
+                    timer = 0;
+                }, 500);
+            }, { passive: false });
+            trigger.addEventListener('touchend', function() {
+                if (timer) { clearTimeout(timer); timer = 0; }
+            });
+            trigger.addEventListener('touchmove', function() {
+                if (timer) { clearTimeout(timer); timer = 0; }
+            });
+        })(triggers[i]);
+    }
+}

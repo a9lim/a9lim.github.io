@@ -153,12 +153,58 @@ var _toolbar = (function () {
         }
     }
 
+    /**
+     * Full sidebar setup: toggle button, close button, swipe dismiss, optional desktop auto-open.
+     * @param {HTMLElement} toggleBtn - The sidebar toggle button.
+     * @param {HTMLElement} panel - The sidebar panel element.
+     * @param {HTMLElement} [closeBtn] - Optional close/X button inside the panel.
+     * @param {Object} [opts]
+     * @param {function} [opts.onToggle] - Called with isOpen boolean after any open/close.
+     * @param {boolean} [opts.openOnDesktop] - If true, auto-open when viewport > 900px.
+     */
+    function initSidebar(toggleBtn, panel, closeBtn, opts) {
+        var onToggle = (opts && opts.onToggle) || null;
+
+        toggleBtn.addEventListener('click', function () {
+            var isOpen = toggleSidebar(toggleBtn, panel);
+            if (typeof _haptics !== 'undefined') _haptics.trigger('light');
+            if (onToggle) onToggle(isOpen);
+        });
+
+        if (closeBtn) {
+            closeBtn.addEventListener('click', function () {
+                closeSidebar(toggleBtn, panel);
+                if (typeof _haptics !== 'undefined') _haptics.trigger('light');
+                if (onToggle) onToggle(false);
+            });
+        }
+
+        // Swipe-to-dismiss on mobile bottom sheet
+        if (typeof initSwipeDismiss === 'function') {
+            initSwipeDismiss(panel, {
+                onDismiss: function () {
+                    closeSidebar(toggleBtn, panel);
+                    if (onToggle) onToggle(false);
+                }
+            });
+        }
+
+        // Auto-open on desktop
+        if (opts && opts.openOnDesktop && window.innerWidth > 900) {
+            panel.classList.add('open');
+            toggleBtn.classList.add('active');
+            toggleBtn.setAttribute('aria-expanded', 'true');
+            if (onToggle) onToggle(true);
+        }
+    }
+
     return {
         updatePlayBtn: updatePlayBtn,
         updateSpeedBtn: updateSpeedBtn,
         initTheme: initTheme,
         toggleTheme: toggleTheme,
         toggleSidebar: toggleSidebar,
-        closeSidebar: closeSidebar
+        closeSidebar: closeSidebar,
+        initSidebar: initSidebar
     };
 })();
