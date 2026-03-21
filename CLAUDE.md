@@ -31,9 +31,11 @@ src/
   markdown.js            Lightweight markdown-to-HTML parser (imported by blog.js)
   world-map.js           SVG map loader, Mercator projection, arc draw animation
 
-Shared files (hosted here, loaded by all 4 projects):
+Shared files (hosted here, loaded by all projects):
   shared-tokens.js       _PALETTE, _FONT, color math, CSS custom property injection
   shared-utils.js        escapeHtml, debounce, throttle, clamp, lerp, cubicBezier, showToast
+  shared-haptics.js      _haptics.trigger(type) -- Web Vibration API haptic feedback
+  shared-toolbar.js      _toolbar -- play/pause, speed, theme toggle, sidebar toggle utilities
   shared-base.css        Reset, layout tokens, .glass, .tool-btn, ctrl-row/group, form controls,
                          .sim-select, .sim-overlay, .ghost-btn, theme icons, toggles, toasts, a11y
   shared-tabs.js         Tab switching IIFE for sidebar .tab-btn/.tab-panel (sim projects only)
@@ -65,8 +67,9 @@ main.js
   └─ src/markdown.js         (imports nothing)
 
 Global scripts (loaded via <script> in <head>, not modules):
-  shared-tokens.js → exposes window._PALETTE, _FONT, _r, _parseHex, _rgb2hsl, _hsl2hex, _darken
-  shared-utils.js  → exposes window.escapeHtml, debounce, throttle, clamp, lerp, cubicBezier, showToast
+  shared-tokens.js  → exposes window._PALETTE, _FONT, _r, _parseHex, _rgb2hsl, _hsl2hex, _darken
+  shared-utils.js   → exposes window.escapeHtml, debounce, throttle, clamp, lerp, cubicBezier, showToast
+  shared-toolbar.js → exposes window._toolbar (initTheme, toggleTheme, toggleSidebar, closeSidebar, ...)
 ```
 
 ## Key Patterns
@@ -195,6 +198,8 @@ The `_PALETTE` and `_FONT` objects are **never frozen** on the root site (no `co
   Google Fonts <link> (Noto Serif, Sans, Sans Mono)
   <script src="shared-tokens.js">    ← injects CSS vars, exposes _PALETTE/_FONT on window
   <script src="shared-utils.js">     ← exposes escapeHtml, debounce, etc. on window
+  <script src="shared-haptics.js">   ← exposes _haptics on window
+  <script src="shared-toolbar.js">   ← exposes _toolbar on window (theme, sidebar utils)
   <link href="shared-base.css">      ← CSS reset, shared layout, glass, tool-btn, etc.
   <link href="styles.css">           ← project-specific overrides
   <link rel="icon" href="favicon.ico">
@@ -207,7 +212,7 @@ The `_PALETTE` and `_FONT` objects are **never frozen** on the root site (no `co
 
 Note: The root site uses **relative paths** for shared files (`shared-tokens.js`, `shared-base.css`). Sub-projects use absolute paths (`/shared-tokens.js`, `/shared-base.css`). Both resolve to the same files because this repo is the root of `a9l.im`.
 
-The root site does **not** load `shared-tabs.js`, `shared-camera.js`, `shared-info.js`, `shared-shortcuts.js`, or `shared-touch.js` -- those are only used by the three simulation projects.
+The root site does **not** load `shared-tabs.js`, `shared-camera.js`, `shared-info.js`, `shared-shortcuts.js`, or `shared-touch.js` -- those are only used by the four simulation projects.
 
 ## Gotchas
 
@@ -218,6 +223,7 @@ The root site does **not** load `shared-tabs.js`, `shared-camera.js`, `shared-in
 - **`shared-utils.js`** -- `escapeHtml()` is called from multiple modules via the window global; removing it breaks rendering
 - **`shared-base.css`** -- all four projects load this; class name changes affect all sims
 - **`shared-tabs.js`** -- tab switching for all three sim sidebars; changing `.tab-btn`/`.tab-panel` class names or `data-tab` attribute breaks tab navigation
+- **`shared-toolbar.js`** -- `_toolbar` IIFE used by all five projects for theme toggle, sidebar toggle, play/pause, and speed button updates; changing the public API breaks all consumers
 - **`shared-camera.js`, `shared-info.js`, `shared-shortcuts.js`, `shared-touch.js`** -- consumed by sim projects; do not rename, move, or change their public API without updating all consumers
 
 ### Shader On-Demand Rendering
