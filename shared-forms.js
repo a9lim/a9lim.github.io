@@ -36,9 +36,19 @@ var _forms = (function () {
      * @param {function} [onChange] - Called with the parsed float value.
      * @param {function} [format] - Format function (value → string). Default: toString.
      */
+    function updateSliderFill(slider) {
+        var min = parseFloat(slider.min) || 0;
+        var max = parseFloat(slider.max) || 100;
+        var val = parseFloat(slider.value);
+        var pct = ((val - min) / (max - min)) * 100;
+        slider.style.setProperty('--slider-fill', pct + '%');
+    }
+
     function bindSlider(slider, display, onChange, format) {
+        updateSliderFill(slider);
         slider.addEventListener('input', function () {
             var v = parseFloat(slider.value);
+            updateSliderFill(slider);
             if (display) display.textContent = format ? format(v) : v.toString();
             if (onChange) onChange(v);
         });
@@ -60,6 +70,7 @@ var _forms = (function () {
     return {
         bindModeGroup: bindModeGroup,
         bindSlider: bindSlider,
+        updateSliderFill: updateSliderFill,
         bindToggle: bindToggle
     };
 })();
