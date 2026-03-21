@@ -179,7 +179,7 @@ var _toolbar = (function () {
      * @param {HTMLElement} [closeBtn] - Optional close/X button inside the panel.
      * @param {Object} [opts]
      * @param {function} [opts.onToggle] - Called with isOpen boolean after any open/close.
-     * @param {boolean} [opts.openOnDesktop] - If true, auto-open when viewport > 900px.
+     * @param {boolean} [opts.openOnDesktop=true] - Auto-open when viewport > 900px. Set false to disable.
      */
     function initSidebar(toggleBtn, panel, closeBtn, opts) {
         var onToggle = (opts && opts.onToggle) || null;
@@ -208,12 +208,32 @@ var _toolbar = (function () {
             });
         }
 
-        // Auto-open on desktop
-        if (opts && opts.openOnDesktop && window.innerWidth > 900) {
-            panel.classList.add('open');
-            toggleBtn.classList.add('active');
-            toggleBtn.setAttribute('aria-expanded', 'true');
-            if (onToggle) onToggle(true);
+        // Auto-open on desktop (default true), animated via double-rAF
+        if (!(opts && opts.openOnDesktop === false) && window.innerWidth > 900) {
+            var openAnimated = function () {
+                requestAnimationFrame(function () {
+                    requestAnimationFrame(function () {
+                        panel.classList.add('open');
+                        toggleBtn.classList.add('active');
+                        toggleBtn.setAttribute('aria-expanded', 'true');
+                        if (onToggle) onToggle(true);
+                    });
+                });
+            };
+            if (document.body.classList.contains('app-ready')) {
+                openAnimated();
+            } else {
+                var obs = new MutationObserver(function (mutations) {
+                    for (var i = 0; i < mutations.length; i++) {
+                        if (document.body.classList.contains('app-ready')) {
+                            obs.disconnect();
+                            openAnimated();
+                            return;
+                        }
+                    }
+                });
+                obs.observe(document.body, { attributes: true, attributeFilter: ['class'] });
+            }
         }
     }
 
