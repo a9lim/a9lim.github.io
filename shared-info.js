@@ -40,7 +40,7 @@ function createInfoTip(triggerEl, opts) {
         if (opts.title) {
             var titleEl = document.createElement('div');
             titleEl.className = 'info-popover-title';
-            titleEl.textContent = opts.title;
+            titleEl.innerHTML = opts.title; // trusted project-defined HTML, not user input
             el.appendChild(titleEl);
         }
 
@@ -48,17 +48,18 @@ function createInfoTip(triggerEl, opts) {
             var bodyEl = document.createElement('div');
             bodyEl.className = 'info-popover-body';
             bodyEl.innerHTML = opts.body; // trusted project-defined HTML, not user input
-            // KaTeX is only loaded by projects that need it; guard avoids ReferenceError
-            if (typeof renderMathInElement === 'function') {
-                renderMathInElement(bodyEl, {
-                    delimiters: [
-                        { left: '$$', right: '$$', display: true },
-                        { left: '$', right: '$', display: false }
-                    ],
-                    throwOnError: false
-                });
-            }
             el.appendChild(bodyEl);
+        }
+
+        // KaTeX is only loaded by projects that need it; guard avoids ReferenceError
+        if (typeof renderMathInElement === 'function') {
+            renderMathInElement(el, {
+                delimiters: [
+                    { left: '$$', right: '$$', display: true },
+                    { left: '$', right: '$', display: false }
+                ],
+                throwOnError: false
+            });
         }
 
         if (isCoarse) {
