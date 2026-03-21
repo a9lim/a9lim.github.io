@@ -76,7 +76,7 @@ export function initScrollReveal() {
                 const vh = window.innerHeight;
                 const progress = 1 - (rect.top / vh);
                 // Clamp translateX between -120% (offscreen left) and 10% (slight overshoot right)
-                const tx = Math.max(-120, Math.min(10, (progress - 0.15) * 180 - 120));
+                const tx = clamp((progress - 0.15) * 180 - 120, -120, 10);
                 stripeBand.style.transform = `translateX(${tx}%) rotate(-3deg)`;
                 stripeTicking = false;
             });
