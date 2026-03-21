@@ -686,6 +686,11 @@ body {
         font-size: 1.05rem;
     }
 
+    .tool-btn svg {
+        width: 16px;
+        height: 16px;
+    }
+
     .tool-sep {
         height: 14px;
         margin: 0 2px;
@@ -736,6 +741,11 @@ body {
         font-size: 0.92rem;
     }
 
+    .tool-btn {
+        width: 32px;
+        height: 32px;
+    }
+
     .sim-toolbar-actions {
         gap: 2px;
     }
@@ -749,6 +759,14 @@ body {
 @media (max-width: 440px) {
     .hide-sm {
         display: none !important;
+    }
+
+    .sim-brand {
+        display: none;
+    }
+
+    .sim-toolbar-actions {
+        gap: 1px;
     }
 }
 
