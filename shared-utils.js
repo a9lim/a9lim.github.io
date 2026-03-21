@@ -90,6 +90,46 @@ function cubicBezier(x1, y1, x2, y2) {
  * @param {string} message  Text to display
  * @param {number} [duration=2000]  Visible time in ms before fade-out
  */
+/**
+ * Wire backdrop-click and close-button dismiss for a modal overlay.
+ * Clicking the overlay background (not its children) or the close button
+ * calls the hide function to dismiss the overlay.
+ * @param {HTMLElement} overlayEl  The overlay container (backdrop).
+ * @param {HTMLElement} [closeBtn] Optional close button inside the overlay.
+ * @param {function} [hideFn]     Custom hide function. Default: sets overlayEl.hidden = true.
+ */
+function initOverlayDismiss(overlayEl, closeBtn, hideFn) {
+    if (!overlayEl) return;
+    var hide = hideFn || function() { overlayEl.hidden = true; };
+    if (closeBtn) closeBtn.addEventListener('click', hide);
+    overlayEl.addEventListener('click', function(e) {
+        if (e.target === overlayEl) hide();
+    });
+}
+
+/**
+ * Resize a canvas buffer to match its CSS size × devicePixelRatio.
+ * Only reassigns width/height when the buffer size actually changed
+ * (avoids clearing the canvas on every call). Sets the 2D context
+ * transform so draw calls use CSS-pixel coordinates.
+ * @param {HTMLCanvasElement} canvas
+ * @param {CanvasRenderingContext2D} ctx
+ * @returns {{ width: number, height: number, dpr: number }} CSS dimensions and DPR.
+ */
+function resizeCanvasDPR(canvas, ctx) {
+    var dpr = window.devicePixelRatio || 1;
+    var w = canvas.clientWidth;
+    var h = canvas.clientHeight;
+    var bw = Math.round(w * dpr);
+    var bh = Math.round(h * dpr);
+    if (canvas.width !== bw || canvas.height !== bh) {
+        canvas.width = bw;
+        canvas.height = bh;
+    }
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    return { width: w, height: h, dpr: dpr };
+}
+
 function showToast(message, duration) {
     if (duration === undefined) duration = 2000;
     let container = document.getElementById('toast-container');

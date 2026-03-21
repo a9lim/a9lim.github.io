@@ -37,6 +37,7 @@ Shared files (hosted here, loaded by all projects):
   shared-haptics.js      _haptics.trigger(type) -- Web Vibration API haptic feedback
   shared-toolbar.js      _toolbar -- play/pause, speed, theme toggle, sidebar toggle utilities
   shared-forms.js        _forms -- bindModeGroup, bindSlider, bindToggle (sim projects only)
+  shared-intro.js        _intro -- intro screen dismiss with app-ready gating (sim projects only)
   shared-base.css        Reset, layout tokens, .glass, .tool-btn, ctrl-row/group, form controls,
                          .sim-select, .sim-overlay, .ghost-btn, theme icons, toggles, toasts, a11y
   shared-tabs.js         Tab switching IIFE for sidebar .tab-btn/.tab-panel (sim projects only)
