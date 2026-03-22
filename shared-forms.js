@@ -17,12 +17,14 @@ var _forms = (function () {
      * @param {function} onChange - Called with the attribute value string.
      */
     function bindModeGroup(container, dataAttr, onChange) {
+        var btns = container.querySelectorAll('.mode-btn');
+        var active = container.querySelector('.mode-btn.active');
         container.addEventListener('click', function (e) {
             var btn = e.target.closest('.mode-btn');
-            if (!btn) return;
-            var btns = container.querySelectorAll('.mode-btn');
-            for (var i = 0; i < btns.length; i++) btns[i].classList.remove('active');
+            if (!btn || btn === active) return;
+            if (active) active.classList.remove('active');
             btn.classList.add('active');
+            active = btn;
             onChange(btn.dataset[dataAttr]);
             if (typeof _haptics !== 'undefined') _haptics.trigger('selection');
         });
