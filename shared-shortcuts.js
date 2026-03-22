@@ -21,6 +21,7 @@ function initShortcuts(shortcuts, opts) {
     if (!opts) opts = {};
     var helpTitle = opts.helpTitle || 'Keyboard Shortcuts';
     var overlay = null;
+    var overlayEl = null; // cached DOM, built once
 
     /** Normalize key strings for lookup: lowercase, no whitespace. */
     function normalizeKey(key) {
@@ -145,7 +146,9 @@ function initShortcuts(shortcuts, opts) {
 
     function showOverlay() {
         if (overlay) return;
-        overlay = buildOverlay();
+        // Build DOM once, reuse on subsequent opens
+        if (!overlayEl) overlayEl = buildOverlay();
+        overlay = overlayEl;
         document.body.appendChild(overlay);
         requestAnimationFrame(function() {
             if (overlay) overlay.classList.add('shortcut-overlay-visible');

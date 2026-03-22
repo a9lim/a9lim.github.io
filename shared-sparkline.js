@@ -36,6 +36,7 @@ function resetSparkHistory(h) {
 
 /**
  * Draw a polyline sparkline onto a canvas 2D context.
+ * Single-pass: finds min/max and draws in one loop.
  *
  * @param {CanvasRenderingContext2D} ctx
  * @param {{ data: Float32Array, head: number, count: number, cap: number }} h
@@ -48,35 +49,41 @@ function drawSparkline(ctx, h, w, hh, color, dimColor) {
     ctx.clearRect(0, 0, w, hh);
     if (h.count < 2) return;
 
-    // Find min/max for auto-scaling
-    let min = Infinity, max = -Infinity;
-    for (let i = 0; i < h.count; i++) {
-        const idx = (h.head - h.count + i + h.cap) % h.cap;
-        const v = h.data[idx];
+    var data = h.data;
+    var count = h.count;
+    var cap = h.cap;
+    // Precompute base offset once — avoids modulo with negative numbers
+    var base = (h.head - count + cap) % cap;
+    var xScale = w / (cap - 1);
+    var pad = hh * 0.1;
+    var plotH = hh - 2 * pad;
+
+    // Single pass: find min/max
+    var min = Infinity, max = -Infinity;
+    for (var i = 0; i < count; i++) {
+        var v = data[(base + i) % cap];
         if (v < min) min = v;
         if (v > max) max = v;
     }
-    const range = max - min || 1;
-    const pad = hh * 0.1; // 10% vertical padding
-    const plotH = hh - 2 * pad;
+    var range = max - min || 1;
+    var yScale = plotH / range;
 
     // Draw polyline
     ctx.beginPath();
     ctx.strokeStyle = color;
     ctx.lineWidth = 1.5;
 
-    for (let i = 0; i < h.count; i++) {
-        const idx = (h.head - h.count + i + h.cap) % h.cap;
-        const x = (i / (h.cap - 1)) * w;
-        const y = pad + plotH - ((h.data[idx] - min) / range) * plotH;
+    for (var i = 0; i < count; i++) {
+        var x = i * xScale;
+        var y = pad + plotH - (data[(base + i) % cap] - min) * yScale;
         if (i === 0) ctx.moveTo(x, y);
         else ctx.lineTo(x, y);
     }
     ctx.stroke();
 
     // Dashed vertical at the data frontier (visible when buffer not yet full)
-    if (h.count < h.cap) {
-        const nowX = (h.count / h.cap) * w;
+    if (count < cap) {
+        var nowX = (count / cap) * w;
         ctx.setLineDash([2, 2]);
         ctx.strokeStyle = dimColor;
         ctx.beginPath();

@@ -6,14 +6,14 @@
 
 /**
  * Escape a string for safe insertion as HTML text content.
- * Uses the browser's own text node escaping via a detached element.
+ * Uses the browser's own text node escaping via a cached detached element.
  * @param {string} str  Raw string
  * @returns {string} HTML-safe string
  */
+var _escDiv = document.createElement('div');
 function escapeHtml(str) {
-    const d = document.createElement('div');
-    d.textContent = str;
-    return d.innerHTML;
+    _escDiv.textContent = str;
+    return _escDiv.innerHTML;
 }
 
 /**
@@ -85,12 +85,6 @@ function cubicBezier(x1, y1, x2, y2) {
 }
 
 /**
- * Show a brief toast notification. Creates the container on first use.
- * Styled by `.toast` / `#toast-container` in shared-base.css.
- * @param {string} message  Text to display
- * @param {number} [duration=2000]  Visible time in ms before fade-out
- */
-/**
  * Wire backdrop-click and close-button dismiss for a modal overlay.
  * Clicking the overlay background (not its children) or the close button
  * calls the hide function to dismiss the overlay.
@@ -112,24 +106,84 @@ function initOverlayDismiss(overlayEl, closeBtn, hideFn) {
  * Only reassigns width/height when the buffer size actually changed
  * (avoids clearing the canvas on every call). Sets the 2D context
  * transform so draw calls use CSS-pixel coordinates.
+ *
+ * Accepts an optional `el` to measure size from (defaults to canvas itself).
+ * When `syncCSS` is true, also sets canvas.style.width/height to match
+ * (useful when the canvas doesn't inherit its size from CSS layout).
+ *
  * @param {HTMLCanvasElement} canvas
  * @param {CanvasRenderingContext2D} ctx
- * @returns {{ width: number, height: number, dpr: number }} CSS dimensions and DPR.
+ * @param {object} [opts]
+ * @param {HTMLElement} [opts.el]       Element to measure (default: canvas)
+ * @param {boolean}     [opts.syncCSS]  Also set canvas.style.width/height
+ * @returns {{ width: number, height: number, dpr: number, changed: boolean }}
  */
-function resizeCanvasDPR(canvas, ctx) {
+function resizeCanvasDPR(canvas, ctx, opts) {
+    var el = (opts && opts.el) || canvas;
+    var rect = el.getBoundingClientRect();
     var dpr = window.devicePixelRatio || 1;
-    var w = canvas.clientWidth;
-    var h = canvas.clientHeight;
+    var w = Math.floor(rect.width)  || canvas.clientWidth;
+    var h = Math.floor(rect.height) || canvas.clientHeight;
     var bw = Math.round(w * dpr);
     var bh = Math.round(h * dpr);
-    if (canvas.width !== bw || canvas.height !== bh) {
+    var changed = canvas.width !== bw || canvas.height !== bh;
+    if (changed) {
         canvas.width = bw;
         canvas.height = bh;
     }
+    if (opts && opts.syncCSS) {
+        canvas.style.width  = w + 'px';
+        canvas.style.height = h + 'px';
+    }
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    return { width: w, height: h, dpr: dpr };
+    return { width: w, height: h, dpr: dpr, changed: changed };
 }
 
+/**
+ * Animate an element's text content from its current value to `end`
+ * over `duration` ms with quartic ease-out. Cancels any in-flight
+ * animation for the same `id`.
+ *
+ * @param {HTMLElement} el        Target element
+ * @param {number}      end       Target numeric value
+ * @param {number}      duration  Animation duration in ms
+ * @param {function}    [formatFn=Math.round]  Formats the interpolated value for display
+ * @param {string}      id        Unique animation ID (for cancellation)
+ */
+var _animCounters = {};
+function animateValue(el, end, duration, formatFn, id) {
+    if (!el) return;
+    if (formatFn === undefined) formatFn = Math.round;
+    var start = el._currentVal || 0;
+    if (start === end) {
+        el.textContent = formatFn(end);
+        el._currentVal = end;
+        return;
+    }
+    var startTs = null;
+    function step(ts) {
+        if (!startTs) startTs = ts;
+        var progress = Math.min((ts - startTs) / duration, 1);
+        var ease = 1 - Math.pow(1 - progress, 4);
+        var current = progress < 1 ? start + (end - start) * ease : end;
+        el.textContent = formatFn(current);
+        el._currentVal = current;
+        if (progress < 1) {
+            _animCounters[id] = requestAnimationFrame(step);
+        } else {
+            delete _animCounters[id];
+        }
+    }
+    if (_animCounters[id]) cancelAnimationFrame(_animCounters[id]);
+    _animCounters[id] = requestAnimationFrame(step);
+}
+
+/**
+ * Show a brief toast notification. Creates the container on first use.
+ * Styled by `.toast` / `#toast-container` in shared-base.css.
+ * @param {string} message  Text to display
+ * @param {number} [duration=2000]  Visible time in ms before fade-out
+ */
 function showToast(message, duration) {
     if (duration === undefined) duration = 2000;
     let container = document.getElementById('toast-container');

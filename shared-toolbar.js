@@ -61,8 +61,12 @@ var _toolbar = (function () {
     function updatePlayBtn(btn, playing) {
         btn.setAttribute('aria-label', playing ? 'Pause simulation' : 'Play simulation');
         btn.title = playing ? 'Pause' : 'Play';
-        btn.textContent = '';
-        btn.appendChild((playing ? _getPauseSvg() : _getPlaySvg()).cloneNode(true));
+        var svg = playing ? _getPauseSvg() : _getPlaySvg();
+        // Reuse cached SVG — move it between buttons if needed, avoid cloneNode
+        if (btn.firstChild !== svg) {
+            btn.textContent = '';
+            btn.appendChild(svg);
+        }
         btn.classList.toggle('playing', playing);
     }
 

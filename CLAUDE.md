@@ -64,8 +64,9 @@ src/
   world-map.js           SVG map loader, Mercator projection, arc draw animation
 
 Shared files (hosted here, loaded by all projects):
-  shared-tokens.js       _PALETTE, _FONT, color math, CSS custom property injection
-  shared-utils.js        escapeHtml, debounce, throttle, clamp, lerp, cubicBezier, showToast
+  shared-tokens.js       _PALETTE, _FONT, _hsl2rgb, color math, CSS custom property injection
+  shared-utils.js        escapeHtml, debounce, throttle, clamp, lerp, cubicBezier, showToast,
+                         resizeCanvasDPR, animateValue, initOverlayDismiss
   shared-haptics.js      _haptics.trigger(type) -- Web Vibration API haptic feedback
   shared-toolbar.js      _toolbar -- play/pause, speed, theme toggle, sidebar toggle utilities
   shared-forms.js        _forms -- bindModeGroup, bindSlider, bindToggle (sim projects only)
@@ -103,8 +104,9 @@ main.js
   └─ src/markdown.js         (imports nothing)
 
 Global scripts (loaded via <script> in <head>, not modules):
-  shared-tokens.js  → exposes window._PALETTE, _FONT, _r, _parseHex, _rgb2hsl, _hsl2hex, _darken
-  shared-utils.js   → exposes window.escapeHtml, debounce, throttle, clamp, lerp, cubicBezier, showToast
+  shared-tokens.js  → exposes window._PALETTE, _FONT, _r, _parseHex, _rgb2hsl, _hsl2hex, _hsl2rgb, _darken
+  shared-utils.js   → exposes window.escapeHtml, debounce, throttle, clamp, lerp, cubicBezier, showToast,
+                       resizeCanvasDPR, animateValue, initOverlayDismiss
   shared-toolbar.js → exposes window._toolbar (initTheme, toggleTheme, toggleSidebar, closeSidebar, ...)
 ```
 

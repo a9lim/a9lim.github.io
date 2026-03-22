@@ -267,18 +267,38 @@ ${gen(D, true)}
 }`;
   document.head.appendChild(style);
 
-  // Set <meta name="theme-color"> to match current theme canvas color.
-  // Safari/iOS uses this for status bar tinting.
-  var tc = document.querySelector('meta[name="theme-color"]');
-  if (!tc) { tc = document.createElement('meta'); tc.name = 'theme-color'; document.head.appendChild(tc); }
-  tc.content = (document.documentElement.dataset.theme === 'dark') ? D.canvas : L.canvas;
+  // Theme-color <meta> is set by shared-toolbar.js _syncThemeColor() on theme init/toggle.
+  // No duplicate here — toolbar owns theme-color lifecycle.
 })();
+
+/**
+ * Convert HSL (h: 0–360, s: 0–1, l: 0–1) to normalized [r, g, b] floats (0–1).
+ * Complements _parseHex (hex→RGB) and _rgb2hsl (RGB→HSL) for full round-trip.
+ * @param {number} h  Hue 0–360
+ * @param {number} s  Saturation 0–1
+ * @param {number} l  Lightness 0–1
+ * @returns {[number, number, number]}
+ */
+function _hsl2rgb(h, s, l) {
+  var c = (1 - Math.abs(2 * l - 1)) * s;
+  var x = c * (1 - Math.abs((h / 60) % 2 - 1));
+  var m = l - c / 2;
+  var r, g, b;
+  if (h < 60)       { r = c; g = x; b = 0; }
+  else if (h < 120) { r = x; g = c; b = 0; }
+  else if (h < 180) { r = 0; g = c; b = x; }
+  else if (h < 240) { r = 0; g = x; b = c; }
+  else if (h < 300) { r = x; g = 0; b = c; }
+  else              { r = c; g = 0; b = x; }
+  return [r + m, g + m, b + m];
+}
 
 // Expose as globals — ES6 modules in each project read these from window
 window._r = _r;
 window._parseHex = _parseHex;
 window._rgb2hsl = _rgb2hsl;
 window._hsl2hex = _hsl2hex;
+window._hsl2rgb = _hsl2rgb;
 window._darken = _darken;
 window._oklch2hex = _oklch2hex;
 window._FONT = _FONT;

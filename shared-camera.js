@@ -119,24 +119,30 @@ function createCamera(opts) {
          * @param {number} [cx]         Screen X pivot (default: viewport center)
          * @param {number} [cy]         Screen Y pivot (default: viewport center)
          */
-        zoomBy: function(factor, cx, cy) {
+        /**
+         * Internal: apply a new zoom level while keeping the world point under
+         * screen position (cx, cy) stationary. Shared by zoomBy and setZoom.
+         */
+        _applyZoom: function(newZoom, cx, cy) {
+            newZoom = clamp(newZoom, this.minZoom, this.maxZoom);
+            if (newZoom === this.zoom) return;
             if (cx === undefined) cx = this.viewportW / 2;
             if (cy === undefined) cy = this.viewportH / 2;
-
-            // Record world point under cursor before zoom
-            var wx = this.x + (cx - this.viewportW / 2) / this.zoom;
-            var wy = this.y + (cy - this.viewportH / 2) / this.zoom;
-
-            var newZoom = clamp(this.zoom * factor, this.minZoom, this.maxZoom);
-            if (newZoom === this.zoom) return;
-
-            // Solve for camera position that maps (cx, cy) back to (wx, wy) at new zoom
-            this.x = wx - (cx - this.viewportW / 2) / newZoom;
-            this.y = wy - (cy - this.viewportH / 2) / newZoom;
+            var offX = cx - this.viewportW / 2;
+            var offY = cy - this.viewportH / 2;
+            // World point under cursor
+            var wx = this.x + offX / this.zoom;
+            var wy = this.y + offY / this.zoom;
+            // Solve for camera pos that maps (cx,cy) back to (wx,wy) at new zoom
+            this.x = wx - offX / newZoom;
+            this.y = wy - offY / newZoom;
             this.zoom = newZoom;
-
             if (this.clampFn) this.clampFn(this);
             this._notify();
+        },
+
+        zoomBy: function(factor, cx, cy) {
+            this._applyZoom(this.zoom * factor, cx, cy);
         },
 
         /**
@@ -146,21 +152,7 @@ function createCamera(opts) {
          * @param {number} [cy]    Screen Y pivot
          */
         setZoom: function(newZoom, cx, cy) {
-            if (cx === undefined) cx = this.viewportW / 2;
-            if (cy === undefined) cy = this.viewportH / 2;
-
-            var wx = this.x + (cx - this.viewportW / 2) / this.zoom;
-            var wy = this.y + (cy - this.viewportH / 2) / this.zoom;
-
-            newZoom = clamp(newZoom, this.minZoom, this.maxZoom);
-            if (newZoom === this.zoom) return;
-
-            this.x = wx - (cx - this.viewportW / 2) / newZoom;
-            this.y = wy - (cy - this.viewportH / 2) / newZoom;
-            this.zoom = newZoom;
-
-            if (this.clampFn) this.clampFn(this);
-            this._notify();
+            this._applyZoom(newZoom, cx, cy);
         },
 
         /**
