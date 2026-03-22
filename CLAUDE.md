@@ -1,6 +1,38 @@
 # CLAUDE.md
 
-Root site for the **a9l.im** portfolio. Hosted via GitHub Pages at `a9lim.github.io` with custom domain `a9l.im` (configured in `CNAME`). This repo also hosts the shared design system files consumed by all sibling projects. See the parent `site-meta/CLAUDE.md` for the full shared design system specification.
+Root site for the **a9l.im** portfolio. Hosted via GitHub Pages at `a9lim.github.io` with custom domain `a9l.im` (configured in `CNAME`). This repo also hosts the shared design system files consumed by all four simulation submodules.
+
+## Subproject Overview
+
+Four simulation projects live as git submodules in this repo:
+
+| Project | Path | Description |
+|---------|------|-------------|
+| **physsim** | `physsim/` | Particle physics simulator. Boris integrator, BH tree acceleration, Higgs/Axion scalar fields, WebGPU compute+render backend, 19 presets across gravity/EM/exotic/cosmological scenarios. |
+| **finsim** | `finsim/` | Options trading simulator (Shoals). GBM+Merton+Heston stock model, Vasicek rates, CRR binomial tree pricing, strategy builder, narrative event engine with political lore and 4-page epilogue. |
+| **gerry** | `gerry/` | Redistricting/gerrymandering simulator. Procedural hex-tile map with 3 parties and 10 districts, fairness metrics (efficiency gap, partisan symmetry), pack-and-crack and fair-draw algorithms, Monte Carlo election simulation. |
+| **biosim** | `biosim/` | Metabolism simulator. 12 pathways (glycolysis, Krebs, Calvin, ETC, etc.), 14 ETC complexes, allosteric regulation, particle system for electrons/protons/photons, ROS production/scavenging, 5 organism presets. |
+
+Each submodule follows the same pattern: `main.js` entry point with `$` DOM cache, `index.html` with floating glass panels, `styles.css` for project overrides, `colors.js` extending shared palette, and `src/` for domain modules.
+
+## Shared Code Policy
+
+All projects share a common design system hosted at this repo's root. **Always prefer shared code over project-specific implementations:**
+
+- Use `shared-tokens.js` (`_PALETTE`, `_FONT`, color math) for all colors — extend via `colors.js`, never hardcode
+- Use `shared-utils.js` (`escapeHtml`, `debounce`, `throttle`, `clamp`, `lerp`, `showToast`) instead of reimplementing
+- Use `shared-base.css` classes (`.glass`, `.tool-btn`, `.ctrl-row`, `.sim-overlay`, `.ghost-btn`) for UI components
+- Use `shared-toolbar.js` (`_toolbar`) for theme toggle, sidebar toggle, play/pause, speed buttons
+- Use `shared-forms.js` (`_forms`) for mode groups, sliders, toggles
+- Use `shared-camera.js` for viewport/zoom
+- Use `shared-info.js` for info tip popovers and `shared-shortcuts.js` for keyboard shortcuts
+- Use `shared-tabs.js` for sidebar tab switching
+- Use `shared-intro.js` for intro screen dismiss
+- Use `shared-touch.js` for swipe-to-dismiss bottom sheets
+- Use `shared-sparkline.js` for ring buffer sparkline rendering
+- Use `shared-tooltip.js` for tooltip popovers
+
+Before adding project-specific utility code, check whether a shared module already provides it. If new utility code would be useful across multiple projects, add it to the appropriate `shared-*.js` file instead of duplicating.
 
 ## File Map
 
@@ -45,6 +77,8 @@ Shared files (hosted here, loaded by all projects):
   shared-info.js         Info tip popovers (sim projects only)
   shared-shortcuts.js    Keyboard shortcut registry (sim projects only)
   shared-touch.js        Swipe-to-dismiss for bottom sheets (sim projects only)
+  shared-tooltip.js      Tooltip popovers (sim projects only)
+  shared-sparkline.js    Ring buffer sparkline renderer (sim projects only)
 ```
 
 ## Module Dependency Graph
@@ -214,7 +248,7 @@ The `_PALETTE` and `_FONT` objects are **never frozen** on the root site (no `co
 
 Note: The root site uses **relative paths** for shared files (`shared-tokens.js`, `shared-base.css`). Sub-projects use absolute paths (`/shared-tokens.js`, `/shared-base.css`). Both resolve to the same files because this repo is the root of `a9l.im`.
 
-The root site does **not** load `shared-tabs.js`, `shared-camera.js`, `shared-info.js`, `shared-shortcuts.js`, or `shared-touch.js` -- those are only used by the four simulation projects.
+The root site does **not** load `shared-tabs.js`, `shared-camera.js`, `shared-info.js`, `shared-shortcuts.js`, `shared-touch.js`, `shared-tooltip.js`, or `shared-sparkline.js` -- those are only used by the four simulation projects.
 
 ## Gotchas
 
@@ -227,7 +261,7 @@ The root site does **not** load `shared-tabs.js`, `shared-camera.js`, `shared-in
 - **`shared-tabs.js`** -- tab switching for all three sim sidebars; changing `.tab-btn`/`.tab-panel` class names or `data-tab` attribute breaks tab navigation
 - **`shared-toolbar.js`** -- `_toolbar` IIFE used by all five projects for theme toggle, sidebar toggle, play/pause, and speed button updates; changing the public API breaks all consumers
 - **`shared-forms.js`** -- `_forms` IIFE used by all four sim projects for mode-toggle groups, range sliders, and toggle checkboxes; changing the public API breaks all consumers
-- **`shared-camera.js`, `shared-info.js`, `shared-shortcuts.js`, `shared-touch.js`** -- consumed by sim projects; do not rename, move, or change their public API without updating all consumers
+- **`shared-camera.js`, `shared-info.js`, `shared-shortcuts.js`, `shared-touch.js`, `shared-tooltip.js`, `shared-sparkline.js`** -- consumed by sim projects; do not rename, move, or change their public API without updating all consumers
 
 ### Shader On-Demand Rendering
 
