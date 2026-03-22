@@ -4,12 +4,18 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Hayashinet</title>
-    <meta name="description" content="Interactive simulations exploring physics, biology, finance, and political science.">
+    <meta name="description" content="Hayashinet — a collection of interactive educational simulations exploring particle physics, cellular metabolism, options trading, and redistricting. Built with vanilla JavaScript, WebGPU, and Canvas.">
     <meta property="og:title" content="Hayashinet">
-    <meta property="og:description" content="Interactive simulations exploring physics, biology, finance, and political science.">
+    <meta property="og:description" content="Interactive educational simulations for physics, biology, finance, and political science. Explore N-body gravity, metabolic pathways, options pricing, and gerrymandering — all in the browser.">
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://a9l.im">
+    <meta property="og:site_name" content="Hayashinet">
     <meta name="twitter:card" content="summary">
+    <meta name="twitter:site" content="@a9_lim">
+    <meta name="twitter:creator" content="@a9_lim">
+    <meta name="author" content="Hayashi">
+    <meta name="theme-color" content="#C8553D">
+    <link rel="canonical" href="https://a9l.im">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
 
@@ -26,6 +32,59 @@
     <link rel="stylesheet" href="styles.css">
 
     <link rel="icon" href="favicon.ico">
+
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "WebSite",
+          "name": "Hayashinet",
+          "url": "https://a9l.im",
+          "description": "A collection of interactive educational simulations exploring particle physics, cellular metabolism, options trading, and redistricting.",
+          "author": {
+            "@type": "Person",
+            "name": "Hayashi",
+            "url": "https://a9l.im/#about",
+            "sameAs": [
+              "https://github.com/a9lim",
+              "https://twitter.com/a9_lim"
+            ]
+          }
+        },
+        {
+          "@type": "ItemList",
+          "name": "Simulations",
+          "itemListElement": [
+            {
+              "@type": "ListItem",
+              "position": 1,
+              "url": "https://a9l.im/physsim",
+              "name": "Geon — Relativistic Particle Physics Simulator"
+            },
+            {
+              "@type": "ListItem",
+              "position": 2,
+              "url": "https://a9l.im/biosim",
+              "name": "Metabolism — Cellular Biochemistry Simulator"
+            },
+            {
+              "@type": "ListItem",
+              "position": 3,
+              "url": "https://a9l.im/gerry",
+              "name": "Redistricting — Gerrymandering & Electoral Fairness Simulator"
+            },
+            {
+              "@type": "ListItem",
+              "position": 4,
+              "url": "https://a9l.im/finsim",
+              "name": "Shoals — Options Trading Simulator"
+            }
+          ]
+        }
+      ]
+    }
+    </script>
 </head>
 <body class="app-ready">
     <!-- ═══ WebGL Shader Background ═══ -->
