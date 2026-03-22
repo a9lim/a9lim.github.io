@@ -1,0 +1,12 @@
+[submodule "physsim"]
+	path = physsim
+	url = https://github.com/a9lim/physsim.git
+[submodule "finsim"]
+	path = finsim
+	url = https://github.com/a9lim/finsim.git
+[submodule "gerry"]
+	path = gerry
+	url = https://github.com/a9lim/gerry.git
+[submodule "biosim"]
+	path = biosim
+	url = https://github.com/a9lim/biosim.git
