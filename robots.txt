@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://a9l.im/sitemap.xml
