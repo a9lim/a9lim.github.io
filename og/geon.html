@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif:wght@700&family=Noto+Sans+Mono:wght@400&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    width: 1200px;
+    height: 630px;
+    overflow: hidden;
+    background: #EBEFF4;
+    display: flex;
+    align-items: center;
+    font-family: system-ui;
+    position: relative;
+  }
+  .flair {
+    width: 400px;
+    height: 630px;
+    flex-shrink: 0;
+    position: relative;
+    overflow: hidden;
+  }
+  .flair canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 400px;
+    height: 630px;
+  }
+  /* Fade-out on right edge */
+  .flair::after {
+    content: '';
+    position: absolute;
+    top: 0; right: 0;
+    width: 100px;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, #EBEFF4);
+    pointer-events: none;
+  }
+  .text-side {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 0 60px;
+  }
+  .project-name {
+    font-family: 'Noto Serif', serif;
+    font-weight: 700;
+    font-size: 156px;
+    color: #0B1016;
+    letter-spacing: -3px;
+    line-height: 1;
+  }
+  .accent-line {
+    width: 88px;
+    height: 3px;
+    background: #E11107;
+    border-radius: 2px;
+    margin-top: 28px;
+  }
+  .site-brand {
+    font-family: 'Noto Sans Mono', monospace;
+    font-size: 22px;
+    color: #777C83;
+    margin-top: 16px;
+    letter-spacing: 0.5px;
+  }
+  .site-brand .copyleft {
+    display: inline-block;
+    transform: scaleX(-1);
+    font-size: 17px;
+    margin-right: 1px;
+    vertical-align: 1px;
+  }
+</style>
+</head>
+<body>
+  <div class="flair">
+    <canvas id="flair" width="800" height="1260"></canvas>
+  </div>
+  <div class="text-side">
+    <div class="project-name">Geon</div>
+    <div class="accent-line"></div>
+    <div class="site-brand"><span class="copyleft">&copy;</span>a9l.im</div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('flair');
+    const ctx = canvas.getContext('2d');
+    const W = canvas.width, H = canvas.height;
+
+    // Interaction midpoint
+    const MX = 400, MY = 630;
+
+    // --- 1. Trajectory arcs (behind particles) ---
+
+    // Red particle arc: from bottom-left curving toward center
+    ctx.beginPath();
+    ctx.moveTo(100, 1000);
+    ctx.bezierCurveTo(120, 850, 200, 760, MX, MY);
+    ctx.strokeStyle = 'rgba(200, 67, 65, 0.4)';
+    ctx.lineWidth = 4;
+    ctx.lineCap = 'round';
+    ctx.stroke();
+
+    // Blue particle arc: from top-right curving toward center
+    ctx.beginPath();
+    ctx.moveTo(700, 260);
+    ctx.bezierCurveTo(680, 400, 580, 500, MX, MY);
+    ctx.strokeStyle = 'rgba(53, 144, 191, 0.4)';
+    ctx.lineWidth = 4;
+    ctx.lineCap = 'round';
+    ctx.stroke();
+
+    // --- 2. Particles ---
+
+    // Red particle at ~(280, 750)
+    const redGrad = ctx.createRadialGradient(280, 750, 0, 280, 750, 100);
+    redGrad.addColorStop(0, '#E8A0A0');
+    redGrad.addColorStop(1, '#C84341');
+    ctx.beginPath();
+    ctx.arc(280, 750, 100, 0, Math.PI * 2);
+    ctx.fillStyle = redGrad;
+    ctx.fill();
+
+    // Blue particle at ~(520, 510)
+    const blueGrad = ctx.createRadialGradient(520, 510, 0, 520, 510, 100);
+    blueGrad.addColorStop(0, '#A0D0E8');
+    blueGrad.addColorStop(1, '#3590BF');
+    ctx.beginPath();
+    ctx.arc(520, 510, 100, 0, Math.PI * 2);
+    ctx.fillStyle = blueGrad;
+    ctx.fill();
+
+    // --- 3. Photon squiggles radiating outward from interaction midpoint ---
+    // Directions: 30°, 120°, 210°, 300° (avoiding particle positions at ~225° and ~45°)
+    const angles = [30, 120, 210, 300].map(d => d * Math.PI / 180);
+    const wavelength = 40; // px along path
+    const amplitude = 16;  // px perpendicular
+    const squiggleLen = 300; // total length
+
+    ctx.strokeStyle = 'rgba(225, 17, 7, 0.6)';
+    ctx.lineWidth = 4;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+
+    angles.forEach(angle => {
+      const cos = Math.cos(angle);
+      const sin = Math.sin(angle);
+      // Perpendicular direction
+      const px = -sin;
+      const py = cos;
+
+      ctx.beginPath();
+      ctx.moveTo(MX, MY);
+
+      let dist = 0;
+      let flip = 1;
+      while (dist < squiggleLen) {
+        // Control point: halfway along next segment, offset perpendicularly
+        const segEnd = Math.min(dist + wavelength, squiggleLen);
+        const midDist = dist + wavelength * 0.5;
+        const cx1 = MX + cos * midDist + px * amplitude * flip;
+        const cy1 = MY + sin * midDist + py * amplitude * flip;
+        const ex = MX + cos * segEnd;
+        const ey = MY + sin * segEnd;
+        ctx.quadraticCurveTo(cx1, cy1, ex, ey);
+        dist = segEnd;
+        flip *= -1;
+      }
+
+      ctx.stroke();
+    });
+
+    // --- 4. Top fade ---
+    const fadeTop = ctx.createLinearGradient(0, 0, 0, 60);
+    fadeTop.addColorStop(0, 'rgba(235, 239, 244, 1)');
+    fadeTop.addColorStop(1, 'rgba(235, 239, 244, 0)');
+    ctx.fillStyle = fadeTop;
+    ctx.fillRect(0, 0, W, 60);
+
+    // --- 5. Bottom fade ---
+    const fadeBot = ctx.createLinearGradient(0, H - 100, 0, H);
+    fadeBot.addColorStop(0, 'rgba(235, 239, 244, 0)');
+    fadeBot.addColorStop(1, 'rgba(235, 239, 244, 1)');
+    ctx.fillStyle = fadeBot;
+    ctx.fillRect(0, H - 100, W, 100);
+  </script>
+</body>
+</html>
