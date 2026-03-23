@@ -12,7 +12,7 @@
  *   - description: Paragraph shown below the heading
  *   - controls:    Array of { label, value } — simulation controls section
  *   - shortcuts:   Array of { key, label, group } — keyboard shortcuts section
- *   - github:      GitHub repo URL for the AGPL footer link
+ *   - repo:        GitHub repo URL for the AGPL footer link
  * @returns {{ show: Function, hide: Function, destroy: Function }}
  */
 function initAboutPanel(config) {
@@ -103,20 +103,25 @@ function initAboutPanel(config) {
 
         content.appendChild(header);
 
-        // ── Description ──────────────────────────────────────────
-        if (config.description) {
-            var desc = document.createElement('p');
-            desc.className = 'about-desc';
-            desc.textContent = config.description;
-            content.appendChild(desc);
-        }
+        // ── Description + Controls section ──────────────────────
+        if (config.description || (config.controls && config.controls.length)) {
+            var descSection = document.createElement('div');
+            descSection.className = 'about-section';
 
-        // ── Controls section ─────────────────────────────────────
-        if (config.controls && config.controls.length) {
-            var ctrlSection = document.createElement('div');
-            ctrlSection.className = 'about-section';
+            if (config.description) {
+                var desc = document.createElement('p');
+                desc.className = 'about-desc';
+                desc.textContent = config.description;
+                descSection.appendChild(desc);
+            }
 
-            config.controls.forEach(function(ctrl) {
+            if (config.controls && config.controls.length) {
+                var ctrlLabel = document.createElement('div');
+                ctrlLabel.className = 'about-group-label';
+                ctrlLabel.textContent = 'Controls';
+                descSection.appendChild(ctrlLabel);
+
+                config.controls.forEach(function(ctrl) {
                 var row = document.createElement('div');
                 row.className = 'about-row';
 
@@ -130,10 +135,11 @@ function initAboutPanel(config) {
 
                 row.appendChild(labelEl);
                 row.appendChild(valueEl);
-                ctrlSection.appendChild(row);
-            });
+                descSection.appendChild(row);
+                });
+            }
 
-            content.appendChild(ctrlSection);
+            content.appendChild(descSection);
         }
 
         // ── Shortcuts section ─────────────────────────────────────
@@ -184,20 +190,12 @@ function initAboutPanel(config) {
         var footer = document.createElement('div');
         footer.className = 'about-footer';
 
-        var footerText = document.createTextNode('Released under the ');
-        footer.appendChild(footerText);
+        footer.appendChild(document.createTextNode('AGPL-3.0'));
 
-        var licenseLink = document.createElement('a');
-        licenseLink.href = 'https://www.gnu.org/licenses/agpl-3.0.html';
-        licenseLink.target = '_blank';
-        licenseLink.rel = 'noopener noreferrer';
-        licenseLink.textContent = 'AGPL-3.0 license';
-        footer.appendChild(licenseLink);
-
-        if (config.github) {
-            footer.appendChild(document.createTextNode(' · '));
+        if (config.repo) {
+            footer.appendChild(document.createTextNode(' \u00b7 '));
             var githubLink = document.createElement('a');
-            githubLink.href = config.github;
+            githubLink.href = config.repo;
             githubLink.target = '_blank';
             githubLink.rel = 'noopener noreferrer';
             githubLink.textContent = 'Source on GitHub';
