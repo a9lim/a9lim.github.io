@@ -100,42 +100,39 @@
       'rgba(129, 96, 181, 0.5)',   // purple #8160B5
     ];
 
-    // Zoomed-in grid — 4 columns x 5 rows, larger hexes
-    // District map: 3 contiguous regions
+    // 2 columns x 3 rows — just 4-6 large hexes, very zoomed in
     const colorMap = [
-      [0,0,1,2],
-      [0,0,1,2],
-      [0,1,1,2],
-      [0,1,2,2],
-      [0,1,2,2],
+      [0, 1],
+      [0, 2],
+      [1, 2],
     ];
 
-    const COLS = 4;
-    const ROWS = 5;
-    const r = 90; // canvas-pixel radius (zoomed in)
+    const COLS = 2;
+    const ROWS = 3;
+    const r = 220; // very large canvas-pixel radius
 
-    // Flat-top hex geometry
-    const hexW = 2 * r;
-    const hexH = Math.sqrt(3) * r;
-    const colStep = 1.5 * r;
-    const rowStep = Math.sqrt(3) * r;
+    // Pointy-top hex geometry (matching sim's -30° vertex start)
+    const colStep = Math.sqrt(3) * r;  // horizontal center-to-center
+    const rowStep = 1.5 * r;           // vertical center-to-center
+    const hexW = Math.sqrt(3) * r;
+    const hexH = 2 * r;
 
     // Total grid extents
-    const gridW = colStep * (COLS - 1) + hexW;
-    const gridH = rowStep * ROWS + hexH / 2;
+    const gridW = colStep * COLS;
+    const gridH = rowStep * (ROWS - 1) + hexH;
 
     // Center grid in canvas
-    const originX = (W - gridW) / 2 + r;
+    const originX = (W - gridW) / 2 + hexW / 2;
     const originY = (H - gridH) / 2 + r;
 
-    // Compute hex centers
+    // Pointy-top: odd ROWS offset right by colStep/2
     function hexCenter(col, row) {
-      const cx = originX + col * colStep;
-      const cy = originY + row * rowStep + (col % 2 === 1 ? rowStep / 2 : 0);
+      const cx = originX + col * colStep + (row % 2 === 1 ? colStep / 2 : 0);
+      const cy = originY + row * rowStep;
       return { cx, cy };
     }
 
-    // Flat-top hex path — vertices at -30°, 30°, 90°, 150°, 210°, 270°
+    // Pointy-top hex path — vertices at -30°, 30°, 90°, 150°, 210°, 270°
     // (same angle offset as the actual sim)
     function hexPath(cx, cy, rr) {
       ctx.beginPath();
@@ -168,8 +165,8 @@
       }
     }
 
-    // Neighbor distance threshold: center-to-center for adjacent flat-top hexes = sqrt(3)*r
-    const neighborDist = rowStep * 1.05;
+    // Neighbor distance threshold: center-to-center for adjacent pointy-top hexes
+    const neighborDist = colStep * 1.05;
 
     // Find shared edge vertices between two adjacent hexes (distance-based)
     function sharedEdgeVertices(h1, h2) {
