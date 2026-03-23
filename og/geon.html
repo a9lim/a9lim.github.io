@@ -167,125 +167,60 @@
       ctx.fill();
     }
 
-    // --- Particle definitions ---
-    // Each has: current position (x,y), bezier control points for trail, charge color, radius
-    const SEG = 20; // trail segments
+    // --- 3-body problem: 3 particles, very zoomed in ---
+    const SEG = 25;
 
-    // Particle 1: positive (reddish), bottom-left region, curving up toward center
-    const p1color = lerpColor(COLOR_SLATE, COLOR_POS, 0.8, 1).replace(/,1\)$/, ')').replace('rgba','rgb');
-    // just use hex-like approach
-    const P1_COLOR = '#B74746'; // slate toward red, ~80%
+    // Particle 1: positive (reddish), sweeping from bottom-left
+    const P1_COLOR = '#B74746';
     const p1trail = sampleBezier(
-      {x: 130, y: 1100},
-      {x: 160, y: 880},
-      {x: 280, y: 780},
-      {x: 310, y: 670},
+      {x: -100, y: 1300},
+      {x: 50, y: 850},
+      {x: 300, y: 550},
+      {x: 500, y: 350},
       SEG
     );
 
-    // Particle 2: negative (bluish), top-right, curving down-left
-    const P2_COLOR = '#4A85A8'; // slate toward blue ~70%
+    // Particle 2: negative (bluish), sweeping from top-right
+    const P2_COLOR = '#4A85A8';
     const p2trail = sampleBezier(
-      {x: 720, y: 180},
-      {x: 680, y: 340},
-      {x: 560, y: 460},
-      {x: 490, y: 560},
+      {x: 900, y: -50},
+      {x: 650, y: 300},
+      {x: 350, y: 650},
+      {x: 150, y: 900},
       SEG
     );
 
-    // Particle 3: positive, right edge mid, curving left in arc
-    const P3_COLOR = '#A85050'; // slate toward red ~60%
+    // Particle 3: neutral (slate), crossing through
+    const P3_COLOR = COLOR_SLATE;
     const p3trail = sampleBezier(
-      {x: 760, y: 700},
-      {x: 680, y: 680},
-      {x: 580, y: 720},
-      {x: 520, y: 810},
+      {x: -50, y: 400},
+      {x: 250, y: 500},
+      {x: 500, y: 700},
+      {x: 700, y: 1100},
       SEG
     );
 
-    // Particle 4: neutral (slate), upper-left, gentle curve downward
-    const P4_COLOR = COLOR_SLATE;
-    const p4trail = sampleBezier(
-      {x:  80, y: 320},
-      {x: 120, y: 430},
-      {x: 200, y: 510},
-      {x: 240, y: 590},
-      SEG
-    );
-
-    // Particle 5: negative, lower-right, swooping arc
-    const P5_COLOR = '#3F7EA0'; // slate toward blue ~75%
-    const p5trail = sampleBezier(
-      {x: 680, y: 1160},
-      {x: 620, y: 1020},
-      {x: 500, y: 940},
-      {x: 430, y: 880},
-      SEG
-    );
-
-    // Particle 6: positive, mid-left, short upward curve
-    const P6_COLOR = '#C04544';
-    const p6trail = sampleBezier(
-      {x: 100, y: 780},
-      {x: 130, y: 700},
-      {x: 190, y: 660},
-      {x: 230, y: 640},
-      SEG
-    );
-
-    // Particle 7: neutral, upper-right region
-    const P7_COLOR = COLOR_SLATE;
-    const p7trail = sampleBezier(
-      {x: 600, y: 300},
-      {x: 570, y: 360},
-      {x: 540, y: 400},
-      {x: 520, y: 440},
-      SEG
-    );
-
-    // --- Draw trails (behind particles) ---
+    // --- Draw trails (thick) ---
     ctx.globalCompositeOperation = 'source-over';
+    drawTrail(p1trail, P1_COLOR, 14);
+    drawTrail(p2trail, P2_COLOR, 14);
+    drawTrail(p3trail, P3_COLOR, 12);
 
-    drawTrail(p1trail, P1_COLOR, 4);
-    drawTrail(p2trail, P2_COLOR, 4);
-    drawTrail(p3trail, P3_COLOR, 4);
-    drawTrail(p4trail, P4_COLOR, 3);
-    drawTrail(p5trail, P5_COLOR, 4);
-    drawTrail(p6trail, P6_COLOR, 3);
-    drawTrail(p7trail, P7_COLOR, 3);
-
-    // --- Draw photons (tiny yellow dots scattered near interaction zones) ---
+    // --- Photons near interaction zone ---
     const photons = [
-      // near p1 trail midpoint area
-      {x: 235, y: 760, r: 5, a: 0.45},
-      {x: 200, y: 830, r: 4, a: 0.30},
-      {x: 270, y: 720, r: 3, a: 0.20},
-      // near p2 trail
-      {x: 610, y: 390, r: 5, a: 0.40},
-      {x: 640, y: 430, r: 3, a: 0.25},
-      // near p3 trail
-      {x: 600, y: 740, r: 4, a: 0.35},
-      {x: 650, y: 770, r: 3, a: 0.20},
-      // near p6
-      {x: 170, y: 665, r: 4, a: 0.38},
-      // scattered
-      {x: 380, y: 500, r: 5, a: 0.28},
-      {x: 420, y: 960, r: 4, a: 0.22},
-      {x: 340, y: 420, r: 3, a: 0.18},
+      {x: 380, y: 550, r: 14, a: 0.45},
+      {x: 300, y: 650, r: 11, a: 0.35},
+      {x: 480, y: 480, r: 10, a: 0.30},
+      {x: 250, y: 720, r: 12, a: 0.25},
+      {x: 500, y: 600, r: 9, a: 0.20},
     ];
     photons.forEach(ph => drawPhoton(ph.x, ph.y, ph.r, ph.a));
 
-    // --- Draw particles (flat fill circles, on top of trails) ---
-    // Current position = last point of each trail
+    // --- Draw particles (large, flat fill) ---
     const last = arr => arr[arr.length - 1];
-
-    drawParticle(last(p1trail).x, last(p1trail).y, 18, P1_COLOR);
-    drawParticle(last(p2trail).x, last(p2trail).y, 20, P2_COLOR);
-    drawParticle(last(p3trail).x, last(p3trail).y, 16, P3_COLOR);
-    drawParticle(last(p4trail).x, last(p4trail).y, 14, P4_COLOR);
-    drawParticle(last(p5trail).x, last(p5trail).y, 18, P5_COLOR);
-    drawParticle(last(p6trail).x, last(p6trail).y, 14, P6_COLOR);
-    drawParticle(last(p7trail).x, last(p7trail).y, 12, P7_COLOR);
+    drawParticle(last(p1trail).x, last(p1trail).y, 65, P1_COLOR);
+    drawParticle(last(p2trail).x, last(p2trail).y, 70, P2_COLOR);
+    drawParticle(last(p3trail).x, last(p3trail).y, 55, P3_COLOR);
 
     // --- Top and bottom fades ---
     const fadeTop = ctx.createLinearGradient(0, 0, 0, 120);
