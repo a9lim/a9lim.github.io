@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif:wght@700&family=Noto+Sans+Mono:wght@400&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    width: 1200px;
+    height: 630px;
+    overflow: hidden;
+    background: #EBEFF4;
+    display: flex;
+    align-items: center;
+    font-family: system-ui;
+    position: relative;
+  }
+  .flair {
+    width: 400px;
+    height: 630px;
+    flex-shrink: 0;
+    position: relative;
+    overflow: hidden;
+  }
+  .flair canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 400px;
+    height: 630px;
+  }
+  /* Fade-out on right edge */
+  .flair::after {
+    content: '';
+    position: absolute;
+    top: 0; right: 0;
+    width: 100px;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, #EBEFF4);
+    pointer-events: none;
+  }
+  .text-side {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 0 60px;
+  }
+  .project-name {
+    font-family: 'Noto Serif', serif;
+    font-weight: 700;
+    font-size: 88px;
+    color: #0B1016;
+    letter-spacing: -2px;
+    line-height: 1;
+  }
+  .accent-line {
+    width: 88px;
+    height: 3px;
+    background: #E11107;
+    border-radius: 2px;
+    margin-top: 28px;
+  }
+  .site-brand {
+    font-family: 'Noto Sans Mono', monospace;
+    font-size: 22px;
+    color: #777C83;
+    margin-top: 16px;
+    letter-spacing: 0.5px;
+  }
+  .site-brand .copyleft {
+    display: inline-block;
+    transform: scaleX(-1);
+    font-size: 17px;
+    margin-right: 1px;
+    vertical-align: 1px;
+  }
+</style>
+</head>
+<body>
+  <div class="flair">
+    <canvas id="flair" width="800" height="1260"></canvas>
+  </div>
+  <div class="text-side">
+    <div class="project-name">Redistricting</div>
+    <div class="accent-line"></div>
+    <div class="site-brand"><span class="copyleft">&copy;</span>a9l.im</div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('flair');
+    const ctx = canvas.getContext('2d');
+    const W = canvas.width, H = canvas.height;
+
+    // District color map: 0=orange, 1=lime, 2=purple
+    const DISTRICT_COLORS = [
+      'rgba(196, 130, 37, 0.5)',   // orange #C48225
+      'rgba(95, 171, 77, 0.5)',    // lime #5FAB4D
+      'rgba(129, 96, 181, 0.5)',   // purple #8160B5
+    ];
+
+    const DISTRICT_COLORS_SOLID = [
+      '#C48225',
+      '#5FAB4D',
+      '#8160B5',
+    ];
+
+    // Deterministic color assignment — 6 columns x 8 rows
+    const colorMap = [
+      [0,0,1,1,2,2],
+      [0,0,1,1,2,2],
+      [0,0,0,1,2,2],
+      [0,0,0,1,1,2],
+      [0,1,1,1,1,2],
+      [0,1,1,2,2,2],
+      [0,0,1,2,2,2],
+      [0,0,1,1,2,2],
+    ];
+
+    const COLS = 6;
+    const ROWS = 8;
+    const r = 56; // canvas-pixel radius
+
+    // Flat-top hex geometry
+    const hexW = 2 * r;
+    const hexH = Math.sqrt(3) * r;
+    const colStep = 1.5 * r;
+    const rowStep = Math.sqrt(3) * r;
+
+    // Total grid extents
+    const gridW = colStep * (COLS - 1) + hexW;
+    const gridH = rowStep * ROWS + hexH / 2;
+
+    // Center grid in canvas
+    const originX = (W - gridW) / 2 + r;
+    const originY = (H - gridH) / 2 + r;
+
+    // Compute hex centers
+    function hexCenter(col, row) {
+      const cx = originX + col * colStep;
+      const cy = originY + row * rowStep + (col % 2 === 1 ? rowStep / 2 : 0);
+      return { cx, cy };
+    }
+
+    // Draw flat-top hexagon path
+    function hexPath(cx, cy, rr) {
+      ctx.beginPath();
+      for (let i = 0; i < 6; i++) {
+        const angle = Math.PI / 3 * i;
+        const x = cx + rr * Math.cos(angle);
+        const y = cy + rr * Math.sin(angle);
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      }
+      ctx.closePath();
+    }
+
+    // Get flat-top hex vertices (0=right, going counterclockwise)
+    function hexVertices(cx, cy, rr) {
+      const verts = [];
+      for (let i = 0; i < 6; i++) {
+        const angle = Math.PI / 3 * i;
+        verts.push({ x: cx + rr * Math.cos(angle), y: cy + rr * Math.sin(angle) });
+      }
+      return verts;
+    }
+
+    // For flat-top hexagons, each edge is shared with a neighbor.
+    // Edge indices (between vertex i and vertex (i+1)%6):
+    //   Edge 0 (v0-v1): right neighbor        -> neighbor col+1, same row (col even) or col+1, row-1 (col odd)
+    //   Edge 1 (v1-v2): bottom-right neighbor  -> neighbor col+1, row+1 (col even) or col+1, same row (col odd)
+    //   Edge 2 (v2-v3): bottom neighbor        -> neighbor same col, row+1
+    //   Edge 3 (v3-v4): bottom-left neighbor   -> neighbor col-1, row+1 (col even) or col-1, same row (col odd)
+    //   Edge 4 (v4-v5): top-left neighbor      -> neighbor col-1, row-1 (col even) or col-1, row (col odd... wait)
+    //   Edge 5 (v5-v0): top neighbor           -> neighbor same col, row-1
+    // Flat-top hex neighbors for offset grid (even-col):
+    //   even col: E=(c+1,r), SE=(c+1,r+1 -- wait no...)
+    // Let's use standard flat-top offset coords:
+    // For even columns: neighbors are (c+1,r), (c+1,r-1), (c,r-1), (c-1,r-1), (c-1,r), (c,r+1)...
+    // Actually let me derive from the visual layout:
+    // odd column is shifted DOWN by rowStep/2
+    // So for col c, row r, center = (originX + c*colStep, originY + r*rowStep + (c%2==1 ? rowStep/2 : 0))
+    // The 6 edges correspond to 6 neighbors. Let me enumerate them by examining which neighbor
+    // shares each edge.
+
+    // Edge i connects vertex i and vertex (i+1)%6.
+    // For flat-top hex, vertices go: 0=right(0°), 1=upper-right(60°), 2=upper-left(120°),
+    //   3=left(180°), 4=lower-left(240°), 5=lower-right(300°)
+    // Edges:
+    //   0: v0-v1 = right to upper-right → shares with neighbor to upper-right
+    //   1: v1-v2 = upper-right to upper-left → shares with neighbor above
+    //   2: v2-v3 = upper-left to left → shares with neighbor to upper-left
+    //   3: v3-v4 = left to lower-left → shares with neighbor to lower-left
+    //   4: v4-v5 = lower-left to lower-right → shares with neighbor below
+    //   5: v5-v0 = lower-right to right → shares with neighbor to lower-right
+
+    // Neighbors for even column (c%2==0):
+    // upper-right: (c+1, r-1)... wait, let me think again.
+    // In our grid: odd columns are shifted DOWN.
+    // So for an even-col hex at (c, r):
+    //   upper-right neighbor is at (c+1, r) because odd col c+1 is shifted down,
+    //   so (c+1, r) center is at y = originY + r*rowStep + rowStep/2,
+    //   while (c, r) is at y = originY + r*rowStep.
+    //   The hex to the upper-right of (c,r) (even) would be at (c+1, r) shifted down —
+    //   hmm, let me just compute numerically.
+
+    // Actually let me just check adjacency by distance: two hexes are neighbors if
+    // distance between centers < 1.1 * rowStep (which equals sqrt(3)*r).
+    // This is the safest approach.
+
+    function getNeighbor(col, row, edgeIdx) {
+      // For flat-top hex with odd-column-down offset:
+      // Edge 0 (v0-v1, right-upperright): neighbor depends on parity
+      // I'll use distance-based adjacency instead
+      return null; // placeholder
+    }
+
+    // Precompute all hex centers
+    const hexes = [];
+    for (let row = 0; row < ROWS; row++) {
+      for (let col = 0; col < COLS; col++) {
+        const { cx, cy } = hexCenter(col, row);
+        hexes.push({ col, row, cx, cy, district: colorMap[row][col] });
+      }
+    }
+
+    // Find shared edges between hexes of different districts
+    // Two hexes share an edge if their centers are ~rowStep apart (= sqrt(3)*r)
+    const neighborDist = rowStep * 1.05; // slight tolerance
+
+    // For each pair of adjacent hexes with different districts, find their shared edge vertices
+    function sharedEdgeVertices(h1, h2) {
+      const v1 = hexVertices(h1.cx, h1.cy, r);
+      const v2 = hexVertices(h2.cx, h2.cy, r);
+      // Find two vertices from h1 that are also (approximately) in h2
+      const shared = [];
+      for (const va of v1) {
+        for (const vb of v2) {
+          const dx = va.x - vb.x, dy = va.y - vb.y;
+          if (dx*dx + dy*dy < 4) { // within 2px
+            shared.push(va);
+            break;
+          }
+        }
+      }
+      return shared;
+    }
+
+    // --- Draw hex fills ---
+    for (const h of hexes) {
+      hexPath(h.cx, h.cy, r);
+      ctx.fillStyle = DISTRICT_COLORS[h.district];
+      ctx.fill();
+    }
+
+    // --- Draw hex outlines ---
+    ctx.strokeStyle = 'rgba(118, 124, 133, 0.2)';
+    ctx.lineWidth = 2;
+    for (const h of hexes) {
+      hexPath(h.cx, h.cy, r);
+      ctx.stroke();
+    }
+
+    // --- Draw district boundaries ---
+    ctx.strokeStyle = 'rgba(11, 16, 22, 0.3)';
+    ctx.lineWidth = 6;
+    ctx.lineCap = 'round';
+
+    for (let i = 0; i < hexes.length; i++) {
+      for (let j = i + 1; j < hexes.length; j++) {
+        const h1 = hexes[i], h2 = hexes[j];
+        if (h1.district === h2.district) continue;
+        const dx = h1.cx - h2.cx, dy = h1.cy - h2.cy;
+        const dist = Math.sqrt(dx*dx + dy*dy);
+        if (dist > neighborDist) continue;
+        // These are adjacent hexes with different districts — draw shared edge
+        const sv = sharedEdgeVertices(h1, h2);
+        if (sv.length === 2) {
+          ctx.beginPath();
+          ctx.moveTo(sv[0].x, sv[0].y);
+          ctx.lineTo(sv[1].x, sv[1].y);
+          ctx.stroke();
+        }
+      }
+    }
+
+    // --- Top fade ---
+    const fadeTop = ctx.createLinearGradient(0, 0, 0, 60);
+    fadeTop.addColorStop(0, 'rgba(235, 239, 244, 1)');
+    fadeTop.addColorStop(1, 'rgba(235, 239, 244, 0)');
+    ctx.fillStyle = fadeTop;
+    ctx.fillRect(0, 0, W, 60);
+
+    // --- Bottom fade ---
+    const fadeBot = ctx.createLinearGradient(0, H - 100, 0, H);
+    fadeBot.addColorStop(0, 'rgba(235, 239, 244, 0)');
+    fadeBot.addColorStop(1, 'rgba(235, 239, 244, 1)');
+    ctx.fillStyle = fadeBot;
+    ctx.fillRect(0, H - 100, W, 100);
+  </script>
+</body>
+</html>
