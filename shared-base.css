@@ -964,8 +964,8 @@ body {
     background: var(--bg-hover);
 }
 
-/* ─── Shortcut Overlay ─── */
-.shortcut-overlay {
+/* ─── About Overlay ─── */
+.about-overlay {
     position: fixed;
     inset: 0;
     z-index: 9500;
@@ -975,32 +975,34 @@ body {
     background: var(--backdrop);
     opacity: 0;
     transition: opacity 0.2s var(--ease-out);
+    pointer-events: none;
 }
 
-.shortcut-overlay-visible {
+.about-overlay-visible {
     opacity: 1;
+    pointer-events: auto;
 }
 
-.shortcut-content {
+.about-content {
     background: var(--bg-panel-solid);
     border: 1px solid var(--border);
     border-radius: var(--radius-lg);
     box-shadow: var(--shadow-lg);
     padding: 24px 28px;
-    max-width: 420px;
+    max-width: 480px;
     width: 90vw;
-    max-height: 80vh;
+    max-height: 85vh;
     overflow-y: auto;
 }
 
-.shortcut-header {
+.about-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
     margin-bottom: 20px;
 }
 
-.shortcut-header h2 {
+.about-header h2 {
     font-family: var(--font-body);
     font-size: 1rem;
     font-weight: 600;
@@ -1008,15 +1010,26 @@ body {
     margin: 0;
 }
 
-.shortcut-group {
+.about-desc {
+    font-size: 0.88rem;
+    line-height: 1.55;
+    color: var(--text-secondary);
+    margin: 0 0 16px;
+}
+
+.about-section {
+    padding-bottom: 16px;
     margin-bottom: 16px;
+    border-bottom: 1px solid var(--border);
 }
 
-.shortcut-group:last-child {
+.about-section:last-of-type {
+    border-bottom: none;
     margin-bottom: 0;
+    padding-bottom: 0;
 }
 
-.shortcut-group-label {
+.about-group-label {
     font-family: var(--font-body);
     font-weight: 600;
     font-size: 0.68rem;
@@ -1028,19 +1041,19 @@ body {
     border-bottom: 1px solid var(--border);
 }
 
-.shortcut-row {
+.about-row {
     display: flex;
     align-items: center;
     justify-content: space-between;
     padding: 5px 0;
 }
 
-.shortcut-label {
+.about-label {
     font-size: 0.82rem;
     color: var(--text-secondary);
 }
 
-.shortcut-key {
+.about-key {
     display: inline-block;
     padding: 2px 8px;
     border-radius: 4px;
@@ -1052,6 +1065,30 @@ body {
     min-width: 24px;
     text-align: center;
     white-space: nowrap;
+}
+
+.about-value {
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    color: var(--text);
+}
+
+.about-footer {
+    padding-top: 12px;
+    margin-top: 4px;
+    border-top: 1px solid var(--border);
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    text-align: center;
+}
+
+.about-footer a {
+    color: var(--accent);
+    text-decoration: none;
+}
+
+.about-footer a:hover {
+    text-decoration: underline;
 }
 
 /* ─── Control Rows ─── */
