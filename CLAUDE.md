@@ -25,7 +25,8 @@ All projects share a common design system hosted at this repo's root. **Always p
 - Use `shared-toolbar.js` (`_toolbar`) for theme toggle, sidebar toggle, play/pause, speed buttons
 - Use `shared-forms.js` (`_forms`) for mode groups, sliders, toggles
 - Use `shared-camera.js` for viewport/zoom
-- Use `shared-info.js` for info tip popovers and `shared-shortcuts.js` for keyboard shortcuts
+- Use `shared-info.js` for info tip popovers and `shared-shortcuts.js` for keyboard shortcut dispatch
+- Use `shared-about.js` (`initAboutPanel`) for the about/help overlay (project description, controls, shortcuts, AGPL footer)
 - Use `shared-tabs.js` for sidebar tab switching
 - Use `shared-intro.js` for intro screen dismiss
 - Use `shared-touch.js` for swipe-to-dismiss bottom sheets
@@ -72,11 +73,14 @@ Shared files (hosted here, loaded by all projects):
   shared-forms.js        _forms -- bindModeGroup, bindSlider, bindToggle (sim projects only)
   shared-intro.js        _intro -- intro screen dismiss with app-ready gating (sim projects only)
   shared-base.css        Reset, layout tokens, .glass, .tool-btn, ctrl-row/group, form controls,
-                         .sim-select, .sim-overlay, .ghost-btn, theme icons, toggles, toasts, a11y
+                         .sim-select, .sim-overlay, .ghost-btn, .about-* (overlay panel), theme icons,
+                         toggles, toasts, a11y
   shared-tabs.js         Tab switching IIFE for sidebar .tab-btn/.tab-panel (sim projects only)
   shared-camera.js       Camera/viewport module (sim projects only, not used here)
   shared-info.js         Info tip popovers (sim projects only)
-  shared-shortcuts.js    Keyboard shortcut registry (sim projects only)
+  shared-shortcuts.js    Keyboard shortcut dispatch — keybind registry only, no overlay (sim projects only)
+  shared-about.js        About/help overlay panel — initAboutPanel(config) for project info,
+                         controls, shortcuts, AGPL footer (sim projects only)
   shared-touch.js        Swipe-to-dismiss for bottom sheets (sim projects only)
   shared-tooltip.js      Tooltip popovers (sim projects only)
   shared-sparkline.js    Ring buffer sparkline renderer (sim projects only)
@@ -263,6 +267,7 @@ The root site does **not** load `shared-tabs.js`, `shared-camera.js`, `shared-in
 - **`shared-tabs.js`** -- tab switching for all three sim sidebars; changing `.tab-btn`/`.tab-panel` class names or `data-tab` attribute breaks tab navigation
 - **`shared-toolbar.js`** -- `_toolbar` IIFE used by all five projects for theme toggle, sidebar toggle, play/pause, and speed button updates; changing the public API breaks all consumers
 - **`shared-forms.js`** -- `_forms` IIFE used by all four sim projects for mode-toggle groups, range sliders, and toggle checkboxes; changing the public API breaks all consumers
+- **`shared-about.js`** -- about/help overlay used by all four sim projects; `initAboutPanel(config)` is the public API. The `?` key and `#about-btn` toolbar button both open this panel. Changing config shape or DOM class names (`.about-*`) breaks all sims.
 - **`shared-camera.js`, `shared-info.js`, `shared-shortcuts.js`, `shared-touch.js`, `shared-tooltip.js`, `shared-sparkline.js`** -- consumed by sim projects; do not rename, move, or change their public API without updating all consumers
 
 ### Shader On-Demand Rendering
