@@ -93,132 +93,75 @@
     const ctx = canvas.getContext('2d');
     const W = canvas.width, H = canvas.height;
 
-    // Membrane curve: gentle convex-upward arc, center at H/2 = 630
-    function membraneY(x) {
-      const t = x / W;
-      // Arc: rises from edges to center, displacement ~30px upward at center
-      return H / 2 - 30 * Math.sin(Math.PI * t);
+    // Scaled values (2x from sim's logical px)
+    const headSpacing = 12;
+    const headRadius  = 5;
+    const memH        = 120;  // total membrane band height
+    const memY        = H / 2 - memH / 2;  // top edge of membrane band
+    const tailLen     = (memH - 6 - headRadius * 2) / 2;
+
+    const HEAD_COLOR = 'rgba(78, 84, 92, 0.3)';
+    const TAIL_COLOR = 'rgba(78, 84, 92, 0.15)';
+
+    // Frozen time value for wobble
+    const t = 1.5;
+
+    // --- Upper heads and lower heads (batched fill) ---
+    ctx.fillStyle = HEAD_COLOR;
+    ctx.beginPath();
+    for (let lx = 6; lx < W; lx += headSpacing) {
+      const wobble = Math.sin(t * 2 + lx * 0.05) * 2.4;
+
+      // Upper head
+      const topHeadY = memY + 3 + wobble;
+      ctx.moveTo(lx + headRadius, topHeadY);
+      ctx.arc(lx, topHeadY, headRadius, 0, Math.PI * 2);
+
+      // Lower head (offset by half spacing)
+      const botHeadY = memY + memH - 3 - wobble;
+      const bx = lx + headSpacing / 2;
+      ctx.moveTo(bx + headRadius, botHeadY);
+      ctx.arc(bx, botHeadY, headRadius, 0, Math.PI * 2);
     }
+    ctx.fill();
 
-    // Colors
-    const HEAD_BLUE  = '#3590BF';
-    const HEAD_GREEN = '#2CA470';
-    const TAIL_COLOR = 'rgba(118, 124, 133, 0.4)';
-    const CHANNEL_COLOR = 'rgba(129, 96, 181, 0.30)';
-    const MOLECULE_COLOR = '#C48225';
+    // --- Tail lines ---
+    ctx.strokeStyle = TAIL_COLOR;
+    ctx.lineWidth = 1.4;
+    ctx.beginPath();
+    for (let lx = 6; lx < W; lx += headSpacing) {
+      const wobble = Math.sin(t * 2 + lx * 0.05) * 2.4;
 
-    const HEAD_R  = 16;   // head radius px
-    const TAIL_L  = 40;   // tail length px
-    const GAP     = 100;  // hydrophobic interior gap (center to center of head rows)
-    const N_LIPIDS = 20;  // lipids across width
+      // Upper head tails (pointing inward = downward)
+      const topHeadY = memY + 3 + wobble;
+      ctx.moveTo(lx - 1,   topHeadY + headRadius);
+      ctx.lineTo(lx - 1.5, topHeadY + headRadius + tailLen);
+      ctx.moveTo(lx + 1,   topHeadY + headRadius);
+      ctx.lineTo(lx + 1.5, topHeadY + headRadius + tailLen);
 
-    // Draw a single phospholipid
-    // cx, cy: head center; tailDir: +1 = tail goes downward (upper leaflet), -1 = tail goes upward (lower leaflet)
-    // colorIndex: 0=blue, 1=green
-    function drawLipid(cx, cy, tailDir, colorIndex) {
-      // Tail lines (two tails, slight angle outward)
-      ctx.save();
-      ctx.strokeStyle = TAIL_COLOR;
-      ctx.lineWidth = 2;
-      ctx.lineCap = 'round';
-
-      // Left tail
-      ctx.beginPath();
-      ctx.moveTo(cx - 4, cy + tailDir * HEAD_R * 0.6);
-      ctx.lineTo(cx - 7, cy + tailDir * (HEAD_R * 0.6 + TAIL_L));
-      ctx.stroke();
-
-      // Right tail
-      ctx.beginPath();
-      ctx.moveTo(cx + 4, cy + tailDir * HEAD_R * 0.6);
-      ctx.lineTo(cx + 7, cy + tailDir * (HEAD_R * 0.6 + TAIL_L));
-      ctx.stroke();
-
-      ctx.restore();
-
-      // Head circle
-      ctx.beginPath();
-      ctx.arc(cx, cy, HEAD_R, 0, Math.PI * 2);
-      ctx.fillStyle = colorIndex === 0 ? HEAD_BLUE : HEAD_GREEN;
-      ctx.fill();
+      // Lower head tails (pointing inward = upward)
+      const botHeadY = memY + memH - 3 - wobble;
+      const bx = lx + headSpacing / 2;
+      ctx.moveTo(bx - 1,   botHeadY - headRadius);
+      ctx.lineTo(bx - 1.5, botHeadY - headRadius - tailLen);
+      ctx.moveTo(bx + 1,   botHeadY - headRadius);
+      ctx.lineTo(bx + 1.5, botHeadY - headRadius - tailLen);
     }
-
-    // --- Draw phospholipids ---
-    const lipidSpacing = W / N_LIPIDS;
-    const halfGap = GAP / 2;
-
-    for (let i = 0; i < N_LIPIDS; i++) {
-      const cx = lipidSpacing * i + lipidSpacing / 2;
-      const mY = membraneY(cx);
-
-      // Upper leaflet: head above membrane center, tails pointing inward (downward)
-      const upperHeadY = mY - halfGap;
-      drawLipid(cx, upperHeadY, +1, i % 2);
-
-      // Lower leaflet: head below membrane center, tails pointing inward (upward)
-      const lowerHeadY = mY + halfGap;
-      drawLipid(cx, lowerHeadY, -1, (i + 1) % 2);
-    }
-
-    // --- Draw channel proteins ---
-    // Each protein: two rounded rectangles (top half and bottom half) with a pore gap in center
-    const channelXs = [250, 550, 700];
-    const channelW  = 60;
-    const poreGap   = 20;   // gap in center of channel
-    const channelHalfH = halfGap - HEAD_R - 4; // height of each half (from membrane center to just inside head row)
-
-    channelXs.forEach(cx => {
-      const mY = membraneY(cx);
-      const x = cx - channelW / 2;
-
-      // Upper half of channel (above pore)
-      const topOfUpper = mY - halfGap - 8;
-      const heightUpper = halfGap - poreGap / 2 + 8;
-      ctx.beginPath();
-      ctx.roundRect(x, topOfUpper, channelW, heightUpper, 8);
-      ctx.fillStyle = CHANNEL_COLOR;
-      ctx.fill();
-
-      // Lower half of channel (below pore)
-      const topOfLower = mY + poreGap / 2;
-      const heightLower = halfGap - poreGap / 2 + 8;
-      ctx.beginPath();
-      ctx.roundRect(x, topOfLower, channelW, heightLower, 8);
-      ctx.fillStyle = CHANNEL_COLOR;
-      ctx.fill();
-    });
-
-    // --- Draw small molecules (transport) ---
-    // Positioned near/inside channel pores
-    const molecules = [
-      { x: 250,  yOff:  0  },
-      { x: 250,  yOff: -28 },
-      { x: 550,  yOff:  8  },
-      { x: 700,  yOff: -6  },
-    ];
-
-    molecules.forEach(({ x, yOff }) => {
-      const mY = membraneY(x);
-      const cy = mY + yOff;
-      ctx.beginPath();
-      ctx.arc(x, cy, 8, 0, Math.PI * 2);
-      ctx.fillStyle = MOLECULE_COLOR;
-      ctx.fill();
-    });
+    ctx.stroke();
 
     // --- Top fade ---
-    const fadeTop = ctx.createLinearGradient(0, 0, 0, 60);
+    const fadeTop = ctx.createLinearGradient(0, 0, 0, 120);
     fadeTop.addColorStop(0, 'rgba(235, 239, 244, 1)');
     fadeTop.addColorStop(1, 'rgba(235, 239, 244, 0)');
     ctx.fillStyle = fadeTop;
-    ctx.fillRect(0, 0, W, 60);
+    ctx.fillRect(0, 0, W, 120);
 
     // --- Bottom fade ---
-    const fadeBot = ctx.createLinearGradient(0, H - 100, 0, H);
+    const fadeBot = ctx.createLinearGradient(0, H - 120, 0, H);
     fadeBot.addColorStop(0, 'rgba(235, 239, 244, 0)');
     fadeBot.addColorStop(1, 'rgba(235, 239, 244, 1)');
     ctx.fillStyle = fadeBot;
-    ctx.fillRect(0, H - 100, W, 100);
+    ctx.fillRect(0, H - 120, W, 120);
   </script>
 </body>
 </html>
