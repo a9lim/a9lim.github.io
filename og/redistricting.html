@@ -100,27 +100,19 @@
       'rgba(129, 96, 181, 0.5)',   // purple #8160B5
     ];
 
-    const DISTRICT_COLORS_SOLID = [
-      '#C48225',
-      '#5FAB4D',
-      '#8160B5',
-    ];
-
-    // Deterministic color assignment — 6 columns x 8 rows
+    // Zoomed-in grid — 4 columns x 5 rows, larger hexes
+    // District map: 3 contiguous regions
     const colorMap = [
-      [0,0,1,1,2,2],
-      [0,0,1,1,2,2],
-      [0,0,0,1,2,2],
-      [0,0,0,1,1,2],
-      [0,1,1,1,1,2],
-      [0,1,1,2,2,2],
-      [0,0,1,2,2,2],
-      [0,0,1,1,2,2],
+      [0,0,1,2],
+      [0,0,1,2],
+      [0,1,1,2],
+      [0,1,2,2],
+      [0,1,2,2],
     ];
 
-    const COLS = 6;
-    const ROWS = 8;
-    const r = 56; // canvas-pixel radius
+    const COLS = 4;
+    const ROWS = 5;
+    const r = 90; // canvas-pixel radius (zoomed in)
 
     // Flat-top hex geometry
     const hexW = 2 * r;
@@ -143,11 +135,12 @@
       return { cx, cy };
     }
 
-    // Draw flat-top hexagon path
+    // Flat-top hex path — vertices at -30°, 30°, 90°, 150°, 210°, 270°
+    // (same angle offset as the actual sim)
     function hexPath(cx, cy, rr) {
       ctx.beginPath();
       for (let i = 0; i < 6; i++) {
-        const angle = Math.PI / 3 * i;
+        const angle = Math.PI / 3 * i - Math.PI / 6; // -30° start
         const x = cx + rr * Math.cos(angle);
         const y = cy + rr * Math.sin(angle);
         if (i === 0) ctx.moveTo(x, y);
@@ -156,64 +149,14 @@
       ctx.closePath();
     }
 
-    // Get flat-top hex vertices (0=right, going counterclockwise)
+    // Get flat-top hex vertices with -30° start offset
     function hexVertices(cx, cy, rr) {
       const verts = [];
       for (let i = 0; i < 6; i++) {
-        const angle = Math.PI / 3 * i;
+        const angle = Math.PI / 3 * i - Math.PI / 6;
         verts.push({ x: cx + rr * Math.cos(angle), y: cy + rr * Math.sin(angle) });
       }
       return verts;
-    }
-
-    // For flat-top hexagons, each edge is shared with a neighbor.
-    // Edge indices (between vertex i and vertex (i+1)%6):
-    //   Edge 0 (v0-v1): right neighbor        -> neighbor col+1, same row (col even) or col+1, row-1 (col odd)
-    //   Edge 1 (v1-v2): bottom-right neighbor  -> neighbor col+1, row+1 (col even) or col+1, same row (col odd)
-    //   Edge 2 (v2-v3): bottom neighbor        -> neighbor same col, row+1
-    //   Edge 3 (v3-v4): bottom-left neighbor   -> neighbor col-1, row+1 (col even) or col-1, same row (col odd)
-    //   Edge 4 (v4-v5): top-left neighbor      -> neighbor col-1, row-1 (col even) or col-1, row (col odd... wait)
-    //   Edge 5 (v5-v0): top neighbor           -> neighbor same col, row-1
-    // Flat-top hex neighbors for offset grid (even-col):
-    //   even col: E=(c+1,r), SE=(c+1,r+1 -- wait no...)
-    // Let's use standard flat-top offset coords:
-    // For even columns: neighbors are (c+1,r), (c+1,r-1), (c,r-1), (c-1,r-1), (c-1,r), (c,r+1)...
-    // Actually let me derive from the visual layout:
-    // odd column is shifted DOWN by rowStep/2
-    // So for col c, row r, center = (originX + c*colStep, originY + r*rowStep + (c%2==1 ? rowStep/2 : 0))
-    // The 6 edges correspond to 6 neighbors. Let me enumerate them by examining which neighbor
-    // shares each edge.
-
-    // Edge i connects vertex i and vertex (i+1)%6.
-    // For flat-top hex, vertices go: 0=right(0°), 1=upper-right(60°), 2=upper-left(120°),
-    //   3=left(180°), 4=lower-left(240°), 5=lower-right(300°)
-    // Edges:
-    //   0: v0-v1 = right to upper-right → shares with neighbor to upper-right
-    //   1: v1-v2 = upper-right to upper-left → shares with neighbor above
-    //   2: v2-v3 = upper-left to left → shares with neighbor to upper-left
-    //   3: v3-v4 = left to lower-left → shares with neighbor to lower-left
-    //   4: v4-v5 = lower-left to lower-right → shares with neighbor below
-    //   5: v5-v0 = lower-right to right → shares with neighbor to lower-right
-
-    // Neighbors for even column (c%2==0):
-    // upper-right: (c+1, r-1)... wait, let me think again.
-    // In our grid: odd columns are shifted DOWN.
-    // So for an even-col hex at (c, r):
-    //   upper-right neighbor is at (c+1, r) because odd col c+1 is shifted down,
-    //   so (c+1, r) center is at y = originY + r*rowStep + rowStep/2,
-    //   while (c, r) is at y = originY + r*rowStep.
-    //   The hex to the upper-right of (c,r) (even) would be at (c+1, r) shifted down —
-    //   hmm, let me just compute numerically.
-
-    // Actually let me just check adjacency by distance: two hexes are neighbors if
-    // distance between centers < 1.1 * rowStep (which equals sqrt(3)*r).
-    // This is the safest approach.
-
-    function getNeighbor(col, row, edgeIdx) {
-      // For flat-top hex with odd-column-down offset:
-      // Edge 0 (v0-v1, right-upperright): neighbor depends on parity
-      // I'll use distance-based adjacency instead
-      return null; // placeholder
     }
 
     // Precompute all hex centers
@@ -225,20 +168,18 @@
       }
     }
 
-    // Find shared edges between hexes of different districts
-    // Two hexes share an edge if their centers are ~rowStep apart (= sqrt(3)*r)
-    const neighborDist = rowStep * 1.05; // slight tolerance
+    // Neighbor distance threshold: center-to-center for adjacent flat-top hexes = sqrt(3)*r
+    const neighborDist = rowStep * 1.05;
 
-    // For each pair of adjacent hexes with different districts, find their shared edge vertices
+    // Find shared edge vertices between two adjacent hexes (distance-based)
     function sharedEdgeVertices(h1, h2) {
       const v1 = hexVertices(h1.cx, h1.cy, r);
       const v2 = hexVertices(h2.cx, h2.cy, r);
-      // Find two vertices from h1 that are also (approximately) in h2
       const shared = [];
       for (const va of v1) {
         for (const vb of v2) {
           const dx = va.x - vb.x, dy = va.y - vb.y;
-          if (dx*dx + dy*dy < 4) { // within 2px
+          if (dx*dx + dy*dy < 9) { // within 3px
             shared.push(va);
             break;
           }
@@ -254,17 +195,17 @@
       ctx.fill();
     }
 
-    // --- Draw hex outlines ---
-    ctx.strokeStyle = 'rgba(118, 124, 133, 0.2)';
+    // --- Draw hex outlines (subtle, ~6% opacity) ---
+    ctx.strokeStyle = 'rgba(11, 16, 22, 0.06)';
     ctx.lineWidth = 2;
     for (const h of hexes) {
       hexPath(h.cx, h.cy, r);
       ctx.stroke();
     }
 
-    // --- Draw district boundaries ---
+    // --- Draw district boundaries (~30% opacity, thicker) ---
     ctx.strokeStyle = 'rgba(11, 16, 22, 0.3)';
-    ctx.lineWidth = 6;
+    ctx.lineWidth = 8;
     ctx.lineCap = 'round';
 
     for (let i = 0; i < hexes.length; i++) {
@@ -274,7 +215,6 @@
         const dx = h1.cx - h2.cx, dy = h1.cy - h2.cy;
         const dist = Math.sqrt(dx*dx + dy*dy);
         if (dist > neighborDist) continue;
-        // These are adjacent hexes with different districts — draw shared edge
         const sv = sharedEdgeVertices(h1, h2);
         if (sv.length === 2) {
           ctx.beginPath();
@@ -286,18 +226,18 @@
     }
 
     // --- Top fade ---
-    const fadeTop = ctx.createLinearGradient(0, 0, 0, 60);
+    const fadeTop = ctx.createLinearGradient(0, 0, 0, 120);
     fadeTop.addColorStop(0, 'rgba(235, 239, 244, 1)');
     fadeTop.addColorStop(1, 'rgba(235, 239, 244, 0)');
     ctx.fillStyle = fadeTop;
-    ctx.fillRect(0, 0, W, 60);
+    ctx.fillRect(0, 0, W, 120);
 
     // --- Bottom fade ---
-    const fadeBot = ctx.createLinearGradient(0, H - 100, 0, H);
+    const fadeBot = ctx.createLinearGradient(0, H - 160, 0, H);
     fadeBot.addColorStop(0, 'rgba(235, 239, 244, 0)');
     fadeBot.addColorStop(1, 'rgba(235, 239, 244, 1)');
     ctx.fillStyle = fadeBot;
-    ctx.fillRect(0, H - 100, W, 100);
+    ctx.fillRect(0, H - 160, W, 160);
   </script>
 </body>
 </html>
