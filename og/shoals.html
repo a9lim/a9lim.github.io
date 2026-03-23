@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif:wght@700&family=Noto+Sans+Mono:wght@400&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    width: 1200px;
+    height: 630px;
+    overflow: hidden;
+    background: #EBEFF4;
+    display: flex;
+    align-items: center;
+    font-family: system-ui;
+    position: relative;
+  }
+  .flair {
+    width: 400px;
+    height: 630px;
+    flex-shrink: 0;
+    position: relative;
+    overflow: hidden;
+  }
+  .flair canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 400px;
+    height: 630px;
+  }
+  /* Fade-out on right edge */
+  .flair::after {
+    content: '';
+    position: absolute;
+    top: 0; right: 0;
+    width: 100px;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, #EBEFF4);
+    pointer-events: none;
+  }
+  .text-side {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 0 60px;
+  }
+  .project-name {
+    font-family: 'Noto Serif', serif;
+    font-weight: 700;
+    font-size: 156px;
+    color: #0B1016;
+    letter-spacing: -3px;
+    line-height: 1;
+  }
+  .accent-line {
+    width: 88px;
+    height: 3px;
+    background: #E11107;
+    border-radius: 2px;
+    margin-top: 28px;
+  }
+  .site-brand {
+    font-family: 'Noto Sans Mono', monospace;
+    font-size: 22px;
+    color: #777C83;
+    margin-top: 16px;
+    letter-spacing: 0.5px;
+  }
+  .site-brand .copyleft {
+    display: inline-block;
+    transform: scaleX(-1);
+    font-size: 17px;
+    margin-right: 1px;
+    vertical-align: 1px;
+  }
+</style>
+</head>
+<body>
+  <div class="flair">
+    <canvas id="chart" width="800" height="1260"></canvas>
+  </div>
+  <div class="text-side">
+    <div class="project-name">Shoals</div>
+    <div class="accent-line"></div>
+    <div class="site-brand"><span class="copyleft">&copy;</span>a9l.im</div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('chart');
+    const ctx = canvas.getContext('2d');
+    const W = canvas.width, H = canvas.height;
+
+    const UP = '#2CA470';
+    const DOWN = '#C5547C';
+
+    // Seeded PRNG for deterministic wick sizing
+    let _seed = 42;
+    function _rand() { _seed = (_seed * 16807 + 0) % 2147483647; return (_seed - 1) / 2147483646; }
+
+    // Generate OHLC — volatile run-up with pullbacks
+    const candles = [];
+    let price = 62;
+    const moves = [
+      3.2, -1.8, 2.5, 4.1, -2.2, 1.9, -3.5, -1.2,
+      2.8, 5.2, 3.8, -2.0, 1.5, -4.1, 2.2, 6.0,
+      -1.5, 3.4, 2.8, -2.8, 4.5, 3.2, -1.0, 5.8
+    ];
+    for (let i = 0; i < moves.length; i++) {
+      const open = price;
+      const close = open + moves[i];
+      const wickUp = 0.5 + _rand() * 2.5;
+      const wickDown = 0.5 + _rand() * 2.5;
+      const high = Math.max(open, close) + wickUp;
+      const low = Math.min(open, close) - wickDown;
+      candles.push({ o: open, h: high, l: low, c: close });
+      price = close;
+    }
+
+    const allPrices = candles.flatMap(c => [c.h, c.l]);
+    const minP = Math.min(...allPrices) - 3;
+    const maxP = Math.max(...allPrices) + 3;
+
+    const padL = 24, padR = 60, padT = 50, padB = 50;
+    const chartW = W - padL - padR;
+    const chartH = H - padT - padB;
+
+    function priceToY(p) {
+      return padT + chartH * (1 - (p - minP) / (maxP - minP));
+    }
+
+    // Subtle horizontal grid
+    ctx.strokeStyle = 'rgba(11, 16, 22, 0.05)';
+    ctx.lineWidth = 1;
+    for (let i = 0; i <= 6; i++) {
+      const y = padT + (chartH / 6) * i;
+      ctx.beginPath();
+      ctx.moveTo(padL, y);
+      ctx.lineTo(W - padR, y);
+      ctx.stroke();
+    }
+
+    // Draw candles
+    const candleW = chartW / candles.length;
+    const bodyW = candleW * 0.6;
+    const wickW = 3;
+
+    candles.forEach((c, i) => {
+      const x = padL + candleW * i + candleW / 2;
+      const isUp = c.c >= c.o;
+      const color = isUp ? UP : DOWN;
+
+      // Subtle glow
+      const glowGrad = ctx.createRadialGradient(x, priceToY((c.h + c.l) / 2), 0, x, priceToY((c.h + c.l) / 2), candleW * 1.2);
+      glowGrad.addColorStop(0, isUp ? 'rgba(44,164,112,0.08)' : 'rgba(197,84,124,0.08)');
+      glowGrad.addColorStop(1, 'transparent');
+      ctx.fillStyle = glowGrad;
+      ctx.fillRect(x - candleW, priceToY(c.h) - 10, candleW * 2, priceToY(c.l) - priceToY(c.h) + 20);
+
+      // Wick
+      ctx.strokeStyle = color;
+      ctx.lineWidth = wickW;
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.moveTo(x, priceToY(c.h));
+      ctx.lineTo(x, priceToY(c.l));
+      ctx.stroke();
+
+      // Body
+      const top = priceToY(Math.max(c.o, c.c));
+      const bot = priceToY(Math.min(c.o, c.c));
+      const bH = Math.max(bot - top, 4);
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      ctx.roundRect(x - bodyW / 2, top, bodyW, bH, 3);
+      ctx.fill();
+    });
+
+    // Fade bottom
+    const fadeBot = ctx.createLinearGradient(0, H - 100, 0, H);
+    fadeBot.addColorStop(0, 'rgba(235, 239, 244, 0)');
+    fadeBot.addColorStop(1, 'rgba(235, 239, 244, 1)');
+    ctx.fillStyle = fadeBot;
+    ctx.fillRect(0, H - 100, W, 100);
+
+    // Fade top
+    const fadeTop = ctx.createLinearGradient(0, 0, 0, 60);
+    fadeTop.addColorStop(0, 'rgba(235, 239, 244, 1)');
+    fadeTop.addColorStop(1, 'rgba(235, 239, 244, 0)');
+    ctx.fillStyle = fadeTop;
+    ctx.fillRect(0, 0, W, 60);
+  </script>
+</body>
+</html>
