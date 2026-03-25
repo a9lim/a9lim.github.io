@@ -20,18 +20,18 @@ Each submodule follows the same pattern: `main.js` entry point with `$` DOM cach
 All projects share a common design system hosted at this repo's root. **Always prefer shared code over project-specific implementations:**
 
 - Use `shared-tokens.js` (`_PALETTE`, `_FONT`, color math) for all colors — extend via `colors.js`, never hardcode
-- Use `shared-utils.js` (`escapeHtml`, `debounce`, `throttle`, `clamp`, `lerp`, `showToast`) instead of reimplementing
+- Use `shared-utils.js` (`escapeHtml`, `debounce`, `throttle`, `clamp`, `lerp`, `showToast`, `trapFocus`) instead of reimplementing
 - Use `shared-base.css` classes (`.glass`, `.tool-btn`, `.ctrl-row`, `.sim-overlay`, `.ghost-btn`) for UI components
 - Use `shared-toolbar.js` (`_toolbar`) for theme toggle, sidebar toggle, play/pause, speed buttons
 - Use `shared-forms.js` (`_forms`) for mode groups, sliders, toggles
 - Use `shared-camera.js` for viewport/zoom
 - Use `shared-info.js` for info tip popovers and `shared-shortcuts.js` for keyboard shortcut dispatch
 - Use `shared-about.js` (`initAboutPanel`) for the about/help overlay (project description, controls, shortcuts, AGPL footer)
-- Use `shared-tabs.js` for sidebar tab switching
+- Use `shared-tabs.js` for sidebar tab switching (supports arrow key navigation and roving tabindex)
 - Use `shared-intro.js` for intro screen dismiss
 - Use `shared-touch.js` for swipe-to-dismiss bottom sheets
 - Use `shared-sparkline.js` for ring buffer sparkline rendering
-- Use `shared-tooltip.js` for tooltip popovers
+- Use `shared-tooltip.js` for tooltip popovers and `bindTooltipTouch(el, hitTestFn, tooltip)` for long-press tooltips on touch
 
 Before adding project-specific utility code, check whether a shared module already provides it. If new utility code would be useful across multiple projects, add it to the appropriate `shared-*.js` file instead of duplicating.
 
@@ -67,7 +67,7 @@ src/
 Shared files (hosted here, loaded by all projects):
   shared-tokens.js       _PALETTE, _FONT, _hsl2rgb, color math, CSS custom property injection
   shared-utils.js        escapeHtml, debounce, throttle, clamp, lerp, cubicBezier, showToast,
-                         resizeCanvasDPR, animateValue, initOverlayDismiss
+                         resizeCanvasDPR, animateValue, initOverlayDismiss, trapFocus
   shared-haptics.js      _haptics.trigger(type) -- Web Vibration API haptic feedback
   shared-toolbar.js      _toolbar -- play/pause, speed, theme toggle, sidebar toggle utilities
   shared-forms.js        _forms -- bindModeGroup, bindSlider, bindToggle (sim projects only)
@@ -75,14 +75,15 @@ Shared files (hosted here, loaded by all projects):
   shared-base.css        Reset, layout tokens, .glass, .tool-btn, ctrl-row/group, form controls,
                          .sim-select, .sim-overlay, .ghost-btn, .about-* (overlay panel), theme icons,
                          toggles, toasts, a11y
-  shared-tabs.js         Tab switching IIFE for sidebar .tab-btn/.tab-panel (sim projects only)
+  shared-tabs.js         Tab switching IIFE for sidebar .tab-btn/.tab-panel, arrow key navigation,
+                         roving tabindex, aria-labelledby on panels (sim projects only)
   shared-camera.js       Camera/viewport module (sim projects only, not used here)
   shared-info.js         Info tip popovers (sim projects only)
   shared-shortcuts.js    Keyboard shortcut dispatch — keybind registry only, no overlay (sim projects only)
   shared-about.js        About/help overlay panel — initAboutPanel(config) for project info,
                          controls, shortcuts, AGPL footer (sim projects only)
   shared-touch.js        Swipe-to-dismiss for bottom sheets (sim projects only)
-  shared-tooltip.js      Tooltip popovers (sim projects only)
+  shared-tooltip.js      Tooltip popovers, long-press touch support via bindTooltipTouch (sim projects only)
   shared-sparkline.js    Ring buffer sparkline renderer (sim projects only)
 ```
 
@@ -110,7 +111,7 @@ main.js
 Global scripts (loaded via <script> in <head>, not modules):
   shared-tokens.js  → exposes window._PALETTE, _FONT, _r, _parseHex, _rgb2hsl, _hsl2hex, _hsl2rgb, _darken
   shared-utils.js   → exposes window.escapeHtml, debounce, throttle, clamp, lerp, cubicBezier, showToast,
-                       resizeCanvasDPR, animateValue, initOverlayDismiss
+                       resizeCanvasDPR, animateValue, initOverlayDismiss, trapFocus
   shared-toolbar.js → exposes window._toolbar (initTheme, toggleTheme, toggleSidebar, closeSidebar, ...)
 ```
 
@@ -180,6 +181,15 @@ The accent stripe (`.stripe-band`) slides in from the left on scroll via `reques
 - Animated arc drawn progressively between cities (IntersectionObserver triggers, 2.5s fallback timeout)
 - Visibility API pauses/resumes the animation
 
+### Accessibility
+
+- Skip link (`<a href="#main-content" class="skip-link">`) at top of `<body>`, targets `<main id="main-content">`
+- Mobile nav uses `trapFocus()` for focus trapping, Escape to close, focus restored on dismiss
+- SPA router moves focus to the new page section on navigation (`tabindex="-1"` + `.focus()`)
+- Carousel dots use `role="tablist"`/`role="tab"` with `aria-selected` and arrow key navigation
+- All overlays and dialogs use `trapFocus()`, `aria-modal="true"`, and restore focus on close
+- `prefers-reduced-motion: reduce` respected in both CSS (shared-base.css blanket override) and JS (shader renders once, world map skips arc animation)
+
 ## Color System
 
 The root site **does not have a `colors.js`**. It uses only the shared tokens injected by `shared-tokens.js`:
@@ -225,6 +235,10 @@ The `_PALETTE` and `_FONT` objects are **never frozen** on the root site (no `co
 - **Noto Sans Mono**: section labels (`.section-label`), scroll hint, blog dates, project tags, blog code blocks
 - Loaded via `<link>` tags in `<head>` (Google Fonts), never `@import` in CSS
 
+### Touch Device Overrides
+
+`shared-base.css` includes `@media (pointer: coarse)` rules that expand `.tool-btn` to 44x44px, `.info-trigger` to 32px min, `.tab-btn` and `.mode-btn` to 44px min-height, and enable horizontal scrolling on `.sim-toolbar-actions`. Project CSS files (e.g., `gerry/styles.css`) add project-specific coarse-pointer overrides for palette buttons, map controls, etc.
+
 ## Responsive Breakpoints
 
 | Breakpoint | What changes |
@@ -247,7 +261,11 @@ The `_PALETTE` and `_FONT` objects are **never frozen** on the root site (no `co
   <link rel="icon" href="favicon.ico">
 </head>
 <body class="app-ready">
+  <a href="#main-content" class="skip-link">Skip to content</a>
   ...
+  <main id="main-content">
+    ... page sections ...
+  </main>
   <script type="module" src="main.js">  ← entry point, imports src/ modules
 </body>
 ```
@@ -341,6 +359,14 @@ Adding new `.fade-in` elements that also need hover effects requires the hover s
 ### Theme Toggle Location
 
 All four projects set `data-theme` on `<html>` (`document.documentElement`). Do not change this without checking the shader's MutationObserver, which watches `document.documentElement`.
+
+### Toggle Inputs Are Visually Hidden, Not `display: none`
+
+`.tog-wrap input` uses the `clip: rect(0,0,0,0)` pattern to stay in the tab order. Do not change back to `display: none` or toggles become keyboard-inaccessible.
+
+### `<h1>` Is for Hero Tagline Only
+
+The navbar brand is a `<span>`, not `<h1>`. Do not change it back -- the sole `<h1>` on the page is the hero tagline, preserving correct heading hierarchy.
 
 ### Blog Fetch Path
 
