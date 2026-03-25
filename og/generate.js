@@ -6,7 +6,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, '..');
 
 const CARDS = [
-  { html: 'hayashinet.html', output: path.join(ROOT, 'og-image.png'),          waitReady: true },
+  { html: 'a9lim.html', output: path.join(ROOT, 'og-image.png'),          waitReady: true },
   { html: 'shoals.html',     output: path.join(ROOT, 'finsim', 'og-image.png'),   waitReady: false },
   { html: 'geon.html',       output: path.join(ROOT, 'physsim', 'og-image.png'),  waitReady: false },
   { html: 'metabolism.html',  output: path.join(ROOT, 'biosim', 'og-image.png'),   waitReady: false },
@@ -25,7 +25,7 @@ for (const card of CARDS) {
   // Wait for fonts
   await page.waitForFunction(() => document.fonts.ready);
 
-  // Wait for SVG load (Hayashinet)
+  // Wait for SVG load (a9l.im)
   if (card.waitReady) {
     await page.waitForFunction(() => window._ready === true, { timeout: 10000 });
   }
