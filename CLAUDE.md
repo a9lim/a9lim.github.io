@@ -10,8 +10,8 @@ Four simulation projects live as git submodules in this repo:
 |---------|------|-------------|
 | **physsim** | `physsim/` | Particle physics simulator. Boris integrator, BH tree acceleration, Higgs/Axion scalar fields, WebGPU compute+render backend, 19 presets across gravity/EM/exotic/cosmological scenarios. |
 | **finsim** | `finsim/` | Options trading simulator (Shoals). GBM+Merton+Heston stock model, Vasicek rates, CRR binomial tree pricing, strategy builder, narrative event engine with political lore and 4-page epilogue. |
-| **gerry** | `gerry/` | Redistricting/gerrymandering simulator. Procedural hex-tile map with 3 parties and 10 districts, fairness metrics (efficiency gap, partisan symmetry), pack-and-crack and fair-draw algorithms, Monte Carlo election simulation. |
-| **biosim** | `biosim/` | Metabolism simulator. 12 pathways (glycolysis, Krebs, Calvin, ETC, etc.), 14 ETC complexes, allosteric regulation, particle system for electrons/protons/photons, ROS production/scavenging, 5 organism presets. |
+| **gerry** | `gerry/` | Gerry — redistricting/gerrymandering simulator. Procedural hex-tile map with 3 parties and 10 districts, fairness metrics (efficiency gap, partisan symmetry), pack-and-crack and fair-draw algorithms, Monte Carlo election simulation. |
+| **biosim** | `biosim/` | Cyano — metabolism simulator. 12 pathways (glycolysis, Krebs, Calvin, ETC, etc.), 14 ETC complexes, allosteric regulation, particle system for electrons/protons/photons, ROS production/scavenging, 5 organism presets. |
 
 Each submodule follows the same pattern: `main.js` entry point with `$` DOM cache, `index.html` with floating glass panels, `styles.css` for project overrides, `colors.js` extending shared palette, and `src/` for domain modules.
 
@@ -255,6 +255,48 @@ The `_PALETTE` and `_FONT` objects are **never frozen** on the root site (no `co
 Note: The root site uses **relative paths** for shared files (`shared-tokens.js`, `shared-base.css`). Sub-projects use absolute paths (`/shared-tokens.js`, `/shared-base.css`). Both resolve to the same files because this repo is the root of `a9l.im`.
 
 The root site does **not** load `shared-tabs.js`, `shared-camera.js`, `shared-info.js`, `shared-shortcuts.js`, `shared-touch.js`, `shared-tooltip.js`, or `shared-sparkline.js` -- those are only used by the four simulation projects.
+
+## OpenGraph Image Generation
+
+Static 1200×630 PNG card images for social sharing. Source HTML pages live in `og/`, output PNGs go to each project root.
+
+### Structure
+
+```
+og/
+  generate.js          # Puppeteer script — opens each HTML, screenshots to PNG
+  hayashinet.html      # Root site card (title: a9l.im, flair: logo.svg)
+  shoals.html          # finsim card (title: Shoals, flair: candlestick chart)
+  geon.html            # physsim card (title: Geon, flair: particle interaction)
+  metabolism.html      # biosim card (title: Cyano, flair: lipid bilayer)
+  redistricting.html   # gerry card (title: Gerry, flair: hex grid)
+```
+
+Output: `og-image.png` (root), `finsim/og-image.png`, `physsim/og-image.png`, `biosim/og-image.png`, `gerry/og-image.png`.
+
+### How to regenerate
+
+```bash
+node og/generate.js    # from repo root; requires Puppeteer
+```
+
+### Card layout
+
+- **Background**: `#EBEFF4`
+- **Left ~33% (400px)**: `<canvas>` at 2x resolution with project-specific flair illustration. Right-edge, top, and bottom fades blend into background.
+- **Right ~67% (800px)**: project name (Noto Serif 700, ~156px), 88×3px red accent underline (`#E11107`), copyleft "a9l.im" (Noto Sans Mono 400, 22px)
+- Each HTML page is **self-contained** — colors are hardcoded hex values, no shared module imports. Google Fonts loaded via `<link>` tags.
+
+### Generation details
+
+- Puppeteer opens each HTML via `file://` URL
+- Viewport: `1200×630, deviceScaleFactor: 1` (canvas handles its own 2x)
+- Waits for `document.fonts.ready` before screenshot; Hayashinet card also waits for `window._ready` (set after SVG `img.onload`)
+- Screenshot: `type: 'png', omitBackground: false`
+
+### Meta tags
+
+Each `index.html` references its `og-image.png` via `<meta property="og:image">` and `<meta name="twitter:image">` with absolute `https://a9l.im/` URLs. `twitter:card` is `summary_large_image`.
 
 ## Gotchas
 

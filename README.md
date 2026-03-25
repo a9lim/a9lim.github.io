@@ -77,8 +77,8 @@ Changes to these files affect all projects. See the parent [site-meta](https://g
 | Project | URL | Description |
 |---------|-----|-------------|
 | [Geon](https://github.com/a9lim/physsim) | [a9l.im/physsim](https://a9l.im/physsim) | Relativistic N-body simulation with scalar fields and radiation |
-| [Metabolism](https://github.com/a9lim/biosim) | [a9l.im/biosim](https://a9l.im/biosim) | Interactive cellular metabolism with 10 pathways and allosteric regulation |
-| [Redistricting](https://github.com/a9lim/gerry) | [a9l.im/gerry](https://a9l.im/gerry) | Gerrymandering simulator on a procedural hex-tile map |
+| [Cyano](https://github.com/a9lim/biosim) | [a9l.im/biosim](https://a9l.im/biosim) | Interactive cellular metabolism with 10 pathways and allosteric regulation |
+| [Gerry](https://github.com/a9lim/gerry) | [a9l.im/gerry](https://a9l.im/gerry) | Gerrymandering simulator on a procedural hex-tile map |
 | [Shoals](https://github.com/a9lim/finsim) | [a9l.im/finsim](https://a9l.im/finsim) | Options trading simulator with stochastic volatility and strategy builder |
 
 ## License
