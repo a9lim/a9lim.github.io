@@ -93,7 +93,7 @@
     const ctx = canvas.getContext('2d');
     const W = canvas.width, H = canvas.height;
 
-    // Colors matching physsim renderer.js
+    // Colors matching geon renderer.js
     const COLOR_SLATE   = '#767C85';
     const COLOR_POS     = '#C84341'; // positive charge → red
     const COLOR_NEG     = '#3590BF'; // negative charge → blue
@@ -128,7 +128,7 @@
       return pts;
     }
 
-    // Draw a trail matching physsim renderer.js drawTrails():
+    // Draw a trail matching geon renderer.js drawTrails():
     // 2-group batched strokes with midpoint alpha, default lineCap (butt),
     // lineWidth = 0.5 * particle radius
     function drawTrail(pts, color, particleRadius) {

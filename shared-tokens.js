@@ -95,7 +95,7 @@ function _oklch2hex(L, C, H) {
 }
 
 // ─── Font stacks ───
-// Left mutable — biosim extends with `emoji` before freezing
+// Left mutable — cyano extends with `emoji` before freezing
 const _FONT = {
   display: "'Noto Serif', Georgia, 'Times New Roman', serif",
   body:    "'Noto Sans', system-ui, -apple-system, sans-serif",

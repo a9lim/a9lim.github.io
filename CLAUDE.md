@@ -8,10 +8,10 @@ Four simulation projects live as git submodules in this repo:
 
 | Project | Path | Description |
 |---------|------|-------------|
-| **physsim** | `physsim/` | Particle physics simulator. Boris integrator, BH tree acceleration, Higgs/Axion scalar fields, WebGPU compute+render backend, 19 presets across gravity/EM/exotic/cosmological scenarios. |
-| **finsim** | `finsim/` | Options trading simulator (Shoals). GBM+Merton+Heston stock model, Vasicek rates, CRR binomial tree pricing, strategy builder, narrative event engine with political lore and 4-page epilogue. |
-| **gerry** | `gerry/` | Gerry — redistricting/gerrymandering simulator. Procedural hex-tile map with 3 parties and 10 districts, fairness metrics (efficiency gap, partisan symmetry), pack-and-crack and fair-draw algorithms, Monte Carlo election simulation. |
-| **biosim** | `biosim/` | Cyano — metabolism simulator. 12 pathways (glycolysis, Krebs, Calvin, ETC, etc.), 14 ETC complexes, allosteric regulation, particle system for electrons/protons/photons, ROS production/scavenging, 5 organism presets. |
+| **geon** | `geon/` | Particle physics simulator. Boris integrator, BH tree acceleration, Higgs/Axion scalar fields, WebGPU compute+render backend, 19 presets across gravity/EM/exotic/cosmological scenarios. |
+| **shoals** | `shoals/` | Options trading simulator. GBM+Merton+Heston stock model, Vasicek rates, CRR binomial tree pricing, strategy builder, narrative event engine with political lore and 4-page epilogue. |
+| **gerry** | `gerry/` | Redistricting/gerrymandering simulator. Procedural hex-tile map with 3 parties and 10 districts, fairness metrics (efficiency gap, partisan symmetry), pack-and-crack and fair-draw algorithms, Monte Carlo election simulation. |
+| **cyano** | `cyano/` | Metabolism simulator. 12 pathways (glycolysis, Krebs, Calvin, ETC, etc.), 14 ETC complexes, allosteric regulation, particle system for electrons/protons/photons, ROS production/scavenging, 5 organism presets. |
 
 Each submodule follows the same pattern: `main.js` entry point with `$` DOM cache, `index.html` with floating glass panels, `styles.css` for project overrides, `colors.js` extending shared palette, and `src/` for domain modules.
 
@@ -265,14 +265,14 @@ Static 1200×630 PNG card images for social sharing. Source HTML pages live in `
 ```
 og/
   generate.js          # Puppeteer script — opens each HTML, screenshots to PNG
-  hayashinet.html      # Root site card (title: a9l.im, flair: logo.svg)
-  shoals.html          # finsim card (title: Shoals, flair: candlestick chart)
-  geon.html            # physsim card (title: Geon, flair: particle interaction)
-  metabolism.html      # biosim card (title: Cyano, flair: lipid bilayer)
+  a9lim.html           # Root site card (title: a9l.im, flair: logo.svg)
+  shoals.html          # shoals card (title: Shoals, flair: candlestick chart)
+  geon.html            # geon card (title: Geon, flair: particle interaction)
+  metabolism.html      # cyano card (title: Cyano, flair: lipid bilayer)
   redistricting.html   # gerry card (title: Gerry, flair: hex grid)
 ```
 
-Output: `og-image.png` (root), `finsim/og-image.png`, `physsim/og-image.png`, `biosim/og-image.png`, `gerry/og-image.png`.
+Output: `og-image.png` (root), `shoals/og-image.png`, `geon/og-image.png`, `cyano/og-image.png`, `gerry/og-image.png`.
 
 ### How to regenerate
 
@@ -291,7 +291,7 @@ node og/generate.js    # from repo root; requires Puppeteer
 
 - Puppeteer opens each HTML via `file://` URL
 - Viewport: `1200×630, deviceScaleFactor: 1` (canvas handles its own 2x)
-- Waits for `document.fonts.ready` before screenshot; Hayashinet card also waits for `window._ready` (set after SVG `img.onload`)
+- Waits for `document.fonts.ready` before screenshot; a9lim card also waits for `window._ready` (set after SVG `img.onload`)
 - Screenshot: `type: 'png', omitBackground: false`
 
 ### Meta tags
