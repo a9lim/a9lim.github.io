@@ -179,6 +179,31 @@ function animateValue(el, end, duration, formatFn, id) {
 }
 
 /**
+ * Trap keyboard focus within an overlay element.
+ * @param {HTMLElement} overlayEl  The overlay container
+ * @returns {Function} Cleanup function that removes the trap
+ */
+function trapFocus(overlayEl) {
+    var FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+    function _handler(e) {
+        if (e.key !== 'Tab') return;
+        var focusable = Array.from(overlayEl.querySelectorAll(FOCUSABLE)).filter(function(el) {
+            return el.offsetParent !== null;
+        });
+        if (!focusable.length) return;
+        var first = focusable[0];
+        var last = focusable[focusable.length - 1];
+        if (e.shiftKey) {
+            if (document.activeElement === first) { e.preventDefault(); last.focus(); }
+        } else {
+            if (document.activeElement === last) { e.preventDefault(); first.focus(); }
+        }
+    }
+    overlayEl.addEventListener('keydown', _handler);
+    return function() { overlayEl.removeEventListener('keydown', _handler); };
+}
+
+/**
  * Show a brief toast notification. Creates the container on first use.
  * Styled by `.toast` / `#toast-container` in shared-base.css.
  * @param {string} message  Text to display
@@ -190,6 +215,7 @@ function showToast(message, duration) {
     if (!container) {
         container = document.createElement('div');
         container.id = 'toast-container';
+        container.setAttribute('role', 'status');
         document.body.appendChild(container);
     }
     const toast = document.createElement('div');
