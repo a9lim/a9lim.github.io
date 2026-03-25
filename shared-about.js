@@ -193,12 +193,12 @@ function initAboutPanel(config) {
         footer.appendChild(document.createTextNode('AGPL-3.0'));
 
         if (config.repo) {
-            footer.appendChild(document.createTextNode(' \u00b7 '));
+            footer.appendChild(document.createTextNode(' | '));
             var githubLink = document.createElement('a');
             githubLink.href = config.repo;
             githubLink.target = '_blank';
             githubLink.rel = 'noopener noreferrer';
-            githubLink.textContent = 'Source on GitHub';
+            githubLink.textContent = 'GitHub';
             footer.appendChild(githubLink);
         }
 
