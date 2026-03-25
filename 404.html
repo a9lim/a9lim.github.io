@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>404 — a9l.im</title>
+    <meta name="robots" content="noindex">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;600&family=Noto+Serif:ital,wght@0,700;1,400&family=Noto+Sans+Mono:wght@400&display=swap" rel="stylesheet">
+
+    <script src="shared-tokens.js"></script>
+    <link rel="stylesheet" href="shared-base.css">
+    <link rel="icon" href="favicon.ico">
+
+    <style>
+        body {
+            margin: 0;
+            min-height: 100dvh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--bg-canvas);
+            color: var(--text);
+            font-family: var(--font-body);
+            text-align: center;
+        }
+        .error-page {
+            max-width: 480px;
+            padding: 32px 24px;
+        }
+        .error-code {
+            font-family: var(--font-display);
+            font-weight: 700;
+            font-size: clamp(5rem, 15vw, 9rem);
+            line-height: 1;
+            color: var(--text-muted);
+            letter-spacing: -3px;
+        }
+        .accent-line {
+            width: 48px;
+            height: 3px;
+            background: var(--accent);
+            border-radius: 2px;
+            margin: 20px auto;
+        }
+        .error-message {
+            font-size: 1.1rem;
+            color: var(--text-secondary);
+            line-height: 1.6;
+            margin-bottom: 32px;
+        }
+        .home-link {
+            display: inline-block;
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            color: var(--accent);
+            text-decoration: none;
+            padding: 10px 24px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            transition: background 0.2s, border-color 0.2s;
+        }
+        .home-link:hover {
+            background: var(--bg-hover);
+            border-color: var(--accent);
+        }
+    </style>
+</head>
+<body>
+    <div class="error-page">
+        <div class="error-code">404</div>
+        <div class="accent-line"></div>
+        <p class="error-message">This page doesn't exist. It may have been moved or removed.</p>
+        <a href="/" class="home-link">Back to a9l.im</a>
+    </div>
+
+    <script>
+        // Respect saved theme preference
+        const saved = localStorage.getItem('a9lim-theme')
+            || localStorage.getItem('geon-theme')
+            || localStorage.getItem('shoals-theme');
+        if (saved === 'dark') document.documentElement.dataset.theme = 'dark';
+    </script>
+</body>
+</html>
