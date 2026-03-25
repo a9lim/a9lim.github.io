@@ -46,3 +46,72 @@ function createSimTooltip() {
         }
     };
 }
+
+/**
+ * Bind long-press touch to show a tooltip via a project-specific hit-test.
+ *
+ * @param {HTMLElement} el         Element to listen on (canvas or container)
+ * @param {Function}    hitTestFn  (clientX, clientY) => { text, screenX, screenY } | null
+ * @param {{ show, hide, el: HTMLElement }} tooltip  Tooltip instance from createSimTooltip()
+ * @returns {Function} Cleanup function
+ */
+function bindTooltipTouch(el, hitTestFn, tooltip) {
+    var HOLD_MS = 400;
+    var MOVE_THRESHOLD = 8;
+    var DISMISS_MS = 3000;
+    var timer = null;
+    var dismissTimer = null;
+    var startX = 0, startY = 0;
+
+    function clearTimers() {
+        if (timer) { clearTimeout(timer); timer = null; }
+        if (dismissTimer) { clearTimeout(dismissTimer); dismissTimer = null; }
+    }
+
+    function onStart(e) {
+        if (e.touches.length !== 1) { clearTimers(); return; }
+        var t = e.touches[0];
+        startX = t.clientX;
+        startY = t.clientY;
+        clearTimers();
+        timer = setTimeout(function () {
+            timer = null;
+            var hit = hitTestFn(t.clientX, t.clientY);
+            if (hit) {
+                tooltip.show(hit.screenX || t.clientX, hit.screenY || t.clientY, hit.text);
+                dismissTimer = setTimeout(function () { tooltip.hide(); }, DISMISS_MS);
+            }
+        }, HOLD_MS);
+    }
+
+    function onMove(e) {
+        if (!timer) return;
+        var t = e.touches[0];
+        var dx = t.clientX - startX, dy = t.clientY - startY;
+        if (dx * dx + dy * dy > MOVE_THRESHOLD * MOVE_THRESHOLD) clearTimers();
+    }
+
+    function onEnd() {
+        if (timer) { clearTimeout(timer); timer = null; }
+    }
+
+    function onStartDismiss(e) {
+        if (tooltip.el.classList.contains('visible') && e.target !== el && !el.contains(e.target)) {
+            tooltip.hide();
+            if (dismissTimer) { clearTimeout(dismissTimer); dismissTimer = null; }
+        }
+    }
+
+    el.addEventListener('touchstart', onStart, { passive: true });
+    el.addEventListener('touchmove', onMove, { passive: true });
+    el.addEventListener('touchend', onEnd, { passive: true });
+    document.addEventListener('touchstart', onStartDismiss, { passive: true });
+
+    return function () {
+        el.removeEventListener('touchstart', onStart);
+        el.removeEventListener('touchmove', onMove);
+        el.removeEventListener('touchend', onEnd);
+        document.removeEventListener('touchstart', onStartDismiss);
+        clearTimers();
+    };
+}
