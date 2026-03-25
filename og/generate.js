@@ -7,9 +7,9 @@ const ROOT = path.resolve(__dirname, '..');
 
 const CARDS = [
   { html: 'a9lim.html', output: path.join(ROOT, 'og-image.png'),          waitReady: true },
-  { html: 'shoals.html',     output: path.join(ROOT, 'finsim', 'og-image.png'),   waitReady: false },
-  { html: 'geon.html',       output: path.join(ROOT, 'physsim', 'og-image.png'),  waitReady: false },
-  { html: 'metabolism.html',  output: path.join(ROOT, 'biosim', 'og-image.png'),   waitReady: false },
+  { html: 'shoals.html',     output: path.join(ROOT, 'shoals', 'og-image.png'),   waitReady: false },
+  { html: 'geon.html',       output: path.join(ROOT, 'geon', 'og-image.png'),     waitReady: false },
+  { html: 'metabolism.html',  output: path.join(ROOT, 'cyano', 'og-image.png'),    waitReady: false },
   { html: 'redistricting.html', output: path.join(ROOT, 'gerry', 'og-image.png'), waitReady: false },
 ];
 

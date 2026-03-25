@@ -1,6 +1,6 @@
 /* ===================================================================
    shared-touch.js — Swipe-to-dismiss for bottom-sheet panels.
-   Used by all three simulation projects (physsim, biosim, gerry).
+   Used by all three simulation projects (geon, cyano, gerry).
    Only active at viewport widths <= 900px where panels become
    bottom sheets instead of side panels.
    =================================================================== */

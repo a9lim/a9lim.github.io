@@ -3,7 +3,7 @@
 
 export const PROJECTS = [
     {
-        href: '/physsim',
+        href: '/geon',
         title: 'Geon',
         shortDesc: 'Relativistic N-body simulator with 11 forces, scalar fields, and WebGPU compute shaders.',
         longDesc: 'Relativistic particle simulator with Boris integration, 1PN corrections, and Barnes-Hut O(N\u2009log\u2009N) spatial partitioning. Includes signal delay via light-cone solving, Higgs and axion scalar fields, pion force carriers, Kerr-Newman black holes with Hawking radiation, and a WebGPU compute pipeline with WGSL shaders.',
@@ -13,7 +13,7 @@ export const PROJECTS = [
         external: false,
     },
     {
-        href: '/biosim',
+        href: '/cyano',
         title: 'Cyano',
         shortDesc: 'Cellular metabolism simulator with ten biochemical pathways, allosteric regulation, and cofactor tracking.',
         longDesc: 'Interactive metabolism simulator mapping glycolysis, Krebs, Calvin, beta-oxidation, and six more pathways onto a shared metabolite grid. Features a 14-complex electron transport chain, five organism presets, reactive oxygen species, and allosteric enzyme regulation gating every reaction.',
@@ -33,12 +33,12 @@ export const PROJECTS = [
         external: false,
     },
     {
-        href: '/finsim',
+        href: '/shoals',
         title: 'Shoals',
         shortDesc: 'Options trading simulator with stochastic volatility, a multi-leg strategy builder, and narrative market events.',
         longDesc: 'Trading simulator with GBM, Merton jumps, Heston stochastic volatility, and Vasicek rates driving a CRR binomial tree for American option pricing with discrete dividends. Includes a 25-strike options chain, multi-leg strategy builder with payoff diagrams and Greek overlays, margin portfolio, and a narrative event engine with 88 curated scenarios.',
         tags: ['finance', 'options pricing', 'canvas'],
-        image: 'img/finsim.png',
+        image: 'img/shoals.png',
         icon: '<svg viewBox="0 0 24 24"><path d="M3 21V3"/><path d="M3 21h18"/><polyline points="3,14 7,8 11,10 14,12 17,6"/><path d="M17,6l4,-3"/><path d="M17,3h4v4"/></svg>',
         external: false,
     },
