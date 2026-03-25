@@ -49,7 +49,6 @@ Inside `@media (pointer: coarse)`:
 ```css
 .sim-toolbar-actions {
   overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
 }
 ```
 
@@ -85,12 +84,12 @@ The existing `input:focus-visible + .tog` rule at line 1463 will start working a
 
 #### `shared-tabs.js` — Arrow key navigation
 
-When a `[role="tab"]` has focus:
+Add a `keydown` listener inside the existing IIFE, attached to each `.tab-btn` element (the same nodelist the click handler already uses). When a `.tab-btn` has focus:
 - `ArrowLeft` / `ArrowRight`: move focus to previous/next tab and activate it
 - `Home`: focus and activate first tab
 - `End`: focus and activate last tab
 
-On init, add `aria-labelledby` on each `[role="tabpanel"]` pointing to its controlling `[role="tab"]` button's `id`. Generate tab `id`s if missing (e.g., `tab-{index}`).
+On init, add `aria-labelledby` on each `[role="tabpanel"]` pointing to its controlling `.tab-btn`'s `id`. Generate tab `id`s if missing using a collision-free scheme (e.g., `tab-{panelId}` derived from the panel's existing `id`).
 
 #### `shared-about.js` — Focus trap and `aria-modal`
 
@@ -102,7 +101,7 @@ On the about overlay element:
 
 #### `shared-info.js` — Reference overlay focus trap
 
-Same pattern as about panel: `aria-modal="true"`, focus trap on open, restore on close.
+Same pattern as about panel: `aria-modal="true"`, focus trap on open, restore on close. Note: the reference overlay uses `hidden` attribute toggling (not DOM insertion/removal like the about panel). `trapFocus()` must be called when `hidden` is removed (in `openReference()`), and cleanup must run when `hidden` is set back (in the dismiss handler).
 
 #### `shared-tooltip.js` — Long-press for touch
 
@@ -116,6 +115,8 @@ Add a touch path alongside the existing mouse path:
 
 This requires each project to pass its hit-test function when initializing tooltip touch support, since the hit-test is project-specific (enzyme hitboxes in cyano, chain cell data in shoals).
 
+**API**: Add a new function `bindTooltipTouch(canvas, hitTestFn, tooltip)` that returns a cleanup function. `hitTestFn(x, y)` receives world-space coordinates and returns `{ text, screenX, screenY }` or `null`. Each project calls this once after creating its tooltip and canvas.
+
 #### `shared-utils.js` — Focus trap utility + toast `aria-live`
 
 **`trapFocus(overlayEl)`**: Returns a cleanup function. On call:
@@ -123,7 +124,7 @@ This requires each project to pass its hit-test function when initializing toolt
 2. Add a `keydown` listener that intercepts Tab/Shift+Tab and cycles focus within the list
 3. The returned cleanup function removes the listener
 
-**Toast `aria-live`**: In `showToast()`, ensure the toast container has `role="status"` and `aria-live="polite"`. Set once on container creation.
+**Toast `aria-live`**: In `showToast()`, ensure the toast container has `role="status"` (`role="status"` implicitly sets `aria-live="polite"`). Set once on container creation.
 
 ### Layer 3: Universal Keyboard Shortcuts
 
@@ -131,11 +132,11 @@ Every project registers these via `initShortcuts()`:
 
 | Key | Action | Group | Applies to |
 |-----|--------|-------|------------|
-| `Space` | Play / Pause | Simulation | all 4 |
+| `Space` | Play / Pause | Simulation | geon, shoals, cyano (no-op in gerry) |
 | `,` | Decrease speed | Simulation | geon, shoals, cyano |
 | `.` | Increase speed | Simulation | geon, shoals, cyano |
 | `/` | Step forward | Simulation | geon, shoals |
-| `R` | Reset simulation | Simulation | all 4 |
+| `R` | Reset simulation / map | Simulation | all 4 (gerry: reset districts) |
 | `T` | Toggle theme | View | all 4 |
 | `S` | Toggle sidebar | View | all 4 |
 | `[` | Previous tab | View | all 4 |
@@ -148,9 +149,9 @@ Every project registers these via `initShortcuts()`:
 
 **Migration from current state:**
 - Geon: `.` moves from step-forward to speed-up; `/` takes step-forward. Add `,`, `[`, `]`, `=`, `-`, `0`.
-- Shoals: `.` moves from step-forward to speed-up; `/` takes step-forward. Add `,`, `R`, `[`, `]`, `=`, `-`, `0`. Fix save/load shortcuts (currently empty callbacks).
+- Shoals: `.` moves from step-forward to speed-up; `/` takes step-forward. `S` currently opens sidebar to Strategy tab — change to universal sidebar toggle (plain toggle). Drop the strategy-specific behavior; users can press `]` to tab over to Strategy instead. Add `,`, `R`, `[`, `]`, `=`, `-`, `0`. Fix save/load shortcuts (currently empty callbacks).
 - Cyano: Add `R`, `,`, `.`, `[`, `]`, `=`, `-`, `0`.
-- Gerry: Unbind `0` from district 10. Add `R`, `,`, `.` (gerry has no speed control — skip `,`/`.`), `[`, `]`, `=`, `-`, `0`.
+- Gerry: Unbind `0` from district 10 (district 10 remains selectable via the palette UI; no replacement key). `Space` is a no-op (gerry has no time-stepping). `R` resets districts (same as `#reset-btn`). `,`/`.` are not bound (no speed control). Add `R`, `[`, `]`, `=`, `-`, `0`.
 
 ### Layer 4: Project-Specific Keyboard Shortcuts
 
@@ -193,7 +194,7 @@ Changes:
 - Add `M` — Monte Carlo simulate
 - Add `P` — toggle pan mode
 - Add `B` — cycle brush size (1→3→7→1)
-- Add `Ctrl+Shift+Z` — redo (alternative)
+- Add `Ctrl+Shift+Z` — redo (alternative to `Ctrl+Y`; both listed in about panel)
 
 ### Layer 5: Project-Specific Mobile/Touch Fixes
 
@@ -214,7 +215,7 @@ Changes:
 
 The existing `spawnParticle()` function already accepts an antimatter flag. The hit-test for particle selection needs to be integrated into the touch path — currently `onTouchEnd` calls `spawnParticle` unconditionally. Change to: hit-test first, if a particle is under the touch point, select or delete based on mode; if empty space, spawn based on mode.
 
-**Hint bar**: detect `(pointer: coarse)` and show `"Tap to Spawn · Pinch to Zoom · X to Toggle Mode"` instead of `"Left Click to Spawn · Right Click to Remove · Scroll to Zoom"`.
+**Hint bar**: Use `window.matchMedia('(pointer: coarse)').matches` (same pattern as `shared-info.js`) to detect touch devices at init time. Show `"Tap to Spawn · Pinch to Zoom · X to Toggle Mode"` instead of `"Left Click to Spawn · Right Click to Remove · Scroll to Zoom"`. All projects use the same JS detection approach for consistency.
 
 #### Shoals — Buy/Sell Toggle + Chart Touch
 
@@ -277,12 +278,12 @@ Added to all overlay elements that get focus trapping.
 #### Project-specific ARIA
 
 **Geon:**
-- Engine tab checkboxes (`#gpu-toggle`, `#barneshut-toggle`): add `role="switch"` and `aria-checked`
+- Engine tab checkboxes (`#gpu-toggle`, `#barneshut-toggle`): add `role="switch"` and `aria-checked`. Note: `aria-checked` must be explicitly toggled in the JS change handler whenever the checkbox state changes, since `role="switch"` prevents the browser from inferring it from the native `checked` property.
 - Tab panels: add `aria-labelledby` (handled by shared-tabs.js enhancement)
 
 **Shoals:**
 - Chain overlay, trade dialog, epilogue: add `role="dialog"` and `aria-label`
-- Chain overlay keyboard navigation: cells already have `tabindex="0"` and `role="button"`. Arrow key nav within `role="grid"` — up/down moves between rows, left/right between call/put columns.
+- Chain overlay keyboard navigation: cells already have `tabindex="0"` and `role="button"`. Use roving tabindex within the chain table — arrow keys move focus between cells (up/down between rows, left/right between call/strike/put columns). No full `role="grid"` restructuring needed since the existing `role="button"` cells with `tabindex` are sufficient for keyboard access.
 
 **Cyano:**
 - Organism `<select>`: add `aria-label="Organism preset"`
