@@ -207,6 +207,8 @@ function registerInfoTips(data) {
 function initReferenceOverlay(overlayEl, titleEl, bodyEl, closeBtn, referenceData) {
     if (!overlayEl) return function() {};
     var cache = {};
+    var _refPreviousFocus = null;
+    var _refTrapCleanup = null;
 
     function openReference(key) {
         var ref = referenceData[key];
@@ -227,6 +229,11 @@ function initReferenceOverlay(overlayEl, titleEl, bodyEl, closeBtn, referenceDat
             cache[key] = bodyEl.innerHTML;
         }
         overlayEl.hidden = false;
+        _refPreviousFocus = document.activeElement;
+        overlayEl.setAttribute('aria-modal', 'true');
+        if (typeof trapFocus === 'function') _refTrapCleanup = trapFocus(overlayEl);
+        var _closeBtn = overlayEl.querySelector('button');
+        if (_closeBtn) _closeBtn.focus();
     }
 
     if (typeof initOverlayDismiss === 'function') {
@@ -237,6 +244,17 @@ function initReferenceOverlay(overlayEl, titleEl, bodyEl, closeBtn, referenceDat
             if (e.target === overlayEl) overlayEl.hidden = true;
         });
     }
+
+    var _refObserver = new MutationObserver(function(mutations) {
+        mutations.forEach(function(m) {
+            if (m.attributeName === 'hidden' && overlayEl.hidden) {
+                if (_refTrapCleanup) { _refTrapCleanup(); _refTrapCleanup = null; }
+                overlayEl.removeAttribute('aria-modal');
+                if (_refPreviousFocus) { _refPreviousFocus.focus(); _refPreviousFocus = null; }
+            }
+        });
+    });
+    _refObserver.observe(overlayEl, { attributes: true, attributeFilter: ['hidden'] });
 
     return openReference;
 }
