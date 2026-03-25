@@ -27,6 +27,11 @@ export function navigateTo(page, slug, { $, pages, navLinks, triggerFadeIns, sho
     $.mobileNav.classList.remove('open');
     $.menuToggle.setAttribute('aria-expanded', 'false');
 
+    if (target) {
+        target.setAttribute('tabindex', '-1');
+        target.focus({ preventScroll: true });
+    }
+
     if (page === 'blog') {
         if (slug) {
             showBlogPost(slug);

@@ -40,17 +40,24 @@ export function initCarousel() {
     let currentPage = 0;
     const isMobile = () => window.innerWidth <= 900;
 
+    dotsContainer.setAttribute('role', 'tablist');
+
     for (let i = 0; i < totalPages; i++) {
         const dot = document.createElement('button');
         dot.className = 'carousel-dot' + (i === 0 ? ' active' : '');
+        dot.setAttribute('role', 'tab');
         dot.setAttribute('aria-label', 'Page ' + (i + 1));
+        dot.setAttribute('aria-selected', i === 0 ? 'true' : 'false');
         dot.addEventListener('click', () => goToPage(i));
         dotsContainer.appendChild(dot);
     }
     const dots = dotsContainer.querySelectorAll('.carousel-dot');
 
     function updateDots() {
-        dots.forEach((d, i) => d.classList.toggle('active', i === currentPage));
+        dots.forEach((d, i) => {
+            d.classList.toggle('active', i === currentPage);
+            d.setAttribute('aria-selected', i === currentPage ? 'true' : 'false');
+        });
     }
 
     function goToPage(n) {
@@ -131,6 +138,19 @@ export function initCarousel() {
             });
         }
     }, { passive: true });
+
+    // Keyboard navigation: arrow keys advance carousel pages
+    const viewport = document.querySelector('.carousel-viewport');
+    if (viewport) {
+        viewport.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowLeft') { e.preventDefault(); goToPage(currentPage - 1); }
+            else if (e.key === 'ArrowRight') { e.preventDefault(); goToPage(currentPage + 1); }
+        });
+    }
+    dotsContainer.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowLeft') { e.preventDefault(); goToPage(currentPage - 1); }
+        else if (e.key === 'ArrowRight') { e.preventDefault(); goToPage(currentPage + 1); }
+    });
 
     initCardTilt('.carousel-card');
     initCardTilt('.project-card');

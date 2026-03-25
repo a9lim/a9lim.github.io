@@ -90,6 +90,8 @@
     </script>
 </head>
 <body class="app-ready">
+    <a href="#main-content" class="skip-link">Skip to content</a>
+
     <!-- ═══ WebGL Shader Background ═══ -->
     <canvas id="shader-bg" aria-hidden="true"></canvas>
 
@@ -97,7 +99,7 @@
     <nav id="navbar" class="sim-toolbar glass" role="navigation" aria-label="Main navigation">
         <div class="nav-left">
             <a href="#home" class="sim-home"><img src="logo.svg" alt="a9l.im" height="28"></a>
-            <h1 class="sim-brand">a9l<em>.im</em></h1>
+            <span class="sim-brand">a9l<em>.im</em></span>
         </div>
 
         <div class="nav-center">
@@ -147,13 +149,14 @@
     </nav>
 
     <!-- ═══ Mobile Nav Overlay ═══ -->
-    <div class="mobile-nav" id="mobile-nav" role="dialog" aria-label="Mobile navigation">
+    <div class="mobile-nav" id="mobile-nav" role="dialog" aria-modal="true" aria-label="Mobile navigation">
         <a href="#home" class="nav-link" data-page="home">Home</a>
         <a href="#projects" class="nav-link" data-page="projects">Projects</a>
         <a href="#blog" class="nav-link" data-page="blog">Blog</a>
         <a href="#about" class="nav-link" data-page="about">About</a>
     </div>
 
+    <main id="main-content">
     <!-- ═══════════════════════════════════
          Page: Home
          ═══════════════════════════════════ -->
@@ -260,6 +263,7 @@
             <div class="map-fade-bottom"></div>
         </div>
     </section>
+    </main>
 
     <!-- ═══ Footer ═══ -->
     <footer class="site-footer">

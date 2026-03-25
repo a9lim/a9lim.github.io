@@ -8,8 +8,8 @@ export function renderProjectCards(container, projects) {
         const ext = p.external ? ' target="_blank" rel="noopener noreferrer"' : '';
         return `<a href="${escapeHtml(p.href)}" class="project-card glass fade-in"${ext}>
             <div class="project-card-top">
-                <div class="project-icon">${p.icon}</div>
-                <span class="project-arrow">${ARROW_SVG}</span>
+                <div class="project-icon" aria-hidden="true">${p.icon}</div>
+                <span class="project-arrow" aria-hidden="true">${ARROW_SVG}</span>
             </div>
             <h3 class="project-title">${escapeHtml(p.title)}</h3>
             <p class="project-desc">${escapeHtml(p.longDesc)}</p>

@@ -1409,3 +1409,8 @@ a:hover { color: var(--accent-light); }
         padding: 16px;
     }
 }
+
+/* ─── Touch-friendly targets ─── */
+@media (pointer: coarse) {
+    .carousel-dot { min-width: 44px; min-height: 44px; }
+}

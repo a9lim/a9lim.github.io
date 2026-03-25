@@ -90,6 +90,7 @@ export function initWorldMap() {
             });
 
             const glows = overlaySvg.querySelectorAll('.map-dot-glow');
+            const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
             // Arc draw: progressive dashoffset animation, with fallback instant draw
             let arcDrawn = false;
@@ -107,6 +108,16 @@ export function initWorldMap() {
                 arcLine.style.strokeDasharray = len;
                 arcLine.style.strokeDashoffset = len;
                 return len;
+            }
+
+            // Reduced motion: show final state immediately, no pulsing glows
+            if (prefersReducedMotion) {
+                drawFullArc();
+                glows.forEach(g => {
+                    g.setAttribute('r', glowR);
+                    g.setAttribute('opacity', '0.25');
+                });
+                return;
             }
 
             let arcLen = 0;

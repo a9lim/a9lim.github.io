@@ -228,6 +228,12 @@ export function initShader($) {
         }
     });
 
+    // Respect prefers-reduced-motion: render once, skip animation loop
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        render();
+        return;
+    }
+
     // Run 2s on load for the entrance animation, then let the idle timer take over
     startLoop();
     setTimeout(() => {
