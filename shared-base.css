@@ -1402,7 +1402,14 @@ label.control-label {
 
 /* ─── Toggle Switches ─── */
 .tog-wrap { position: relative; }
-.tog-wrap input { display: none; }
+.tog-wrap input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+}
 
 .tog {
     display: inline-flex;
@@ -1479,6 +1486,20 @@ label.control-label {
 @media (pointer: coarse) {
     .tog { --tog-shift: 22px; width: 48px; height: 26px; border-radius: 13px; }
     .tog-thumb { width: 18px; height: 18px; }
+}
+
+/* ─── Touch Device Overrides ─── */
+@media (pointer: coarse) {
+  .tool-btn { width: 44px; height: 44px; }
+  .info-trigger { min-width: 32px; min-height: 32px; padding: 8px; }
+  .tab-btn { min-height: 44px; }
+  .mode-btn { min-height: 44px; }
+
+  .sim-toolbar-actions {
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .sim-toolbar-actions::-webkit-scrollbar { display: none; }
 }
 
 /* ─── Reduced Motion ─── */
