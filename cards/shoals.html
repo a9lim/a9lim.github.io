@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    width: 960px;
+    height: 600px;
+    overflow: hidden;
+    background: #EBEFF4;
+  }
+  canvas { display: block; width: 960px; height: 600px; }
+</style>
+</head>
+<body>
+  <canvas id="c" width="1920" height="1200"></canvas>
+  <script>
+    const canvas = document.getElementById('c');
+    const ctx = canvas.getContext('2d');
+    const W = canvas.width, H = canvas.height;
+
+    const UP = '#2CA470';
+    const DOWN = '#C5547C';
+
+    let _seed = 42;
+    function _rand() { _seed = (_seed * 16807 + 0) % 2147483647; return (_seed - 1) / 2147483646; }
+
+    // Generate OHLC data — volatile run-up with pullbacks
+    const candles = [];
+    let price = 55;
+    const moves = [
+      2.8, -1.5, 3.2, 1.8, -2.4, 4.1, -1.2, 2.5,
+      -3.5, 1.9, 5.2, 3.8, -2.0, 1.5, -4.1, 2.2,
+      6.0, -1.5, 3.4, 2.8, -2.8, 4.5, 3.2, -1.0,
+      5.8, -2.1, 3.6, 1.4, -1.8, 4.2, -3.0, 2.6,
+      1.9, 3.5, -2.2, 5.1, -1.4, 2.8, -0.8, 3.9
+    ];
+    for (let i = 0; i < moves.length; i++) {
+      const open = price;
+      const close = open + moves[i];
+      const wickUp = 0.5 + _rand() * 3;
+      const wickDown = 0.5 + _rand() * 3;
+      const high = Math.max(open, close) + wickUp;
+      const low = Math.min(open, close) - wickDown;
+      candles.push({ o: open, h: high, l: low, c: close });
+      price = close;
+    }
+
+    const allPrices = candles.flatMap(c => [c.h, c.l]);
+    const minP = Math.min(...allPrices) - 3;
+    const maxP = Math.max(...allPrices) + 3;
+
+    const padL = 40, padR = 40, padT = 60, padB = 60;
+    const chartW = W - padL - padR;
+    const chartH = H - padT - padB;
+
+    function priceToY(p) {
+      return padT + chartH * (1 - (p - minP) / (maxP - minP));
+    }
+
+    // Subtle horizontal grid
+    ctx.strokeStyle = 'rgba(11, 16, 22, 0.04)';
+    ctx.lineWidth = 1;
+    for (let i = 0; i <= 8; i++) {
+      const y = padT + (chartH / 8) * i;
+      ctx.beginPath();
+      ctx.moveTo(padL, y);
+      ctx.lineTo(W - padR, y);
+      ctx.stroke();
+    }
+
+    // Draw candles
+    const candleW = chartW / candles.length;
+    const bodyW = candleW * 0.55;
+    const wickW = 3;
+
+    candles.forEach((c, i) => {
+      const x = padL + candleW * i + candleW / 2;
+      const isUp = c.c >= c.o;
+      const color = isUp ? UP : DOWN;
+
+      // Subtle glow
+      const glowGrad = ctx.createRadialGradient(x, priceToY((c.h + c.l) / 2), 0, x, priceToY((c.h + c.l) / 2), candleW * 1.2);
+      glowGrad.addColorStop(0, isUp ? 'rgba(44,164,112,0.06)' : 'rgba(197,84,124,0.06)');
+      glowGrad.addColorStop(1, 'transparent');
+      ctx.fillStyle = glowGrad;
+      ctx.fillRect(x - candleW, priceToY(c.h) - 10, candleW * 2, priceToY(c.l) - priceToY(c.h) + 20);
+
+      // Wick
+      ctx.strokeStyle = color;
+      ctx.lineWidth = wickW;
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.moveTo(x, priceToY(c.h));
+      ctx.lineTo(x, priceToY(c.l));
+      ctx.stroke();
+
+      // Body
+      const top = priceToY(Math.max(c.o, c.c));
+      const bot = priceToY(Math.min(c.o, c.c));
+      const bH = Math.max(bot - top, 4);
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      ctx.roundRect(x - bodyW / 2, top, bodyW, bH, 3);
+      ctx.fill();
+    });
+  </script>
+</body>
+</html>
