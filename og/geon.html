@@ -128,24 +128,33 @@
       return pts;
     }
 
-    // Draw a trail from an array of points, alpha fading from 0 → alphaMax, color is hex
-    function drawTrail(pts, color, lineWidth) {
-      const n = pts.length - 1;
-      ctx.lineCap = 'round';
+    // Draw a trail matching physsim renderer.js drawTrails():
+    // 2-group batched strokes with midpoint alpha, default lineCap (butt),
+    // lineWidth = 0.5 * particle radius
+    function drawTrail(pts, color, particleRadius) {
+      const n = pts.length - 1; // segment count
+      const lineWidth = 0.5 * particleRadius;
       ctx.lineWidth = lineWidth;
-      for (let i = 0; i < n; i++) {
-        const alpha = ALPHA_MAX * (i / n);
+      const r = parseInt(color.slice(1,3),16);
+      const g = parseInt(color.slice(3,5),16);
+      const b = parseInt(color.slice(5,7),16);
+      const groupCount = 2;
+      for (let g_ = 0; g_ < groupCount; g_++) {
+        const segStart = Math.floor(g_ * n / groupCount);
+        const segEnd = Math.floor((g_ + 1) * n / groupCount);
+        if (segEnd <= segStart) continue;
+        const midSeg = (segStart + segEnd) / 2;
+        const alpha = ((midSeg + 1) / (n + 1)) * ALPHA_MAX;
+        ctx.globalAlpha = alpha;
+        ctx.strokeStyle = `rgb(${r},${g},${b})`;
         ctx.beginPath();
-        ctx.moveTo(pts[i].x, pts[i].y);
-        ctx.lineTo(pts[i+1].x, pts[i+1].y);
-        ctx.strokeStyle = lerpColor(color, color, 0, alpha); // just the color at this alpha
-        // rebuild rgba from hex each segment
-        const r = parseInt(color.slice(1,3),16);
-        const g = parseInt(color.slice(3,5),16);
-        const b = parseInt(color.slice(5,7),16);
-        ctx.strokeStyle = `rgba(${r},${g},${b},${alpha})`;
+        ctx.moveTo(pts[segStart].x, pts[segStart].y);
+        for (let s = segStart + 1; s <= segEnd; s++) {
+          ctx.lineTo(pts[s].x, pts[s].y);
+        }
         ctx.stroke();
       }
+      ctx.globalAlpha = 1.0;
     }
 
     // Draw a filled particle circle (flat fill, no gradient)
@@ -200,11 +209,11 @@
       SEG
     );
 
-    // --- Draw trails (thick) ---
+    // --- Draw trails (lineWidth = 0.5 * radius, matching renderer.js) ---
     ctx.globalCompositeOperation = 'source-over';
-    drawTrail(p1trail, P1_COLOR, 14);
-    drawTrail(p2trail, P2_COLOR, 14);
-    drawTrail(p3trail, P3_COLOR, 12);
+    drawTrail(p1trail, P1_COLOR, 65);   // radius 65 → lineWidth 32.5
+    drawTrail(p2trail, P2_COLOR, 70);   // radius 70 → lineWidth 35
+    drawTrail(p3trail, P3_COLOR, 55);   // radius 55 → lineWidth 27.5
 
     // --- Photons near interaction zone ---
     const photons = [

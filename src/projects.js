@@ -14,7 +14,7 @@ export const PROJECTS = [
     },
     {
         href: '/biosim',
-        title: 'Metabolism',
+        title: 'Cyano',
         shortDesc: 'Cellular metabolism simulator with ten biochemical pathways, allosteric regulation, and cofactor tracking.',
         longDesc: 'Interactive metabolism simulator mapping glycolysis, Krebs, Calvin, beta-oxidation, and six more pathways onto a shared metabolite grid. Features a 14-complex electron transport chain, five organism presets, reactive oxygen species, and allosteric enzyme regulation gating every reaction.',
         tags: ['biology', 'biochemistry', 'canvas'],
@@ -24,7 +24,7 @@ export const PROJECTS = [
     },
     {
         href: '/gerry',
-        title: 'Redistricting',
+        title: 'Gerry',
         shortDesc: 'Draw districts on a procedural hex map and stress-test them with Monte Carlo elections and fairness metrics.',
         longDesc: 'Gerrymandering sandbox with three parties, ten districts, and six fairness metrics including efficiency gap and partisan symmetry. Features automated pack-and-crack vs simulated-annealing fair draw, Monte Carlo election stress tests, and seeded procedural map generation.',
         tags: ['politics', 'svg', 'monte carlo'],
