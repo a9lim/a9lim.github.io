@@ -1223,14 +1223,14 @@ a:hover { color: var(--accent-light); }
 }
 
 .world-map-wrap svg path {
-    fill: var(--ext-brown);
+    fill: var(--text-muted);
     fill-opacity: 0.22;
     stroke: none;
     transition: fill-opacity 0.3s var(--ease-out);
 }
 
 [data-theme="dark"] .world-map-wrap svg path {
-    fill: var(--ext-brown);
+    fill: var(--text-muted);
     fill-opacity: 0.15;
 }
 
