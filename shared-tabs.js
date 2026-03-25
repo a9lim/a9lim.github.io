@@ -5,9 +5,10 @@
     var activeBtn = null;
     var activePanel = null;
 
-    // Assign IDs and aria-labelledby
+    // Assign IDs and aria-labelledby (btn IDs use 'tabbtn-' prefix to avoid
+    // colliding with panel IDs which use 'tab-' prefix)
     btns.forEach(function (btn, i) {
-        if (!btn.id) btn.id = 'tab-' + (btn.dataset.tab || i);
+        if (!btn.id) btn.id = 'tabbtn-' + (btn.dataset.tab || i);
         var panel = document.getElementById('tab-' + btn.dataset.tab);
         if (panel) panel.setAttribute('aria-labelledby', btn.id);
     });
