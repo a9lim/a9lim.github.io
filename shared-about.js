@@ -21,6 +21,8 @@ function initAboutPanel(config) {
     var overlayEl = null;
     var visible = false;
     var hideTimer = null;
+    var _previousFocus = null;
+    var _trapCleanup = null;
 
     /** True if focus is in a text-editable element (suppress "?" toggle). */
     function isAboutInputFocused() {
@@ -76,6 +78,7 @@ function initAboutPanel(config) {
         overlay.className = 'about-overlay';
         overlay.setAttribute('role', 'dialog');
         overlay.setAttribute('aria-label', config.title || 'About');
+        overlay.setAttribute('aria-modal', 'true');
 
         // Close when clicking the backdrop (outside content)
         overlay.addEventListener('click', function(e) {
@@ -222,6 +225,13 @@ function initAboutPanel(config) {
 
         document.body.appendChild(overlayEl);
 
+        _previousFocus = document.activeElement;
+        requestAnimationFrame(function() {
+            var closeBtn = overlayEl.querySelector('.about-close');
+            if (closeBtn) closeBtn.focus();
+        });
+        if (typeof trapFocus === 'function') _trapCleanup = trapFocus(overlayEl);
+
         // Trigger fade-in on next frame
         requestAnimationFrame(function() {
             overlayEl.classList.add('about-overlay-visible');
@@ -230,6 +240,8 @@ function initAboutPanel(config) {
 
     function hide() {
         if (!visible) return;
+        if (_trapCleanup) { _trapCleanup(); _trapCleanup = null; }
+        if (_previousFocus) { _previousFocus.focus(); _previousFocus = null; }
         visible = false;
 
         if (overlayEl) {
