@@ -222,6 +222,10 @@ function showToast(message, duration) {
     toast.className = 'toast';
     toast.textContent = message;
     container.appendChild(toast);
+    // Switch to multiline style if text wraps beyond one line
+    if (toast.scrollHeight > toast.offsetHeight + 2) {
+        toast.classList.add('toast-multiline');
+    }
     // rAF ensures the initial state is painted before adding .visible triggers transition
     requestAnimationFrame(() => toast.classList.add('visible'));
     setTimeout(() => {
