@@ -29,7 +29,7 @@ function createInfoTip(triggerEl, opts) {
 
     function buildPopover() {
         var el = document.createElement('div');
-        el.className = 'info-popover';
+        el.className = 'info-popover glass';
         el.setAttribute('role', 'tooltip');
         el.style.maxWidth = maxWidth + 'px';
 

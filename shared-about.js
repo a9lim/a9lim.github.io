@@ -86,7 +86,7 @@ function initAboutPanel(config) {
         });
 
         var content = document.createElement('div');
-        content.className = 'about-content';
+        content.className = 'about-content glass';
         overlay.appendChild(content);
 
         // ── Header ──────────────────────────────────────────────
