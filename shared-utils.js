@@ -222,12 +222,13 @@ function showToast(message, duration) {
     toast.className = 'toast';
     toast.textContent = message;
     container.appendChild(toast);
-    // Switch to multiline style if text wraps beyond one line
-    if (toast.scrollHeight > toast.offsetHeight + 2) {
-        toast.classList.add('toast-multiline');
-    }
-    // rAF ensures the initial state is painted before adding .visible triggers transition
-    requestAnimationFrame(() => toast.classList.add('visible'));
+    // Switch to rounded-rect style if text will wrap at max-width (~460px)
+    requestAnimationFrame(() => {
+        if (toast.scrollHeight > toast.offsetHeight + 2 || toast.offsetWidth >= 450) {
+            toast.classList.add('toast-multiline');
+        }
+        toast.classList.add('visible');
+    });
     setTimeout(() => {
         toast.classList.remove('visible');
         setTimeout(() => toast.remove(), 300); // matches CSS transition duration
