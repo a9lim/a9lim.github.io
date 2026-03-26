@@ -798,6 +798,12 @@ body {
     transform: translateY(12px);
     transition: opacity 0.3s var(--ease-out), transform 0.3s var(--ease-out);
     pointer-events: auto;
+    max-width: min(460px, 85vw);
+}
+.toast.toast-multiline {
+    border-radius: var(--radius-lg, 12px);
+    padding: 12px 20px;
+    line-height: 1.45;
 }
 
 .toast.visible {
