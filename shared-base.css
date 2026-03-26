@@ -908,9 +908,6 @@ body {
     z-index: 9000;
     padding: 10px 14px;
     border-radius: var(--radius-sm);
-    background: var(--bg-panel-solid);
-    border: 1px solid var(--border);
-    box-shadow: var(--shadow-md);
     font-family: var(--font-body);
     font-size: 0.78rem;
     line-height: 1.55;
@@ -984,7 +981,8 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    background: var(--backdrop);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
     opacity: 0;
     transition: opacity 0.2s var(--ease-out);
     pointer-events: none;
@@ -996,10 +994,7 @@ body {
 }
 
 .about-content {
-    background: var(--bg-panel-solid);
-    border: 1px solid var(--border);
     border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-lg);
     padding: 24px 28px;
     max-width: 480px;
     width: 90vw;
