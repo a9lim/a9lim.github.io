@@ -782,6 +782,12 @@ body {
     align-items: center;
     gap: 8px;
     pointer-events: none;
+    transition: left 0.3s var(--ease-out);
+}
+@media (min-width: 901px) {
+    body:has(> .sim-panel.open) #toast-container {
+        left: calc(50% - (var(--panel-w) + 24px) / 2);
+    }
 }
 
 .toast {
