@@ -10,3 +10,6 @@
 [submodule "cyano"]
 	path = cyano
 	url = https://github.com/a9lim/cyano.git
+[submodule "scripture"]
+	path = scripture
+	url = https://github.com/a9lim/scripture.git
