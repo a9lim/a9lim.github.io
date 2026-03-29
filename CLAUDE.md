@@ -10,7 +10,7 @@ Flat, lineless, modern. Every surface is differentiated by **background color**,
 - **No resting shadows** — `box-shadow: none` at rest. Hover states may use `var(--shadow-sm)` or `var(--shadow-md)`.
 - **Background differentiation** — use `--bg-hover`, `--bg-elevated`, `--accent-subtle` to distinguish nested surfaces, not lines.
 - **Subtle animations** — hover lifts are small (`translateY(-2px)` to `-4px`), no scale transforms on cards. Transitions use `var(--ease-out)` or `var(--ease-spring)`.
-- `.glass` uses `bg-panel-solid` (opaque), not semi-transparent `bg-panel`. No shimmer inset.
+- `.glass` uses `bg-panel` (semi-transparent) with `backdrop-filter: blur(20px) saturate(1.5)` for true glassmorphism. No shimmer inset.
 - Shadow tokens (`--shadow-sm` etc.) contain no `0 0 0 1px` spread rings.
 
 ## Shared Code Policy
