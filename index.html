@@ -23,7 +23,7 @@
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Noto+Sans+Mono:wght@300;400;500;600;700&family=Noto+Serif:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Fira+Code:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
     <!-- Shared tokens inject CSS vars and expose _PALETTE/_FONT before CSS loads -->
     <script src="shared-tokens.js"></script>
@@ -91,6 +91,9 @@
 </head>
 <body class="app-ready">
     <a href="#main-content" class="skip-link">Skip to content</a>
+
+    <!-- ═══ Grain Overlay ═══ -->
+    <div class="grain-overlay" aria-hidden="true"></div>
 
     <!-- ═══ WebGL Shader Background ═══ -->
     <canvas id="shader-bg" aria-hidden="true"></canvas>
@@ -162,6 +165,8 @@
          ═══════════════════════════════════ -->
     <section id="page-home" class="page-section active" aria-label="Home">
         <div class="hero">
+            <div class="hero-orb hero-orb-1" aria-hidden="true"></div>
+            <div class="hero-orb hero-orb-2" aria-hidden="true"></div>
             <h1 class="hero-tagline fade-in">
                 Building <em>interactive</em> simulations
             </h1>
@@ -172,11 +177,6 @@
                 <span>Scroll</span>
                 <div class="scroll-hint-line"></div>
             </div>
-        </div>
-
-        <!-- ─── Accent Stripe Transition ─── -->
-        <div class="stripe-section" aria-hidden="true">
-            <div class="stripe-band"></div>
         </div>
 
         <!-- ─── Featured Project Carousel ─── -->
