@@ -98,8 +98,9 @@ function _oklch2hex(L, C, H) {
 // Left mutable — cyano extends with `emoji` before freezing
 const _FONT = {
   display: "'Instrument Serif', Georgia, 'Times New Roman', serif",
-  body:    "'DM Sans', system-ui, -apple-system, sans-serif",
-  mono:    "'Fira Code', 'SF Mono', 'Menlo', monospace",
+  body:      "'DM Sans', system-ui, -apple-system, sans-serif",
+  bodySerif: "'Crimson Pro', Georgia, 'Times New Roman', serif",
+  mono:      "'Fira Code', 'SF Mono', 'Menlo', monospace",
 };
 
 // ─── Palette ───
@@ -185,6 +186,7 @@ const _PALETTE = {
   style.textContent = `:root {
   --font-display: ${_FONT.display};
   --font-body:    ${_FONT.body};
+  --font-body-serif: ${_FONT.bodySerif};
   --font-mono:    ${_FONT.mono};
 
 ${gen(L, false)}
