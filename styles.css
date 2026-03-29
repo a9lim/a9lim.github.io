@@ -106,7 +106,7 @@ a:hover { color: var(--accent-light); }
     color: var(--text-secondary);
     padding: 8px 14px;
     border-radius: var(--radius-sm);
-    transition: color 0.25s var(--ease-out), background 0.25s var(--ease-out), transform 0.25s var(--ease-spring);
+    transition: color 0.3s var(--ease-out), background 0.3s var(--ease-out), transform 0.3s var(--ease-spring);
     cursor: pointer;
     text-decoration: none;
     position: relative;
@@ -122,8 +122,7 @@ a:hover { color: var(--accent-light); }
     height: 2px;
     background: var(--accent);
     border-radius: 1px;
-    transition: width 0.3s var(--ease-spring), left 0.3s var(--ease-spring);
-    box-shadow: 0 0 8px var(--accent-glow);
+    transition: width 0.4s var(--ease-spring), left 0.4s var(--ease-spring);
 }
 
 .nav-center .nav-link:hover::after,
@@ -155,7 +154,7 @@ a:hover { color: var(--accent-light); }
     display: inline-flex;
     border: none;
     color: var(--text-secondary);
-    transition: background 0.2s var(--ease-out), color 0.2s var(--ease-out), transform 0.25s var(--ease-spring), box-shadow 0.2s var(--ease-out);
+    transition: background 0.3s var(--ease-out), color 0.3s var(--ease-out), transform 0.3s var(--ease-spring), box-shadow 0.3s var(--ease-out);
 }
 
 .tool-btn:hover {
@@ -228,8 +227,8 @@ a:hover { color: var(--accent-light); }
 }
 
 @keyframes pageEnter {
-    from { opacity: 0; transform: translateY(20px) scale(0.99); }
-    to   { opacity: 1; transform: translateY(0) scale(1); }
+    from { opacity: 0; transform: translateY(20px) scale(0.99); filter: blur(3px); }
+    to   { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
 }
 
 /* Uppercase mono label used on every page ("Featured", "Projects", etc.) */
@@ -257,7 +256,6 @@ a:hover { color: var(--accent-light); }
     height: 8px;
     border-radius: 50%;
     background: var(--accent);
-    box-shadow: 0 0 12px var(--accent-glow);
     animation: breathe 3s ease-in-out infinite;
 }
 
@@ -369,8 +367,8 @@ a:hover { color: var(--accent-light); }
     border: none;
     border-radius: var(--radius-pill);
     cursor: pointer;
-    transition: background 0.2s var(--ease-out), transform 0.3s var(--ease-spring), box-shadow 0.3s var(--ease-out);
-    box-shadow: 0 4px 20px var(--accent-glow), var(--shadow-md);
+    transition: background 0.3s var(--ease-out), transform 0.4s var(--ease-spring), box-shadow 0.4s var(--ease-out);
+    box-shadow: var(--shadow-md);
     animation: heroFadeUp 0.9s var(--ease-out) 0.4s both;
 }
 
@@ -382,7 +380,7 @@ a:hover { color: var(--accent-light); }
 .hero-cta:hover {
     background: var(--accent-light);
     transform: translateY(-3px) scale(1.02);
-    box-shadow: var(--shadow-glow-lg), var(--shadow-lg);
+    box-shadow: var(--shadow-lg);
     color: var(--overlay-text);
 }
 
@@ -417,7 +415,7 @@ a:hover { color: var(--accent-light); }
     display: flex;
     flex-direction: column;
     gap: 16px;
-    transition: transform 0.4s var(--ease-spring), box-shadow 0.4s var(--ease-out), border-color 0.3s var(--ease-out);
+    transition: transform 0.5s var(--ease-spring), box-shadow 0.5s var(--ease-out), border-color 0.4s var(--ease-out);
     text-decoration: none;
     color: var(--text);
     position: relative;
@@ -431,7 +429,7 @@ a:hover { color: var(--accent-light); }
     inset: 0;
     background: linear-gradient(135deg, var(--accent-subtle), transparent 50%);
     opacity: 0;
-    transition: opacity 0.4s var(--ease-out);
+    transition: opacity 0.6s var(--ease-out);
     pointer-events: none;
 }
 
@@ -439,8 +437,8 @@ a:hover { color: var(--accent-light); }
 .project-card:hover,
 .project-card.visible:hover {
     transform: translateY(-8px) scale(1.02);
-    box-shadow: var(--shadow-xl), 0 0 40px var(--accent-glow);
-    border-color: var(--accent-glow);
+    box-shadow: var(--shadow-xl);
+    border-color: var(--border-strong);
     color: var(--text);
 }
 
@@ -481,13 +479,13 @@ a:hover { color: var(--accent-light); }
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
-    transition: transform 0.4s var(--ease-spring), box-shadow 0.3s var(--ease-out);
+    transition: transform 0.5s var(--ease-spring), box-shadow 0.5s var(--ease-out);
     box-shadow: var(--shadow-sm);
 }
 
 .project-card:hover .project-icon {
     transform: scale(1.1) rotate(-3deg);
-    box-shadow: var(--shadow-md), 0 0 20px var(--accent-glow);
+    box-shadow: var(--shadow-md);
 }
 
 .project-icon svg {
@@ -504,7 +502,7 @@ a:hover { color: var(--accent-light); }
     width: 20px;
     height: 20px;
     color: var(--text-muted);
-    transition: color 0.3s var(--ease-out), transform 0.4s var(--ease-spring);
+    transition: color 0.4s var(--ease-out), transform 0.5s var(--ease-spring);
     flex-shrink: 0;
     margin-top: 4px;
 }
@@ -530,7 +528,7 @@ a:hover { color: var(--accent-light); }
     font-size: 1.5rem;
     line-height: 1.2;
     letter-spacing: -0.01em;
-    transition: color 0.3s var(--ease-out);
+    transition: color 0.4s var(--ease-out);
 }
 
 .project-card:hover .project-title {
@@ -563,7 +561,7 @@ a:hover { color: var(--accent-light); }
     white-space: nowrap;
     opacity: 0.7;
     transform: translateY(4px);
-    transition: opacity 0.3s var(--ease-out), transform 0.4s var(--ease-spring), background 0.2s var(--ease-out), box-shadow 0.3s var(--ease-out);
+    transition: opacity 0.4s var(--ease-out), transform 0.5s var(--ease-spring), background 0.3s var(--ease-out), box-shadow 0.4s var(--ease-out);
 }
 
 .project-card:hover .project-tag {
@@ -593,7 +591,7 @@ a:hover { color: var(--accent-light); }
     gap: 24px;
     padding: 16px;
     border-radius: var(--radius-sm);
-    transition: background 0.2s var(--ease-out), transform 0.3s var(--ease-spring), box-shadow 0.3s var(--ease-out);
+    transition: background 0.3s var(--ease-out), transform 0.4s var(--ease-spring), box-shadow 0.4s var(--ease-out);
     text-decoration: none;
     color: var(--text);
     position: relative;
@@ -611,7 +609,6 @@ a:hover { color: var(--accent-light); }
     border-radius: 2px;
     background: var(--accent);
     transition: transform 0.3s var(--ease-spring);
-    box-shadow: 0 0 8px var(--accent-glow);
 }
 
 .blog-entry:hover {
@@ -942,7 +939,7 @@ a:hover { color: var(--accent-light); }
     margin-top: 48px;
     position: relative;
     overflow: hidden;
-    transition: box-shadow 0.4s var(--ease-out), transform 0.3s var(--ease-spring);
+    transition: box-shadow 0.5s var(--ease-out), transform 0.5s var(--ease-spring);
 }
 
 /* Subtle gradient shimmer on contact card */
@@ -952,12 +949,12 @@ a:hover { color: var(--accent-light); }
     inset: 0;
     background: linear-gradient(135deg, var(--accent-subtle), transparent 60%);
     opacity: 0;
-    transition: opacity 0.4s var(--ease-out);
+    transition: opacity 0.6s var(--ease-out);
     pointer-events: none;
 }
 
 .contact-section:hover {
-    box-shadow: var(--shadow-lg), 0 0 40px var(--accent-glow);
+    box-shadow: var(--shadow-lg);
     transform: translateY(-4px);
 }
 
@@ -984,7 +981,7 @@ a:hover { color: var(--accent-light); }
     font-family: var(--font-mono);
     font-size: 1rem;
     color: var(--accent);
-    transition: color 0.2s var(--ease-out), letter-spacing 0.3s var(--ease-spring);
+    transition: color 0.3s var(--ease-out), letter-spacing 0.5s var(--ease-spring);
     position: relative;
 }
 
@@ -1013,7 +1010,6 @@ a:hover { color: var(--accent-light); }
     background: linear-gradient(90deg, transparent, var(--accent), transparent);
     margin: 0 auto 32px;
     border-radius: 1px;
-    box-shadow: 0 0 12px var(--accent-glow);
 }
 
 .footer-content {
@@ -1034,7 +1030,7 @@ a:hover { color: var(--accent-light); }
     font-weight: 500;
     color: var(--text-secondary);
     text-decoration: none;
-    transition: color 0.2s var(--ease-out), transform 0.3s var(--ease-spring);
+    transition: color 0.3s var(--ease-out), transform 0.4s var(--ease-spring);
     display: inline-block;
 }
 
@@ -1050,13 +1046,13 @@ a:hover { color: var(--accent-light); }
 
 .footer-social a {
     color: var(--text-muted);
-    transition: color 0.2s var(--ease-out), transform 0.3s var(--ease-spring);
+    transition: color 0.3s var(--ease-out), transform 0.4s var(--ease-spring);
     display: inline-flex;
 }
 
 .footer-social a:hover {
     color: var(--accent);
-    transform: translateY(-3px) scale(1.1);
+    transform: translateY(-3px) scale(1.08);
 }
 
 .footer-copy {
@@ -1098,7 +1094,6 @@ a:hover { color: var(--accent-light); }
     height: 100%;
     background: linear-gradient(to bottom, transparent, var(--accent), transparent);
     animation: scrollLine 2.5s var(--ease-in-out) 1s infinite;
-    box-shadow: 0 0 6px var(--accent-glow);
 }
 
 @keyframes scrollLine {
@@ -1152,7 +1147,7 @@ a:hover { color: var(--accent-light); }
     display: flex;
     flex-direction: column;
     justify-content: flex-end;
-    transition: transform 0.4s var(--ease-spring), box-shadow 0.4s var(--ease-out);
+    transition: transform 0.5s var(--ease-spring), box-shadow 0.5s var(--ease-out);
 }
 
 .carousel-card-visual {
@@ -1217,7 +1212,7 @@ a:hover { color: var(--accent-light); }
 
 .carousel-card:hover {
     transform: translateY(-8px) scale(1.03);
-    box-shadow: var(--shadow-xl), 0 0 40px var(--accent-glow);
+    box-shadow: var(--shadow-xl);
 }
 
 .carousel-card-info {
@@ -1233,7 +1228,7 @@ a:hover { color: var(--accent-light); }
     line-height: 1.15;
     margin-bottom: 8px;
     color: var(--overlay-text);
-    transition: text-shadow 0.4s var(--ease-out);
+    transition: text-shadow 0.5s var(--ease-out);
 }
 
 .carousel-card:hover .carousel-card-info h3 {
@@ -1277,7 +1272,7 @@ a:hover { color: var(--accent-light); }
     border: none;
     padding: 0;
     cursor: pointer;
-    transition: background 0.3s var(--ease-out), width 0.5s var(--ease-spring), transform 0.3s var(--ease-spring), box-shadow 0.3s var(--ease-out);
+    transition: background 0.3s var(--ease-out), width 0.5s var(--ease-spring), transform 0.4s var(--ease-spring);
 }
 
 .carousel-dot:hover {
@@ -1289,7 +1284,6 @@ a:hover { color: var(--accent-light); }
     width: 28px;
     background: var(--accent);
     transform: none;
-    box-shadow: 0 0 12px var(--accent-glow);
 }
 
 /* Shimmer: radial gradient follows mouse via --mouse-x/--mouse-y from card-effects.js */
@@ -1434,7 +1428,6 @@ a:hover { color: var(--accent-light); }
     stroke: var(--accent);
     stroke-width: 1.5;
     stroke-linecap: round;
-    filter: drop-shadow(0 0 4px var(--accent-glow));
 }
 
 /* ═══════════════════════════════════
@@ -1443,12 +1436,14 @@ a:hover { color: var(--accent-light); }
 .scroll-reveal {
     opacity: 0;
     transform: translateY(30px) scale(0.98);
-    transition: opacity 0.8s var(--ease-out), transform 0.8s var(--ease-out);
+    filter: blur(4px);
+    transition: opacity 0.8s var(--ease-out), transform 0.8s var(--ease-out), filter 0.8s var(--ease-out);
 }
 
 .scroll-reveal.visible {
     opacity: 1;
     transform: translateY(0) scale(1);
+    filter: blur(0);
 }
 
 .carousel-card.scroll-reveal:nth-child(2) { transition-delay: 0.08s; }
@@ -1464,13 +1459,15 @@ a:hover { color: var(--accent-light); }
 .fade-in {
     opacity: 0;
     transform: translateY(24px);
-    transition: opacity 0.7s var(--ease-out), transform 0.7s var(--ease-out);
+    filter: blur(4px);
+    transition: opacity 0.7s var(--ease-out), transform 0.7s var(--ease-out), filter 0.7s var(--ease-out);
 }
 
 .fade-in.visible {
     opacity: 1;
     transform: translateY(0);
-    transition: opacity 0.7s var(--ease-out), transform 0.4s var(--ease-spring), box-shadow 0.3s var(--ease-out);
+    filter: blur(0);
+    transition: opacity 0.7s var(--ease-out), transform 0.5s var(--ease-spring), filter 0.5s var(--ease-out), box-shadow 0.4s var(--ease-out);
 }
 
 .fade-in:nth-child(1) { transition-delay: 0s; }
