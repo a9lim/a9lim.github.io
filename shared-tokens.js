@@ -97,9 +97,9 @@ function _oklch2hex(L, C, H) {
 // ─── Font stacks ───
 // Left mutable — cyano extends with `emoji` before freezing
 const _FONT = {
-  display: "'Noto Serif', Georgia, 'Times New Roman', serif",
-  body:    "'Noto Sans', system-ui, -apple-system, sans-serif",
-  mono:    "'Noto Sans Mono', 'SF Mono', 'Menlo', monospace",
+  display: "'Instrument Serif', Georgia, 'Times New Roman', serif",
+  body:    "'DM Sans', system-ui, -apple-system, sans-serif",
+  mono:    "'Fira Code', 'SF Mono', 'Menlo', monospace",
 };
 
 // ─── Palette ───
@@ -194,9 +194,13 @@ ${gen(L, false)}
   --accent-subtle: ${_r(P.accent, 0.078)};
   --accent-glow:   ${_r(P.accent, 0.18)};
 
-  --shadow-sm: 0 1px 4px #0000000a, 0 0 0 1px #00000005;
-  --shadow-md: 0 4px 20px #0000000f, 0 0 0 1px #00000005;
-  --shadow-lg: 0 12px 48px #0000001a, 0 0 0 1px #00000005;
+  --shadow-xs: 0 1px 2px #00000008;
+  --shadow-sm: 0 1px 3px #0000000a, 0 2px 8px #00000008, 0 0 0 1px #00000005;
+  --shadow-md: 0 2px 4px #0000000a, 0 4px 16px #00000012, 0 8px 32px #0000000a;
+  --shadow-lg: 0 4px 8px #0000000a, 0 8px 24px #00000014, 0 16px 56px #0000001a;
+  --shadow-xl: 0 8px 16px #0000000f, 0 16px 48px #0000001a, 0 32px 80px #00000022;
+  --shadow-glow: 0 0 20px ${_r(P.accent, 0.15)}, 0 0 60px ${_r(P.accent, 0.08)};
+  --shadow-glow-lg: 0 0 30px ${_r(P.accent, 0.2)}, 0 0 80px ${_r(P.accent, 0.12)}, 0 0 120px ${_r(P.accent, 0.06)};
 
   --tog-bg:             ${togBg};
   --tog-thumb-on:       ${L.elevated};
@@ -242,9 +246,13 @@ ${gen(L, false)}
 [data-theme="dark"] {
 ${gen(D, true)}
 
-  --shadow-sm: 0 1px 4px #00000033, 0 0 0 1px #ffffff08;
-  --shadow-md: 0 4px 20px #0000004d, 0 0 0 1px #ffffff08;
-  --shadow-lg: 0 12px 48px #00000066, 0 0 0 1px #ffffff08;
+  --shadow-xs: 0 1px 2px #00000022;
+  --shadow-sm: 0 1px 3px #00000033, 0 2px 8px #00000028, 0 0 0 1px #ffffff06;
+  --shadow-md: 0 2px 4px #00000033, 0 4px 16px #0000003d, 0 8px 32px #00000028;
+  --shadow-lg: 0 4px 8px #00000033, 0 8px 24px #00000044, 0 16px 56px #00000055;
+  --shadow-xl: 0 8px 16px #00000044, 0 16px 48px #00000055, 0 32px 80px #00000066;
+  --shadow-glow: 0 0 20px ${_r(P.accent, 0.2)}, 0 0 60px ${_r(P.accent, 0.1)};
+  --shadow-glow-lg: 0 0 30px ${_r(P.accent, 0.25)}, 0 0 80px ${_r(P.accent, 0.15)}, 0 0 120px ${_r(P.accent, 0.08)};
 
   --backdrop: #00000080;
 
@@ -303,3 +311,32 @@ window._darken = _darken;
 window._oklch2hex = _oklch2hex;
 window._FONT = _FONT;
 window._PALETTE = _PALETTE;
+
+/**
+ * Freeze _PALETTE (extended, light, dark) and _FONT.
+ * Called by each project's colors.js after extending with project-specific keys.
+ */
+function _freezeTokens() {
+  Object.freeze(_PALETTE.extended);
+  Object.freeze(_PALETTE.light);
+  Object.freeze(_PALETTE.dark);
+  Object.freeze(_FONT);
+  Object.freeze(_PALETTE);
+}
+
+/**
+ * Inject project-specific CSS custom properties via a <style> tag.
+ * @param {string} lightCSS  CSS variable declarations for :root (light mode)
+ * @param {string} darkCSS   CSS variable declarations for [data-theme="dark"]
+ * @param {string} [id='project-vars']  Style element ID
+ */
+function _injectProjectVars(lightCSS, darkCSS, id) {
+  var style = document.createElement('style');
+  style.id = id || 'project-vars';
+  style.textContent = ':root {\n' + lightCSS + '\n}\n'
+    + '[data-theme="dark"] {\n' + (darkCSS || '') + '\n}';
+  document.head.appendChild(style);
+}
+
+window._freezeTokens = _freezeTokens;
+window._injectProjectVars = _injectProjectVars;

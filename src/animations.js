@@ -45,7 +45,7 @@ export function initNavbarScroll($) {
     });
 }
 
-/** Wire up scroll-reveal observer and accent stripe animation. */
+/** Wire up scroll-reveal observer and parallax. */
 export function initScrollReveal() {
     const revealEls = document.querySelectorAll('.scroll-reveal');
 
@@ -62,23 +62,18 @@ export function initScrollReveal() {
         revealEls.forEach(el => observer.observe(el));
     }
 
-    // Accent stripe slides from left as its section scrolls into view
-    const stripeBand = document.querySelector('.stripe-band');
-    const stripeSection = document.querySelector('.stripe-section');
-    let stripeTicking = false;
+    // Parallax elements: hero orbs float with scroll
+    const orbs = document.querySelectorAll('.hero-orb');
 
     function onScroll() {
         updateScrollNorm();
-        if (stripeBand && stripeSection && !stripeTicking) {
-            stripeTicking = true;
-            requestAnimationFrame(() => {
-                const rect = stripeSection.getBoundingClientRect();
-                const vh = window.innerHeight;
-                const progress = 1 - (rect.top / vh);
-                // Clamp translateX between -120% (offscreen left) and 10% (slight overshoot right)
-                const tx = clamp((progress - 0.15) * 180 - 120, -120, 10);
-                stripeBand.style.transform = `translateX(${tx}%) rotate(-3deg)`;
-                stripeTicking = false;
+
+        // Subtle parallax on hero orbs
+        if (orbs.length) {
+            const sy = window.scrollY;
+            orbs.forEach((orb, i) => {
+                const speed = (i + 1) * 0.15;
+                orb.style.transform = `translateY(${sy * speed}px) scale(${1 - sy * 0.0003})`;
             });
         }
     }

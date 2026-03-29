@@ -209,6 +209,58 @@ function trapFocus(overlayEl) {
  * @param {string} message  Text to display
  * @param {number} [duration=2000]  Visible time in ms before fade-out
  */
+/**
+ * Cycle active tab forward or backward.
+ * All sim projects use [/] keys for this — extracted to shared utility.
+ * @param {number} dir  +1 for next, -1 for previous
+ */
+function cycleTab(dir) {
+    var btns = document.querySelectorAll('.tab-btn');
+    var idx = 0;
+    btns.forEach(function(b, i) { if (b.classList.contains('active')) idx = i; });
+    var next = (idx + dir + btns.length) % btns.length;
+    btns[next].click();
+}
+
+/**
+ * Set mobile-specific hint text on an element.
+ * Only runs on coarse-pointer (touch) devices.
+ * @param {string} elementId   ID of the hint element
+ * @param {string} text        Touch-specific hint text
+ * @param {string} [fallback]  Fallback CSS selector if ID not found
+ */
+function setMobileHint(elementId, text, fallback) {
+    if (!window.matchMedia('(pointer: coarse)').matches) return;
+    var el = document.getElementById(elementId);
+    if (!el && fallback) el = document.querySelector(fallback);
+    if (el) el.textContent = text;
+}
+
+/**
+ * Wire a mode toggle button with consistent aria attributes.
+ * @param {HTMLElement} btn        The toggle button
+ * @param {function}    getState   Returns current boolean state
+ * @param {function}    setState   Sets new boolean state
+ * @param {string}      labelOff   Aria-label when off
+ * @param {string}      labelOn    Aria-label when on
+ * @param {function}    [onToggle] Called with new state after toggle
+ */
+function bindModeToggle(btn, getState, setState, labelOff, labelOn, onToggle) {
+    if (!btn) return;
+    function update() {
+        var s = getState();
+        btn.setAttribute('aria-pressed', String(s));
+        btn.setAttribute('aria-label', s ? labelOn : labelOff);
+        btn.title = (s ? labelOn : labelOff) + ' (X)';
+    }
+    btn.addEventListener('click', function() {
+        setState(!getState());
+        update();
+        if (onToggle) onToggle(getState());
+    });
+    update();
+}
+
 function showToast(message, duration) {
     if (duration === undefined) duration = 2000;
     let container = document.getElementById('toast-container');

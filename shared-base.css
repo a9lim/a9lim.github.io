@@ -22,6 +22,8 @@
     --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
     --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
     --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+    --ease-elastic: cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    --ease-smooth: cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 
 /* ─── Body Base ─── */
@@ -37,10 +39,10 @@ body {
 /* ─── Glass Panel ─── */
 .glass {
     background: var(--bg-panel);
-    backdrop-filter: blur(24px) saturate(1.3);
-    -webkit-backdrop-filter: blur(24px) saturate(1.3);
+    backdrop-filter: blur(24px) saturate(1.4);
+    -webkit-backdrop-filter: blur(24px) saturate(1.4);
     border: 1px solid var(--border);
-    box-shadow: var(--shadow-md);
+    box-shadow: var(--shadow-md), inset 0 1px 0 0 var(--shimmer);
 }
 
 /* ─── Tool Buttons ─── */
@@ -77,12 +79,14 @@ body {
     color: var(--text);
     background: var(--bg-hover);
     border-color: var(--border);
+    box-shadow: var(--shadow-sm);
 }
 
 .tool-btn:active {
     background: var(--border-strong);
-    transform: scale(0.94);
+    transform: scale(0.92);
     transition-duration: 0.05s;
+    box-shadow: none;
 }
 
 .tool-btn:focus-visible {
@@ -163,21 +167,23 @@ body {
     justify-content: center;
     background: var(--bg-canvas);
     overflow: hidden;
-    transition: opacity 0.85s var(--ease-out), transform 0.85s var(--ease-out);
+    transition: opacity 0.85s var(--ease-out), transform 0.85s var(--ease-out), filter 0.85s var(--ease-out);
 }
 
 #intro-screen.hidden {
     opacity: 0;
-    transform: scale(1.02);
+    transform: scale(1.04);
+    filter: blur(8px);
     pointer-events: none;
 }
 
 .intro-bg {
     position: absolute;
-    inset: 0;
+    inset: -10%;
     background:
-        radial-gradient(ellipse at 25% 35%, var(--intro-warm) 0%, transparent 55%),
-        radial-gradient(ellipse at 75% 65%, var(--intro-cool) 0%, transparent 45%);
+        radial-gradient(ellipse at 20% 30%, var(--intro-warm) 0%, transparent 50%),
+        radial-gradient(ellipse at 80% 70%, var(--intro-cool) 0%, transparent 40%),
+        radial-gradient(ellipse at 50% 50%, var(--accent-subtle) 0%, transparent 60%);
     animation: introBgPulse 10s ease-in-out infinite alternate;
 }
 
@@ -191,7 +197,7 @@ body {
 }
 
 .intro-overline {
-    display: block;
+    display: inline-block;
     font-family: var(--font-mono);
     font-size: 0.72rem;
     font-weight: 500;
@@ -199,6 +205,10 @@ body {
     text-transform: uppercase;
     color: var(--accent);
     margin-bottom: 1.2rem;
+    padding: 0.3rem 1rem;
+    border: 1px solid var(--accent-glow);
+    border-radius: var(--radius-pill);
+    background: var(--accent-subtle);
 }
 
 .intro-title {
@@ -216,6 +226,7 @@ body {
     font-weight: 300;
     display: block;
     letter-spacing: 0.04em;
+    color: var(--text-secondary);
 }
 
 .intro-desc {
@@ -244,8 +255,9 @@ body {
     border: 1px solid var(--border);
     border-radius: var(--radius-md);
     text-align: left;
-    transition: background 0.25s;
+    transition: background 0.3s var(--ease-out), transform 0.3s var(--ease-spring), box-shadow 0.3s var(--ease-out), border-color 0.3s;
     animation: fadeUp 0.6s var(--ease-out) both;
+    box-shadow: var(--shadow-sm);
 }
 
 .intro-card:nth-child(1) { animation-delay: 0.5s; }
@@ -253,7 +265,10 @@ body {
 .intro-card:nth-child(3) { animation-delay: 0.74s; }
 
 .intro-card:hover {
-    background: var(--border-strong);
+    background: var(--bg-elevated);
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-lg);
+    border-color: var(--accent-glow);
 }
 
 .intro-card-icon {
@@ -266,6 +281,13 @@ body {
     background: var(--accent-subtle);
     color: var(--accent);
     flex-shrink: 0;
+    box-shadow: var(--shadow-xs);
+    transition: transform 0.3s var(--ease-spring), box-shadow 0.3s;
+}
+
+.intro-card:hover .intro-card-icon {
+    transform: scale(1.1) rotate(-5deg);
+    box-shadow: 0 0 16px var(--accent-glow);
 }
 
 .intro-card-text {
@@ -291,26 +313,44 @@ body {
     font-size: 0.92rem;
     font-weight: 500;
     color: #FDFBF5;
-    background: var(--accent);
+    background: linear-gradient(135deg, var(--accent), var(--accent-light));
     border: none;
     border-radius: var(--radius-pill);
     padding: 0.8rem 2.8rem;
     cursor: pointer;
     letter-spacing: 0.02em;
-    transition: all 0.3s var(--ease-out);
-    box-shadow: 0 0 40px var(--accent-glow), 0 0 80px var(--intro-warm);
+    transition: all 0.35s var(--ease-out);
+    box-shadow: var(--shadow-glow), var(--shadow-md);
     animation: fadeUp 0.6s var(--ease-out) 0.9s both;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Shimmer sweep on CTA button */
+#intro-start::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent);
+    transition: left 0.6s var(--ease-out);
+}
+
+#intro-start:hover::before {
+    left: 100%;
 }
 
 #intro-start:hover {
-    background: var(--accent-light);
-    transform: translateY(-2px);
-    box-shadow: 0 0 50px var(--accent-glow), 0 0 100px var(--intro-warm-hover);
+    background: linear-gradient(135deg, var(--accent-light), var(--accent));
+    transform: translateY(-3px) scale(1.02);
+    box-shadow: var(--shadow-glow-lg), var(--shadow-lg);
 }
 
 #intro-start:active {
-    transform: translateY(0);
-    box-shadow: 0 0 30px var(--accent-glow);
+    transform: translateY(0) scale(0.98);
+    box-shadow: var(--shadow-glow);
 }
 
 /* ─── Sidebar Patterns ─── */
@@ -351,11 +391,12 @@ body {
     padding: 6px 8px;
     margin-bottom: 1px;
     border-radius: 6px;
-    transition: background 0.15s ease;
+    transition: background 0.2s var(--ease-out), transform 0.2s var(--ease-spring);
 }
 
 .stat-row:hover {
     background: var(--bg-hover);
+    transform: translateX(2px);
 }
 
 .stat-label {
@@ -413,7 +454,7 @@ body {
     font-size: clamp(0.62rem, 0.95vw, 0.7rem);
     color: var(--text-muted);
     cursor: pointer;
-    transition: all 0.28s ease;
+    transition: color 0.28s var(--ease-out), border-color 0.28s var(--ease-out), background 0.28s var(--ease-out);
     letter-spacing: 0.04em;
     text-transform: uppercase;
     text-align: center;
@@ -421,11 +462,13 @@ body {
 
 .tab-btn:hover {
     color: var(--text-secondary);
+    background: var(--bg-hover);
 }
 
 .tab-btn.active {
     color: var(--accent);
     border-bottom-color: var(--accent);
+    background: var(--accent-subtle);
 }
 
 .tab-panels {
@@ -543,13 +586,13 @@ body {
     flex-direction: column;
     overflow: hidden;
     border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-lg);
+    box-shadow: var(--shadow-xl);
     transform: translateX(calc(100% + 24px));
     transition: background-color 0.4s, border-color 0.3s;
 }
 
 .app-ready .sim-panel {
-    transition: transform 0.55s var(--ease-out), background-color 0.4s, border-color 0.3s;
+    transition: transform 0.55s var(--ease-out), background-color 0.4s, border-color 0.3s, box-shadow 0.3s;
 }
 
 .sim-panel.open {
@@ -570,12 +613,18 @@ body {
     z-index: 100;
     opacity: 0;
     pointer-events: none;
-    transition: background-color 0.4s var(--ease-out), border-color 0.3s var(--ease-out);
+    transition: background-color 0.4s var(--ease-out), border-color 0.3s var(--ease-out), left 0.3s var(--ease-out);
 }
 
 .app-ready .sim-bar {
     animation: paletteEnter 0.5s var(--ease-out) 0.2s both;
     pointer-events: auto;
+}
+
+@media (min-width: 901px) {
+    body:has(.sim-panel.open) .sim-bar {
+        left: calc(50% - (var(--panel-w) + 24px) / 2);
+    }
 }
 
 /* Floating left control stack */
@@ -785,7 +834,7 @@ body {
     transition: left 0.3s var(--ease-out);
 }
 @media (min-width: 901px) {
-    body:has(> .sim-panel.open) #toast-container {
+    body:has(.sim-panel.open) #toast-container {
         left: calc(50% - (var(--panel-w) + 24px) / 2);
     }
 }
@@ -794,8 +843,8 @@ body {
     padding: 8px 24px;
     border-radius: var(--radius-pill);
     background: var(--bg-panel);
-    backdrop-filter: blur(24px) saturate(1.3);
-    -webkit-backdrop-filter: blur(24px) saturate(1.3);
+    backdrop-filter: blur(24px) saturate(1.4);
+    -webkit-backdrop-filter: blur(24px) saturate(1.4);
     border: 1px solid var(--border);
     color: var(--text);
     font: 500 0.82rem var(--font-body);
@@ -1239,7 +1288,7 @@ input[type=range]::-moz-range-thumb {
     font-weight: 400;
     color: var(--text-secondary);
     cursor: pointer;
-    transition: background 0.2s, color 0.2s;
+    transition: background 0.25s var(--ease-out), color 0.25s var(--ease-out), box-shadow 0.25s;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1247,12 +1296,16 @@ input[type=range]::-moz-range-thumb {
     line-height: 1;
 }
 
-.mode-btn:hover { color: var(--text); }
+.mode-btn:hover {
+    color: var(--text);
+    background: var(--bg-hover);
+}
 
 .mode-btn.active {
     background: var(--accent-subtle);
     color: var(--accent);
     font-weight: 500;
+    box-shadow: inset 0 -2px 0 var(--accent);
 }
 
 /* Checkbox label layout (standalone checkboxes, not .tog toggles) */
@@ -1315,6 +1368,8 @@ input[type=range]::-moz-range-thumb {
     background: var(--bg-hover);
     color: var(--text);
     border-color: var(--border-strong);
+    box-shadow: var(--shadow-sm);
+    transform: translateY(-1px);
 }
 
 .ghost-btn:disabled,
@@ -1507,6 +1562,194 @@ label.control-label {
     scrollbar-width: none;
   }
   .sim-toolbar-actions::-webkit-scrollbar { display: none; }
+}
+
+/* ─── Simulation Body Base ─── */
+/* Simulation apps (not the portfolio) use this to lock viewport */
+.sim-body {
+    overflow: hidden;
+    font-size: 14px;
+    line-height: 1.5;
+    height: 100vh;
+    height: 100dvh;
+    width: 100vw;
+    user-select: none;
+}
+
+html:has(> .sim-body) { overflow: hidden; }
+
+/* ─── Canvas Container ─── */
+.canvas-container {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: var(--bg-canvas);
+    position: relative;
+    touch-action: none;
+    transition: background-color 0.5s var(--ease-out);
+}
+
+/* ─── Substrate Pill Buttons ─── */
+.pill-group {
+    display: flex;
+    align-items: center;
+}
+
+.pill-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.35rem 0.7rem;
+    border: none;
+    background: transparent;
+    font-family: var(--font-body);
+    font-weight: 600;
+    font-size: clamp(0.72rem, 1vw, 0.82rem);
+    cursor: pointer;
+    transition: color 0.2s, background 0.2s;
+    white-space: nowrap;
+    outline: none;
+    -webkit-appearance: none;
+}
+
+.pill-btn-left  { border-radius: var(--radius-pill) 0 0 var(--radius-pill); }
+.pill-btn-right { border-radius: 0 var(--radius-pill) var(--radius-pill) 0; }
+.pill-btn-solo  { border-radius: var(--radius-pill); }
+
+.pill-btn:hover:not(:disabled) {
+    background: color-mix(in srgb, currentColor 10%, transparent);
+}
+
+.pill-btn:active:not(:disabled) {
+    transform: scale(0.96);
+}
+
+.pill-btn:disabled {
+    opacity: 0.35;
+    cursor: default;
+}
+
+/* ─── Divider ─── */
+.divider {
+    width: 1px;
+    height: 20px;
+    background: var(--border);
+    flex-shrink: 0;
+}
+
+/* ─── Sparkline ─── */
+.sparkline {
+    display: block;
+    width: 100%;
+    height: var(--sparkline-h, 36px);
+    margin-top: 4px;
+    border-radius: 4px;
+    background: transparent;
+}
+
+/* ─── Text Input ─── */
+.sim-input {
+    width: 100%;
+    padding: 0.4rem 0.65rem;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border);
+    background: var(--bg-elevated);
+    color: var(--text);
+    font-family: var(--font-body);
+    font-size: 0.82rem;
+    outline: none;
+    transition: border-color 0.15s;
+}
+
+.sim-input:focus {
+    border-color: var(--accent);
+}
+
+/* ─── Progress Track ─── */
+.progress-track {
+    width: 100%;
+    height: var(--track-h, 4px);
+    background: var(--slider-track);
+    border-radius: calc(var(--track-h, 4px) / 2);
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    width: 0%;
+    border-radius: inherit;
+    transition: width 0.4s var(--ease-smooth);
+}
+
+/* ─── Icon Tight (thicker stroke for small icons) ─── */
+.icon-tight svg {
+    stroke-width: 2.5;
+}
+
+/* ─── Label Utilities ─── */
+.label-caps {
+    font-family: var(--font-mono);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-size: 0.72rem;
+    color: var(--text-muted);
+}
+
+/* ─── Canvas Cursor ─── */
+.cursor-grab { cursor: grab; }
+.cursor-grab:active { cursor: grabbing; }
+
+/* ─── Mobile Bottom Sheet ─── */
+/* Sim panels become bottom sheets on mobile */
+@media (max-width: 900px) {
+    .sim-panel {
+        top: auto;
+        right: 0;
+        left: 0;
+        bottom: 0;
+        width: 100%;
+        max-height: 55vh;
+        border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+        transform: translateY(100%);
+    }
+
+    .sim-panel.open,
+    .app-ready .sim-panel.open {
+        transform: translateY(0);
+    }
+}
+
+/* ─── Elevation Utilities ─── */
+.elevation-1 { box-shadow: var(--shadow-sm); }
+.elevation-2 { box-shadow: var(--shadow-md); }
+.elevation-3 { box-shadow: var(--shadow-lg); }
+.elevation-4 { box-shadow: var(--shadow-xl); }
+
+/* ─── Additional Keyframes ─── */
+@keyframes scaleIn {
+    from { opacity: 0; transform: scale(0.95); }
+    to   { opacity: 1; transform: scale(1); }
+}
+
+@keyframes glowPulse {
+    0%, 100% { box-shadow: var(--shadow-glow); }
+    50%      { box-shadow: var(--shadow-glow-lg); }
+}
+
+@keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50%      { transform: translateY(-6px); }
+}
+
+@keyframes shimmerSlide {
+    0%   { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+}
+
+@keyframes breathe {
+    0%, 100% { opacity: 0.4; }
+    50%      { opacity: 0.8; }
 }
 
 /* ─── Reduced Motion ─── */
