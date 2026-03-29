@@ -97,7 +97,7 @@ body {
 .tool-btn.active {
     color: var(--accent);
     background: var(--accent-subtle);
-    border-color: var(--accent-glow);
+    border-color: var(--border-strong);
 }
 
 
@@ -255,7 +255,7 @@ body {
     border: 1px solid var(--border);
     border-radius: var(--radius-md);
     text-align: left;
-    transition: background 0.3s var(--ease-out), transform 0.3s var(--ease-spring), box-shadow 0.3s var(--ease-out), border-color 0.3s;
+    transition: background 0.4s var(--ease-out), transform 0.4s var(--ease-spring), box-shadow 0.4s var(--ease-out), border-color 0.4s var(--ease-out);
     animation: fadeUp 0.6s var(--ease-out) both;
     box-shadow: var(--shadow-sm);
 }
@@ -268,7 +268,7 @@ body {
     background: var(--bg-elevated);
     transform: translateY(-3px);
     box-shadow: var(--shadow-lg);
-    border-color: var(--accent-glow);
+    border-color: var(--border-strong);
 }
 
 .intro-card-icon {
@@ -282,12 +282,12 @@ body {
     color: var(--accent);
     flex-shrink: 0;
     box-shadow: var(--shadow-xs);
-    transition: transform 0.3s var(--ease-spring), box-shadow 0.3s;
+    transition: transform 0.4s var(--ease-spring), box-shadow 0.4s var(--ease-out);
 }
 
 .intro-card:hover .intro-card-icon {
     transform: scale(1.1) rotate(-5deg);
-    box-shadow: 0 0 16px var(--accent-glow);
+    box-shadow: var(--shadow-md);
 }
 
 .intro-card-text {
@@ -320,7 +320,7 @@ body {
     cursor: pointer;
     letter-spacing: 0.02em;
     transition: all 0.35s var(--ease-out);
-    box-shadow: var(--shadow-glow), var(--shadow-md);
+    box-shadow: var(--shadow-md);
     animation: fadeUp 0.6s var(--ease-out) 0.9s both;
     position: relative;
     overflow: hidden;
@@ -345,12 +345,12 @@ body {
 #intro-start:hover {
     background: linear-gradient(135deg, var(--accent-light), var(--accent));
     transform: translateY(-3px) scale(1.02);
-    box-shadow: var(--shadow-glow-lg), var(--shadow-lg);
+    box-shadow: var(--shadow-lg);
 }
 
 #intro-start:active {
     transform: translateY(0) scale(0.98);
-    box-shadow: var(--shadow-glow);
+    box-shadow: var(--shadow-sm);
 }
 
 /* ─── Sidebar Patterns ─── */
