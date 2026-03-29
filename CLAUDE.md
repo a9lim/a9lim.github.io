@@ -1,10 +1,21 @@
 # CLAUDE.md
 
-Root site for the **a9l.im** portfolio. Hosted via GitHub Pages with custom domain `a9l.im` (configured in `CNAME`). Also hosts the shared design system consumed by all four simulation submodules (`geon`, `shoals`, `gerry`, `cyano`).
+Root site for the **a9l.im** portfolio. Hosted via GitHub Pages with custom domain `a9l.im` (configured in `CNAME`). Also hosts the shared design system consumed by all five submodules (`geon`, `shoals`, `gerry`, `cyano`, `scripture`).
+
+## Design Philosophy
+
+Flat, lineless, modern. Every surface is differentiated by **background color**, never borders. Shadows appear **only on hover/active/focus** — nothing has a resting-state shadow. Elevation is earned through interaction, not decoration.
+
+- **No borders** on panels, buttons, inputs, tabs, cards, separators, or toggles. Use `border: none` everywhere. The only exception is `outline` on `:focus-visible` for accessibility.
+- **No resting shadows** — `box-shadow: none` at rest. Hover states may use `var(--shadow-sm)` or `var(--shadow-md)`.
+- **Background differentiation** — use `--bg-hover`, `--bg-elevated`, `--accent-subtle` to distinguish nested surfaces, not lines.
+- **Subtle animations** — hover lifts are small (`translateY(-2px)` to `-4px`), no scale transforms on cards. Transitions use `var(--ease-out)` or `var(--ease-spring)`.
+- `.glass` uses `bg-panel-solid` (opaque), not semi-transparent `bg-panel`. No shimmer inset.
+- Shadow tokens (`--shadow-sm` etc.) contain no `0 0 0 1px` spread rings.
 
 ## Shared Code Policy
 
-All projects share a common design system at this repo's root. **Always prefer shared code over project-specific implementations.** Before adding utility code to a project, check whether a `shared-*.js` file already provides it. New utilities useful across projects should go in the appropriate shared file.
+All projects share a common design system at this repo's root. **Always prefer shared code over project-specific implementations.** Check `shared-*.js` before adding utility code to a project.
 
 Key shared modules:
 - `shared-tokens.js` — `_PALETTE`, `_FONT`, color math. Extend via `colors.js`, never hardcode colors
@@ -20,7 +31,7 @@ Key shared modules:
 cd path/to/a9lim.github.io && python -m http.server
 ```
 
-Root site uses relative paths for shared files; sub-projects use absolute paths (`/shared-*.js`). Both resolve to the same files.
+Root site uses relative paths for shared files; sub-projects use absolute paths (`/shared-*.js`).
 
 ## Overview
 
