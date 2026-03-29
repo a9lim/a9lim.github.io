@@ -38,11 +38,12 @@ body {
 
 /* ─── Glass Panel ─── */
 .glass {
-    background: var(--bg-panel);
+    background: var(--bg-panel-solid);
     backdrop-filter: blur(24px) saturate(1.4);
     -webkit-backdrop-filter: blur(24px) saturate(1.4);
-    border: 1px solid var(--border);
-    box-shadow: var(--shadow-md), inset 0 1px 0 0 var(--shimmer);
+    border: none;
+    box-shadow: none;
+    transition: box-shadow 0.3s var(--ease-out), background 0.3s var(--ease-out);
 }
 
 /* ─── Tool Buttons ─── */
@@ -53,7 +54,7 @@ body {
     width: 34px;
     height: 34px;
     background: transparent;
-    border: 1px solid transparent;
+    border: none;
     border-radius: var(--radius-sm);
     color: var(--text-muted);
     cursor: pointer;
@@ -61,7 +62,7 @@ body {
     flex-shrink: 0;
     outline: none;
     -webkit-appearance: none;
-    transition: color 0.2s, background 0.2s, border-color 0.2s, opacity 0.2s, box-shadow 0.2s;
+    transition: color 0.2s var(--ease-out), background 0.2s var(--ease-out), opacity 0.2s, box-shadow 0.25s var(--ease-out), transform 0.2s var(--ease-spring);
 }
 
 .tool-btn svg {
@@ -78,7 +79,6 @@ body {
 .tool-btn:hover {
     color: var(--text);
     background: var(--bg-hover);
-    border-color: var(--border);
     box-shadow: var(--shadow-sm);
 }
 
@@ -97,7 +97,6 @@ body {
 .tool-btn.active {
     color: var(--accent);
     background: var(--accent-subtle);
-    border-color: var(--border-strong);
 }
 
 
@@ -206,9 +205,10 @@ body {
     color: var(--accent);
     margin-bottom: 1.2rem;
     padding: 0.3rem 1rem;
-    border: 1px solid var(--accent-glow);
+    border: none;
     border-radius: var(--radius-pill);
     background: var(--accent-subtle);
+    transition: background 0.3s var(--ease-out), box-shadow 0.3s var(--ease-out);
 }
 
 .intro-title {
@@ -252,12 +252,12 @@ body {
     gap: 0.75rem;
     padding: 0.7rem 1rem;
     background: var(--bg-hover);
-    border: 1px solid var(--border);
+    border: none;
     border-radius: var(--radius-md);
     text-align: left;
-    transition: background 0.4s var(--ease-out), transform 0.4s var(--ease-spring), box-shadow 0.4s var(--ease-out), border-color 0.4s var(--ease-out);
+    transition: background 0.4s var(--ease-out), transform 0.4s var(--ease-spring), box-shadow 0.4s var(--ease-out);
     animation: fadeUp 0.6s var(--ease-out) both;
-    box-shadow: var(--shadow-sm);
+    box-shadow: none;
 }
 
 .intro-card:nth-child(1) { animation-delay: 0.5s; }
@@ -266,9 +266,8 @@ body {
 
 .intro-card:hover {
     background: var(--bg-elevated);
-    transform: translateY(-3px);
-    box-shadow: var(--shadow-lg);
-    border-color: var(--border-strong);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-sm);
 }
 
 .intro-card-icon {
@@ -281,13 +280,11 @@ body {
     background: var(--accent-subtle);
     color: var(--accent);
     flex-shrink: 0;
-    box-shadow: var(--shadow-xs);
-    transition: transform 0.4s var(--ease-spring), box-shadow 0.4s var(--ease-out);
+    transition: transform 0.4s var(--ease-spring), background 0.3s var(--ease-out);
 }
 
 .intro-card:hover .intro-card-icon {
-    transform: scale(1.1) rotate(-5deg);
-    box-shadow: var(--shadow-md);
+    transform: scale(1.05);
 }
 
 .intro-card-text {
@@ -320,7 +317,7 @@ body {
     cursor: pointer;
     letter-spacing: 0.02em;
     transition: all 0.35s var(--ease-out);
-    box-shadow: var(--shadow-md);
+    box-shadow: none;
     animation: fadeUp 0.6s var(--ease-out) 0.9s both;
     position: relative;
     overflow: hidden;
@@ -344,8 +341,8 @@ body {
 
 #intro-start:hover {
     background: linear-gradient(135deg, var(--accent-light), var(--accent));
-    transform: translateY(-3px) scale(1.02);
-    box-shadow: var(--shadow-lg);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
 }
 
 #intro-start:active {
@@ -363,7 +360,6 @@ body {
     color: var(--text-muted);
     margin-bottom: 0.65rem;
     padding-bottom: 0.4rem;
-    border-bottom: 1px solid var(--border);
 }
 
 .stats-header {
@@ -371,7 +367,6 @@ body {
     align-items: center;
     justify-content: space-between;
     padding: 16px 16px 12px;
-    border-bottom: 1px solid var(--border);
     flex-shrink: 0;
 }
 
@@ -391,7 +386,7 @@ body {
     padding: 6px 8px;
     margin-bottom: 1px;
     border-radius: 6px;
-    transition: background 0.2s var(--ease-out), transform 0.2s var(--ease-spring);
+    transition: background 0.2s var(--ease-out), transform 0.2s var(--ease-spring), color 0.2s var(--ease-out);
 }
 
 .stat-row:hover {
@@ -435,7 +430,6 @@ body {
 .tab-bar {
     display: flex;
     gap: 0;
-    border-bottom: 1px solid var(--border);
     padding: 0 16px;
     flex-shrink: 0;
     position: sticky;
@@ -448,13 +442,13 @@ body {
     padding: 0.6rem 0.4rem 0.5rem;
     background: transparent;
     border: none;
-    border-bottom: 2px solid transparent;
+    border-radius: var(--radius-sm);
     font-family: var(--font-body);
     font-weight: 500;
     font-size: clamp(0.62rem, 0.95vw, 0.7rem);
     color: var(--text-muted);
     cursor: pointer;
-    transition: color 0.28s var(--ease-out), border-color 0.28s var(--ease-out), background 0.28s var(--ease-out);
+    transition: color 0.28s var(--ease-out), background 0.28s var(--ease-out), box-shadow 0.28s var(--ease-out);
     letter-spacing: 0.04em;
     text-transform: uppercase;
     text-align: center;
@@ -467,8 +461,8 @@ body {
 
 .tab-btn.active {
     color: var(--accent);
-    border-bottom-color: var(--accent);
     background: var(--accent-subtle);
+    font-weight: 600;
 }
 
 .tab-panels {
@@ -505,7 +499,7 @@ body {
     border-radius: var(--radius-lg);
     opacity: 0;
     pointer-events: none;
-    transition: background-color 0.4s var(--ease-out), border-color 0.3s var(--ease-out);
+    transition: background-color 0.4s var(--ease-out), box-shadow 0.4s var(--ease-out);
 }
 
 .app-ready .sim-toolbar {
@@ -525,10 +519,10 @@ body {
 .tool-sep {
     width: 1px;
     height: 18px;
-    background: var(--border-strong);
+    background: var(--text-muted);
     margin: 0 4px;
     flex-shrink: 0;
-    opacity: 0.6;
+    opacity: 0.15;
 }
 
 /* Home logo link */
@@ -586,13 +580,13 @@ body {
     flex-direction: column;
     overflow: hidden;
     border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-xl);
+    box-shadow: none;
     transform: translateX(calc(100% + 24px));
-    transition: background-color 0.4s, border-color 0.3s;
+    transition: background-color 0.4s, box-shadow 0.3s;
 }
 
 .app-ready .sim-panel {
-    transition: transform 0.55s var(--ease-out), background-color 0.4s, border-color 0.3s, box-shadow 0.3s;
+    transition: transform 0.55s var(--ease-out), background-color 0.4s, box-shadow 0.3s;
 }
 
 .sim-panel.open {
@@ -613,7 +607,7 @@ body {
     z-index: 100;
     opacity: 0;
     pointer-events: none;
-    transition: background-color 0.4s var(--ease-out), border-color 0.3s var(--ease-out), left 0.3s var(--ease-out);
+    transition: background-color 0.4s var(--ease-out), box-shadow 0.3s var(--ease-out), left 0.3s var(--ease-out);
 }
 
 .app-ready .sim-bar {
@@ -642,7 +636,7 @@ body {
     font-variant-numeric: tabular-nums;
     opacity: 0;
     pointer-events: none;
-    transition: background-color 0.4s var(--ease-out), border-color 0.3s var(--ease-out);
+    transition: background-color 0.4s var(--ease-out), box-shadow 0.3s var(--ease-out);
 }
 
 .app-ready .sim-controls {
@@ -671,8 +665,9 @@ body {
 .ctrl-sep {
     width: 20px;
     height: 1px;
-    background: var(--border);
+    background: var(--bg-hover);
     margin: 2px auto;
+    opacity: 0.6;
 }
 
 /* Thin scrollbar */
@@ -695,7 +690,6 @@ body {
     padding: 0.4rem 0.55rem;
     border-radius: var(--radius-sm);
     background: var(--accent-subtle);
-    border: 1px solid var(--accent-glow);
 }
 
 .hidden {
@@ -842,13 +836,13 @@ body {
 .toast {
     padding: 8px 24px;
     border-radius: var(--radius-pill);
-    background: var(--bg-panel);
+    background: var(--bg-panel-solid);
     backdrop-filter: blur(24px) saturate(1.4);
     -webkit-backdrop-filter: blur(24px) saturate(1.4);
-    border: 1px solid var(--border);
+    border: none;
     color: var(--text);
     font: 500 0.82rem var(--font-body);
-    box-shadow: var(--shadow-md);
+    box-shadow: var(--shadow-sm);
     opacity: 0;
     transform: translateY(12px);
     transition: opacity 0.3s var(--ease-out), transform 0.3s var(--ease-out);
@@ -905,8 +899,8 @@ body {
     width: 16px;
     height: 16px;
     border-radius: 50%;
-    border: 1px solid var(--border-strong);
-    background: transparent;
+    border: none;
+    background: var(--bg-hover);
     color: var(--text-muted);
     font-size: 0.6rem;
     font-weight: 700;
@@ -917,14 +911,14 @@ body {
     flex-shrink: 0;
     line-height: 1;
     vertical-align: middle;
-    transition: color 0.15s, border-color 0.15s, background 0.15s;
+    transition: color 0.2s var(--ease-out), background 0.2s var(--ease-out), box-shadow 0.2s var(--ease-out);
 }
 
 .info-trigger:hover,
 .info-trigger:focus-visible {
     color: var(--accent);
-    border-color: var(--accent);
     background: var(--accent-subtle);
+    box-shadow: var(--shadow-sm);
 }
 
 /* ─── Sim Tooltip (cursor-following) ─── */
@@ -934,8 +928,8 @@ body {
     padding: 6px 10px;
     border-radius: var(--radius-sm);
     background: var(--bg-panel-solid);
-    border: 1px solid var(--border);
-    box-shadow: var(--shadow-sm);
+    border: none;
+    box-shadow: none;
     font: 500 0.72rem / 1.55 var(--font-mono);
     color: var(--text);
     pointer-events: none;
@@ -963,7 +957,7 @@ body {
     color: var(--text);
     opacity: 0;
     transform: translateY(4px);
-    transition: opacity 0.18s var(--ease-out), transform 0.18s var(--ease-out);
+    transition: opacity 0.2s var(--ease-out), transform 0.2s var(--ease-out);
     pointer-events: none;
 }
 
@@ -1030,10 +1024,10 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    backdrop-filter: blur(4px);
-    -webkit-backdrop-filter: blur(4px);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
     opacity: 0;
-    transition: opacity 0.2s var(--ease-out);
+    transition: opacity 0.3s var(--ease-out);
     pointer-events: none;
 }
 
@@ -1049,6 +1043,13 @@ body {
     width: 90vw;
     max-height: 85vh;
     overflow-y: auto;
+    box-shadow: none;
+    transform: translateY(8px) scale(0.98);
+    transition: transform 0.3s var(--ease-out), opacity 0.3s var(--ease-out);
+}
+
+.about-overlay-visible .about-content {
+    transform: translateY(0) scale(1);
 }
 
 .about-header {
@@ -1076,11 +1077,9 @@ body {
 .about-section {
     padding-bottom: 16px;
     margin-bottom: 16px;
-    border-bottom: 1px solid var(--border);
 }
 
 .about-section:last-of-type {
-    border-bottom: none;
     margin-bottom: 0;
     padding-bottom: 0;
 }
@@ -1094,7 +1093,6 @@ body {
     color: var(--text-muted);
     margin-bottom: 8px;
     padding-bottom: 4px;
-    border-bottom: 1px solid var(--border);
 }
 
 .about-row {
@@ -1111,10 +1109,10 @@ body {
 
 .about-key {
     display: inline-block;
-    padding: 2px 8px;
-    border-radius: 4px;
-    border: 1px solid var(--border-strong);
-    background: var(--bg-hover);
+    padding: 3px 9px;
+    border-radius: 6px;
+    border: none;
+    background: var(--bg-elevated);
     font-family: var(--font-mono);
     font-size: 0.72rem;
     color: var(--text);
@@ -1132,7 +1130,6 @@ body {
 .about-footer {
     padding-top: 12px;
     margin-top: 4px;
-    border-top: 1px solid var(--border);
     font-size: 0.75rem;
     color: var(--text-muted);
     text-align: center;
@@ -1191,11 +1188,19 @@ body {
     width: 100%;
     padding: 6px 10px;
     border-radius: var(--radius-sm);
-    border: 1px solid var(--border);
-    background: var(--bg-panel);
+    border: none;
+    background: var(--bg-hover);
     color: var(--text);
     font-family: var(--font-body);
     font-size: 0.82rem;
+    transition: background 0.2s var(--ease-out), box-shadow 0.25s var(--ease-out);
+}
+
+.sim-select:focus {
+    background: var(--bg-elevated);
+    box-shadow: var(--shadow-sm);
+    outline: 2px solid var(--accent);
+    outline-offset: 0;
 }
 
 /* ─── Form Controls ─── */
@@ -1270,17 +1275,15 @@ input[type=range]::-moz-range-thumb {
 
 /* Segmented control (mode toggles) */
 .mode-toggles {
-    display: grid;
-    grid-auto-columns: 1fr;
-    grid-auto-flow: column;
-    gap: 1px;
-    background: var(--border);
+    display: flex;
+    gap: 4px;
+    background: transparent;
     border-radius: var(--radius-sm);
-    overflow: hidden;
 }
 
 .mode-btn {
-    background: var(--bg-panel-solid);
+    flex: 1;
+    background: var(--bg-hover);
     border: none;
     padding: 8px 12px;
     font-family: var(--font-body);
@@ -1288,24 +1291,23 @@ input[type=range]::-moz-range-thumb {
     font-weight: 400;
     color: var(--text-secondary);
     cursor: pointer;
-    transition: background 0.25s var(--ease-out), color 0.25s var(--ease-out), box-shadow 0.25s;
+    transition: background 0.25s var(--ease-out), color 0.25s var(--ease-out), box-shadow 0.25s var(--ease-out);
     display: flex;
     align-items: center;
     justify-content: center;
-    border-radius: 0;
+    border-radius: var(--radius-sm);
     line-height: 1;
 }
 
 .mode-btn:hover {
     color: var(--text);
-    background: var(--bg-hover);
+    background: var(--bg-elevated);
 }
 
 .mode-btn.active {
     background: var(--accent-subtle);
     color: var(--accent);
     font-weight: 500;
-    box-shadow: inset 0 -2px 0 var(--accent);
 }
 
 /* Checkbox label layout (standalone checkboxes, not .tog toggles) */
@@ -1354,20 +1356,19 @@ input[type=range]::-moz-range-thumb {
 .ghost-btn {
     padding: 0.4rem 0.75rem;
     border-radius: var(--radius-sm);
-    border: 1px solid var(--border);
-    background: transparent;
+    border: none;
+    background: var(--bg-hover);
     color: var(--text-secondary);
     font-family: var(--font-body);
     font-size: 0.78rem;
     font-weight: 500;
     cursor: pointer;
-    transition: background 0.15s, color 0.15s, border-color 0.15s;
+    transition: background 0.2s var(--ease-out), color 0.2s var(--ease-out), box-shadow 0.25s var(--ease-out), transform 0.2s var(--ease-spring);
 }
 
 .ghost-btn:hover {
-    background: var(--bg-hover);
+    background: var(--bg-elevated);
     color: var(--text);
-    border-color: var(--border-strong);
     box-shadow: var(--shadow-sm);
     transform: translateY(-1px);
 }
@@ -1482,8 +1483,8 @@ label.control-label {
     border-radius: 11px;
     cursor: pointer;
     position: relative;
-    border: 1px solid var(--tog-border);
-    box-shadow: var(--tog-shadow);
+    border: none;
+    box-shadow: none;
     transition: all 0.28s ease;
     overflow: hidden;
     --tog-color: var(--accent);
@@ -1518,8 +1519,6 @@ label.control-label {
 
 .tog-wrap input:checked + .tog {
     background: linear-gradient(135deg, var(--tog-color), color-mix(in srgb, var(--tog-color), black 25%));
-    border-color: color-mix(in srgb, var(--tog-color) 35%, transparent);
-    box-shadow: inset 0 1px 3px var(--tog-checked-inset);
 }
 .tog-wrap input:checked + .tog .tog-thumb {
     transform: translateX(var(--tog-shift));
@@ -1537,7 +1536,6 @@ label.control-label {
 /* Dark-mode toggle overrides */
 [data-theme="dark"] .tog-wrap input:checked + .tog {
     background: linear-gradient(135deg, color-mix(in srgb, var(--tog-color), black 82%), color-mix(in srgb, var(--tog-color), black 72%));
-    border-color: color-mix(in srgb, var(--tog-color) 22%, transparent);
 }
 [data-theme="dark"] .tog-wrap input:checked + .tog .tog-thumb {
     background: var(--tog-color);
@@ -1633,8 +1631,9 @@ html:has(> .sim-body) { overflow: hidden; }
 .divider {
     width: 1px;
     height: 20px;
-    background: var(--border);
+    background: var(--bg-hover);
     flex-shrink: 0;
+    opacity: 0.6;
 }
 
 /* ─── Sparkline ─── */
@@ -1652,17 +1651,20 @@ html:has(> .sim-body) { overflow: hidden; }
     width: 100%;
     padding: 0.4rem 0.65rem;
     border-radius: var(--radius-sm);
-    border: 1px solid var(--border);
-    background: var(--bg-elevated);
+    border: none;
+    background: var(--bg-hover);
     color: var(--text);
     font-family: var(--font-body);
     font-size: 0.82rem;
     outline: none;
-    transition: border-color 0.15s;
+    transition: background 0.2s var(--ease-out), box-shadow 0.25s var(--ease-out);
 }
 
 .sim-input:focus {
-    border-color: var(--accent);
+    background: var(--bg-elevated);
+    box-shadow: var(--shadow-sm);
+    outline: 2px solid var(--accent);
+    outline-offset: 0;
 }
 
 /* ─── Progress Track ─── */

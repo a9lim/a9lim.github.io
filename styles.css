@@ -14,8 +14,9 @@
 ::-webkit-scrollbar { width: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb {
-    background: var(--border-strong);
+    background: var(--text-muted);
     border-radius: 3px;
+    opacity: 0.3;
     transition: background 0.2s;
 }
 ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
@@ -78,11 +79,11 @@ a:hover { color: var(--accent-light); }
 #navbar {
     border-radius: var(--radius-lg);
     padding: 0 12px 0 20px;
-    transition: background-color 0.4s var(--ease-out), border-color 0.3s var(--ease-out), box-shadow 0.4s var(--ease-out);
+    transition: background-color 0.4s var(--ease-out), box-shadow 0.4s var(--ease-out);
 }
 
 #navbar.scrolled {
-    box-shadow: var(--shadow-lg);
+    box-shadow: none;
 }
 
 .nav-left {
@@ -158,7 +159,8 @@ a:hover { color: var(--accent-light); }
 }
 
 .tool-btn:hover {
-    transform: translateY(-1px);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-sm);
 }
 
 .tool-btn[aria-label="Twitter"] svg,
@@ -368,7 +370,7 @@ a:hover { color: var(--accent-light); }
     border-radius: var(--radius-pill);
     cursor: pointer;
     transition: background 0.3s var(--ease-out), transform 0.4s var(--ease-spring), box-shadow 0.4s var(--ease-out);
-    box-shadow: var(--shadow-md);
+    box-shadow: none;
     animation: heroFadeUp 0.9s var(--ease-out) 0.4s both;
 }
 
@@ -379,8 +381,8 @@ a:hover { color: var(--accent-light); }
 
 .hero-cta:hover {
     background: var(--accent-light);
-    transform: translateY(-3px) scale(1.02);
-    box-shadow: var(--shadow-lg);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
     color: var(--overlay-text);
 }
 
@@ -415,7 +417,7 @@ a:hover { color: var(--accent-light); }
     display: flex;
     flex-direction: column;
     gap: 16px;
-    transition: transform 0.5s var(--ease-spring), box-shadow 0.5s var(--ease-out), border-color 0.4s var(--ease-out);
+    transition: transform 0.5s var(--ease-spring), box-shadow 0.5s var(--ease-out), background 0.4s var(--ease-out);
     text-decoration: none;
     color: var(--text);
     position: relative;
@@ -436,9 +438,8 @@ a:hover { color: var(--accent-light); }
 /* .visible:hover needed to beat .fade-in.visible (specificity 0,2,0) */
 .project-card:hover,
 .project-card.visible:hover {
-    transform: translateY(-8px) scale(1.02);
-    box-shadow: var(--shadow-xl);
-    border-color: var(--border-strong);
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-md);
     color: var(--text);
 }
 
@@ -479,13 +480,11 @@ a:hover { color: var(--accent-light); }
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
-    transition: transform 0.5s var(--ease-spring), box-shadow 0.5s var(--ease-out);
-    box-shadow: var(--shadow-sm);
+    transition: transform 0.5s var(--ease-spring), box-shadow 0.5s var(--ease-out), background 0.3s var(--ease-out);
 }
 
 .project-card:hover .project-icon {
-    transform: scale(1.1) rotate(-3deg);
-    box-shadow: var(--shadow-md);
+    transform: scale(1.05);
 }
 
 .project-icon svg {
@@ -519,7 +518,7 @@ a:hover { color: var(--accent-light); }
 
 .project-card:hover .project-arrow {
     color: var(--accent);
-    transform: translate(4px, -4px);
+    transform: translate(2px, -2px);
 }
 
 .project-title {
@@ -567,7 +566,6 @@ a:hover { color: var(--accent-light); }
 .project-card:hover .project-tag {
     opacity: 1;
     transform: translateY(0);
-    box-shadow: var(--shadow-xs);
 }
 
 .project-card:hover .project-tag:nth-child(2) { transition-delay: 0.04s; }
@@ -615,7 +613,6 @@ a:hover { color: var(--accent-light); }
     background: var(--bg-hover);
     color: var(--text);
     transform: translateX(8px);
-    box-shadow: var(--shadow-sm);
 }
 
 .blog-entry:hover::before {
@@ -787,7 +784,7 @@ a:hover { color: var(--accent-light); }
 }
 
 .blog-content h1 { font-family: var(--font-display); font-weight: normal; font-size: 2rem; }
-.blog-content h2 { font-family: var(--font-display); font-weight: normal; font-size: 1.5rem; border-bottom: 1px solid var(--border); padding-bottom: 0.3em; }
+.blog-content h2 { font-family: var(--font-display); font-weight: normal; font-size: 1.5rem; }
 .blog-content h3 { font-size: 1.15rem; font-weight: 600; }
 .blog-content h4 { font-size: 1rem; font-weight: 600; }
 
@@ -821,10 +818,9 @@ a:hover { color: var(--accent-light); }
     padding: 20px 24px;
     border-radius: var(--radius-md);
     background: var(--bg-elevated);
-    border: 1px solid var(--border);
+    border: none;
     overflow-x: auto;
     line-height: 1.5;
-    box-shadow: var(--shadow-sm), inset 0 1px 0 0 var(--shimmer);
 }
 
 .blog-content pre code {
@@ -845,7 +841,7 @@ a:hover { color: var(--accent-light); }
     letter-spacing: 0.08em;
     margin-bottom: 12px;
     padding-bottom: 8px;
-    border-bottom: 1px solid var(--border);
+    opacity: 0.6;
 }
 
 /* Map class names to human-readable language labels */
@@ -868,12 +864,23 @@ a:hover { color: var(--accent-light); }
 
 .blog-content blockquote {
     margin: 1.5em 0;
-    padding: 12px 20px;
-    border-left: 3px solid var(--accent);
+    padding: 12px 20px 12px 24px;
+    border-left: none;
     background: var(--bg-hover);
-    border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+    border-radius: var(--radius-sm);
     color: var(--text-secondary);
-    box-shadow: var(--shadow-xs);
+    position: relative;
+}
+
+.blog-content blockquote::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 8px;
+    bottom: 8px;
+    width: 3px;
+    border-radius: 2px;
+    background: var(--accent);
 }
 
 .blog-content blockquote p { margin-bottom: 0.5em; }
@@ -891,7 +898,8 @@ a:hover { color: var(--accent-light); }
 
 .blog-content hr {
     border: none;
-    border-top: 1px solid var(--border);
+    height: 1px;
+    background: var(--bg-hover);
     margin: 2.5em 0;
 }
 
@@ -900,6 +908,10 @@ a:hover { color: var(--accent-light); }
     height: auto;
     border-radius: var(--radius-md);
     margin: 1.5em 0;
+    transition: box-shadow 0.3s var(--ease-out);
+}
+
+.blog-content img:hover {
     box-shadow: var(--shadow-md);
 }
 
@@ -939,7 +951,7 @@ a:hover { color: var(--accent-light); }
     margin-top: 48px;
     position: relative;
     overflow: hidden;
-    transition: box-shadow 0.5s var(--ease-out), transform 0.5s var(--ease-spring);
+    transition: box-shadow 0.5s var(--ease-out), transform 0.5s var(--ease-spring), background 0.4s var(--ease-out);
 }
 
 /* Subtle gradient shimmer on contact card */
@@ -954,8 +966,8 @@ a:hover { color: var(--accent-light); }
 }
 
 .contact-section:hover {
-    box-shadow: var(--shadow-lg);
-    transform: translateY(-4px);
+    box-shadow: var(--shadow-sm);
+    transform: translateY(-2px);
 }
 
 .contact-section:hover::before {
@@ -1007,9 +1019,10 @@ a:hover { color: var(--accent-light); }
 .footer-accent {
     width: 48px;
     height: 2px;
-    background: linear-gradient(90deg, transparent, var(--accent), transparent);
+    background: var(--accent);
     margin: 0 auto 32px;
     border-radius: 1px;
+    opacity: 0.3;
 }
 
 .footer-content {
@@ -1052,7 +1065,7 @@ a:hover { color: var(--accent-light); }
 
 .footer-social a:hover {
     color: var(--accent);
-    transform: translateY(-3px) scale(1.08);
+    transform: translateY(-2px);
 }
 
 .footer-copy {
@@ -1211,8 +1224,8 @@ a:hover { color: var(--accent-light); }
 }
 
 .carousel-card:hover {
-    transform: translateY(-8px) scale(1.03);
-    box-shadow: var(--shadow-xl);
+    transform: translateY(-4px) scale(1.01);
+    box-shadow: var(--shadow-md);
 }
 
 .carousel-card-info {
@@ -1589,8 +1602,6 @@ a:hover { color: var(--accent-light); }
         margin-left: -16px;
         margin-right: -16px;
         border-radius: 0;
-        border-left: none;
-        border-right: none;
         padding: 16px;
     }
 
