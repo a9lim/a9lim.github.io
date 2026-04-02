@@ -9,7 +9,8 @@ const CARDS = [
   { html: 'geon.html',   output: path.join(ROOT, 'img', 'geon.png') },
   { html: 'shoals.html', output: path.join(ROOT, 'img', 'shoals.png') },
   { html: 'cyano.html',  output: path.join(ROOT, 'img', 'cyano.png') },
-  { html: 'gerry.html',  output: path.join(ROOT, 'img', 'gerry.png') },
+  { html: 'gerry.html',     output: path.join(ROOT, 'img', 'gerry.png') },
+  { html: 'scripture.html', output: path.join(ROOT, 'img', 'scripture.png') },
 ];
 
 const browser = await puppeteer.launch({ headless: true });

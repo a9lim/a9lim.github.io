@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Fira+Code:wght@400&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    width: 1200px;
+    height: 630px;
+    overflow: hidden;
+    background: #EBEFF4;
+    display: flex;
+    align-items: center;
+    font-family: system-ui;
+    position: relative;
+  }
+  .flair {
+    width: 400px;
+    height: 630px;
+    flex-shrink: 0;
+    position: relative;
+    overflow: hidden;
+  }
+  .flair canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 400px;
+    height: 630px;
+  }
+  /* Fade-out on right edge */
+  .flair::after {
+    content: '';
+    position: absolute;
+    top: 0; right: 0;
+    width: 100px;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, #EBEFF4);
+    pointer-events: none;
+  }
+  .text-side {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 0 60px;
+  }
+  .project-name {
+    font-family: 'Noto Serif', serif;
+    font-weight: 700;
+    font-size: 120px;
+    color: #0B1016;
+    letter-spacing: -3px;
+    line-height: 1;
+  }
+  .accent-line {
+    width: 88px;
+    height: 3px;
+    background: #E11107;
+    border-radius: 2px;
+    margin-top: 28px;
+  }
+  .site-brand {
+    font-family: 'Noto Sans Mono', monospace;
+    font-size: 22px;
+    color: #777C83;
+    margin-top: 16px;
+    letter-spacing: 0.5px;
+  }
+  .site-brand .copyleft {
+    display: inline-block;
+    transform: scaleX(-1);
+    font-size: 17px;
+    margin-right: 1px;
+    vertical-align: 1px;
+  }
+</style>
+</head>
+<body>
+  <div class="flair">
+    <canvas id="flair" width="800" height="1260"></canvas>
+  </div>
+  <div class="text-side">
+    <div class="project-name">Scripture</div>
+    <div class="accent-line"></div>
+    <div class="site-brand"><span class="copyleft">&copy;</span>a9l.im</div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('flair');
+    const ctx = canvas.getContext('2d');
+    const W = canvas.width, H = canvas.height;
+
+    // Draw an open book with verse lines — evokes a scripture reader
+    const pageW = 280;
+    const pageH = 440;
+    const gutter = 30;
+    const cx = W / 2;
+    const cy = H / 2;
+
+    // Left page
+    const lx = cx - gutter - pageW;
+    const ly = cy - pageH / 2;
+    ctx.fillStyle = 'rgba(78, 84, 92, 0.04)';
+    ctx.fillRect(lx, ly, pageW, pageH);
+
+    // Right page
+    const rx = cx + gutter;
+    ctx.fillRect(rx, ly, pageW, pageH);
+
+    // Spine line
+    ctx.strokeStyle = 'rgba(78, 84, 92, 0.12)';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(cx, ly - 10);
+    ctx.lineTo(cx, ly + pageH + 10);
+    ctx.stroke();
+
+    // Verse number column + text lines on both pages
+    const lineH = 22;
+    const margin = 24;
+    const verseNumW = 28;
+
+    // Seeded random for consistent line widths
+    let seed = 42;
+    function rand() {
+      seed = (seed * 16807 + 0) % 2147483647;
+      return (seed - 1) / 2147483646;
+    }
+
+    function drawPageLines(px, py, pw, ph) {
+      const textStart = px + margin + verseNumW;
+      const textEnd = px + pw - margin;
+      const maxW = textEnd - textStart;
+      let y = py + margin + 16;
+      let verse = 1;
+
+      while (y + lineH < py + ph - margin) {
+        // Verse number
+        ctx.fillStyle = 'rgba(78, 84, 92, 0.18)';
+        ctx.fillRect(px + margin, y + 4, 14, 6);
+
+        // 2-4 text lines per verse
+        const lines = 2 + Math.floor(rand() * 3);
+        for (let l = 0; l < lines && y + lineH < py + ph - margin; l++) {
+          const w = l === lines - 1 ? maxW * (0.3 + rand() * 0.5) : maxW * (0.85 + rand() * 0.15);
+          ctx.fillStyle = 'rgba(78, 84, 92, 0.10)';
+          ctx.fillRect(textStart, y + 4, w, 6);
+          y += lineH;
+        }
+        y += 6; // verse gap
+        verse++;
+      }
+    }
+
+    drawPageLines(lx, ly, pageW, pageH);
+    drawPageLines(rx, ly, pageW, pageH);
+
+    // --- Top fade ---
+    const fadeTop = ctx.createLinearGradient(0, 0, 0, 120);
+    fadeTop.addColorStop(0, 'rgba(235, 239, 244, 1)');
+    fadeTop.addColorStop(1, 'rgba(235, 239, 244, 0)');
+    ctx.fillStyle = fadeTop;
+    ctx.fillRect(0, 0, W, 120);
+
+    // --- Bottom fade ---
+    const fadeBot = ctx.createLinearGradient(0, H - 160, 0, H);
+    fadeBot.addColorStop(0, 'rgba(235, 239, 244, 0)');
+    fadeBot.addColorStop(1, 'rgba(235, 239, 244, 1)');
+    ctx.fillStyle = fadeBot;
+    ctx.fillRect(0, H - 160, W, 160);
+  </script>
+</body>
+</html>

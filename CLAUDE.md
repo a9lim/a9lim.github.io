@@ -23,7 +23,7 @@ Key shared modules:
 - `shared-base.css` — reset, layout tokens, `.glass`, `.tool-btn`, `.ctrl-row`, `.sim-overlay`, toasts, a11y
 - `shared-toolbar.js` — `_toolbar` (theme toggle, sidebar, play/pause, speed)
 - `shared-forms.js` — `_forms` (mode groups, sliders, toggles)
-- `shared-intro.js`, `shared-tabs.js`, `shared-camera.js`, `shared-info.js`, `shared-shortcuts.js`, `shared-about.js`, `shared-touch.js`, `shared-tooltip.js`, `shared-sparkline.js`, `shared-haptics.js`
+- `shared-tabs.js`, `shared-camera.js`, `shared-info.js`, `shared-shortcuts.js`, `shared-about.js`, `shared-touch.js`, `shared-tooltip.js`, `shared-sparkline.js`, `shared-haptics.js`
 
 ## Running Locally
 
@@ -43,13 +43,14 @@ Single-page portfolio site. Hash-based SPA router (`#home`, `#projects`, `#blog`
 - `src/projects.js` exports `PROJECTS` array — single source of truth for carousel and projects page.
 - `shared-tokens.js` and `shared-utils.js` are plain `<script>` tags exposing globals on `window`. ES6 modules access these directly. Converting them to modules would break all consumers.
 
-## OpenGraph Image Generation
+## Image Generation
 
 ```bash
-node og/generate.js    # from repo root; requires Puppeteer
+node og/generate.js      # OG images (1200×630) → each project's og-image.png
+node cards/generate.js   # Card images (1920×1200) → img/{project}.png
 ```
 
-Source HTML in `og/`, output PNGs at each project root. Each OG HTML page is self-contained (hardcoded colors, no shared imports). Each `index.html` references its `og-image.png` via `<meta property="og:image">` with absolute `https://a9l.im/` URLs.
+Both require Puppeteer (installed in `og/`). Source HTML in `og/` and `cards/` respectively — self-contained pages with hardcoded colors, no shared imports. Each `index.html` references its `og-image.png` via `<meta property="og:image">` with absolute `https://a9l.im/` URLs. Card images are referenced by `src/projects.js` for the carousel and projects page.
 
 ## Gotchas
 
