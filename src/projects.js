@@ -45,8 +45,8 @@ export const PROJECTS = [
     {
         href: '/scripture',
         title: 'Scripture',
-        shortDesc: 'Read and compare religious scriptures with footnotes, cross-references, glossary, and full-text search.',
-        longDesc: 'Scripture reader displaying the Quran, KJV Bible, Book of Mormon, Doctrine & Covenants, and Pearl of Great Price chapter by chapter with verse numbers, typed footnotes, cross-reference navigation, a Bible Dictionary glossary, and full-text search across all works.',
+        shortDesc: 'Sacred text reader with eleven works from multiple traditions, full-text search, and verse-linked notes.',
+        longDesc: 'Sacred text reader with eleven works: KJV Old and New Testaments, Apocrypha, Quran (Pickthall), Book of Mormon, Doctrine & Covenants, Pearl of Great Price, Four Books (Legge), Tao Te Ching, Kojiki, and Bundahis. Features chapter navigation, verse-linked notes, and full-text search across all works.',
         tags: ['reader', 'text', 'religion'],
         image: 'img/scripture.png',
         icon: '<svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/><line x1="8" y1="7" x2="16" y2="7"/><line x1="8" y1="11" x2="14" y2="11"/></svg>',

@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    width: 960px;
+    height: 600px;
+    overflow: hidden;
+    background: #EBEFF4;
+  }
+  canvas { display: block; width: 960px; height: 600px; }
+</style>
+</head>
+<body>
+  <canvas id="c" width="1920" height="1200"></canvas>
+  <script>
+    const canvas = document.getElementById('c');
+    const ctx = canvas.getContext('2d');
+    const W = 1920, H = 1200;
+
+    let seed = 31;
+    function rand() { seed = (seed * 16807) % 2147483647; return (seed - 1) / 2147483646; }
+
+    // Two-page open book spread filling the card
+    const pageW = 680;
+    const pageH = 920;
+    const gutter = 44;
+    const cx = W / 2;
+    const cy = H / 2;
+
+    const lx = cx - gutter - pageW;
+    const ly = cy - pageH / 2;
+    const rx = cx + gutter;
+
+    // Page fills
+    ctx.fillStyle = 'rgba(78, 84, 92, 0.035)';
+    ctx.fillRect(lx, ly, pageW, pageH);
+    ctx.fillRect(rx, ly, pageW, pageH);
+
+    // Spine
+    ctx.strokeStyle = 'rgba(78, 84, 92, 0.09)';
+    ctx.lineWidth = 2.5;
+    ctx.beginPath();
+    ctx.moveTo(cx, ly - 16);
+    ctx.lineTo(cx, ly + pageH + 16);
+    ctx.stroke();
+
+    // Draw verse text lines on a page
+    const lineH = 28;
+    const margin = 44;
+    const verseNumW = 36;
+
+    function drawPage(px, py, pw, ph) {
+      const textStart = px + margin + verseNumW;
+      const textEnd = px + pw - margin;
+      const maxW = textEnd - textStart;
+      let y = py + margin + 24;
+
+      while (y + lineH < py + ph - margin) {
+        // Verse number — small rounded rect
+        ctx.fillStyle = 'rgba(78, 84, 92, 0.14)';
+        const numW = 12 + rand() * 8;
+        ctx.beginPath();
+        ctx.roundRect(px + margin, y + 3, numW, 8, 3);
+        ctx.fill();
+
+        // 2-5 text lines per verse
+        const lines = 2 + Math.floor(rand() * 4);
+        for (let l = 0; l < lines && y + lineH < py + ph - margin; l++) {
+          const w = l === lines - 1
+            ? maxW * (0.2 + rand() * 0.55)
+            : maxW * (0.8 + rand() * 0.2);
+          ctx.fillStyle = 'rgba(78, 84, 92, 0.07)';
+          ctx.beginPath();
+          ctx.roundRect(textStart, y + 3, w, 8, 3);
+          ctx.fill();
+          y += lineH;
+        }
+        y += 12; // verse gap
+      }
+    }
+
+    drawPage(lx, ly, pageW, pageH);
+    drawPage(rx, ly, pageW, pageH);
+  </script>
+</body>
+</html>

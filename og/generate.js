@@ -11,6 +11,7 @@ const CARDS = [
   { html: 'geon.html',       output: path.join(ROOT, 'geon', 'og-image.png'),     waitReady: false },
   { html: 'metabolism.html',  output: path.join(ROOT, 'cyano', 'og-image.png'),    waitReady: false },
   { html: 'redistricting.html', output: path.join(ROOT, 'gerry', 'og-image.png'), waitReady: false },
+  { html: 'scripture.html',    output: path.join(ROOT, 'scripture', 'og-image.png'), waitReady: false },
 ];
 
 const browser = await puppeteer.launch({ headless: true });
