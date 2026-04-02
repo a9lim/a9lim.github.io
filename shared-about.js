@@ -189,6 +189,47 @@ function initAboutPanel(config) {
             content.appendChild(shortcutSection);
         }
 
+        // ── Credits section ──────────────────────────────────────
+        if (config.credits && config.credits.length) {
+            var creditSection = document.createElement('div');
+            creditSection.className = 'about-section';
+
+            var creditLabel = document.createElement('div');
+            creditLabel.className = 'about-group-label';
+            creditLabel.textContent = 'Sources';
+            creditSection.appendChild(creditLabel);
+
+            config.credits.forEach(function(c) {
+                var row = document.createElement('div');
+                row.className = 'about-row';
+
+                var labelEl = document.createElement('span');
+                labelEl.className = 'about-label';
+                labelEl.textContent = c.label;
+
+                if (c.url) {
+                    var linkEl = document.createElement('a');
+                    linkEl.href = c.url;
+                    linkEl.target = '_blank';
+                    linkEl.rel = 'noopener noreferrer';
+                    linkEl.className = 'about-value';
+                    linkEl.textContent = c.value || c.url;
+                    row.appendChild(labelEl);
+                    row.appendChild(linkEl);
+                } else {
+                    var valueEl = document.createElement('span');
+                    valueEl.className = 'about-value';
+                    valueEl.textContent = c.value;
+                    row.appendChild(labelEl);
+                    row.appendChild(valueEl);
+                }
+
+                creditSection.appendChild(row);
+            });
+
+            content.appendChild(creditSection);
+        }
+
         // ── AGPL Footer ───────────────────────────────────────────
         var footer = document.createElement('div');
         footer.className = 'about-footer';
