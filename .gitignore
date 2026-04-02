@@ -12,6 +12,15 @@ Thumbs.db
 *.swo
 *~
 
+# Logs
+*.log
+
+# Claude Code
+.claude/
+
+# Playwright MCP
+.playwright-mcp/
+
 # Superpowers
 .superpowers/
 
