@@ -188,7 +188,7 @@ Enough elastic DNA for cohesion, not the full treatment.
 
 ### No changes to
 
-shared-forms.js, shared-tabs.js, shared-camera.js, shared-intro.js, shared-about.js, shared-touch.js, shared-tooltip.js, shared-sparkline.js, shared-haptics.js, shared-shortcuts.js, shared-info.js
+shared-forms.js, shared-tabs.js, shared-camera.js, shared-about.js, shared-touch.js, shared-tooltip.js, shared-sparkline.js, shared-haptics.js, shared-shortcuts.js, shared-info.js
 
 ---
 
