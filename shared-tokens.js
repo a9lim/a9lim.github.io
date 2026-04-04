@@ -97,10 +97,10 @@ function _oklch2hex(L, C, H) {
 // ─── Font stacks ───
 // Left mutable — cyano extends with `emoji` before freezing
 const _FONT = {
-  display: "'Instrument Serif', Georgia, 'Times New Roman', serif",
-  body:      "'DM Sans', system-ui, -apple-system, sans-serif",
-  bodySerif: "'Crimson Pro', Georgia, 'Times New Roman', serif",
-  mono:      "'Fira Code', 'SF Mono', 'Menlo', monospace",
+  display: "'Merriweather', Georgia, 'Times New Roman', serif",
+  body:      "'Lato', system-ui, -apple-system, sans-serif",
+  bodySerif: "'Crimson Text', Georgia, 'Times New Roman', serif",
+  mono:      "'Recursive', 'SF Mono', 'Menlo', monospace",
 };
 
 // ─── Palette ───
