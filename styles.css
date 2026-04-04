@@ -390,8 +390,8 @@ a:hover { color: var(--accent-light); }
     fill: none;
     stroke: currentColor;
     stroke-width: 2;
-    stroke-linecap: round;
-    stroke-linejoin: round;
+    stroke-linecap: square;
+    stroke-linejoin: miter;
     transition: transform 0.3s var(--ease-spring);
 }
 
@@ -491,8 +491,8 @@ a:hover { color: var(--accent-light); }
     stroke: var(--accent);
     fill: none;
     stroke-width: 1.8;
-    stroke-linecap: round;
-    stroke-linejoin: round;
+    stroke-linecap: square;
+    stroke-linejoin: miter;
 }
 
 .project-arrow {
@@ -510,8 +510,8 @@ a:hover { color: var(--accent-light); }
     fill: none;
     stroke: currentColor;
     stroke-width: 2;
-    stroke-linecap: round;
-    stroke-linejoin: round;
+    stroke-linecap: square;
+    stroke-linejoin: miter;
 }
 
 .project-card:hover .project-arrow {
@@ -1438,7 +1438,7 @@ a:hover { color: var(--accent-light); }
     fill: none;
     stroke: var(--accent);
     stroke-width: 1.5;
-    stroke-linecap: round;
+    stroke-linecap: square;
 }
 
 /* ═══════════════════════════════════

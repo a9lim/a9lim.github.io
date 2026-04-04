@@ -39,7 +39,7 @@ export const PROJECTS = [
         longDesc: 'Trading simulator with GBM, Merton jumps, Heston stochastic volatility, and Vasicek rates driving a CRR binomial tree for American option pricing with discrete dividends. Includes a 25-strike options chain, multi-leg strategy builder with payoff diagrams and Greek overlays, margin portfolio, and a narrative event engine with 88 curated scenarios.',
         tags: ['finance', 'options pricing', 'canvas'],
         image: 'img/shoals.png',
-        icon: '<svg viewBox="0 0 24 24"><path d="M3 21V3"/><path d="M3 21h18"/><polyline points="3,14 7,8 11,10 14,12 17,6"/><path d="M17,6l4,-3"/><path d="M17,3h4v4"/></svg>',
+        icon: '<svg viewBox="0 0 24 24"><path d="M3 21V3"/><path d="M3 21h18"/><polyline points="3,17 7,13 11,15 15,9 19,5"/></svg>',
         external: false,
     },
     {
