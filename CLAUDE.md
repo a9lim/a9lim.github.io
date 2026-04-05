@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-Root site for the **a9l.im** portfolio. Hosted on Cloudflare Workers + Assets with custom domain `a9l.im`. Also hosts the shared design system consumed by all five submodules (`geon`, `shoals`, `gerry`, `cyano`, `scripture`). Cloudflare config lives in `wrangler.jsonc` (Worker + asset serving), `_worker.js` (SPA routing), `_headers` (security + caching), and `_routes.json` (static asset exclusions).
+Root site for the **a9l.im** portfolio. Hosted on Cloudflare Workers + Assets with custom domain `a9l.im`. Also hosts the shared design system consumed by all five submodules (`geon`, `shoals`, `gerry`, `cyano`, `scripture`). Cloudflare config lives in `wrangler.jsonc` (Worker + asset serving + Analytics Engine), `_worker.js` (SPA routing + HTMLRewriter SSR + SEO + security headers + CDN cache control + analytics), `_headers` (security + caching + Early Hints + COEP + CDN-Cache-Control), and `_routes.json` (static asset exclusions). Fonts are self-hosted in `fonts/` (no Google Fonts dependency).
 
 ## Design Philosophy
 
@@ -36,12 +36,18 @@ Root site uses relative paths for shared files; sub-projects use absolute paths 
 
 ## Overview
 
-Single-page portfolio site. Path-based SPA router (`/`, `/projects`, `/blog`, `/about`, `/blog/{slug}`). `_worker.js` routes non-static requests to the correct SPA shell (`index.html` for root routes, `scripture/index.html` for `/scripture/*`). Static assets are served directly by the asset layer before the Worker runs. WebGL simplex noise shader background, project carousel, blog with markdown rendering, SVG world map with animated arc.
+Single-page portfolio site. Path-based SPA router (`/`, `/projects`, `/blog`, `/about`, `/blog/{slug}`). `_worker.js` routes non-static requests to the correct SPA shell (`index.html` for root routes, `scripture/index.html` for `/scripture/*`) and uses HTMLRewriter for:
+- **SSR**: Blog posts are rendered from markdown at the edge (parser ported from `src/markdown.js`). The project grid is injected as static HTML on `/projects`. The correct page section gets the `active` class per route. All of this makes SPA content visible to crawlers without JS execution.
+- **SEO injection**: Per-route `<title>`, `<meta description>`, OG tags, canonical URLs, `BlogPosting` JSON-LD (blog posts), and `Person` JSON-LD (`/about`).
+- **Security headers** (CSP, HSTS, COOP, etc.) via the `secure()` wrapper — `_headers` only covers static assets.
+
+Static assets are served directly by the asset layer before the Worker runs (`html_handling: "drop-trailing-slash"`). CDN caching is split from browser caching via `Cloudflare-CDN-Cache-Control`: the CDN caches Worker HTML for 1 hour and static assets indefinitely (purged on deploy), while browsers use short TTLs. Analytics Engine (`VIEWS` binding) logs page views server-side via `waitUntil()` with pathname, country, referer, user-agent, city, and ASN. Speculation Rules in `index.html` prefetch and prerender SPA routes. WebGL simplex noise shader background, project carousel, blog with markdown rendering, SVG world map with animated arc.
 
 ## Architecture
 
 - `main.js` creates `$` DOM cache, passed to all init functions. Modules never call `getElementById` for shared elements.
-- `src/projects.js` exports `PROJECTS` array — single source of truth for carousel and projects page.
+- `src/projects.js` exports `PROJECTS` array — single source of truth for carousel and projects page. **Also duplicated** as `PROJECTS_SSR` in `_worker.js` for crawler SSR — update both when adding/editing projects.
+- `src/markdown.js` is the client-side markdown parser. **Also duplicated** as `mdEsc`/`mdInline`/`renderMarkdown` in `_worker.js` for blog SSR — update both when changing the parser.
 - `shared-tokens.js` and `shared-utils.js` are plain `<script>` tags exposing globals on `window`. ES6 modules access these directly. Converting them to modules would break all consumers.
 
 ## Image Generation
@@ -49,6 +55,7 @@ Single-page portfolio site. Path-based SPA router (`/`, `/projects`, `/blog`, `/
 ```bash
 node og/generate.js      # OG images (1200×630) → each project's og-image.webp
 node cards/generate.js   # Card images (1920×1200) → img/{project}.webp
+node _build.js           # Sitemap (2700+ URLs with scripture deep routes + lastmod dates)
 ```
 
 Both require Puppeteer (installed in `og/` and `cards/`). Source HTML in `og/` and `cards/` respectively — self-contained pages with hardcoded colors, no shared imports. All generated images are WebP (quality 90). Each `index.html` references its `og-image.webp` via `<meta property="og:image">` with absolute `https://a9l.im/` URLs. Card images are referenced by `src/projects.js` for the carousel and projects page.
@@ -57,9 +64,9 @@ Both require Puppeteer (installed in `og/` and `cards/`). Source HTML in `og/` a
 
 ### Do Not Break
 
-- **`_worker.js`** — SPA routing depends on this; removing it breaks direct navigation to `/projects`, `/blog/*`, `/about`, and `/scripture/*`
-- **`_headers`** — security headers (CSP, HSTS, COOP), cache policy, and Early Hints
-- **`_routes.json`** — excludes static assets from the Worker pipeline
+- **`_worker.js`** — SPA routing, HTMLRewriter SSR + SEO injection, security headers (via `secure()` wrapper), CDN cache control, and Analytics Engine logging. Removing it breaks direct navigation to `/projects`, `/blog/*`, `/about`, and `/scripture/*`. Route metadata lives in `ROUTE_META` and `BLOG_META` at the top of the file — update these when adding SPA routes or blog posts. `PROJECTS_SSR` and the markdown parser (`renderMarkdown`) are duplicated from client code — update both copies. `ABOUT_JSONLD` contains Person structured data for `/about`. Security headers are duplicated between `_worker.js` (`SECURITY_HEADERS` object) and `_headers` (`/*` block) because they serve different response types — keep them in sync.
+- **`_headers`** — security headers for static assets (CSP, HSTS, COOP, COEP on `/geon/*`), cache policy with `Cloudflare-CDN-Cache-Control` for CDN/browser TTL separation, and Early Hints (including per-subproject `modulepreload` for `main.js`). Does NOT apply to Worker-served responses — those get headers from `_worker.js`.
+- **`_routes.json`** — excludes static assets and subproject paths (`/geon/*`, `/cyano/*`, `/gerry/*`, `/shoals/*`) from the Worker. `/scripture/*` is intentionally NOT excluded because the Worker handles scripture's SPA deep-route routing (e.g. `/scripture/kjv/genesis/1`). Scripture static assets (JS/CSS) still serve directly via the assets-first default.
 - **All `shared-*.js` and `shared-base.css` files** — consumed by all projects. Changing public APIs or class names (`.tab-btn`, `.tab-panel`, `data-tab`, `.glass`, `.tool-btn`, `.about-*`) breaks all sims
 - `_toolbar`, `_forms`, `initAboutPanel(config)` — changing these APIs breaks all consumers
 
@@ -86,4 +93,13 @@ All project sidebars now use `.sidebar-tabs` inside `.stats-header` instead of a
 - `data-theme` is on `<html>` — the shader's MutationObserver watches `document.documentElement`
 - `.tog-wrap input` uses `clip: rect(0,0,0,0)` for a11y — do not change to `display: none`
 - The sole `<h1>` is the hero tagline — navbar brand is a `<span>` for heading hierarchy
-- Blog fetches `posts.json` and `posts/{slug}.md` via relative URLs — breaks if served from a subdirectory
+- Blog fetches `posts.json` and `posts/{slug}.md` via relative URLs — breaks if served from a subdirectory. The Worker also fetches these for SSR — slug validation rejects `/` and `..` to prevent path traversal.
+- `fonts/` contains self-hosted woff2 files (Merriweather, Lato, Crimson Text, Recursive). `fonts/fonts.css` has the `@font-face` declarations. CSP allows `font-src 'self'` only — no external font domains.
+- `_build.js` generates `sitemap.xml` from git dates and scripture manifests. Run before deploy. Requires git history for `<lastmod>`.
+- `manifest.json` — Web App Manifest for PWA. Icons are placeholder (favicon.ico only) — generate proper 192/512px icons as a follow-up.
+
+### Cloudflare Headers Split
+
+- `_headers` applies to **static assets only** (served by the asset layer). Worker-served HTML (SPA routes, scripture, 404) gets headers from `_worker.js`'s `secure()` function. Both must carry the same security headers — changing CSP or HSTS in one requires updating the other.
+- `Cloudflare-CDN-Cache-Control` is stripped by Cloudflare before reaching the browser. It controls CDN-layer caching independently of `Cache-Control` (which controls the browser). `_headers` uses this for static assets; the Worker sets it for HTML responses.
+- `_headers` has a **100-rule limit**. Adding new path-header pairs requires checking headroom. Early Hints are the largest consumer (~45 rules after self-hosting fonts removed preconnect pairs).
