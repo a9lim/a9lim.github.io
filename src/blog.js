@@ -63,7 +63,7 @@ export async function showBlogListing($) {
     }
 
     $.blogListCt.innerHTML = postsCache.map(function (p) {
-        return '<a href="#blog/' + escapeHtml(p.slug) + '" class="blog-entry">'
+        return '<a href="/blog/' + escapeHtml(p.slug) + '" class="blog-entry" data-page="blog">'
             + '<span class="blog-date">' + formatDate(p.date) + '</span>'
             + '<span class="blog-title">' + escapeHtml(p.title) + '</span>'
             + (p.tag ? '<span class="blog-tag">' + escapeHtml(p.tag) + '</span>' : '')

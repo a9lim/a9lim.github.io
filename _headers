@@ -1,0 +1,46 @@
+# Security headers (all pages)
+/*
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: SAMEORIGIN
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: geolocation=(), microphone=(), camera=()
+
+# HTML — always revalidate
+/*.html
+  Cache-Control: public, max-age=0, must-revalidate
+/
+  Cache-Control: public, max-age=0, must-revalidate
+/projects
+  Cache-Control: public, max-age=0, must-revalidate
+/blog
+  Cache-Control: public, max-age=0, must-revalidate
+/blog/*
+  Cache-Control: public, max-age=0, must-revalidate
+/about
+  Cache-Control: public, max-age=0, must-revalidate
+
+# Shared design system — cache aggressively (URLs are versioned by content)
+/shared-*.js
+  Cache-Control: public, max-age=604800
+/shared-*.css
+  Cache-Control: public, max-age=604800
+
+# Static assets
+/favicon.ico
+  Cache-Control: public, max-age=604800
+/logo.svg
+  Cache-Control: public, max-age=604800
+/og-image.png
+  Cache-Control: public, max-age=604800
+/img/*
+  Cache-Control: public, max-age=604800
+
+# Fonts served by Google — but preconnect hints are in HTML
+
+# Feed and sitemap
+/feed.xml
+  Cache-Control: public, max-age=3600
+/sitemap.xml
+  Cache-Control: public, max-age=3600
+/robots.txt
+  Cache-Control: public, max-age=86400

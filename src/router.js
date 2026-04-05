@@ -1,16 +1,21 @@
-// ─── SPA Hash Router ───
-// Routes: #home, #projects, #blog, #about, #blog/{slug}.
+// ─── SPA Path Router ───
+// Routes: /, /projects, /blog, /about, /blog/{slug}.
+// Cloudflare Pages _redirects serves index.html for these paths.
 // A delegated click handler on document intercepts [data-page] links.
 
-export function parseHash() {
-    const raw = location.hash.replace('#', '');
+const PAGES = ['home', 'projects', 'blog', 'about'];
+
+export function parsePath() {
+    const raw = location.pathname.replace(/^\//, '').replace(/\/$/, '');
     const parts = raw.split('/');
-    const page = ['home', 'projects', 'blog', 'about'].includes(parts[0]) ? parts[0] : 'home';
+    const page = PAGES.includes(parts[0]) ? parts[0] : 'home';
     const slug = page === 'blog' && parts[1] ? parts[1] : null;
     return { page, slug };
 }
 
-export function navigateTo(page, slug, { $, pages, navLinks, triggerFadeIns, showBlogPost, showBlogListing }) {
+export function navigateTo(page, slug, deps) {
+    const { $, pages, navLinks, triggerFadeIns, showBlogPost, showBlogListing } = deps;
+
     pages.forEach(p => p.classList.remove('active'));
     navLinks.forEach(l => l.classList.remove('active'));
 
@@ -44,20 +49,32 @@ export function navigateTo(page, slug, { $, pages, navLinks, triggerFadeIns, sho
 }
 
 export function initRouter(deps) {
-    function onHashChange() {
-        const { page, slug } = parseHash();
+    function onRoute() {
+        const { page, slug } = parsePath();
         navigateTo(page, slug, deps);
     }
 
-    window.addEventListener('hashchange', onHashChange);
+    window.addEventListener('popstate', onRoute);
 
     document.addEventListener('click', (e) => {
         const link = e.target.closest('[data-page]');
-        if (link) {
+        if (!link) return;
+
+        // Blog entry links have data-page="blog" and a full path href
+        const href = link.getAttribute('href');
+        if (href && href.startsWith('/blog/')) {
             e.preventDefault();
-            location.hash = link.dataset.page;
+            history.pushState(null, '', href);
+            onRoute();
+            return;
         }
+
+        e.preventDefault();
+        const page = link.dataset.page;
+        const path = page === 'home' ? '/' : '/' + page;
+        history.pushState(null, '', path);
+        onRoute();
     });
 
-    onHashChange();
+    onRoute();
 }

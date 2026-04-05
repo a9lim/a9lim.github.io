@@ -1,0 +1,12 @@
+# Domain canonicalization
+https://www.a9l.im/* https://a9l.im/:splat 301
+http://www.a9l.im/* https://a9l.im/:splat 301
+
+# Root site SPA pages
+/projects    /index.html   200
+/blog        /index.html   200
+/blog/*      /index.html   200
+/about       /index.html   200
+
+# Scripture path routing
+/scripture/*   /scripture/index.html   200

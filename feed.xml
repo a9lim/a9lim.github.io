@@ -9,8 +9,8 @@
 
     <item>
       <title>Hello, World</title>
-      <link>https://a9l.im/#blog/hello-world</link>
-      <guid isPermaLink="true">https://a9l.im/#blog/hello-world</guid>
+      <link>https://a9l.im/blog/hello-world</link>
+      <guid isPermaLink="true">https://a9l.im/blog/hello-world</guid>
       <pubDate>Thu, 26 Feb 2026 00:00:00 +0000</pubDate>
       <category>meta</category>
       <description>This is the first post on a9l.im — a quick tour of the blog and a test of every markdown feature the parser supports.</description>

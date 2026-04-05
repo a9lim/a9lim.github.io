@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-Root site for the **a9l.im** portfolio. Hosted via GitHub Pages with custom domain `a9l.im` (configured in `CNAME`). Also hosts the shared design system consumed by all five submodules (`geon`, `shoals`, `gerry`, `cyano`, `scripture`).
+Root site for the **a9l.im** portfolio. Hosted on Cloudflare Pages with custom domain `a9l.im`. Also hosts the shared design system consumed by all five submodules (`geon`, `shoals`, `gerry`, `cyano`, `scripture`). Cloudflare config lives in `_redirects` (SPA fallback routes) and `_headers` (security + caching).
 
 ## Design Philosophy
 
@@ -36,7 +36,7 @@ Root site uses relative paths for shared files; sub-projects use absolute paths 
 
 ## Overview
 
-Single-page portfolio site. Hash-based SPA router (`#home`, `#projects`, `#blog`, `#about`). WebGL simplex noise shader background, project carousel, blog with markdown rendering, SVG world map with animated arc.
+Single-page portfolio site. Path-based SPA router (`/`, `/projects`, `/blog`, `/about`, `/blog/{slug}`). Cloudflare Pages `_redirects` serves `index.html` for these paths. WebGL simplex noise shader background, project carousel, blog with markdown rendering, SVG world map with animated arc.
 
 ## Architecture
 
@@ -57,7 +57,8 @@ Both require Puppeteer (installed in `og/`). Source HTML in `og/` and `cards/` r
 
 ### Do Not Break
 
-- **`CNAME` file** — deleting removes the `a9l.im` custom domain
+- **`_redirects`** — SPA routing depends on this; removing it breaks direct navigation to `/projects`, `/blog/*`, `/about`, and `/scripture/*`
+- **`_headers`** — security headers and cache policy
 - **All `shared-*.js` and `shared-base.css` files** — consumed by all projects. Changing public APIs or class names (`.tab-btn`, `.tab-panel`, `data-tab`, `.glass`, `.tool-btn`, `.about-*`) breaks all sims
 - `_toolbar`, `_forms`, `initAboutPanel(config)` — changing these APIs breaks all consumers
 
