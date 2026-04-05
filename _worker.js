@@ -27,6 +27,18 @@ const BLOG_META = {
   },
 };
 
+const PROJECTS_SSR = `
+<div class="project-card fade-in visible"><a href="/geon"><h3>Geon</h3><p>Relativistic N-body simulator with 11 forces, scalar fields, and WebGPU compute shaders.</p><span class="tag">physics</span><span class="tag">webgpu</span><span class="tag">relativity</span><span class="tag">canvas</span></a></div>
+<div class="project-card fade-in visible"><a href="/cyano"><h3>Cyano</h3><p>Cellular metabolism simulator with twelve biochemical pathways, allosteric regulation, and cofactor tracking.</p><span class="tag">biology</span><span class="tag">biochemistry</span><span class="tag">canvas</span></a></div>
+<div class="project-card fade-in visible"><a href="/gerry"><h3>Gerry</h3><p>Draw districts on a procedural hex map and stress-test them with Monte Carlo elections and fairness metrics.</p><span class="tag">politics</span><span class="tag">svg</span><span class="tag">monte carlo</span></a></div>
+<div class="project-card fade-in visible"><a href="/shoals"><h3>Shoals</h3><p>Options trading simulator with stochastic volatility, a multi-leg strategy builder, and narrative market events.</p><span class="tag">finance</span><span class="tag">options pricing</span><span class="tag">canvas</span></a></div>
+<div class="project-card fade-in visible"><a href="/scripture"><h3>Scripture</h3><p>Sacred text reader with sixteen works from multiple traditions, full-text search, concordance, and text-to-speech.</p><span class="tag">reader</span><span class="tag">text</span><span class="tag">religion</span></a></div>
+<div class="project-card fade-in visible"><a href="https://github.com/a9lim/shannon" target="_blank" rel="noopener noreferrer"><h3>Shannon</h3><p>Autonomous AI agent for Discord and Signal with web browsing, command execution, and task scheduling.</p><span class="tag">python</span><span class="tag">llm</span><span class="tag">automation</span></a></div>
+<div class="project-card fade-in visible"><a href="https://github.com/a9lim/Raiko" target="_blank" rel="noopener noreferrer"><h3>Raiko</h3><p>Discord music and chat bot with queue management and conversational AI.</p><span class="tag">discord</span><span class="tag">java</span><span class="tag">music</span></a></div>
+<div class="project-card fade-in visible"><a href="https://github.com/a9lim/faithful" target="_blank" rel="noopener noreferrer"><h3>Faithful</h3><p>Discord chatbot that emulates given messages in the style of source material.</p><span class="tag">discord</span><span class="tag">chatbot</span><span class="tag">nlp</span></a></div>
+<div class="project-card fade-in visible"><a href="https://github.com/catppuccin/sddm" target="_blank" rel="noopener noreferrer"><h3>Catppuccin for SDDM</h3><p>Soothing pastel theme for the SDDM display manager with all four flavor variants.</p><span class="tag">linux</span><span class="tag">theme</span><span class="tag">catppuccin</span></a></div>
+`;
+
 // ─── Security headers for Worker responses ───
 // Static assets get these from _headers. Worker-served HTML (SPA routes,
 // scripture, 404) must set them here — _headers doesn't apply to Worker responses.
@@ -91,6 +103,13 @@ function rewriteHTML(response, meta) {
     .on('#blog-listing', {
       element(el) {
         if (meta.ssrContent) el.setAttribute('style', 'display:none');
+      },
+    })
+    .on('.projects-grid', {
+      element(el) {
+        if (meta.canonical === 'https://a9l.im/projects') {
+          el.setInnerContent(PROJECTS_SSR, { html: true });
+        }
       },
     })
     .transform(response);
