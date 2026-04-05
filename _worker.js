@@ -101,10 +101,16 @@ function mdEsc(s) {
   return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
+function mdSafeUrl(u) {
+  const l = u.trim().toLowerCase();
+  if (l.startsWith('javascript:') || l.startsWith('vbscript:') || l.startsWith('data:text/html')) return '';
+  return u;
+}
+
 function mdInline(src) {
   return src
-    .replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '<img src="$2" alt="$1" loading="lazy">')
-    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>')
+    .replace(/!\[([^\]]*)\]\(([^)]+)\)/g, (_, alt, url) => `<img src="${mdSafeUrl(url)}" alt="${alt}" loading="lazy">`)
+    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, (_, text, url) => { const s = mdSafeUrl(url); return s ? `<a href="${s}" target="_blank" rel="noopener noreferrer">${text}</a>` : text; })
     .replace(/`([^`]+)`/g, '<code>$1</code>')
     .replace(/\*{3}(.+?)\*{3}/g, '<strong><em>$1</em></strong>')
     .replace(/_{3}(.+?)_{3}/g, '<strong><em>$1</em></strong>')
@@ -121,9 +127,10 @@ function renderMarkdown(src) {
   const len = lines.length;
   while (i < len) {
     const line = lines[i];
-    if (/^(`{3,}|~{3,})(.*)$/.test(line)) {
-      const fence = RegExp.$1;
-      const lang = RegExp.$2.trim();
+    const fenceMatch = line.match(/^(`{3,}|~{3,})(.*)$/);
+    if (fenceMatch) {
+      const fence = fenceMatch[1];
+      const lang = fenceMatch[2].trim();
       const code = [];
       i++;
       while (i < len && lines[i].indexOf(fence) !== 0) { code.push(mdEsc(lines[i])); i++; }
@@ -164,6 +171,12 @@ function renderMarkdown(src) {
   return html.join('\n');
 }
 
+function fmtDate(iso) {
+  const d = new Date(iso + 'T00:00:00');
+  const m = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  return m[d.getMonth()] + ' ' + d.getDate() + ', ' + d.getFullYear();
+}
+
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
@@ -195,29 +208,31 @@ export default {
         meta = { ...meta, canonical: `https://a9l.im${pathname}` };
 
         // SSR: fetch markdown and render to HTML for crawlers
-        try {
-          const [mdRes, postsRes] = await Promise.all([
-            env.ASSETS.fetch(new URL(`/posts/${slug}.md`, origin)),
-            env.ASSETS.fetch(new URL('/posts.json', origin)),
-          ]);
-          if (mdRes.ok) {
-            const mdText = await mdRes.text();
-            const renderedBody = renderMarkdown(mdText);
+        if (slug && !slug.includes('/') && !slug.includes('..')) {
+          try {
+            const [mdRes, postsRes] = await Promise.all([
+              env.ASSETS.fetch(new URL(`/posts/${slug}.md`, origin)),
+              env.ASSETS.fetch(new URL('/posts.json', origin)),
+            ]);
+            if (mdRes.ok) {
+              const mdText = await mdRes.text();
+              const renderedBody = renderMarkdown(mdText);
 
-            let postHeader = '';
-            if (postsRes.ok) {
-              try {
-                const posts = await postsRes.json();
-                const postMeta = posts.find(p => p.slug === slug);
-                if (postMeta) {
-                  postHeader = `<span class="blog-post-date">${mdEsc(postMeta.date)}${postMeta.tag ? ' &middot; ' + mdEsc(postMeta.tag) : ''}</span><h1 class="blog-post-title">${mdEsc(postMeta.title)}</h1>`;
-                }
-              } catch (_) { /* proceed without metadata */ }
+              let postHeader = '';
+              if (postsRes.ok) {
+                try {
+                  const posts = await postsRes.json();
+                  const postMeta = posts.find(p => p.slug === slug);
+                  if (postMeta) {
+                    postHeader = `<span class="blog-post-date">${fmtDate(postMeta.date)}${postMeta.tag ? ' &middot; ' + mdEsc(postMeta.tag) : ''}</span><h1 class="blog-post-title">${mdEsc(postMeta.title)}</h1>`;
+                  }
+                } catch (_) { /* proceed without metadata */ }
+              }
+
+              meta.ssrContent = `<div class="blog-post-header">${postHeader}</div><div class="blog-content">${renderedBody}</div>`;
             }
-
-            meta.ssrContent = `<div class="blog-post-header">${postHeader}</div><div class="blog-content">${renderedBody}</div>`;
-          }
-        } catch (_) { /* SSR failed — client JS will hydrate */ }
+          } catch (_) { /* SSR failed — client JS will hydrate */ }
+        }
       } else {
         meta = { ...ROUTE_META[pathname], canonical: `https://a9l.im${pathname}` };
       }
