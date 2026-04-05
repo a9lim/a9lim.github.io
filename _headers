@@ -27,30 +27,35 @@
   Link: </shared-tokens.js>; rel=preload; as=script
   Link: </shared-base.css>; rel=preload; as=style
   Link: </styles.css>; rel=preload; as=style
+  Link: </main.js>; rel=modulepreload
 /projects
   Link: <https://fonts.googleapis.com>; rel=preconnect
   Link: <https://fonts.gstatic.com>; rel=preconnect; crossorigin
   Link: </shared-tokens.js>; rel=preload; as=script
   Link: </shared-base.css>; rel=preload; as=style
   Link: </styles.css>; rel=preload; as=style
+  Link: </main.js>; rel=modulepreload
 /blog
   Link: <https://fonts.googleapis.com>; rel=preconnect
   Link: <https://fonts.gstatic.com>; rel=preconnect; crossorigin
   Link: </shared-tokens.js>; rel=preload; as=script
   Link: </shared-base.css>; rel=preload; as=style
   Link: </styles.css>; rel=preload; as=style
+  Link: </main.js>; rel=modulepreload
 /blog/*
   Link: <https://fonts.googleapis.com>; rel=preconnect
   Link: <https://fonts.gstatic.com>; rel=preconnect; crossorigin
   Link: </shared-tokens.js>; rel=preload; as=script
   Link: </shared-base.css>; rel=preload; as=style
   Link: </styles.css>; rel=preload; as=style
+  Link: </main.js>; rel=modulepreload
 /about
   Link: <https://fonts.googleapis.com>; rel=preconnect
   Link: <https://fonts.gstatic.com>; rel=preconnect; crossorigin
   Link: </shared-tokens.js>; rel=preload; as=script
   Link: </shared-base.css>; rel=preload; as=style
   Link: </styles.css>; rel=preload; as=style
+  Link: </main.js>; rel=modulepreload
 
 # Subapp Early Hints — shared resources + project-specific CSS and module entry
 /geon/*
