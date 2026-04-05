@@ -414,6 +414,13 @@ body {
 }
 
 /* ─── Tab System ─── */
+.sidebar-tabs {
+    display: flex;
+    gap: 0;
+    justify-content: center;
+    flex: 1;
+}
+
 .tabs-wrap {
     flex: 1;
     display: flex;

@@ -23,6 +23,7 @@ Key shared modules:
 - `shared-base.css` — reset, layout tokens, `.glass`, `.tool-btn`, `.ctrl-row`, `.sim-overlay`, toasts, a11y
 - `shared-toolbar.js` — `_toolbar` (theme toggle, sidebar, play/pause, speed)
 - `shared-forms.js` — `_forms` (mode groups, sliders, toggles)
+- `shared-icons.js` — unified SVG icon library. Exposes `_ICON` global, renders icons via `data-icon` attribute
 - `shared-tabs.js`, `shared-camera.js`, `shared-info.js`, `shared-shortcuts.js`, `shared-about.js`, `shared-touch.js`, `shared-tooltip.js`, `shared-sparkline.js`, `shared-haptics.js`
 
 ## Running Locally
@@ -72,6 +73,10 @@ Not a continuous loop. Renders on scroll/resize/theme-change, auto-stops after 1
 ### Specificity
 
 - `.fade-in.visible` (0,2,0) beats `.project-card:hover` (0,1,1). Hover selectors must include `.visible` (e.g., `.my-element.visible:hover`)
+
+### Sidebar Pattern
+
+All project sidebars now use `.sidebar-tabs` inside `.stats-header` instead of a `<h2 class="stats-title">` with a separate `.tab-bar`. New sidebars should follow this pattern.
 
 ### Other
 
