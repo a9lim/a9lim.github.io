@@ -1,6 +1,6 @@
 // Renders the projects grid page from the shared PROJECTS data array.
 
-const ARROW_SVG = '<svg viewBox="0 0 24 24"><path d="M7 17L16.3 7.7M17 7H7M17 7v10"/></svg>';
+const ARROW_SVG = _ICON.projectArrow;
 
 /** Generate .project-card markup for each project and inject into container. */
 export function renderProjectCards(container, projects) {
