@@ -42,34 +42,11 @@ function initAboutPanel(config) {
             .replace(/^escape$/i, 'Esc');
     }
 
-    /** Build the SVG X icon for the close button using DOM methods. */
+    /** Build a close icon DOM element from _ICON. */
     function buildCloseIcon() {
-        var NS = 'http://www.w3.org/2000/svg';
-        var svg = document.createElementNS(NS, 'svg');
-        svg.setAttribute('viewBox', '0 0 24 24');
-        svg.setAttribute('width', '18');
-        svg.setAttribute('height', '18');
-        svg.setAttribute('fill', 'none');
-        svg.setAttribute('stroke', 'currentColor');
-        svg.setAttribute('stroke-width', '2');
-        svg.setAttribute('stroke-linecap', 'round');
-        svg.setAttribute('stroke-linejoin', 'round');
-
-        var line1 = document.createElementNS(NS, 'line');
-        line1.setAttribute('x1', '18');
-        line1.setAttribute('y1', '6');
-        line1.setAttribute('x2', '6');
-        line1.setAttribute('y2', '18');
-
-        var line2 = document.createElementNS(NS, 'line');
-        line2.setAttribute('x1', '6');
-        line2.setAttribute('y1', '6');
-        line2.setAttribute('x2', '18');
-        line2.setAttribute('y2', '18');
-
-        svg.appendChild(line1);
-        svg.appendChild(line2);
-        return svg;
+        var d = document.createElement('div');
+        d.insertAdjacentHTML('afterbegin', _ICON.close);
+        return d.firstChild;
     }
 
     /** Build and cache the overlay DOM (called once). */

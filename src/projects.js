@@ -9,7 +9,7 @@ export const PROJECTS = [
         longDesc: 'Relativistic particle simulator with Boris integration, 1PN corrections, and Barnes-Hut O(N\u2009log\u2009N) spatial partitioning. Includes signal delay via light-cone solving, Higgs and axion scalar fields, pion force carriers, Kerr-Newman black holes with Hawking radiation, and a WebGPU compute pipeline with WGSL shaders.',
         tags: ['physics', 'webgpu', 'relativity', 'canvas'],
         image: 'img/geon.png',
-        icon: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><line x1="1" y1="12" x2="23" y2="12"/></svg>',
+        icon: _ICON.projGeon,
         external: false,
     },
     {
@@ -19,7 +19,7 @@ export const PROJECTS = [
         longDesc: 'Interactive metabolism simulator mapping glycolysis, Krebs, Calvin, beta-oxidation, and six more pathways onto a shared metabolite grid. Features a 14-complex electron transport chain, five organism presets, reactive oxygen species, and allosteric enzyme regulation gating every reaction.',
         tags: ['biology', 'biochemistry', 'canvas'],
         image: 'img/cyano.png',
-        icon: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4"/></svg>',
+        icon: _ICON.projCyano,
         external: false,
     },
     {
@@ -29,7 +29,7 @@ export const PROJECTS = [
         longDesc: 'Gerrymandering sandbox with three parties, ten districts, and six fairness metrics including efficiency gap and partisan symmetry. Features automated pack-and-crack vs simulated-annealing fair draw, Monte Carlo election stress tests, and seeded procedural map generation.',
         tags: ['politics', 'svg', 'monte carlo'],
         image: 'img/gerry.png',
-        icon: '<svg viewBox="0 0 24 24"><path d="M12 2l5.2 3v6L12 14 6.8 11V5zM6.8 11L1.6 14v6l5.2 3 5.2-3v-6M17.2 11l5.2 3v6l-5.2 3-5.2-3v-6"/></svg>',
+        icon: _ICON.projGerry,
         external: false,
     },
     {
@@ -39,7 +39,7 @@ export const PROJECTS = [
         longDesc: 'Trading simulator with GBM, Merton jumps, Heston stochastic volatility, and Vasicek rates driving a CRR binomial tree for American option pricing with discrete dividends. Includes a 25-strike options chain, multi-leg strategy builder with payoff diagrams and Greek overlays, margin portfolio, and a narrative event engine with 88 curated scenarios.',
         tags: ['finance', 'options pricing', 'canvas'],
         image: 'img/shoals.png',
-        icon: '<svg viewBox="0 0 24 24"><path d="M3 21V3"/><path d="M3 21h18"/><polyline points="3,17 7,13 11,15 15,9 19,5"/></svg>',
+        icon: _ICON.projShoals,
         external: false,
     },
     {
@@ -49,7 +49,7 @@ export const PROJECTS = [
         longDesc: 'Sacred text reader with twelve works: KJV Old and New Testaments, Apocrypha, Quran (Pickthall), Book of Mormon, Doctrine & Covenants, Pearl of Great Price, Four Books (Legge), Tao Te Ching, Kojiki, Bundahis, and Lotus Sutra (Kern). Features chapter navigation, verse-linked notes, and full-text search across all works.',
         tags: ['reader', 'text', 'religion'],
         image: 'img/scripture.png',
-        icon: '<svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/><line x1="8" y1="7" x2="16" y2="7"/><line x1="8" y1="11" x2="14" y2="11"/></svg>',
+        icon: _ICON.projScripture,
         external: false,
     },
     {
@@ -59,7 +59,7 @@ export const PROJECTS = [
         longDesc: 'AI agent that communicates over Discord and Signal. Browses the web, executes system commands, schedules tasks, and delegates programming work autonomously.',
         tags: ['python', 'llm', 'automation'],
         image: 'img/shannon.png',
-        icon: '<svg viewBox="0 0 24 24"><path d="M12 2a2 2 0 0 1 2 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 0 1 7 7h1a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-1.07A7 7 0 0 1 14 22h-4a7 7 0 0 1-6.93-6H2a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1h1a7 7 0 0 1 7-7h1V5.73c-.6-.34-1-.99-1-1.73a2 2 0 0 1 2-2z"/><circle cx="9" cy="15" r="1"/><circle cx="15" cy="15" r="1"/></svg>',
+        icon: _ICON.projShannon,
         external: true,
     },
     {
@@ -69,7 +69,7 @@ export const PROJECTS = [
         longDesc: 'Discord music and chat bot. Plays audio from YouTube, SoundCloud, and other sources with queue management, playlists, and conversational AI features.',
         tags: ['discord', 'java', 'music'],
         image: 'img/raiko.png',
-        icon: '<svg viewBox="0 0 24 24"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>',
+        icon: _ICON.projRaiko,
         external: true,
     },
     {
@@ -79,7 +79,7 @@ export const PROJECTS = [
         longDesc: 'Discord chatbot that emulates given messages. Feed it a corpus of text and it generates responses in the style of the source material.',
         tags: ['discord', 'chatbot', 'nlp'],
         image: 'img/faithful.png',
-        icon: '<svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>',
+        icon: _ICON.projFaithful,
         external: true,
     },
     {
@@ -89,7 +89,7 @@ export const PROJECTS = [
         longDesc: 'Soothing pastel theme for the SDDM display manager. Brings the Catppuccin color palette to the Linux login screen with all four flavor variants.',
         tags: ['linux', 'theme', 'catppuccin'],
         image: 'img/catppuccin.webp',
-        icon: '<svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>',
+        icon: _ICON.projCatppuccin,
         external: true,
     },
 ];
