@@ -4,15 +4,19 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>a9l.im</title>
-    <meta name="description" content="a9l.im — a collection of interactive educational simulations exploring particle physics, cellular metabolism, options trading, redistricting, and sacred texts. Built with vanilla JavaScript, WebGPU, and Canvas.">
+    <meta name="description" content="Free interactive simulations for learning physics, biology, finance, and political science. Explore gravity, metabolism, options trading, gerrymandering, and sacred texts — all in the browser, no install required.">
+    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1">
     <meta property="og:title" content="a9l.im">
-    <meta property="og:description" content="Interactive educational simulations for physics, biology, finance, political science, and sacred texts. Explore N-body gravity, metabolic pathways, options pricing, gerrymandering, and twelve scriptures — all in the browser.">
+    <meta property="og:description" content="Free interactive simulations for learning physics, biology, finance, and political science. Explore gravity, metabolism, options trading, gerrymandering, and sacred texts — all in the browser.">
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://a9l.im">
     <meta property="og:site_name" content="a9l.im">
     <meta name="twitter:card" content="summary_large_image">
     <meta property="og:image" content="https://a9l.im/og-image.webp">
     <meta name="twitter:image" content="https://a9l.im/og-image.webp">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:type" content="image/webp">
     <meta name="twitter:site" content="@a9_lim">
     <meta name="twitter:creator" content="@a9_lim">
     <meta name="author" content="a9lim">
@@ -39,7 +43,7 @@
     <link rel="alternate" type="application/rss+xml" title="a9l.im" href="https://a9l.im/feed.xml">
 
     <script type="speculationrules">
-    {"prefetch":[{"source":"document","where":{"href_matches":["/geon","/cyano","/gerry","/shoals","/scripture","/scripture/*"]},"eagerness":"moderate"}]}
+    {"prefetch":[{"source":"document","where":{"href_matches":["/projects","/blog","/about","/geon","/cyano","/gerry","/shoals","/scripture","/scripture/*"]},"eagerness":"moderate"}],"prerender":[{"source":"document","where":{"href_matches":["/projects","/blog","/about"]},"eagerness":"conservative"}]}
     </script>
 
     <script type="application/ld+json">
@@ -51,6 +55,17 @@
           "name": "a9l.im",
           "url": "https://a9l.im",
           "description": "A collection of interactive educational simulations exploring particle physics, cellular metabolism, options trading, redistricting, and sacred texts.",
+          "speakable": {
+            "@type": "SpeakableSpecification",
+            "cssSelector": [".hero-tagline", ".hero-sub", "meta[name='description']"]
+          },
+          "about": [
+            {"@type": "Thing", "@id": "https://www.wikidata.org/wiki/Q413", "name": "Physics"},
+            {"@type": "Thing", "@id": "https://www.wikidata.org/wiki/Q7162", "name": "Genetics"},
+            {"@type": "Thing", "@id": "https://www.wikidata.org/wiki/Q8386", "name": "Option"},
+            {"@type": "Thing", "@id": "https://www.wikidata.org/wiki/Q5765940", "name": "Gerrymandering"},
+            {"@type": "Thing", "@id": "https://www.wikidata.org/wiki/Q179461", "name": "Religious text"}
+          ],
           "author": {
             "@type": "Person",
             "name": "a9lim",
