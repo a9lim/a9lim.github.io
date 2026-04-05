@@ -9,10 +9,10 @@ Five interactive projects live on the site as submodules, plus several external 
 | Project | Description |
 |---------|-------------|
 | [Geon](https://a9l.im/geon) | Relativistic N-body simulator with scalar fields and WebGPU compute shaders |
-| [Cyano](https://a9l.im/cyano) | Cellular metabolism simulator with ten biochemical pathways |
+| [Cyano](https://a9l.im/cyano) | Cellular metabolism simulator with twelve biochemical pathways |
 | [Gerry](https://a9l.im/gerry) | Gerrymandering sandbox with Monte Carlo elections and fairness metrics |
 | [Shoals](https://a9l.im/shoals) | Options trading simulator with stochastic volatility and strategy builder |
-| [Scripture](https://a9l.im/scripture) | Sacred text reader with twelve works, full-text search, and verse-linked notes |
+| [Scripture](https://a9l.im/scripture) | Sacred text reader with sixteen works, full-text search, concordance, and text-to-speech |
 
 ## Shared Design System
 
