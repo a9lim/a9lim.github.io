@@ -1,0 +1,16 @@
+{
+  "name": "a9l.im \u2014 Interactive Educational Simulations",
+  "short_name": "a9l.im",
+  "description": "Interactive simulations for physics, biology, finance, and political science.",
+  "start_url": "/",
+  "display": "standalone",
+  "theme_color": "#C8553D",
+  "background_color": "#FDFBF5",
+  "icons": [
+    {
+      "src": "/favicon.ico",
+      "sizes": "48x48",
+      "type": "image/x-icon"
+    }
+  ]
+}
