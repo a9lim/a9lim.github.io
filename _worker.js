@@ -112,6 +112,34 @@ function rewriteHTML(response, meta) {
         }
       },
     })
+    .on('#page-home', {
+      element(el) {
+        if (meta.canonical !== 'https://a9l.im' && meta.canonical !== 'https://a9l.im/') {
+          el.setAttribute('class', 'page-section');
+        }
+      },
+    })
+    .on('#page-about', {
+      element(el) {
+        if (meta.canonical === 'https://a9l.im/about') {
+          el.setAttribute('class', 'page-section active');
+        }
+      },
+    })
+    .on('#page-projects', {
+      element(el) {
+        if (meta.canonical === 'https://a9l.im/projects') {
+          el.setAttribute('class', 'page-section active');
+        }
+      },
+    })
+    .on('#page-blog', {
+      element(el) {
+        if (meta.canonical === 'https://a9l.im/blog' || meta.canonical.startsWith('https://a9l.im/blog/')) {
+          el.setAttribute('class', 'page-section active');
+        }
+      },
+    })
     .transform(response);
 }
 
