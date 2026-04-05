@@ -6,20 +6,17 @@
   Permissions-Policy: geolocation=(), microphone=(), camera=()
   Strict-Transport-Security: max-age=31536000; includeSubDomains; preload
   Cross-Origin-Opener-Policy: same-origin
-  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self'; frame-ancestors 'self'
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self'; worker-src 'self' blob:; base-uri 'self'; frame-ancestors 'self'
 
-# HTML — serve stale while revalidating in background
+# Cross-origin isolation for geon (enables SharedArrayBuffer / high-res timers for WebGPU)
+/geon/*
+  Cross-Origin-Embedder-Policy: credentialless
+
+# HTML — no-cache with stale-while-revalidate (static pages only;
+# Worker-served SPA routes set their own cache headers)
 /*.html
   Cache-Control: public, max-age=0, stale-while-revalidate=86400
 /
-  Cache-Control: public, max-age=0, stale-while-revalidate=86400
-/projects
-  Cache-Control: public, max-age=0, stale-while-revalidate=86400
-/blog
-  Cache-Control: public, max-age=0, stale-while-revalidate=86400
-/blog/*
-  Cache-Control: public, max-age=0, stale-while-revalidate=86400
-/about
   Cache-Control: public, max-age=0, stale-while-revalidate=86400
 
 # Early Hints — preload critical resources for root SPA
@@ -54,48 +51,101 @@
   Link: </shared-base.css>; rel=preload; as=style
   Link: </styles.css>; rel=preload; as=style
 
-# Subapp Early Hints
+# Subapp Early Hints — shared resources + project-specific CSS and module entry
 /geon/*
   Link: <https://fonts.googleapis.com>; rel=preconnect
   Link: <https://fonts.gstatic.com>; rel=preconnect; crossorigin
   Link: </shared-tokens.js>; rel=preload; as=script
   Link: </shared-base.css>; rel=preload; as=style
+  Link: </geon/styles.css>; rel=preload; as=style
+  Link: </geon/main.js>; rel=modulepreload
 /scripture/*
   Link: <https://fonts.googleapis.com>; rel=preconnect
   Link: <https://fonts.gstatic.com>; rel=preconnect; crossorigin
   Link: </shared-tokens.js>; rel=preload; as=script
   Link: </shared-base.css>; rel=preload; as=style
+  Link: </scripture/styles.css>; rel=preload; as=style
+  Link: </scripture/main.js>; rel=modulepreload
 /cyano/*
   Link: <https://fonts.googleapis.com>; rel=preconnect
   Link: <https://fonts.gstatic.com>; rel=preconnect; crossorigin
   Link: </shared-tokens.js>; rel=preload; as=script
   Link: </shared-base.css>; rel=preload; as=style
+  Link: </cyano/styles.css>; rel=preload; as=style
+  Link: </cyano/main.js>; rel=modulepreload
 /shoals/*
   Link: <https://fonts.googleapis.com>; rel=preconnect
   Link: <https://fonts.gstatic.com>; rel=preconnect; crossorigin
   Link: </shared-tokens.js>; rel=preload; as=script
   Link: </shared-base.css>; rel=preload; as=style
+  Link: </shoals/styles.css>; rel=preload; as=style
+  Link: </shoals/main.js>; rel=modulepreload
 /gerry/*
   Link: <https://fonts.googleapis.com>; rel=preconnect
   Link: <https://fonts.gstatic.com>; rel=preconnect; crossorigin
   Link: </shared-tokens.js>; rel=preload; as=script
   Link: </shared-base.css>; rel=preload; as=style
+  Link: </gerry/styles.css>; rel=preload; as=style
+  Link: </gerry/main.js>; rel=modulepreload
 
-# Shared design system — immutable, cache 1 year
+# Shared design system — short browser TTL, CDN caches until next deploy
 /shared-*.js
-  Cache-Control: public, max-age=31536000, immutable
+  Cache-Control: public, max-age=86400, stale-while-revalidate=604800
+  Cloudflare-CDN-Cache-Control: public, max-age=31536000, immutable
 /shared-*.css
-  Cache-Control: public, max-age=31536000, immutable
+  Cache-Control: public, max-age=86400, stale-while-revalidate=604800
+  Cloudflare-CDN-Cache-Control: public, max-age=31536000, immutable
 
-# Static assets
+# Subproject assets — short browser TTL, CDN caches until next deploy
+/geon/*.js
+  Cache-Control: public, max-age=86400, stale-while-revalidate=604800
+  Cloudflare-CDN-Cache-Control: public, max-age=31536000, immutable
+/geon/*.css
+  Cache-Control: public, max-age=86400, stale-while-revalidate=604800
+  Cloudflare-CDN-Cache-Control: public, max-age=31536000, immutable
+/cyano/*.js
+  Cache-Control: public, max-age=86400, stale-while-revalidate=604800
+  Cloudflare-CDN-Cache-Control: public, max-age=31536000, immutable
+/cyano/*.css
+  Cache-Control: public, max-age=86400, stale-while-revalidate=604800
+  Cloudflare-CDN-Cache-Control: public, max-age=31536000, immutable
+/gerry/*.js
+  Cache-Control: public, max-age=86400, stale-while-revalidate=604800
+  Cloudflare-CDN-Cache-Control: public, max-age=31536000, immutable
+/gerry/*.css
+  Cache-Control: public, max-age=86400, stale-while-revalidate=604800
+  Cloudflare-CDN-Cache-Control: public, max-age=31536000, immutable
+/shoals/*.js
+  Cache-Control: public, max-age=86400, stale-while-revalidate=604800
+  Cloudflare-CDN-Cache-Control: public, max-age=31536000, immutable
+/shoals/*.css
+  Cache-Control: public, max-age=86400, stale-while-revalidate=604800
+  Cloudflare-CDN-Cache-Control: public, max-age=31536000, immutable
+/scripture/*.js
+  Cache-Control: public, max-age=86400, stale-while-revalidate=604800
+  Cloudflare-CDN-Cache-Control: public, max-age=31536000, immutable
+/scripture/*.css
+  Cache-Control: public, max-age=86400, stale-while-revalidate=604800
+  Cloudflare-CDN-Cache-Control: public, max-age=31536000, immutable
+
+# Static assets — CDN caches until next deploy
 /favicon.ico
   Cache-Control: public, max-age=604800
+  Cloudflare-CDN-Cache-Control: public, max-age=31536000, immutable
 /logo.svg
   Cache-Control: public, max-age=604800
+  Cloudflare-CDN-Cache-Control: public, max-age=31536000, immutable
 /og-image.webp
   Cache-Control: public, max-age=604800
+  Cloudflare-CDN-Cache-Control: public, max-age=31536000, immutable
 /img/*
   Cache-Control: public, max-age=604800
+  Cloudflare-CDN-Cache-Control: public, max-age=31536000, immutable
+
+# Manifest
+/manifest.json
+  Cache-Control: public, max-age=86400
+  Cloudflare-CDN-Cache-Control: public, max-age=31536000, immutable
 
 # Feed and sitemap
 /feed.xml
