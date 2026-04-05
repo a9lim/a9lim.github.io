@@ -1,14 +1,14 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "a9lim",
+  "main": "_worker.js",
   "compatibility_date": "2026-04-05",
   "observability": {
     "enabled": true
   },
   "assets": {
-    "directory": "."
-  },
-  "compatibility_flags": [
-    "nodejs_compat"
-  ]
+    "directory": ".",
+    "binding": "ASSETS",
+    "not_found_handling": "none"
+  }
 }

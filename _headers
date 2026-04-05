@@ -4,38 +4,98 @@
   X-Frame-Options: SAMEORIGIN
   Referrer-Policy: strict-origin-when-cross-origin
   Permissions-Policy: geolocation=(), microphone=(), camera=()
+  Strict-Transport-Security: max-age=31536000; includeSubDomains; preload
+  Cross-Origin-Opener-Policy: same-origin
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self'; frame-ancestors 'self'
 
-# HTML — always revalidate
+# HTML — serve stale while revalidating in background
 /*.html
-  Cache-Control: public, max-age=0, must-revalidate
+  Cache-Control: public, max-age=0, stale-while-revalidate=86400
 /
-  Cache-Control: public, max-age=0, must-revalidate
+  Cache-Control: public, max-age=0, stale-while-revalidate=86400
 /projects
-  Cache-Control: public, max-age=0, must-revalidate
+  Cache-Control: public, max-age=0, stale-while-revalidate=86400
 /blog
-  Cache-Control: public, max-age=0, must-revalidate
+  Cache-Control: public, max-age=0, stale-while-revalidate=86400
 /blog/*
-  Cache-Control: public, max-age=0, must-revalidate
+  Cache-Control: public, max-age=0, stale-while-revalidate=86400
 /about
-  Cache-Control: public, max-age=0, must-revalidate
+  Cache-Control: public, max-age=0, stale-while-revalidate=86400
 
-# Shared design system — cache aggressively (URLs are versioned by content)
+# Early Hints — preload critical resources for root SPA
+/
+  Link: <https://fonts.googleapis.com>; rel=preconnect
+  Link: <https://fonts.gstatic.com>; rel=preconnect; crossorigin
+  Link: </shared-tokens.js>; rel=preload; as=script
+  Link: </shared-base.css>; rel=preload; as=style
+  Link: </styles.css>; rel=preload; as=style
+/projects
+  Link: <https://fonts.googleapis.com>; rel=preconnect
+  Link: <https://fonts.gstatic.com>; rel=preconnect; crossorigin
+  Link: </shared-tokens.js>; rel=preload; as=script
+  Link: </shared-base.css>; rel=preload; as=style
+  Link: </styles.css>; rel=preload; as=style
+/blog
+  Link: <https://fonts.googleapis.com>; rel=preconnect
+  Link: <https://fonts.gstatic.com>; rel=preconnect; crossorigin
+  Link: </shared-tokens.js>; rel=preload; as=script
+  Link: </shared-base.css>; rel=preload; as=style
+  Link: </styles.css>; rel=preload; as=style
+/blog/*
+  Link: <https://fonts.googleapis.com>; rel=preconnect
+  Link: <https://fonts.gstatic.com>; rel=preconnect; crossorigin
+  Link: </shared-tokens.js>; rel=preload; as=script
+  Link: </shared-base.css>; rel=preload; as=style
+  Link: </styles.css>; rel=preload; as=style
+/about
+  Link: <https://fonts.googleapis.com>; rel=preconnect
+  Link: <https://fonts.gstatic.com>; rel=preconnect; crossorigin
+  Link: </shared-tokens.js>; rel=preload; as=script
+  Link: </shared-base.css>; rel=preload; as=style
+  Link: </styles.css>; rel=preload; as=style
+
+# Subapp Early Hints
+/geon/*
+  Link: <https://fonts.googleapis.com>; rel=preconnect
+  Link: <https://fonts.gstatic.com>; rel=preconnect; crossorigin
+  Link: </shared-tokens.js>; rel=preload; as=script
+  Link: </shared-base.css>; rel=preload; as=style
+/scripture/*
+  Link: <https://fonts.googleapis.com>; rel=preconnect
+  Link: <https://fonts.gstatic.com>; rel=preconnect; crossorigin
+  Link: </shared-tokens.js>; rel=preload; as=script
+  Link: </shared-base.css>; rel=preload; as=style
+/cyano/*
+  Link: <https://fonts.googleapis.com>; rel=preconnect
+  Link: <https://fonts.gstatic.com>; rel=preconnect; crossorigin
+  Link: </shared-tokens.js>; rel=preload; as=script
+  Link: </shared-base.css>; rel=preload; as=style
+/shoals/*
+  Link: <https://fonts.googleapis.com>; rel=preconnect
+  Link: <https://fonts.gstatic.com>; rel=preconnect; crossorigin
+  Link: </shared-tokens.js>; rel=preload; as=script
+  Link: </shared-base.css>; rel=preload; as=style
+/gerry/*
+  Link: <https://fonts.googleapis.com>; rel=preconnect
+  Link: <https://fonts.gstatic.com>; rel=preconnect; crossorigin
+  Link: </shared-tokens.js>; rel=preload; as=script
+  Link: </shared-base.css>; rel=preload; as=style
+
+# Shared design system — immutable, cache 1 year
 /shared-*.js
-  Cache-Control: public, max-age=604800
+  Cache-Control: public, max-age=31536000, immutable
 /shared-*.css
-  Cache-Control: public, max-age=604800
+  Cache-Control: public, max-age=31536000, immutable
 
 # Static assets
 /favicon.ico
   Cache-Control: public, max-age=604800
 /logo.svg
   Cache-Control: public, max-age=604800
-/og-image.png
+/og-image.webp
   Cache-Control: public, max-age=604800
 /img/*
   Cache-Control: public, max-age=604800
-
-# Fonts served by Google — but preconnect hints are in HTML
 
 # Feed and sitemap
 /feed.xml

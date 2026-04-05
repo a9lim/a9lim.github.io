@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-Root site for the **a9l.im** portfolio. Hosted on Cloudflare Pages with custom domain `a9l.im`. Also hosts the shared design system consumed by all five submodules (`geon`, `shoals`, `gerry`, `cyano`, `scripture`). Cloudflare config lives in `_redirects` (SPA fallback routes) and `_headers` (security + caching).
+Root site for the **a9l.im** portfolio. Hosted on Cloudflare Workers + Assets with custom domain `a9l.im`. Also hosts the shared design system consumed by all five submodules (`geon`, `shoals`, `gerry`, `cyano`, `scripture`). Cloudflare config lives in `wrangler.jsonc` (Worker + asset serving), `_worker.js` (SPA routing), `_headers` (security + caching), and `_routes.json` (static asset exclusions).
 
 ## Design Philosophy
 
@@ -36,7 +36,7 @@ Root site uses relative paths for shared files; sub-projects use absolute paths 
 
 ## Overview
 
-Single-page portfolio site. Path-based SPA router (`/`, `/projects`, `/blog`, `/about`, `/blog/{slug}`). Cloudflare Pages `_redirects` serves `index.html` for these paths. WebGL simplex noise shader background, project carousel, blog with markdown rendering, SVG world map with animated arc.
+Single-page portfolio site. Path-based SPA router (`/`, `/projects`, `/blog`, `/about`, `/blog/{slug}`). `_worker.js` routes non-static requests to the correct SPA shell (`index.html` for root routes, `scripture/index.html` for `/scripture/*`). Static assets are served directly by the asset layer before the Worker runs. WebGL simplex noise shader background, project carousel, blog with markdown rendering, SVG world map with animated arc.
 
 ## Architecture
 
@@ -47,18 +47,19 @@ Single-page portfolio site. Path-based SPA router (`/`, `/projects`, `/blog`, `/
 ## Image Generation
 
 ```bash
-node og/generate.js      # OG images (1200×630) → each project's og-image.png
-node cards/generate.js   # Card images (1920×1200) → img/{project}.png
+node og/generate.js      # OG images (1200×630) → each project's og-image.webp
+node cards/generate.js   # Card images (1920×1200) → img/{project}.webp
 ```
 
-Both require Puppeteer (installed in `og/`). Source HTML in `og/` and `cards/` respectively — self-contained pages with hardcoded colors, no shared imports. Each `index.html` references its `og-image.png` via `<meta property="og:image">` with absolute `https://a9l.im/` URLs. Card images are referenced by `src/projects.js` for the carousel and projects page.
+Both require Puppeteer (installed in `og/` and `cards/`). Source HTML in `og/` and `cards/` respectively — self-contained pages with hardcoded colors, no shared imports. All generated images are WebP (quality 90). Each `index.html` references its `og-image.webp` via `<meta property="og:image">` with absolute `https://a9l.im/` URLs. Card images are referenced by `src/projects.js` for the carousel and projects page.
 
 ## Gotchas
 
 ### Do Not Break
 
-- **`_redirects`** — SPA routing depends on this; removing it breaks direct navigation to `/projects`, `/blog/*`, `/about`, and `/scripture/*`
-- **`_headers`** — security headers and cache policy
+- **`_worker.js`** — SPA routing depends on this; removing it breaks direct navigation to `/projects`, `/blog/*`, `/about`, and `/scripture/*`
+- **`_headers`** — security headers (CSP, HSTS, COOP), cache policy, and Early Hints
+- **`_routes.json`** — excludes static assets from the Worker pipeline
 - **All `shared-*.js` and `shared-base.css` files** — consumed by all projects. Changing public APIs or class names (`.tab-btn`, `.tab-panel`, `data-tab`, `.glass`, `.tool-btn`, `.about-*`) breaks all sims
 - `_toolbar`, `_forms`, `initAboutPanel(config)` — changing these APIs breaks all consumers
 

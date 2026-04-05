@@ -6,11 +6,11 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, '..');
 
 const CARDS = [
-  { html: 'geon.html',   output: path.join(ROOT, 'img', 'geon.png') },
-  { html: 'shoals.html', output: path.join(ROOT, 'img', 'shoals.png') },
-  { html: 'cyano.html',  output: path.join(ROOT, 'img', 'cyano.png') },
-  { html: 'gerry.html',     output: path.join(ROOT, 'img', 'gerry.png') },
-  { html: 'scripture.html', output: path.join(ROOT, 'img', 'scripture.png') },
+  { html: 'geon.html',   output: path.join(ROOT, 'img', 'geon.webp') },
+  { html: 'shoals.html', output: path.join(ROOT, 'img', 'shoals.webp') },
+  { html: 'cyano.html',  output: path.join(ROOT, 'img', 'cyano.webp') },
+  { html: 'gerry.html',     output: path.join(ROOT, 'img', 'gerry.webp') },
+  { html: 'scripture.html', output: path.join(ROOT, 'img', 'scripture.webp') },
 ];
 
 const browser = await puppeteer.launch({ headless: true });
@@ -22,7 +22,7 @@ for (const card of CARDS) {
   const url = 'file://' + path.join(__dirname, card.html);
   await page.goto(url, { waitUntil: 'networkidle0' });
 
-  await page.screenshot({ path: card.output, type: 'png', omitBackground: false });
+  await page.screenshot({ path: card.output, type: 'webp', quality: 90, omitBackground: false });
   console.log(`✓ ${card.html} → ${path.relative(ROOT, card.output)}`);
   await page.close();
 }

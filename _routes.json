@@ -1,0 +1,4 @@
+{
+  "version": 1,
+  "exclude": ["/img/*", "/shared-*", "/*.css", "/*.js", "/favicon.ico", "/logo.svg", "/og-image.webp", "/world-map.svg", "/posts/*", "/*.xml", "/robots.txt"]
+}
