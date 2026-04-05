@@ -4,17 +4,17 @@
 const ROUTE_META = {
   '/projects': {
     title: 'Projects \u2014 a9l.im',
-    desc: 'Interactive educational simulations: relativistic physics, cellular metabolism, options trading, gerrymandering, and sacred texts. All in-browser, vanilla JS.',
+    desc: 'Browse interactive simulations for physics, biology, finance, and political science. Open-source, zero-dependency tools that run entirely in the browser.',
     ogTitle: 'Projects \u2014 a9l.im',
   },
   '/blog': {
     title: 'Blog \u2014 a9l.im',
-    desc: 'Articles on simulation design, computational physics, web development, and educational technology.',
+    desc: 'Articles on building educational simulations, computational physics, browser-based rendering, and interactive learning tools.',
     ogTitle: 'Blog \u2014 a9l.im',
   },
   '/about': {
     title: 'About \u2014 a9l.im',
-    desc: 'About a9lim and the educational simulation projects at a9l.im.',
+    desc: 'About a9lim \u2014 building open-source interactive simulations for understanding complex systems in physics, biology, finance, and political science.',
     ogTitle: 'About \u2014 a9l.im',
   },
 };
@@ -26,6 +26,28 @@ const BLOG_META = {
     ogTitle: 'Hello, World \u2014 a9l.im',
   },
 };
+
+const ABOUT_JSONLD = JSON.stringify({
+  '@context': 'https://schema.org',
+  '@type': 'Person',
+  name: 'a9lim',
+  url: 'https://a9l.im/about',
+  sameAs: [
+    'https://github.com/a9lim',
+    'https://twitter.com/a9_lim',
+  ],
+  description: 'Builder of interactive educational simulations exploring physics, biology, finance, and political science.',
+  knowsAbout: [
+    'Particle physics simulation',
+    'Cellular metabolism',
+    'Options pricing',
+    'Gerrymandering and electoral fairness',
+    'Sacred text analysis',
+    'WebGPU',
+    'JavaScript',
+  ],
+  mainEntityOfPage: { '@type': 'WebPage', '@id': 'https://a9l.im/about' },
+});
 
 const PROJECTS_SSR = `
 <div class="project-card fade-in visible"><a href="/geon"><h3>Geon</h3><p>Relativistic N-body simulator with 11 forces, scalar fields, and WebGPU compute shaders.</p><span class="tag">physics</span><span class="tag">webgpu</span><span class="tag">relativity</span><span class="tag">canvas</span></a></div>
@@ -50,6 +72,7 @@ const SECURITY_HEADERS = {
   'Strict-Transport-Security': 'max-age=31536000; includeSubDomains; preload',
   'Cross-Origin-Opener-Policy': 'same-origin',
   'Content-Security-Policy': "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self'; worker-src 'self' blob:; base-uri 'self'; frame-ancestors 'self'",
+  'Content-Language': 'en',
 };
 
 // Wrap a response with security + cache headers.
@@ -87,6 +110,13 @@ function rewriteHTML(response, meta) {
     })
     .on('link[rel="canonical"]', {
       element(el) { el.setAttribute('href', meta.canonical); },
+    })
+    .on('head', {
+      element(el) {
+        if (meta.jsonLd) {
+          el.append(`<script type="application/ld+json">${meta.jsonLd}</script>`, { html: true });
+        }
+      },
     })
     .on('#blog-post-content', {
       element(el) {
@@ -272,6 +302,19 @@ export default {
                   const postMeta = posts.find(p => p.slug === slug);
                   if (postMeta) {
                     postHeader = `<span class="blog-post-date">${fmtDate(postMeta.date)}${postMeta.tag ? ' &middot; ' + mdEsc(postMeta.tag) : ''}</span><h1 class="blog-post-title">${mdEsc(postMeta.title)}</h1>`;
+                    meta.jsonLd = JSON.stringify({
+                      '@context': 'https://schema.org',
+                      '@type': 'BlogPosting',
+                      headline: postMeta.title,
+                      datePublished: postMeta.date,
+                      dateModified: postMeta.date,
+                      description: meta.desc,
+                      url: meta.canonical,
+                      author: { '@type': 'Person', name: 'a9lim', url: 'https://a9l.im/about', sameAs: ['https://github.com/a9lim', 'https://twitter.com/a9_lim'] },
+                      publisher: { '@type': 'Person', name: 'a9lim', url: 'https://a9l.im' },
+                      isPartOf: { '@type': 'Blog', name: 'a9l.im Blog', url: 'https://a9l.im/blog' },
+                      mainEntityOfPage: { '@type': 'WebPage', '@id': meta.canonical },
+                    });
                   }
                 } catch (_) { /* proceed without metadata */ }
               }
@@ -282,6 +325,7 @@ export default {
         }
       } else {
         meta = { ...ROUTE_META[pathname], canonical: `https://a9l.im${pathname}` };
+        if (pathname === '/about') meta.jsonLd = ABOUT_JSONLD;
       }
 
       if (env.VIEWS) logView(ctx, env.VIEWS, request, pathname);
