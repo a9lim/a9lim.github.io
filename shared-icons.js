@@ -21,6 +21,8 @@ var _ICON = (function () {
     // ── Reusable path fragments ──
     var SUN   = '<circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>';
     var MOON  = '<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>';
+    var SUNF  = '<circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="4" stroke="currentColor" stroke-width="3" stroke-linecap="square"/><line x1="12" y1="20" x2="12" y2="23" stroke="currentColor" stroke-width="3" stroke-linecap="square"/><line x1="4.22" y1="4.22" x2="6.34" y2="6.34" stroke="currentColor" stroke-width="3" stroke-linecap="square"/><line x1="17.66" y1="17.66" x2="19.78" y2="19.78" stroke="currentColor" stroke-width="3" stroke-linecap="square"/><line x1="1" y1="12" x2="4" y2="12" stroke="currentColor" stroke-width="3" stroke-linecap="square"/><line x1="20" y1="12" x2="23" y2="12" stroke="currentColor" stroke-width="3" stroke-linecap="square"/><line x1="4.22" y1="19.78" x2="6.34" y2="17.66" stroke="currentColor" stroke-width="3" stroke-linecap="square"/><line x1="17.66" y1="6.34" x2="19.78" y2="4.22" stroke="currentColor" stroke-width="3" stroke-linecap="square"/>';
+    var FILL  = ' width="10" height="10" viewBox="0 0 24 24" fill="currentColor" stroke="none"';
     var MENU  = '<line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>';
     var ABOUT = '<circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/>';
     var RESET = '<path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3.7 7.3"/><path d="M3 3v5h5"/>';
@@ -67,7 +69,8 @@ var _ICON = (function () {
         download: s('<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="14" x2="12" y2="3"/>'),
         speaker:  s('<polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/>'),
         eye:      s('<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>'),
-        split:    s('<rect x="3" y="3" width="18" height="18" rx="2"/><line x1="12" y1="3" x2="12" y2="21"/>'),
+        copy:     s('<rect x="9" y="9" width="10" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h8"/>'),
+        link:     s('<path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>'),
         dice:     s('<rect x="1" y="1" width="22" height="22" rx="4"/><circle cx="8" cy="8" r="1.5" fill="currentColor" stroke="none"/><circle cx="16" cy="8" r="1.5" fill="currentColor" stroke="none"/><circle cx="8" cy="16" r="1.5" fill="currentColor" stroke="none"/><circle cx="16" cy="16" r="1.5" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.5" fill="currentColor" stroke="none"/>'),
 
         // ── Map tools (gerry) ──
@@ -97,6 +100,10 @@ var _ICON = (function () {
         stop:     s('<rect x="4" y="4" width="16" height="16" rx="2"/>'),
         bookmark:       s('<path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/>'),
         bookmarkFilled: s('<path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/>', ' width="18" height="18" viewBox="0 0 24 24" fill="currentColor" stroke="none"'),
+
+        // ── Toggle icons (small, filled, for toggle switches) ──
+        togSun:  s(SUNF, FILL),
+        togMoon: s(MOON, FILL),
 
         // ── Mode toggles (project-specific, kept inline for CSS/JS toggling) ──
         modeNormal:  s('<circle cx="12" cy="12" r="9"/><line x1="8" y1="12" x2="16" y2="12"/>', M20),
