@@ -22,41 +22,70 @@
 /
   Cache-Control: public, max-age=0, stale-while-revalidate=86400
 
-# Early Hints — modulepreload and font preload only
-# (script/style preloads are redundant with render-blocking tags in HTML)
+# Early Hints — preload critical resources for root SPA
 /
+  Link: </shared-tokens.js>; rel=preload; as=script
+  Link: </shared-base.css>; rel=preload; as=style
+  Link: </styles.css>; rel=preload; as=style
   Link: </main.js>; rel=modulepreload
   Link: </fonts/lato-400.woff2>; rel=preload; as=font; crossorigin
 /projects
+  Link: </shared-tokens.js>; rel=preload; as=script
+  Link: </shared-base.css>; rel=preload; as=style
+  Link: </styles.css>; rel=preload; as=style
   Link: </main.js>; rel=modulepreload
   Link: </fonts/lato-400.woff2>; rel=preload; as=font; crossorigin
 /blog
+  Link: </shared-tokens.js>; rel=preload; as=script
+  Link: </shared-base.css>; rel=preload; as=style
+  Link: </styles.css>; rel=preload; as=style
   Link: </main.js>; rel=modulepreload
   Link: </fonts/lato-400.woff2>; rel=preload; as=font; crossorigin
 /blog/*
+  Link: </shared-tokens.js>; rel=preload; as=script
+  Link: </shared-base.css>; rel=preload; as=style
+  Link: </styles.css>; rel=preload; as=style
   Link: </main.js>; rel=modulepreload
   Link: </fonts/lato-400.woff2>; rel=preload; as=font; crossorigin
 /about
+  Link: </shared-tokens.js>; rel=preload; as=script
+  Link: </shared-base.css>; rel=preload; as=style
+  Link: </styles.css>; rel=preload; as=style
   Link: </main.js>; rel=modulepreload
   Link: </fonts/lato-400.woff2>; rel=preload; as=font; crossorigin
 
 # Subapp Early Hints — shared resources + project-specific CSS and module entry
 /geon/*
+  Link: </shared-tokens.js>; rel=preload; as=script
+  Link: </shared-base.css>; rel=preload; as=style
+  Link: </geon/styles.css>; rel=preload; as=style
   Link: </geon/main.js>; rel=modulepreload
   Link: </fonts/lato-400.woff2>; rel=preload; as=font; crossorigin
   Link: <https://cdn.jsdelivr.net>; rel=preconnect; crossorigin
 /scripture/*
+  Link: </shared-tokens.js>; rel=preload; as=script
+  Link: </shared-base.css>; rel=preload; as=style
+  Link: </scripture/styles.css>; rel=preload; as=style
   Link: </scripture/main.js>; rel=modulepreload
   Link: </fonts/lato-400.woff2>; rel=preload; as=font; crossorigin
 /cyano/*
+  Link: </shared-tokens.js>; rel=preload; as=script
+  Link: </shared-base.css>; rel=preload; as=style
+  Link: </cyano/styles.css>; rel=preload; as=style
   Link: </cyano/main.js>; rel=modulepreload
   Link: </fonts/lato-400.woff2>; rel=preload; as=font; crossorigin
   Link: <https://cdn.jsdelivr.net>; rel=preconnect; crossorigin
 /shoals/*
+  Link: </shared-tokens.js>; rel=preload; as=script
+  Link: </shared-base.css>; rel=preload; as=style
+  Link: </shoals/styles.css>; rel=preload; as=style
   Link: </shoals/main.js>; rel=modulepreload
   Link: </fonts/lato-400.woff2>; rel=preload; as=font; crossorigin
   Link: <https://cdn.jsdelivr.net>; rel=preconnect; crossorigin
 /gerry/*
+  Link: </shared-tokens.js>; rel=preload; as=script
+  Link: </shared-base.css>; rel=preload; as=style
+  Link: </gerry/styles.css>; rel=preload; as=style
   Link: </gerry/main.js>; rel=modulepreload
   Link: </fonts/lato-400.woff2>; rel=preload; as=font; crossorigin
 
