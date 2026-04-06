@@ -19,6 +19,8 @@
     "/.well-known/*",
     "/*.txt",
     "/*.md",
+    "/scripture/*.js",
+    "/scripture/*.css",
     "/scripture/*.md",
     "/scripture/data/*",
     "/feed.atom"
