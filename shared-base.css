@@ -1168,6 +1168,35 @@ body {
     text-decoration: underline;
 }
 
+.about-updated {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin-top: 0.75rem;
+    text-align: center;
+}
+
+/* ─── Educational Content ─── */
+.edu-content {
+    max-width: 42rem;
+    margin: 2rem auto;
+    padding: 0 1rem;
+    font-size: 0.95rem;
+    line-height: 1.6;
+    color: var(--text-secondary);
+}
+
+.edu-content summary {
+    cursor: pointer;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.edu-content h2,
+.edu-content h3 {
+    color: var(--text-primary);
+    margin-top: 1.5rem;
+}
+
 /* ─── Control Rows ─── */
 .ctrl-row {
     display: flex;

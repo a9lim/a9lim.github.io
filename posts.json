@@ -3,6 +3,8 @@
     "slug": "hello-world",
     "title": "Hello, World",
     "date": "2026-02-26",
-    "tag": "meta"
+    "updated": "2026-02-26",
+    "tag": "meta",
+    "excerpt": "First post on the a9l.im blog — a site tour and markdown feature test."
   }
 ]

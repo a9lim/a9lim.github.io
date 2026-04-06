@@ -9,6 +9,10 @@
   "assets": {
     "directory": ".",
     "binding": "ASSETS",
-    "not_found_handling": "none"
-  }
+    "not_found_handling": "none",
+    "html_handling": "drop-trailing-slash"
+  },
+  "analytics_engine_datasets": [
+    { "binding": "VIEWS", "dataset": "a9lim_views" }
+  ]
 }

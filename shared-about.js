@@ -207,6 +207,17 @@ function initAboutPanel(config) {
             content.appendChild(creditSection);
         }
 
+        // ── Last Updated ──────────────────────────────────────────
+        if (config.lastUpdated) {
+            var dateEl = document.createElement('div');
+            dateEl.className = 'about-updated';
+            var timeEl = document.createElement('time');
+            timeEl.setAttribute('datetime', config.lastUpdated);
+            timeEl.textContent = 'Updated ' + config.lastUpdated;
+            dateEl.appendChild(timeEl);
+            content.appendChild(dateEl);
+        }
+
         // ── AGPL Footer ───────────────────────────────────────────
         var footer = document.createElement('div');
         footer.className = 'about-footer';

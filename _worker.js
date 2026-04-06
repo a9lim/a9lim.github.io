@@ -8,6 +8,26 @@ const WORK_TITLES = {
   poe: 'Poetic Edda', viraf: 'Arda Viraf',
 };
 
+// ─── Scripture work schema metadata (for CreativeWork JSON-LD) ───
+const WORK_SCHEMA = {
+  ot:        { translator: 'King James Version', lang: 'en', year: 1611, wikidata: 'Q628' },
+  nt:        { translator: 'King James Version', lang: 'en', year: 1611, wikidata: 'Q37922' },
+  apoc:      { translator: 'King James Version', lang: 'en', year: 1611 },
+  quran:     { translator: 'Marmaduke Pickthall', lang: 'en', year: 1930, wikidata: 'Q428' },
+  bom:       { translator: 'Joseph Smith', lang: 'en', year: 1830, wikidata: 'Q374076' },
+  dc:        { lang: 'en', year: 1835, wikidata: 'Q217164' },
+  pgp:       { lang: 'en', year: 1851, wikidata: 'Q1332454' },
+  fourbooks: { translator: 'James Legge', lang: 'en', year: 1893 },
+  kj:        { translator: 'Basil Hall Chamberlain', lang: 'en', year: 1919, wikidata: 'Q388841' },
+  ttc:       { translator: 'James Legge', lang: 'en', year: 1891, wikidata: 'Q80738' },
+  bund:      { translator: 'Edward William West', lang: 'en', year: 1880 },
+  lotus:     { translator: 'Hendrik Kern', lang: 'en', year: 1884 },
+  bop:       { translator: 'James Legge', lang: 'en', year: 1876 },
+  kv:        { translator: 'John Martin Crawford', lang: 'en', year: 1888 },
+  poe:       { translator: 'Henry Adams Bellows', lang: 'en', year: 1923 },
+  viraf:     { translator: 'Martin Haug & Edward William West', lang: 'en', year: 1872 },
+};
+
 // ─── Route metadata for HTMLRewriter SEO injection ───
 // Root SPA routes all serve index.html, so meta tags need edge rewriting.
 
@@ -297,6 +317,15 @@ export default {
               const book = manifest.books.find(b => b.id === bookId);
               if (book) {
                 const chapterLabel = `${book.name} ${chapterNum}`;
+                const ws = WORK_SCHEMA[workId] || {};
+                const bookSchema = {
+                  '@type': 'Book',
+                  name: workTitle,
+                  ...(ws.wikidata && { '@id': `https://www.wikidata.org/wiki/${ws.wikidata}` }),
+                  ...(ws.translator && { translator: { '@type': 'Person', name: ws.translator } }),
+                  inLanguage: ws.lang || 'en',
+                  ...(ws.year && { datePublished: String(ws.year) }),
+                };
                 const meta = {
                   title: `${chapterLabel} \u2014 ${workTitle} | Scripture`,
                   desc: `Read ${chapterLabel} (${workTitle}) \u2014 full-text search, concordance, verse notes, and cross-tradition comparisons.`,
@@ -304,11 +333,23 @@ export default {
                   canonical: `https://a9l.im${pathname}`,
                   jsonLd: JSON.stringify({
                     '@context': 'https://schema.org',
-                    '@type': 'BreadcrumbList',
-                    itemListElement: [
-                      { '@type': 'ListItem', position: 1, name: 'Scripture', item: 'https://a9l.im/scripture/' },
-                      { '@type': 'ListItem', position: 2, name: workTitle, item: `https://a9l.im/scripture/${workId}` },
-                      { '@type': 'ListItem', position: 3, name: chapterLabel },
+                    '@graph': [
+                      {
+                        '@type': 'BreadcrumbList',
+                        itemListElement: [
+                          { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://a9l.im' },
+                          { '@type': 'ListItem', position: 2, name: 'Scripture', item: 'https://a9l.im/scripture/' },
+                          { '@type': 'ListItem', position: 3, name: workTitle, item: `https://a9l.im/scripture/${workId}` },
+                          { '@type': 'ListItem', position: 4, name: chapterLabel, item: `https://a9l.im${pathname}` },
+                        ],
+                      },
+                      {
+                        '@type': 'CreativeWork',
+                        name: chapterLabel,
+                        url: `https://a9l.im${pathname}`,
+                        inLanguage: 'en',
+                        isPartOf: bookSchema,
+                      },
                     ],
                   }),
                   ssrBreadcrumb: `<a href="/scripture/">Scripture</a> <span aria-hidden="true">\u203a</span> <a href="/scripture/${workId}">${mdEsc(workTitle)}</a> <span aria-hidden="true">\u203a</span> <span>${mdEsc(chapterLabel)}</span>`,
@@ -370,6 +411,7 @@ export default {
                   const posts = await postsRes.json();
                   const postMeta = posts.find(p => p.slug === slug);
                   if (postMeta) {
+                    if (postMeta.excerpt) meta.desc = postMeta.excerpt;
                     postHeader = `<span class="blog-post-date">${fmtDate(postMeta.date)}${postMeta.tag ? ' &middot; ' + mdEsc(postMeta.tag) : ''}</span><h1 class="blog-post-title">${mdEsc(postMeta.title)}</h1>`;
                     meta.jsonLd = JSON.stringify({
                       '@context': 'https://schema.org',
@@ -378,7 +420,7 @@ export default {
                           '@type': 'BlogPosting',
                           headline: postMeta.title,
                           datePublished: postMeta.date,
-                          dateModified: postMeta.date,
+                          dateModified: postMeta.updated || postMeta.date,
                           description: meta.desc,
                           url: meta.canonical,
                           author: { '@type': 'Person', name: 'a9lim', url: 'https://a9l.im/about', sameAs: ['https://github.com/a9lim', 'https://twitter.com/a9_lim'] },
@@ -391,7 +433,7 @@ export default {
                           itemListElement: [
                             { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://a9l.im' },
                             { '@type': 'ListItem', position: 2, name: 'Blog', item: 'https://a9l.im/blog' },
-                            { '@type': 'ListItem', position: 3, name: postMeta.title },
+                            { '@type': 'ListItem', position: 3, name: postMeta.title, item: meta.canonical },
                           ],
                         },
                       ],
@@ -406,20 +448,38 @@ export default {
         }
       } else {
         meta = { ...ROUTE_META[pathname], canonical: `https://a9l.im${pathname}` };
-        if (pathname === '/about') meta.jsonLd = ABOUT_JSONLD;
+        const pageName = pathname === '/projects' ? 'Projects' : pathname === '/blog' ? 'Blog' : 'About';
+        const breadcrumb = {
+          '@type': 'BreadcrumbList',
+          itemListElement: [
+            { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://a9l.im' },
+            { '@type': 'ListItem', position: 2, name: pageName, item: `https://a9l.im${pathname}` },
+          ],
+        };
+        if (pathname === '/about') {
+          const person = JSON.parse(ABOUT_JSONLD);
+          delete person['@context'];
+          meta.jsonLd = JSON.stringify({ '@context': 'https://schema.org', '@graph': [person, breadcrumb] });
+        } else {
+          meta.jsonLd = JSON.stringify({ '@context': 'https://schema.org', ...breadcrumb });
+        }
       }
 
       if (env.VIEWS) logView(ctx, env.VIEWS, request, pathname);
       return secure(rewriteHTML(response, meta));
     }
 
-    // Everything else: 404 (not CDN-cached)
+    // Everything else: 404 (not CDN-cached, noindex)
     const page = await env.ASSETS.fetch(new URL('/404.html', origin));
     if (env.VIEWS) logView(ctx, env.VIEWS, request, pathname);
-    return secure(
-      new Response(page.body, { status: 404, headers: page.headers }),
-      { 'Cloudflare-CDN-Cache-Control': 'no-store' },
-    );
+    const notFound = new HTMLRewriter()
+      .on('head', {
+        element(el) {
+          el.append('<meta name="robots" content="noindex, nofollow">', { html: true });
+        },
+      })
+      .transform(new Response(page.body, { status: 404, headers: page.headers }));
+    return secure(notFound, { 'Cloudflare-CDN-Cache-Control': 'no-store' });
   },
 };
 

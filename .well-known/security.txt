@@ -1,0 +1,4 @@
+Contact: mailto:mx@a9l.im
+Expires: 2027-04-05T00:00:00.000Z
+Preferred-Languages: en
+Canonical: https://a9l.im/.well-known/security.txt
