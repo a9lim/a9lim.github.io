@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 'use strict';
 
-const { readFileSync, writeFileSync } = require('fs');
+const { readFileSync, writeFileSync, existsSync } = require('fs');
 const { execFileSync } = require('child_process');
 const { join } = require('path');
 
@@ -27,36 +27,138 @@ function readJSON(rel) {
   return JSON.parse(readFileSync(join(ROOT, rel), 'utf8'));
 }
 
+function readText(rel) {
+  return readFileSync(join(ROOT, rel), 'utf8');
+}
+
+function rfc2822(isoDate) {
+  return new Date(isoDate + 'T00:00:00Z').toUTCString();
+}
+
+function isoTimestamp(isoDate) {
+  return isoDate + 'T00:00:00Z';
+}
+
+function escXml(s) {
+  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+// --- Markdown renderer (duplicated from _worker.js — update both when changing) ---
+
+function mdEsc(s) {
+  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+function mdSafeUrl(u) {
+  const l = u.trim().toLowerCase();
+  if (l.startsWith('javascript:') || l.startsWith('vbscript:') || l.startsWith('data:text/html')) return '';
+  return u;
+}
+
+function mdInline(src) {
+  return src
+    .replace(/!\[([^\]]*)\]\(([^)]+)\)/g, (_, alt, url) => `<img src="${mdSafeUrl(url)}" alt="${alt}" loading="lazy">`)
+    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, (_, text, url) => { const s = mdSafeUrl(url); return s ? `<a href="${s}" target="_blank" rel="noopener noreferrer">${text}</a>` : text; })
+    .replace(/`([^`]+)`/g, '<code>$1</code>')
+    .replace(/\*{3}(.+?)\*{3}/g, '<strong><em>$1</em></strong>')
+    .replace(/_{3}(.+?)_{3}/g, '<strong><em>$1</em></strong>')
+    .replace(/\*{2}(.+?)\*{2}/g, '<strong>$1</strong>')
+    .replace(/_{2}(.+?)_{2}/g, '<strong>$1</strong>')
+    .replace(/\*(.+?)\*/g, '<em>$1</em>')
+    .replace(/(^|[\s(])_(.+?)_([\s).,!?]|$)/g, '$1<em>$2</em>$3');
+}
+
+function renderMarkdown(src) {
+  const lines = src.replace(/\r\n?/g, '\n').split('\n');
+  const html = [];
+  let i = 0;
+  const len = lines.length;
+  while (i < len) {
+    const line = lines[i];
+    const fenceMatch = line.match(/^(`{3,}|~{3,})(.*)$/);
+    if (fenceMatch) {
+      const fence = fenceMatch[1];
+      const lang = fenceMatch[2].trim();
+      const code = [];
+      i++;
+      while (i < len && lines[i].indexOf(fence) !== 0) { code.push(mdEsc(lines[i])); i++; }
+      i++;
+      const langAttr = lang ? ' class="language-' + mdEsc(lang) + '"' : '';
+      html.push('<pre><code' + langAttr + '>' + code.join('\n') + '</code></pre>');
+      continue;
+    }
+    if (/^\s*$/.test(line)) { i++; continue; }
+    const hm = line.match(/^(#{1,6})\s+(.+)$/);
+    if (hm) { html.push('<h' + hm[1].length + '>' + mdInline(mdEsc(hm[2])) + '</h' + hm[1].length + '>'); i++; continue; }
+    if (/^(-{3,}|\*{3,}|_{3,})\s*$/.test(line)) { html.push('<hr>'); i++; continue; }
+    if (/^>\s?/.test(line)) {
+      const bq = [];
+      while (i < len && /^>\s?/.test(lines[i])) { bq.push(lines[i].replace(/^>\s?/, '')); i++; }
+      html.push('<blockquote>' + renderMarkdown(bq.join('\n')) + '</blockquote>');
+      continue;
+    }
+    if (/^[\-*+]\s+/.test(line)) {
+      const items = [];
+      while (i < len && /^[\-*+]\s+/.test(lines[i])) { items.push(lines[i].replace(/^[\-*+]\s+/, '')); i++; }
+      html.push('<ul>' + items.map(it => '<li>' + mdInline(mdEsc(it)) + '</li>').join('') + '</ul>');
+      continue;
+    }
+    if (/^\d+[.)]\s+/.test(line)) {
+      const ol = [];
+      while (i < len && /^\d+[.)]\s+/.test(lines[i])) { ol.push(lines[i].replace(/^\d+[.)]\s+/, '')); i++; }
+      html.push('<ol>' + ol.map(it => '<li>' + mdInline(mdEsc(it)) + '</li>').join('') + '</ol>');
+      continue;
+    }
+    const p = [];
+    while (i < len && !/^\s*$/.test(lines[i])
+      && !/^(#{1,6}\s|>\s?|[\-*+]\s|`{3,}|~{3,}|\d+[.)]\s|(-{3,}|\*{3,}|_{3,})\s*$)/.test(lines[i])) {
+      p.push(lines[i]); i++;
+    }
+    if (p.length) html.push('<p>' + mdInline(mdEsc(p.join('\n'))) + '</p>');
+  }
+  return html.join('\n');
+}
+
 // --- collect URLs ---
 
 const urls = [];
 
-function add(path, lastmod) {
-  urls.push({ loc: SITE + path, lastmod: lastmod || today() });
+// Image map: sim paths → [card image, OG image]
+const IMAGE_MAP = {
+  '/':          ['og-image.webp'],
+  '/geon':      ['img/geon.webp', 'geon/og-image.webp'],
+  '/cyano':     ['img/cyano.webp', 'cyano/og-image.webp'],
+  '/gerry':     ['img/gerry.webp', 'gerry/og-image.webp'],
+  '/shoals':    ['img/shoals.webp', 'shoals/og-image.webp'],
+  '/scripture/': ['img/scripture.webp', 'scripture/og-image.webp'],
+};
+
+function add(path, lastmod, images, changefreq, priority) {
+  urls.push({ loc: SITE + path, lastmod: lastmod || today(), images: images || null, changefreq: changefreq || null, priority: priority != null ? priority : null });
 }
 
 // 1. Static routes
 const staticRoutes = [
-  { path: '/',          file: 'index.html' },
-  { path: '/projects',  file: 'index.html' },
-  { path: '/blog',      file: 'index.html' },
-  { path: '/about',     file: 'index.html' },
-  { path: '/geon',      file: 'geon/index.html' },
-  { path: '/cyano',     file: 'cyano/index.html' },
-  { path: '/gerry',     file: 'gerry/index.html' },
-  { path: '/shoals',    file: 'shoals/index.html' },
-  { path: '/scripture/', file: 'scripture/index.html' },
+  { path: '/',          file: 'index.html',           changefreq: 'weekly',  priority: 1.0 },
+  { path: '/projects',  file: 'index.html',           changefreq: 'monthly', priority: 0.8 },
+  { path: '/blog',      file: 'index.html',           changefreq: 'monthly', priority: 0.8 },
+  { path: '/about',     file: 'index.html',           changefreq: 'monthly', priority: 0.8 },
+  { path: '/geon',      file: 'geon/index.html',      changefreq: 'monthly', priority: 0.9 },
+  { path: '/cyano',     file: 'cyano/index.html',     changefreq: 'monthly', priority: 0.9 },
+  { path: '/gerry',     file: 'gerry/index.html',     changefreq: 'monthly', priority: 0.9 },
+  { path: '/shoals',    file: 'shoals/index.html',    changefreq: 'monthly', priority: 0.9 },
+  { path: '/scripture/', file: 'scripture/index.html', changefreq: 'monthly', priority: 0.9 },
 ];
 
 for (const r of staticRoutes) {
-  add(r.path, gitLastmod(r.file));
+  add(r.path, gitLastmod(r.file), IMAGE_MAP[r.path] || null, r.changefreq, r.priority);
 }
 
 // 2. Blog posts
 const posts = readJSON('posts.json');
 for (const p of posts) {
   const md = `posts/${p.slug}.md`;
-  add(`/blog/${p.slug}`, gitLastmod(md) || p.date);
+  add(`/blog/${p.slug}`, gitLastmod(md) || p.date, null, 'yearly', 0.6);
 }
 
 // 3. Scripture deep routes
@@ -64,29 +166,149 @@ const workIds = readJSON('scripture/data/works.json');
 
 for (const workId of workIds) {
   const manifest = readJSON(`scripture/data/${workId}/manifest.json`);
-  // lastmod for the whole work = manifest file date
   const workLastmod = gitLastmod(`scripture/data/${workId}/manifest.json`);
 
   for (const book of manifest.books) {
     const start = book.start || 1;
     for (let i = 0; i < book.chapters; i++) {
       const chapterId = `${book.id}-${start + i}`;
-      add(`/scripture/${workId}/${chapterId}`, workLastmod);
+      add(`/scripture/${workId}/${chapterId}`, workLastmod, null, 'yearly', 0.5);
     }
   }
 }
 
-// --- generate XML ---
+// --- generate sitemap.xml ---
 
 const xml = [
   '<?xml version="1.0" encoding="UTF-8"?>',
-  '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',
-  ...urls.map(u =>
-    `  <url>\n    <loc>${u.loc}</loc>\n    <lastmod>${u.lastmod}</lastmod>\n  </url>`
-  ),
+  '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">',
+  ...urls.map(u => {
+    const parts = [`  <url>\n    <loc>${u.loc}</loc>\n    <lastmod>${u.lastmod}</lastmod>${u.changefreq ? `\n    <changefreq>${u.changefreq}</changefreq>` : ''}${u.priority != null ? `\n    <priority>${u.priority}</priority>` : ''}`];
+    if (u.images) {
+      for (const img of u.images) {
+        parts.push(`    <image:image>\n      <image:loc>${SITE}/${img}</image:loc>\n    </image:image>`);
+      }
+    }
+    parts.push('  </url>');
+    return parts.join('\n');
+  }),
   '</urlset>',
   ''
 ].join('\n');
 
 writeFileSync(join(ROOT, 'sitemap.xml'), xml);
 console.log(`sitemap.xml: ${urls.length} URLs`);
+
+// --- generate feed.xml (RSS 2.0) ---
+
+const postItems = posts.map(p => {
+  const mdSrc = readText(`posts/${p.slug}.md`);
+  const htmlContent = renderMarkdown(mdSrc);
+  const firstPara = mdSrc.split(/\n\n/)[0].replace(/[*_`\[\]()#>!]/g, '').trim();
+  return `    <item>
+      <title>${escXml(p.title)}</title>
+      <link>${SITE}/blog/${p.slug}</link>
+      <guid isPermaLink="true">${SITE}/blog/${p.slug}</guid>
+      <pubDate>${rfc2822(p.date)}</pubDate>
+      <category>${escXml(p.tag)}</category>
+      <description>${escXml(firstPara)}</description>
+      <content:encoded><![CDATA[${htmlContent}]]></content:encoded>
+    </item>`;
+});
+
+const latestDate = rfc2822(today());
+
+const rss = `<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/">
+  <channel>
+    <title>a9l.im</title>
+    <link>${SITE}</link>
+    <description>Interactive educational simulations for physics, biology, finance, and political science.</description>
+    <language>en-us</language>
+    <lastBuildDate>${latestDate}</lastBuildDate>
+    <atom:link href="${SITE}/feed.xml" rel="self" type="application/rss+xml"/>
+${postItems.join('\n')}
+  </channel>
+</rss>
+`;
+
+writeFileSync(join(ROOT, 'feed.xml'), rss);
+console.log(`feed.xml: ${posts.length} items`);
+
+// --- generate feed.atom ---
+
+const atomEntries = posts.map(p => {
+  const mdSrc = readText(`posts/${p.slug}.md`);
+  const htmlContent = renderMarkdown(mdSrc);
+  const firstPara = mdSrc.split(/\n\n/)[0].replace(/[*_`\[\]()#>!]/g, '').trim();
+  return `  <entry>
+    <title>${escXml(p.title)}</title>
+    <link href="${SITE}/blog/${p.slug}" rel="alternate"/>
+    <id>${SITE}/blog/${p.slug}</id>
+    <published>${isoTimestamp(p.date)}</published>
+    <updated>${isoTimestamp(p.date)}</updated>
+    <summary>${escXml(firstPara)}</summary>
+    <content type="html"><![CDATA[${htmlContent}]]></content>
+  </entry>`;
+});
+
+const latestIso = isoTimestamp(today());
+
+const atom = `<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+  <title>a9l.im</title>
+  <subtitle>Interactive educational simulations for physics, biology, finance, and political science.</subtitle>
+  <link href="${SITE}/feed.atom" rel="self" type="application/atom+xml"/>
+  <link href="${SITE}" rel="alternate" type="text/html"/>
+  <id>${SITE}/</id>
+  <updated>${latestIso}</updated>
+  <author>
+    <name>a9lim</name>
+    <uri>${SITE}/about</uri>
+  </author>
+${atomEntries.join('\n')}
+</feed>
+`;
+
+writeFileSync(join(ROOT, 'feed.atom'), atom);
+console.log(`feed.atom: ${posts.length} entries`);
+
+// --- generate llms-full.txt ---
+
+const aboutFiles = [
+  { heading: 'Geon', path: 'geon/about.md' },
+  { heading: 'Cyano', path: 'cyano/about.md' },
+  { heading: 'Gerry', path: 'gerry/about.md' },
+  { heading: 'Shoals', path: 'shoals/about.md' },
+  { heading: 'Scripture', path: 'scripture/about.md' },
+];
+
+const llmsParts = [
+  '# a9l.im — Full Documentation',
+  '',
+  '> Free interactive educational simulations for physics, biology, finance, political science, and sacred texts.',
+  '',
+];
+
+// Site about
+if (existsSync(join(ROOT, 'about.md'))) {
+  llmsParts.push(readText('about.md'), '');
+}
+
+// Project about pages
+for (const a of aboutFiles) {
+  const p = join(ROOT, a.path);
+  if (existsSync(p)) {
+    llmsParts.push(readText(a.path), '');
+  }
+}
+
+// Blog posts
+llmsParts.push('---', '', '# Blog Posts', '');
+for (const p of posts) {
+  llmsParts.push(`## ${p.title}`, '', `*${p.date}*`, '');
+  llmsParts.push(readText(`posts/${p.slug}.md`), '');
+}
+
+writeFileSync(join(ROOT, 'llms-full.txt'), llmsParts.join('\n'));
+console.log('llms-full.txt: generated');

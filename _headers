@@ -59,6 +59,7 @@
   Link: </shared-base.css>; rel=preload; as=style
   Link: </geon/styles.css>; rel=preload; as=style
   Link: </geon/main.js>; rel=modulepreload
+  Link: <https://cdn.jsdelivr.net>; rel=preconnect; crossorigin
 /scripture/*
   Link: </fonts/fonts.css>; rel=preload; as=style
   Link: </shared-tokens.js>; rel=preload; as=script
@@ -71,12 +72,14 @@
   Link: </shared-base.css>; rel=preload; as=style
   Link: </cyano/styles.css>; rel=preload; as=style
   Link: </cyano/main.js>; rel=modulepreload
+  Link: <https://cdn.jsdelivr.net>; rel=preconnect; crossorigin
 /shoals/*
   Link: </fonts/fonts.css>; rel=preload; as=style
   Link: </shared-tokens.js>; rel=preload; as=script
   Link: </shared-base.css>; rel=preload; as=style
   Link: </shoals/styles.css>; rel=preload; as=style
   Link: </shoals/main.js>; rel=modulepreload
+  Link: <https://cdn.jsdelivr.net>; rel=preconnect; crossorigin
 /gerry/*
   Link: </fonts/fonts.css>; rel=preload; as=style
   Link: </shared-tokens.js>; rel=preload; as=script
@@ -154,7 +157,19 @@
 # Feed and sitemap
 /feed.xml
   Cache-Control: public, max-age=3600
+/feed.atom
+  Cache-Control: public, max-age=3600
 /sitemap.xml
   Cache-Control: public, max-age=3600
 /robots.txt
+  Cache-Control: public, max-age=86400
+
+# LLM and discovery files
+/llms.txt
+  Cache-Control: public, max-age=3600
+/llms-full.txt
+  Cache-Control: public, max-age=3600
+/about.md
+  Cache-Control: public, max-age=3600
+/.well-known/*
   Cache-Control: public, max-age=86400

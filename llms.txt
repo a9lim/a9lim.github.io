@@ -1,0 +1,19 @@
+# a9l.im
+
+> Free interactive educational simulations for physics, biology, finance, political science, and sacred texts. Open-source, zero-dependency browser tools.
+
+## Simulations
+
+- [Geon](https://a9l.im/geon): Relativistic N-body particle physics simulator with 11 forces, scalar fields, and WebGPU compute shaders
+- [Cyano](https://a9l.im/cyano): Cellular metabolism simulator with twelve biochemical pathways, allosteric regulation, and electron transport
+- [Gerry](https://a9l.im/gerry): Gerrymandering and electoral fairness simulator with Monte Carlo elections and six fairness metrics
+- [Shoals](https://a9l.im/shoals): Options trading simulator with stochastic volatility, binomial tree pricing, and 400+ market scenarios
+- [Scripture](https://a9l.im/scripture/): Sacred text reader with sixteen works from multiple traditions, full-text search, and concordance
+
+## Blog
+
+- [Hello, World](https://a9l.im/blog/hello-world): First post — site tour and markdown feature test
+
+## About
+
+- [About a9lim](https://a9l.im/about): Background, projects, and contact

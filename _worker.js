@@ -1,3 +1,13 @@
+// ─── Scripture work display names (for breadcrumb JSON-LD) ───
+const WORK_TITLES = {
+  ot: 'Old Testament', nt: 'New Testament', apoc: 'Apocrypha',
+  quran: 'Quran', bom: 'Book of Mormon', dc: 'Doctrine and Covenants',
+  pgp: 'Pearl of Great Price', fourbooks: 'The Four Books',
+  kj: 'Kojiki', ttc: 'Tao Te Ching', bund: 'Bundahishn',
+  lotus: 'Lotus Sutra', bop: 'Book of Poetry', kv: 'Kalevala',
+  poe: 'Poetic Edda', viraf: 'Arda Viraf',
+};
+
 // ─── Route metadata for HTMLRewriter SEO injection ───
 // Root SPA routes all serve index.html, so meta tags need edge rewriting.
 
@@ -116,6 +126,16 @@ function rewriteHTML(response, meta) {
         if (meta.jsonLd) {
           el.append(`<script type="application/ld+json">${meta.jsonLd}</script>`, { html: true });
         }
+      },
+    })
+    .on('#reading-pane', {
+      element(el) {
+        if (meta.ssrVerses) el.setInnerContent(meta.ssrVerses, { html: true });
+      },
+    })
+    .on('#breadcrumb', {
+      element(el) {
+        if (meta.ssrBreadcrumb) el.setInnerContent(meta.ssrBreadcrumb, { html: true });
       },
     })
     .on('#blog-post-content', {
@@ -263,6 +283,55 @@ export default {
     if (pathname.startsWith('/scripture')) {
       const res = await env.ASSETS.fetch(new URL('/scripture/index.html', origin));
       if (env.VIEWS) logView(ctx, env.VIEWS, request, pathname);
+
+      // Inject meta tags, BreadcrumbList JSON-LD, verse excerpt, and visible breadcrumb for chapter URLs
+      const chapterMatch = pathname.match(/^\/scripture\/([a-z]+)\/(.+)-(\d+)$/);
+      if (chapterMatch) {
+        const [, workId, bookId, chapterNum] = chapterMatch;
+        const workTitle = WORK_TITLES[workId];
+        if (workTitle) {
+          try {
+            const manifestRes = await env.ASSETS.fetch(new URL(`/scripture/data/${workId}/manifest.json`, origin));
+            if (manifestRes.ok) {
+              const manifest = await manifestRes.json();
+              const book = manifest.books.find(b => b.id === bookId);
+              if (book) {
+                const chapterLabel = `${book.name} ${chapterNum}`;
+                const meta = {
+                  title: `${chapterLabel} \u2014 ${workTitle} | Scripture`,
+                  desc: `Read ${chapterLabel} (${workTitle}) \u2014 full-text search, concordance, verse notes, and cross-tradition comparisons.`,
+                  ogTitle: `${chapterLabel} \u2014 ${workTitle} | Scripture`,
+                  canonical: `https://a9l.im${pathname}`,
+                  jsonLd: JSON.stringify({
+                    '@context': 'https://schema.org',
+                    '@type': 'BreadcrumbList',
+                    itemListElement: [
+                      { '@type': 'ListItem', position: 1, name: 'Scripture', item: 'https://a9l.im/scripture/' },
+                      { '@type': 'ListItem', position: 2, name: workTitle, item: `https://a9l.im/scripture/${workId}` },
+                      { '@type': 'ListItem', position: 3, name: chapterLabel },
+                    ],
+                  }),
+                  ssrBreadcrumb: `<a href="/scripture/">Scripture</a> <span aria-hidden="true">\u203a</span> <a href="/scripture/${workId}">${mdEsc(workTitle)}</a> <span aria-hidden="true">\u203a</span> <span>${mdEsc(chapterLabel)}</span>`,
+                };
+
+                // SSR: inject first ~500 chars of verse text for crawlers
+                try {
+                  const chapterRes = await env.ASSETS.fetch(new URL(`/scripture/data/${workId}/chapters/${bookId}-${chapterNum}.json`, origin));
+                  if (chapterRes.ok) {
+                    const chapter = await chapterRes.json();
+                    const raw = chapter.sections.flatMap(s => s.verses).join(' ');
+                    const excerpt = raw.length > 500 ? raw.slice(0, raw.lastIndexOf(' ', 500)) + '\u2026' : raw;
+                    meta.ssrVerses = `<p>${mdEsc(excerpt)}</p>`;
+                  }
+                } catch (_) { /* verse SSR failed — client JS will hydrate */ }
+
+                return secure(rewriteHTML(res, meta));
+              }
+            }
+          } catch (_) { /* fall through to default */ }
+        }
+      }
+
       return secure(res);
     }
 
@@ -304,16 +373,28 @@ export default {
                     postHeader = `<span class="blog-post-date">${fmtDate(postMeta.date)}${postMeta.tag ? ' &middot; ' + mdEsc(postMeta.tag) : ''}</span><h1 class="blog-post-title">${mdEsc(postMeta.title)}</h1>`;
                     meta.jsonLd = JSON.stringify({
                       '@context': 'https://schema.org',
-                      '@type': 'BlogPosting',
-                      headline: postMeta.title,
-                      datePublished: postMeta.date,
-                      dateModified: postMeta.date,
-                      description: meta.desc,
-                      url: meta.canonical,
-                      author: { '@type': 'Person', name: 'a9lim', url: 'https://a9l.im/about', sameAs: ['https://github.com/a9lim', 'https://twitter.com/a9_lim'] },
-                      publisher: { '@type': 'Person', name: 'a9lim', url: 'https://a9l.im' },
-                      isPartOf: { '@type': 'Blog', name: 'a9l.im Blog', url: 'https://a9l.im/blog' },
-                      mainEntityOfPage: { '@type': 'WebPage', '@id': meta.canonical },
+                      '@graph': [
+                        {
+                          '@type': 'BlogPosting',
+                          headline: postMeta.title,
+                          datePublished: postMeta.date,
+                          dateModified: postMeta.date,
+                          description: meta.desc,
+                          url: meta.canonical,
+                          author: { '@type': 'Person', name: 'a9lim', url: 'https://a9l.im/about', sameAs: ['https://github.com/a9lim', 'https://twitter.com/a9_lim'] },
+                          publisher: { '@type': 'Person', name: 'a9lim', url: 'https://a9l.im' },
+                          isPartOf: { '@type': 'Blog', name: 'a9l.im Blog', url: 'https://a9l.im/blog' },
+                          mainEntityOfPage: { '@type': 'WebPage', '@id': meta.canonical },
+                        },
+                        {
+                          '@type': 'BreadcrumbList',
+                          itemListElement: [
+                            { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://a9l.im' },
+                            { '@type': 'ListItem', position: 2, name: 'Blog', item: 'https://a9l.im/blog' },
+                            { '@type': 'ListItem', position: 3, name: postMeta.title },
+                          ],
+                        },
+                      ],
                     });
                   }
                 } catch (_) { /* proceed without metadata */ }

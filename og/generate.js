@@ -36,4 +36,23 @@ for (const card of CARDS) {
   await page.close();
 }
 
+// Generate PWA icons (192x192 and 512x512 PNG)
+const ICONS = [
+  { size: 512, output: path.join(ROOT, 'icon-512.png') },
+  { size: 192, output: path.join(ROOT, 'icon-192.png') },
+];
+
+for (const icon of ICONS) {
+  const page = await browser.newPage();
+  await page.setViewport({ width: icon.size, height: icon.size, deviceScaleFactor: 1 });
+
+  const url = 'file://' + path.join(__dirname, 'icon.html');
+  await page.goto(url, { waitUntil: 'networkidle0' });
+  await page.waitForFunction(() => document.fonts.ready);
+
+  await page.screenshot({ path: icon.output, type: 'png', omitBackground: true });
+  console.log(`✓ icon.html → ${path.relative(ROOT, icon.output)} (${icon.size}x${icon.size})`);
+  await page.close();
+}
+
 await browser.close();

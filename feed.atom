@@ -1,20 +1,23 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/">
-  <channel>
-    <title>a9l.im</title>
-    <link>https://a9l.im</link>
-    <description>Interactive educational simulations for physics, biology, finance, and political science.</description>
-    <language>en-us</language>
-    <lastBuildDate>Mon, 06 Apr 2026 00:00:00 GMT</lastBuildDate>
-    <atom:link href="https://a9l.im/feed.xml" rel="self" type="application/rss+xml"/>
-    <item>
-      <title>Hello, World</title>
-      <link>https://a9l.im/blog/hello-world</link>
-      <guid isPermaLink="true">https://a9l.im/blog/hello-world</guid>
-      <pubDate>Thu, 26 Feb 2026 00:00:00 GMT</pubDate>
-      <category>meta</category>
-      <description>This is the first post on a9l.im — a quick tour of the blog and a test of every markdown feature the parser supports.</description>
-      <content:encoded><![CDATA[<p>This is the first post on <strong>a9l.im</strong> — a quick tour of the blog and a test of every markdown feature the parser supports.</p>
+<feed xmlns="http://www.w3.org/2005/Atom">
+  <title>a9l.im</title>
+  <subtitle>Interactive educational simulations for physics, biology, finance, and political science.</subtitle>
+  <link href="https://a9l.im/feed.atom" rel="self" type="application/atom+xml"/>
+  <link href="https://a9l.im" rel="alternate" type="text/html"/>
+  <id>https://a9l.im/</id>
+  <updated>2026-04-06T00:00:00Z</updated>
+  <author>
+    <name>a9lim</name>
+    <uri>https://a9l.im/about</uri>
+  </author>
+  <entry>
+    <title>Hello, World</title>
+    <link href="https://a9l.im/blog/hello-world" rel="alternate"/>
+    <id>https://a9l.im/blog/hello-world</id>
+    <published>2026-02-26T00:00:00Z</published>
+    <updated>2026-02-26T00:00:00Z</updated>
+    <summary>This is the first post on a9l.im — a quick tour of the blog and a test of every markdown feature the parser supports.</summary>
+    <content type="html"><![CDATA[<p>This is the first post on <strong>a9l.im</strong> — a quick tour of the blog and a test of every markdown feature the parser supports.</p>
 <h2>Why a blog?</h2>
 <p>Building interactive simulations generates a lot of <em>interesting problems</em> — numerical precision, rendering tricks, algorithmic trade-offs. A blog is a good place to write them up.</p>
 <h2>What the parser handles</h2>
@@ -39,7 +42,6 @@
 console.log(greet('world'));</code></pre>
 <h3>Horizontal rules</h3>
 <hr>
-<p>That covers all the basics. More posts to come.</p>]]></content:encoded>
-    </item>
-  </channel>
-</rss>
+<p>That covers all the basics. More posts to come.</p>]]></content>
+  </entry>
+</feed>
