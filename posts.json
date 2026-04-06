@@ -4,7 +4,7 @@
     "title": "Hello, World",
     "date": "2026-02-26",
     "updated": "2026-02-26",
-    "tag": "meta",
+    "tag": ["meta"],
     "excerpt": "First post on the a9l.im blog — a site tour and markdown feature test."
   }
 ]

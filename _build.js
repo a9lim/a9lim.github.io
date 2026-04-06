@@ -217,7 +217,7 @@ const postItems = posts.map(p => {
       <link>${SITE}/blog/${p.slug}</link>
       <guid isPermaLink="true">${SITE}/blog/${p.slug}</guid>
       <pubDate>${rfc2822(p.date)}</pubDate>
-      <category>${escXml(p.tag)}</category>
+      ${(Array.isArray(p.tag) ? p.tag : [p.tag]).filter(Boolean).map(t => `<category>${escXml(t)}</category>`).join('\n      ')}
       <description>${escXml(firstPara)}</description>
       <content:encoded><![CDATA[${htmlContent}]]></content:encoded>
     </item>`;

@@ -17,7 +17,7 @@ export function navigateTo(page, slug, deps) {
     const { $, pages, navLinks, triggerFadeIns, showBlogPost, showBlogListing } = deps;
 
     pages.forEach(p => p.classList.remove('active'));
-    navLinks.forEach(l => l.classList.remove('active'));
+    navLinks.forEach(l => { l.classList.remove('active'); l.removeAttribute('aria-current'); });
 
     const target = document.getElementById('page-' + page);
     if (target) {
@@ -26,7 +26,7 @@ export function navigateTo(page, slug, deps) {
     }
 
     navLinks.forEach(l => {
-        if (l.dataset.page === page) l.classList.add('active');
+        if (l.dataset.page === page) { l.classList.add('active'); l.setAttribute('aria-current', 'page'); }
     });
 
     $.mobileNav.classList.remove('open');

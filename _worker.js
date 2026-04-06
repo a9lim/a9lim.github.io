@@ -10,22 +10,90 @@ const WORK_TITLES = {
 
 // ─── Scripture work schema metadata (for CreativeWork JSON-LD) ───
 const WORK_SCHEMA = {
-  ot:        { translator: 'King James Version', lang: 'en', year: 1611, wikidata: 'Q628' },
-  nt:        { translator: 'King James Version', lang: 'en', year: 1611, wikidata: 'Q37922' },
-  apoc:      { translator: 'King James Version', lang: 'en', year: 1611, wikidata: 'Q151616' },
-  quran:     { translator: 'Marmaduke Pickthall', lang: 'en', year: 1930, wikidata: 'Q428' },
-  bom:       { translator: 'Joseph Smith', lang: 'en', year: 1830, wikidata: 'Q374076' },
-  dc:        { lang: 'en', year: 1835, wikidata: 'Q217164' },
-  pgp:       { lang: 'en', year: 1851, wikidata: 'Q1332454' },
-  fourbooks: { translator: 'James Legge', lang: 'en', year: 1893, wikidata: 'Q728094' },
-  kj:        { translator: 'Basil Hall Chamberlain', lang: 'en', year: 1919, wikidata: 'Q388841' },
-  ttc:       { translator: 'James Legge', lang: 'en', year: 1891, wikidata: 'Q80738' },
-  bund:      { translator: 'Edward William West', lang: 'en', year: 1880, wikidata: 'Q576019' },
-  lotus:     { translator: 'Hendrik Kern', lang: 'en', year: 1884, wikidata: 'Q1046' },
-  bop:       { translator: 'James Legge', lang: 'en', year: 1876, wikidata: 'Q756386' },
-  kv:        { translator: 'John Martin Crawford', lang: 'en', year: 1888, wikidata: 'Q242309' },
-  poe:       { translator: 'Henry Adams Bellows', lang: 'en', year: 1923, wikidata: 'Q174285' },
-  viraf:     { translator: 'Martin Haug & Edward William West', lang: 'en', year: 1872, wikidata: 'Q1371791' },
+  ot:        { translator: 'King James Version', lang: 'en', year: 1611, wikidata: 'Q628', description: 'The Old Testament of the King James Bible, first published in 1611, covering Genesis through Malachi.', sameAs: ['https://en.wikipedia.org/wiki/Old_Testament', 'https://www.sacred-texts.com/bib/kjv/index.htm'] },
+  nt:        { translator: 'King James Version', lang: 'en', year: 1611, wikidata: 'Q37922', description: 'The New Testament of the King James Bible, covering the Gospels, Acts, Epistles, and Revelation.', sameAs: ['https://en.wikipedia.org/wiki/New_Testament', 'https://www.sacred-texts.com/bib/kjv/index.htm'] },
+  apoc:      { translator: 'King James Version', lang: 'en', year: 1611, wikidata: 'Q151616', description: 'The Apocrypha of the King James Bible, including Tobit, Judith, Wisdom, Sirach, Baruch, and the books of Maccabees.', sameAs: ['https://en.wikipedia.org/wiki/Biblical_apocrypha'] },
+  quran:     { translator: 'Marmaduke Pickthall', translatorWikidata: 'Q726525', lang: 'en', year: 1930, wikidata: 'Q428', description: 'The Meaning of the Glorious Koran, an English translation by Marmaduke Pickthall first published in 1930.', sameAs: ['https://en.wikipedia.org/wiki/Quran', 'https://www.sacred-texts.com/isl/pick/index.htm'] },
+  bom:       { translator: 'Joseph Smith', translatorWikidata: 'Q47230', lang: 'en', year: 1830, wikidata: 'Q374076', description: 'The Book of Mormon, first published in 1830, a sacred text of the Latter-day Saint movement.', sameAs: ['https://en.wikipedia.org/wiki/Book_of_Mormon'] },
+  dc:        { lang: 'en', year: 1835, wikidata: 'Q217164', description: 'The Doctrine and Covenants, a collection of revelations and declarations forming part of the Latter-day Saint canon.', sameAs: ['https://en.wikipedia.org/wiki/Doctrine_and_Covenants'] },
+  pgp:       { lang: 'en', year: 1851, wikidata: 'Q1332454', description: 'The Pearl of Great Price, a selection of writings by Joseph Smith including the Book of Moses and Book of Abraham.', sameAs: ['https://en.wikipedia.org/wiki/Pearl_of_Great_Price_(Mormonism)'] },
+  fourbooks: { translator: 'James Legge', translatorWikidata: 'Q457922', lang: 'en', year: 1893, wikidata: 'Q728094', description: 'The Four Books of Confucianism — the Analects, Mencius, Great Learning, and Doctrine of the Mean — translated by James Legge.', sameAs: ['https://en.wikipedia.org/wiki/Four_Books_and_Five_Classics', 'https://www.sacred-texts.com/cfu/index.htm'] },
+  kj:        { translator: 'Basil Hall Chamberlain', translatorWikidata: 'Q315580', lang: 'en', year: 1919, wikidata: 'Q388841', description: 'The Kojiki (Record of Ancient Matters), Japan\'s oldest chronicle, translated by Basil Hall Chamberlain.', sameAs: ['https://en.wikipedia.org/wiki/Kojiki', 'https://www.sacred-texts.com/shi/kj/index.htm'] },
+  ttc:       { translator: 'James Legge', translatorWikidata: 'Q457922', lang: 'en', year: 1891, wikidata: 'Q80738', description: 'The Tao Te Ching by Laozi, foundational text of Taoism, translated by James Legge.', sameAs: ['https://en.wikipedia.org/wiki/Tao_Te_Ching', 'https://www.sacred-texts.com/tao/taote.htm'] },
+  bund:      { translator: 'Edward William West', translatorWikidata: 'Q5765974', lang: 'en', year: 1880, wikidata: 'Q576019', description: 'The Bundahishn (Creation), a Zoroastrian text on cosmogony and cosmology, translated by E. W. West.', sameAs: ['https://en.wikipedia.org/wiki/Bundahishn', 'https://www.sacred-texts.com/zor/sbe05/index.htm'] },
+  lotus:     { translator: 'Hendrik Kern', translatorWikidata: 'Q735960', lang: 'en', year: 1884, wikidata: 'Q1046', description: 'The Lotus Sutra (Saddharma Pundarika), a foundational Mahayana Buddhist scripture, translated by Hendrik Kern.', sameAs: ['https://en.wikipedia.org/wiki/Lotus_Sutra', 'https://www.sacred-texts.com/bud/lotus/index.htm'] },
+  bop:       { translator: 'James Legge', translatorWikidata: 'Q457922', lang: 'en', year: 1876, wikidata: 'Q756386', description: 'The Book of Poetry (Shijing), the oldest collection of Chinese poetry, translated by James Legge.', sameAs: ['https://en.wikipedia.org/wiki/Classic_of_Poetry', 'https://www.sacred-texts.com/cfu/bop/index.htm'] },
+  kv:        { translator: 'John Martin Crawford', translatorWikidata: 'Q6244227', lang: 'en', year: 1888, wikidata: 'Q242309', description: 'The Kalevala, the Finnish national epic compiled by Elias Lönnrot, translated by John Martin Crawford.', sameAs: ['https://en.wikipedia.org/wiki/Kalevala', 'https://www.sacred-texts.com/neu/kveng/index.htm'] },
+  poe:       { translator: 'Henry Adams Bellows', translatorWikidata: 'Q5720629', lang: 'en', year: 1923, wikidata: 'Q174285', description: 'The Poetic Edda, a collection of Old Norse mythological and heroic poems, translated by Henry Adams Bellows.', sameAs: ['https://en.wikipedia.org/wiki/Poetic_Edda', 'https://www.sacred-texts.com/neu/poe/index.htm'] },
+  viraf:     { translator: 'Martin Haug & Edward William West', translatorWikidata: 'Q5765974', lang: 'en', year: 1872, wikidata: 'Q1371791', description: 'The Book of Arda Viraf, a Zoroastrian text describing a visionary journey through heaven and hell.', sameAs: ['https://en.wikipedia.org/wiki/Book_of_Arda_Viraf'] },
+};
+
+// ─── Named entity mentions for scripture works (GEO entity linking) ───
+const WORK_MENTIONS = {
+  ot: [
+    { '@type': 'Person', '@id': 'https://www.wikidata.org/wiki/Q9190', name: 'Abraham' },
+    { '@type': 'Person', '@id': 'https://www.wikidata.org/wiki/Q9077', name: 'Moses' },
+    { '@type': 'Person', '@id': 'https://www.wikidata.org/wiki/Q41370', name: 'David' },
+    { '@type': 'Person', '@id': 'https://www.wikidata.org/wiki/Q819598', name: 'Isaiah' },
+  ],
+  nt: [
+    { '@type': 'Person', '@id': 'https://www.wikidata.org/wiki/Q302', name: 'Jesus' },
+    { '@type': 'Person', '@id': 'https://www.wikidata.org/wiki/Q9200', name: 'Paul the Apostle' },
+    { '@type': 'Person', '@id': 'https://www.wikidata.org/wiki/Q345', name: 'Mary' },
+    { '@type': 'Person', '@id': 'https://www.wikidata.org/wiki/Q33923', name: 'Peter' },
+  ],
+  apoc: [
+    { '@type': 'Person', '@id': 'https://www.wikidata.org/wiki/Q312747', name: 'Judas Maccabeus' },
+    { '@type': 'Person', '@id': 'https://www.wikidata.org/wiki/Q208218', name: 'Tobit' },
+  ],
+  quran: [
+    { '@type': 'Person', '@id': 'https://www.wikidata.org/wiki/Q9458', name: 'Muhammad' },
+    { '@type': 'Person', '@id': 'https://www.wikidata.org/wiki/Q9190', name: 'Ibrahim (Abraham)' },
+    { '@type': 'Person', '@id': 'https://www.wikidata.org/wiki/Q9077', name: 'Musa (Moses)' },
+  ],
+  bom: [
+    { '@type': 'Person', '@id': 'https://www.wikidata.org/wiki/Q3338506', name: 'Nephi' },
+    { '@type': 'Person', '@id': 'https://www.wikidata.org/wiki/Q3324753', name: 'Moroni' },
+  ],
+  dc: [
+    { '@type': 'Person', '@id': 'https://www.wikidata.org/wiki/Q47230', name: 'Joseph Smith' },
+  ],
+  pgp: [
+    { '@type': 'Person', '@id': 'https://www.wikidata.org/wiki/Q9190', name: 'Abraham' },
+    { '@type': 'Person', '@id': 'https://www.wikidata.org/wiki/Q9077', name: 'Moses' },
+  ],
+  fourbooks: [
+    { '@type': 'Person', '@id': 'https://www.wikidata.org/wiki/Q4604', name: 'Confucius' },
+    { '@type': 'Person', '@id': 'https://www.wikidata.org/wiki/Q4142', name: 'Mencius' },
+  ],
+  kj: [
+    { '@type': 'Thing', '@id': 'https://www.wikidata.org/wiki/Q170344', name: 'Amaterasu' },
+    { '@type': 'Thing', '@id': 'https://www.wikidata.org/wiki/Q170349', name: 'Susanoo' },
+  ],
+  ttc: [
+    { '@type': 'Person', '@id': 'https://www.wikidata.org/wiki/Q9333', name: 'Laozi' },
+  ],
+  bund: [
+    { '@type': 'Thing', '@id': 'https://www.wikidata.org/wiki/Q606329', name: 'Ahura Mazda' },
+    { '@type': 'Thing', '@id': 'https://www.wikidata.org/wiki/Q184579', name: 'Angra Mainyu' },
+  ],
+  lotus: [
+    { '@type': 'Thing', '@id': 'https://www.wikidata.org/wiki/Q9441', name: 'Gautama Buddha' },
+  ],
+  bop: [
+    { '@type': 'Person', '@id': 'https://www.wikidata.org/wiki/Q4604', name: 'Confucius' },
+  ],
+  kv: [
+    { '@type': 'Thing', '@id': 'https://www.wikidata.org/wiki/Q248623', name: 'Väinämöinen' },
+    { '@type': 'Thing', '@id': 'https://www.wikidata.org/wiki/Q1147498', name: 'Ilmarinen' },
+  ],
+  poe: [
+    { '@type': 'Thing', '@id': 'https://www.wikidata.org/wiki/Q43610', name: 'Odin' },
+    { '@type': 'Thing', '@id': 'https://www.wikidata.org/wiki/Q42952', name: 'Thor' },
+  ],
+  viraf: [
+    { '@type': 'Person', '@id': 'https://www.wikidata.org/wiki/Q606329', name: 'Ahura Mazda' },
+  ],
 };
 
 // ─── Route metadata for HTMLRewriter SEO injection ───
@@ -161,7 +229,11 @@ function rewriteHTML(response, meta) {
         if (meta.articlePublished) el.append(`<meta property="article:published_time" content="${meta.articlePublished}">`, { html: true });
         if (meta.articleModified) el.append(`<meta property="article:modified_time" content="${meta.articleModified}">`, { html: true });
         if (meta.articleAuthor) el.append(`<meta property="article:author" content="${meta.articleAuthor}">`, { html: true });
-        if (meta.articleTag) el.append(`<meta property="article:tag" content="${meta.articleTag}">`, { html: true });
+        if (meta.articleTag) {
+          const tags = Array.isArray(meta.articleTag) ? meta.articleTag : [meta.articleTag];
+          for (const t of tags) el.append(`<meta property="article:tag" content="${t}">`, { html: true });
+        }
+        if (meta.canonical) el.append(`<link rel="alternate" hreflang="en" href="${meta.canonical}">`, { html: true });
       },
     })
     .on('#reading-pane', {
@@ -171,7 +243,10 @@ function rewriteHTML(response, meta) {
     })
     .on('#breadcrumb', {
       element(el) {
-        if (meta.ssrBreadcrumb) el.setInnerContent(meta.ssrBreadcrumb, { html: true });
+        if (meta.ssrBreadcrumb) {
+          el.setInnerContent(meta.ssrBreadcrumb, { html: true });
+          el.removeAttribute('hidden');
+        }
       },
     })
     .on('#blog-post-content', {
@@ -342,7 +417,7 @@ export default {
         const workTitle = WORK_TITLES[workId];
         if (workTitle) {
           const ws = WORK_SCHEMA[workId] || {};
-          const translatorPerson = ws.translator ? { '@type': 'Person', name: ws.translator } : undefined;
+          const translatorPerson = ws.translator ? { '@type': 'Person', name: ws.translator, ...(ws.translatorWikidata && { '@id': `https://www.wikidata.org/wiki/${ws.translatorWikidata}` }) } : undefined;
           const meta = {
             title: `${workTitle} | Scripture`,
             desc: `Read the ${workTitle}${ws.translator ? ' (' + ws.translator + ' translation, ' + ws.year + ')' : ''} \u2014 full-text search, concordance, verse notes, and cross-tradition comparisons.`,
@@ -365,9 +440,13 @@ export default {
                   url: `https://a9l.im/scripture/${workId}`,
                   inLanguage: ws.lang || 'en',
                   '@id': `https://a9l.im/scripture/${workId}`,
+                  ...(ws.description && { description: ws.description }),
+                  ...(ws.sameAs && { sameAs: ws.sameAs }),
                   ...(ws.wikidata && { translationOfWork: { '@type': 'Book', '@id': `https://www.wikidata.org/wiki/${ws.wikidata}` } }),
                   ...(translatorPerson && { translator: translatorPerson }),
                   ...(ws.year && { datePublished: String(ws.year) }),
+                  ...(WORK_MENTIONS[workId] && { mentions: WORK_MENTIONS[workId] }),
+                  potentialAction: { '@type': 'ReadAction', target: `https://a9l.im/scripture/${workId}` },
                 },
               ],
             }),
@@ -402,16 +481,20 @@ export default {
               if (book) {
                 const chapterLabel = `${book.name} ${chapterNum}`;
                 const ws = WORK_SCHEMA[workId] || {};
-                const translatorPerson = ws.translator ? { '@type': 'Person', name: ws.translator } : undefined;
+                const translatorPerson = ws.translator ? { '@type': 'Person', name: ws.translator, ...(ws.translatorWikidata && { '@id': `https://www.wikidata.org/wiki/${ws.translatorWikidata}` }) } : undefined;
                 const bookSchema = {
                   '@type': 'Book',
                   name: workTitle,
                   url: `https://a9l.im/scripture/${workId}`,
                   '@id': `https://a9l.im/scripture/${workId}`,
+                  ...(ws.description && { description: ws.description }),
+                  ...(ws.sameAs && { sameAs: ws.sameAs }),
                   ...(ws.wikidata && { translationOfWork: { '@type': 'Book', '@id': `https://www.wikidata.org/wiki/${ws.wikidata}` } }),
                   ...(translatorPerson && { translator: translatorPerson }),
                   inLanguage: ws.lang || 'en',
                   ...(ws.year && { datePublished: String(ws.year) }),
+                  ...(WORK_MENTIONS[workId] && { mentions: WORK_MENTIONS[workId] }),
+                  potentialAction: { '@type': 'ReadAction', target: `https://a9l.im/scripture/${workId}` },
                 };
 
                 // Compute prev/next chapter URLs
@@ -488,7 +571,8 @@ export default {
                         graph.push({
                           '@type': 'Quotation',
                           text: verseText,
-                          isPartOf: { '@type': 'CreativeWork', name: chapterLabel, url: chapterUrl },
+                          ...(translatorPerson && { author: translatorPerson }),
+                          isPartOf: { '@type': 'CreativeWork', name: chapterLabel, url: chapterUrl, isPartOf: { '@type': 'Book', name: workTitle, '@id': `https://a9l.im/scripture/${workId}` } },
                         });
                       }
                     } else {
@@ -587,8 +671,10 @@ export default {
                     meta.articlePublished = postMeta.date;
                     meta.articleModified = postMeta.updated || postMeta.date;
                     meta.articleAuthor = 'https://a9l.im/about';
-                    if (postMeta.tag) meta.articleTag = postMeta.tag;
-                    postHeader = `<span class="blog-post-date">${fmtDate(postMeta.date)}${postMeta.tag ? ' &middot; ' + mdEsc(postMeta.tag) : ''}</span><h1 class="blog-post-title">${mdEsc(postMeta.title)}</h1>`;
+                    if (postMeta.tag) meta.articleTag = Array.isArray(postMeta.tag) ? postMeta.tag : [postMeta.tag];
+                    const tagDisplay = Array.isArray(postMeta.tag) ? postMeta.tag.join(', ') : postMeta.tag;
+                    postHeader = `<span class="blog-post-date">${fmtDate(postMeta.date)}${postMeta.tag ? ' &middot; ' + mdEsc(tagDisplay) : ''}</span><h1 class="blog-post-title">${mdEsc(postMeta.title)}</h1>`;
+                    const wordCount = mdText.replace(/[#*_`>\-\[\]()]/g, '').split(/\s+/).filter(Boolean).length;
                     meta.jsonLd = JSON.stringify({
                       '@context': 'https://schema.org',
                       '@graph': [
@@ -599,6 +685,8 @@ export default {
                           dateModified: postMeta.updated || postMeta.date,
                           description: meta.desc,
                           url: meta.canonical,
+                          wordCount,
+                          image: 'https://a9l.im/og-image.webp',
                           author: { '@type': 'Person', name: 'a9lim', url: 'https://a9l.im/about', sameAs: ['https://github.com/a9lim', 'https://twitter.com/a9_lim'] },
                           publisher: { '@type': 'Organization', name: 'a9l.im', url: 'https://a9l.im', logo: { '@type': 'ImageObject', url: 'https://a9l.im/icon-192.png', width: 192, height: 192 } },
                           isPartOf: { '@type': 'Blog', name: 'a9l.im Blog', url: 'https://a9l.im/blog' },
@@ -625,6 +713,7 @@ export default {
       } else {
         meta = { ...ROUTE_META[pathname], canonical: `https://a9l.im${pathname}` };
         const pageName = pathname === '/projects' ? 'Projects' : pathname === '/blog' ? 'Blog' : 'About';
+        meta.ssrBreadcrumb = `<a href="/">Home</a> <span aria-hidden="true">\u203a</span> <span>${pageName}</span>`;
         const breadcrumb = {
           '@type': 'BreadcrumbList',
           itemListElement: [

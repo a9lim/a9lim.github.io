@@ -25,6 +25,7 @@
     <meta name="author" content="a9lim">
     <meta name="theme-color" content="#C8553D">
     <link rel="canonical" href="https://a9l.im">
+    <link rel="alternate" hreflang="en" href="https://a9l.im">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <link rel="apple-touch-icon" sizes="192x192" href="/icon-192.png">
@@ -61,6 +62,9 @@
           "name": "a9l.im",
           "url": "https://a9l.im",
           "description": "A collection of interactive educational simulations exploring particle physics, cellular metabolism, options trading, redistricting, and sacred texts.",
+          "datePublished": "2026-02-17",
+          "dateModified": "2026-04-05",
+          "inLanguage": "en",
           "mainEntityOfPage": {"@type": "WebPage", "@id": "https://a9l.im"},
           "speakable": {
             "@type": "SpeakableSpecification",
@@ -140,6 +144,26 @@
       ]
     }
     </script>
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Course",
+      "name": "Interactive Science and Society Simulations",
+      "description": "A self-directed learning path through five interactive simulations covering particle physics, cellular metabolism, options trading, redistricting, and comparative religion.",
+      "provider": {
+        "@type": "Person",
+        "name": "a9lim",
+        "url": "https://a9l.im/about"
+      },
+      "hasPart": [
+        {"@type": "LearningResource", "url": "https://a9l.im/geon", "name": "Geon — Relativistic Particle Physics Simulator", "position": 1},
+        {"@type": "LearningResource", "url": "https://a9l.im/cyano", "name": "Cyano — Cellular Metabolism Simulator", "position": 2},
+        {"@type": "LearningResource", "url": "https://a9l.im/shoals", "name": "Shoals — Options Trading Simulator", "position": 3},
+        {"@type": "LearningResource", "url": "https://a9l.im/gerry", "name": "Gerry — Gerrymandering & Electoral Fairness Simulator", "position": 4},
+        {"@type": "LearningResource", "url": "https://a9l.im/scripture/", "name": "Scripture — Sacred Text Reader", "position": 5}
+      ]
+    }
+    </script>
 </head>
 <body class="app-ready">
     <a href="#main-content" class="skip-link">Skip to content</a>
@@ -188,6 +212,7 @@
     </div>
 
     <main id="main-content">
+    <nav id="breadcrumb" class="breadcrumb" aria-label="Breadcrumb" hidden></nav>
     <!-- ═══════════════════════════════════
          Page: Home
          ═══════════════════════════════════ -->

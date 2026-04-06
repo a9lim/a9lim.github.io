@@ -51,6 +51,18 @@ Designed for undergraduate physics education. Students can toggle individual for
 
 WebGPU compute shaders handle force summation in parallel. Falls back to Canvas 2D on devices without WebGPU support. All computation runs client-side with no server dependency.
 
+## Topology Modes
+
+Six boundary conditions: open (particles escape), reflective (elastic walls), toroidal (wrap-around), Klein bottle (orientation-reversing wrap), projective plane (RP2), and spherical. Toroidal boundaries require minimum-image convention for force calculation to avoid double-counting.
+
+## Signal Delay
+
+Optional signal delay mode computes forces using the light-cone distance rather than instantaneous position, simulating relativistic causality. Requires maintaining a circular history buffer of past particle states. When enabled, each force evaluation interpolates the emitting particle's historical position at the retarded time, producing visible propagation delays at speeds near c.
+
+## GPU and CPU Backends
+
+WebGPU compute shaders handle pairwise force summation with Barnes-Hut tree acceleration when available. The GPU backend supports up to 512 particles with 4096 photons, compared to 128 particles on CPU. Falls back to a Web Worker pool with SharedArrayBuffer on devices without WebGPU. The Canvas 2D renderer is a final fallback for legacy browsers. Backend selection is automatic but can be forced to CPU via a query parameter. Scalar field evolution (Higgs, axion) uses a 128x128 grid on GPU and 64x64 on CPU, with cubic B-spline interpolation for C2 continuity.
+
 
 # Cyano — Interactive Cellular Metabolism Simulator
 
@@ -75,6 +87,18 @@ Five organism presets configure different pathway availability: cyanobacteria (p
 ## Educational Use
 
 Designed for undergraduate biochemistry. Students can manipulate substrate concentrations, toggle pathways, and observe flux changes through the metabolic network in real time.
+
+## Proton Gradient and Chemiosmotic Coupling
+
+The electron transport chain model tracks the proton motive force (PMF) across the inner mitochondrial membrane as the sum of the membrane potential and the pH gradient. ATP synthase couples proton flow back through the membrane to ADP phosphorylation at a ratio of approximately 4 H+ per ATP. Uncoupling proteins dissipate the PMF as heat, reducing ATP yield. Proton leak occurs passively at a base rate of 2%, increasing to 10% when uncoupling is enabled, and is visible in real time through the dashboard.
+
+## Cofactor Conservation
+
+The model enforces strict conservation of NAD+/NADH, FAD/FADH2, CoA/acetyl-CoA, and ATP/ADP/AMP pools. Each reaction that consumes a cofactor must have a corresponding regeneration pathway active, or the pool depletes and the pathway stalls. This creates realistic metabolic bottlenecks.
+
+## Fatty Acid Metabolism
+
+Beta-oxidation cleaves two-carbon units from fatty acyl-CoA chains, producing acetyl-CoA, NADH, and FADH2 per cycle. The simulator models chain lengths from C4 to C22 and tracks odd-chain fatty acids that produce propionyl-CoA requiring the methylmalonyl pathway. The reverse direction (fatty acid synthesis) consumes NADPH and ATP, coupling lipogenesis to the pentose phosphate pathway.
 
 
 # Gerry — Gerrymandering & Electoral Fairness Simulator
@@ -104,6 +128,14 @@ Automated redistricting modes include pack-and-crack (a classic gerrymandering s
 
 Designed for political science and civics education. Students experience firsthand how the same electorate can produce dramatically different outcomes depending on where district lines are drawn.
 
+## Procedural Map Generation
+
+Maps are generated from a seeded Perlin noise function that assigns party affiliation probabilities to each hex cell. The seed is adjustable via the URL hash, producing reproducible maps with configurable partisan lean, urban clustering, and minority population density. Population per cell varies by a log-normal distribution to simulate real demographic density patterns. Three density tiers — urban, suburban, and rural — produce distinct partisan compositions mimicking the urban-rural political divide.
+
+## Majority-Minority Districts
+
+The simulator tracks districts where a minority group holds a voting majority, as required for Voting Rights Act Section 2 compliance. The fairness dashboard flags maps that pack or crack minority populations, and the fair-draw algorithm includes a constraint term for minority representation. The pack-and-crack algorithm demonstrates how concentrating opposition voters into a few districts while distributing the remainder thinly yields disproportionate seat shares.
+
 
 # Shoals — Interactive Options Trading Simulator
 
@@ -128,6 +160,18 @@ A narrative event engine with over 400 curated scenarios introduces market shock
 ## Educational Use
 
 Designed for quantitative finance education. Students learn options pricing theory by building positions and observing how Greeks respond to changes in the underlying price, volatility, time decay, and interest rates. The event engine connects abstract models to real-world market behavior.
+
+## Narrative Event Engine
+
+Over 400 curated market scenarios organized into six categories: earnings, monetary policy, geopolitical, sector rotation, technical signals, and black swan events. Each event modifies drift, volatility, and jump intensity parameters with configurable magnitude and decay. Events can chain — a rate hike may trigger a sector rotation, which triggers a technical breakout. Superevents receive full-screen treatment with chord stabs from the synthesized audio engine. A Poisson scheduler controls event arrival with trait-aware likelihood weighting based on player decisions.
+
+## Faction System
+
+Three market factions — momentum traders, value investors, and market makers — respond differently to events and shift the demand curve. Faction behavior is parameterized by sensitivity to price changes, mean reversion speed, and inventory limits.
+
+## Price Impact
+
+The Almgren-Chriss model simulates temporary and permanent price impact from large trades. Temporary impact decays exponentially; permanent impact shifts the equilibrium price based on order flow. Impact is computed as an overlay on the simulated price — it never mutates the underlying stochastic process, preserving model consistency.
 
 
 # Scripture — Sacred Text Reader
