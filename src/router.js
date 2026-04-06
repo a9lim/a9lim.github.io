@@ -16,6 +16,9 @@ export function parsePath() {
 export function navigateTo(page, slug, deps) {
     const { $, pages, navLinks, triggerFadeIns, showBlogPost, showBlogListing } = deps;
 
+    const bc = document.getElementById('breadcrumb');
+    if (bc) { bc.textContent = ''; bc.hidden = true; }
+
     pages.forEach(p => p.classList.remove('active'));
     navLinks.forEach(l => { l.classList.remove('active'); l.removeAttribute('aria-current'); });
 
