@@ -4,5 +4,5 @@
   <LongName>a9l.im — Interactive Educational Simulations</LongName>
   <Description>Search a9l.im simulations and scripture</Description>
   <Image width="16" height="16" type="image/x-icon">https://a9l.im/favicon.ico</Image>
-  <Url type="text/html" template="https://www.google.com/search?q=site:a9l.im+{searchTerms}"/>
+  <Url type="text/html" template="https://a9l.im/scripture/?q={searchTerms}"/>
 </OpenSearchDescription>

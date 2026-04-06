@@ -133,9 +133,18 @@ const IMAGE_MAP = {
   '/scripture/': ['img/scripture.webp', 'scripture/og-image.webp'],
 };
 
-function add(path, lastmod, images, changefreq, priority) {
-  urls.push({ loc: SITE + path, lastmod: lastmod || today(), images: images || null, changefreq: changefreq || null, priority: priority != null ? priority : null });
+function add(path, lastmod, images, changefreq, priority, imageCaption) {
+  urls.push({ loc: SITE + path, lastmod: lastmod || today(), images: images || null, changefreq: changefreq || null, priority: priority != null ? priority : null, imageCaption: imageCaption || null });
 }
+
+const IMAGE_CAPTIONS = {
+  '/': 'a9l.im — interactive educational simulations for physics, biology, finance, and political science',
+  '/geon': 'Geon — relativistic N-body particle physics simulator with 11 forces and WebGPU compute shaders',
+  '/cyano': 'Cyano — cellular metabolism simulator with twelve biochemical pathways and electron transport',
+  '/gerry': 'Gerry — gerrymandering and electoral fairness simulator with Monte Carlo elections',
+  '/shoals': 'Shoals — options trading simulator with stochastic volatility and 400+ market scenarios',
+  '/scripture/': 'Scripture — sacred text reader with sixteen works from multiple traditions',
+};
 
 // 1. Static routes
 const staticRoutes = [
@@ -151,7 +160,7 @@ const staticRoutes = [
 ];
 
 for (const r of staticRoutes) {
-  add(r.path, gitLastmod(r.file), IMAGE_MAP[r.path] || null, r.changefreq, r.priority);
+  add(r.path, gitLastmod(r.file), IMAGE_MAP[r.path] || null, r.changefreq, r.priority, IMAGE_CAPTIONS[r.path] || null);
 }
 
 // 1b. Scripture work-level routes
@@ -193,7 +202,8 @@ const xml = [
     if (u.images) {
       for (const img of u.images) {
         const imgTitle = u.loc.replace(SITE, '').replace(/\/$/, '').slice(1) || 'a9l.im';
-        parts.push(`    <image:image>\n      <image:loc>${SITE}/${img}</image:loc>\n      <image:title>${escXml(imgTitle)}</image:title>\n    </image:image>`);
+        const captionTag = u.imageCaption ? `\n      <image:caption>${escXml(u.imageCaption)}</image:caption>` : '';
+        parts.push(`    <image:image>\n      <image:loc>${SITE}/${img}</image:loc>\n      <image:title>${escXml(imgTitle)}</image:title>${captionTag}\n    </image:image>`);
       }
     }
     parts.push('  </url>');
@@ -306,6 +316,8 @@ const llmsParts = [
   '# a9l.im — Full Documentation',
   '',
   '> Free interactive educational simulations for physics, biology, finance, political science, and sacred texts.',
+  '',
+  'See also: [llms.txt](https://a9l.im/llms.txt)',
   '',
 ];
 

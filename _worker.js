@@ -183,6 +183,7 @@ function secure(response, extra) {
   for (const [k, v] of Object.entries(SECURITY_HEADERS)) r.headers.set(k, v);
   r.headers.set('Cache-Control', 'public, max-age=0, stale-while-revalidate=86400');
   r.headers.set('Cloudflare-CDN-Cache-Control', 'public, max-age=3600, stale-while-revalidate=86400');
+  r.headers.set('Vary', 'Accept-Encoding');
   if (extra) for (const [k, v] of Object.entries(extra)) r.headers.set(k, v);
   return r;
 }
@@ -233,7 +234,10 @@ function rewriteHTML(response, meta) {
           const tags = Array.isArray(meta.articleTag) ? meta.articleTag : [meta.articleTag];
           for (const t of tags) el.append(`<meta property="article:tag" content="${t}">`, { html: true });
         }
-        if (meta.canonical) el.append(`<link rel="alternate" hreflang="en" href="${meta.canonical}">`, { html: true });
+        if (meta.canonical) {
+          el.append(`<link rel="alternate" hreflang="en" href="${meta.canonical}">`, { html: true });
+          el.append(`<link rel="alternate" hreflang="x-default" href="${meta.canonical}">`, { html: true });
+        }
       },
     })
     .on('#reading-pane', {
@@ -402,6 +406,13 @@ const SCRIPTURE_WORKS_SSR = Object.entries(WORK_TITLES).map(([id, title]) => {
 
 export default {
   async fetch(request, env, ctx) {
+    if (request.method !== 'GET' && request.method !== 'HEAD') {
+      return new Response('Method Not Allowed', { status: 405, headers: { Allow: 'GET, HEAD' } });
+    }
+    const timedFetch = (url, ms = 2000) => Promise.race([
+      env.ASSETS.fetch(url),
+      new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), ms)),
+    ]);
     const url = new URL(request.url);
     const { pathname, origin } = url;
 
@@ -447,20 +458,37 @@ export default {
                   ...(ws.year && { datePublished: String(ws.year) }),
                   ...(WORK_MENTIONS[workId] && { mentions: WORK_MENTIONS[workId] }),
                   potentialAction: { '@type': 'ReadAction', target: `https://a9l.im/scripture/${workId}` },
+                  license: 'https://creativecommons.org/publicdomain/mark/1.0/',
+                  contentRating: 'General',
+                },
+                {
+                  '@type': 'Dataset',
+                  name: `${workTitle} — Full Text`,
+                  description: ws.description || `Complete text of the ${workTitle}`,
+                  url: `https://a9l.im/scripture/${workId}`,
+                  license: 'https://creativecommons.org/publicdomain/mark/1.0/',
+                  inLanguage: ws.lang || 'en',
+                  ...(translatorPerson && { creator: translatorPerson }),
+                  distribution: {
+                    '@type': 'DataDownload',
+                    encodingFormat: 'application/json',
+                    contentUrl: `https://a9l.im/scripture/data/${workId}/manifest.json`,
+                  },
                 },
               ],
             }),
             ssrBreadcrumb: `<a href="/scripture/">Scripture</a> <span aria-hidden="true">\u203a</span> <span>${mdEsc(workTitle)}</span>`,
           };
           try {
-            const manifestRes = await env.ASSETS.fetch(new URL(`/scripture/data/${workId}/manifest.json`, origin));
+            const manifestRes = await timedFetch(new URL(`/scripture/data/${workId}/manifest.json`, origin));
             if (manifestRes.ok) {
               const manifest = await manifestRes.json();
               const bookList = manifest.books.map(b => {
                 const startCh = b.start || 1;
                 return `<a href="/scripture/${workId}/${b.id}-${startCh}">${mdEsc(b.name)}</a>`;
               }).join(' ');
-              meta.ssrVerses = `<h1>${mdEsc(workTitle)}</h1><nav class="book-listing">${bookList}</nav>`;
+              const descHtml = ws.description ? `<p>${mdEsc(ws.description)}</p>` : '';
+              meta.ssrVerses = `<h1>${mdEsc(workTitle)}</h1>${descHtml}<nav class="book-listing">${bookList}</nav>`;
             }
           } catch (_) { /* SSR failed — client JS will hydrate */ }
           return secure(rewriteHTML(res, meta));
@@ -474,7 +502,7 @@ export default {
         const workTitle = WORK_TITLES[workId];
         if (workTitle) {
           try {
-            const manifestRes = await env.ASSETS.fetch(new URL(`/scripture/data/${workId}/manifest.json`, origin));
+            const manifestRes = await timedFetch(new URL(`/scripture/data/${workId}/manifest.json`, origin));
             if (manifestRes.ok) {
               const manifest = await manifestRes.json();
               const book = manifest.books.find(b => b.id === bookId);
@@ -527,8 +555,10 @@ export default {
                   { '@type': 'BreadcrumbList', itemListElement: breadcrumbItems },
                   {
                     '@type': 'Chapter',
+                    '@id': chapterUrl,
                     name: chapterLabel,
                     url: chapterUrl,
+                    position: parseInt(chapterNum, 10),
                     inLanguage: ws.lang || 'en',
                     isPartOf: bookSchema,
                     audience: { '@type': 'Audience', audienceType: 'Students, scholars, readers of sacred texts' },
@@ -552,7 +582,7 @@ export default {
 
                 // SSR: inject verse text for crawlers
                 try {
-                  const chapterRes = await env.ASSETS.fetch(new URL(`/scripture/data/${workId}/chapters/${bookId}-${chapterNum}.json`, origin));
+                  const chapterRes = await timedFetch(new URL(`/scripture/data/${workId}/chapters/${bookId}-${chapterNum}.json`, origin));
                   if (chapterRes.ok) {
                     const chapter = await chapterRes.json();
                     const allVerses = chapter.sections.flatMap(s => s.verses);
@@ -570,13 +600,17 @@ export default {
                         breadcrumbItems.push({ '@type': 'ListItem', position: 5, name: `Verse ${verseNum}`, item: `https://a9l.im${pathname}` });
                         graph.push({
                           '@type': 'Quotation',
+                          '@id': `https://a9l.im${pathname}`,
+                          url: `https://a9l.im${pathname}`,
                           text: verseText,
+                          inLanguage: ws.lang || 'en',
+                          position: parseInt(verseNum, 10),
                           ...(translatorPerson && { author: translatorPerson }),
                           isPartOf: { '@type': 'CreativeWork', name: chapterLabel, url: chapterUrl, isPartOf: { '@type': 'Book', name: workTitle, '@id': `https://a9l.im/scripture/${workId}` } },
                         });
                       }
                     } else {
-                      const maxVerses = Math.min(allVerses.length, 10);
+                      const maxVerses = Math.min(allVerses.length, 25);
                       const verseHtml = allVerses.slice(0, maxVerses).map((v, i) =>
                         `<p><b>${i + 1}.</b> ${mdEsc(v)}</p>`
                       ).join('');
@@ -605,6 +639,7 @@ export default {
             '@graph': [
               {
                 '@type': 'CollectionPage',
+                '@id': 'https://a9l.im/scripture/',
                 name: 'Scripture',
                 url: 'https://a9l.im/scripture/',
                 description: 'A browser-based reader for sixteen sacred texts.',
@@ -680,12 +715,15 @@ export default {
                       '@graph': [
                         {
                           '@type': 'BlogPosting',
+                          '@id': meta.canonical,
                           headline: postMeta.title,
                           datePublished: postMeta.date,
                           dateModified: postMeta.updated || postMeta.date,
                           description: meta.desc,
                           url: meta.canonical,
                           wordCount,
+                          ...(postMeta.tag && { articleSection: Array.isArray(postMeta.tag) ? postMeta.tag[0] : postMeta.tag }),
+                          speakable: { '@type': 'SpeakableSpecification', cssSelector: ['.blog-post-title', '.blog-content p:first-of-type'] },
                           image: 'https://a9l.im/og-image.webp',
                           author: { '@type': 'Person', name: 'a9lim', url: 'https://a9l.im/about', sameAs: ['https://github.com/a9lim', 'https://twitter.com/a9_lim'] },
                           publisher: { '@type': 'Organization', name: 'a9l.im', url: 'https://a9l.im', logo: { '@type': 'ImageObject', url: 'https://a9l.im/icon-192.png', width: 192, height: 192 } },
@@ -714,6 +752,16 @@ export default {
         meta = { ...ROUTE_META[pathname], canonical: `https://a9l.im${pathname}` };
         const pageName = pathname === '/projects' ? 'Projects' : pathname === '/blog' ? 'Blog' : 'About';
         meta.ssrBreadcrumb = `<a href="/">Home</a> <span aria-hidden="true">\u203a</span> <span>${pageName}</span>`;
+        const navElement = {
+          '@type': 'SiteNavigationElement',
+          name: 'Main Navigation',
+          hasPart: [
+            { '@type': 'WebPage', name: 'Home', url: 'https://a9l.im' },
+            { '@type': 'WebPage', name: 'Projects', url: 'https://a9l.im/projects' },
+            { '@type': 'WebPage', name: 'Blog', url: 'https://a9l.im/blog' },
+            { '@type': 'WebPage', name: 'About', url: 'https://a9l.im/about' },
+          ],
+        };
         const breadcrumb = {
           '@type': 'BreadcrumbList',
           itemListElement: [
@@ -724,7 +772,7 @@ export default {
         if (pathname === '/about') {
           const person = JSON.parse(ABOUT_JSONLD);
           delete person['@context'];
-          meta.jsonLd = JSON.stringify({ '@context': 'https://schema.org', '@graph': [person, breadcrumb] });
+          meta.jsonLd = JSON.stringify({ '@context': 'https://schema.org', '@graph': [person, breadcrumb, navElement] });
         } else if (pathname === '/projects') {
           const projectItems = [
             { position: 1, name: 'Geon — Relativistic Particle Physics Simulator', url: 'https://a9l.im/geon' },
@@ -736,15 +784,16 @@ export default {
           meta.jsonLd = JSON.stringify({
             '@context': 'https://schema.org',
             '@graph': [
-              { '@type': 'CollectionPage', name: 'Projects', url: 'https://a9l.im/projects', mainEntity: { '@type': 'ItemList', itemListElement: projectItems } },
+              { '@type': 'CollectionPage', '@id': 'https://a9l.im/projects', name: 'Projects', url: 'https://a9l.im/projects', mainEntity: { '@type': 'ItemList', itemListElement: projectItems } },
               breadcrumb,
+              navElement,
             ],
           });
         } else if (pathname === '/blog') {
           // Blog listing SSR — will be overridden below if posts.json loads
-          meta.jsonLd = JSON.stringify({ '@context': 'https://schema.org', ...breadcrumb });
+          meta.jsonLd = JSON.stringify({ '@context': 'https://schema.org', '@graph': [breadcrumb, navElement] });
         } else {
-          meta.jsonLd = JSON.stringify({ '@context': 'https://schema.org', ...breadcrumb });
+          meta.jsonLd = JSON.stringify({ '@context': 'https://schema.org', '@graph': [breadcrumb, navElement] });
         }
         // SSR blog listing from posts.json
         if (pathname === '/blog') {
@@ -761,9 +810,10 @@ export default {
               meta.jsonLd = JSON.stringify({
                 '@context': 'https://schema.org',
                 '@graph': [
-                  { '@type': 'Blog', name: 'a9l.im Blog', url: 'https://a9l.im/blog', blogPost: posts.map(p => ({ '@type': 'BlogPosting', headline: p.title, url: `https://a9l.im/blog/${p.slug}`, datePublished: p.date })) },
-                  { '@type': 'ItemList', itemListElement: blogItems },
+                  { '@type': 'Blog', '@id': 'https://a9l.im/blog', name: 'a9l.im Blog', url: 'https://a9l.im/blog', blogPost: posts.map(p => ({ '@type': 'BlogPosting', headline: p.title, url: `https://a9l.im/blog/${p.slug}`, datePublished: p.date })) },
+                  { '@type': 'ItemList', '@id': 'https://a9l.im/blog#list', itemListElement: blogItems },
                   breadcrumb,
+                  navElement,
                 ],
               });
             }

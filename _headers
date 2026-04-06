@@ -8,6 +8,8 @@
   Cross-Origin-Opener-Policy: same-origin
   Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: blob:; connect-src 'self'; worker-src 'self' blob:; base-uri 'self'; frame-ancestors 'self'
   Content-Language: en
+  X-Robots-Tag: index, follow
+  Vary: Accept-Encoding
 
 # Cross-origin isolation for geon (enables SharedArrayBuffer / high-res timers for WebGPU)
 /geon/*

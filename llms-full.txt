@@ -2,6 +2,8 @@
 
 > Free interactive educational simulations for physics, biology, finance, political science, and sacred texts.
 
+See also: [llms.txt](https://a9l.im/llms.txt)
+
 # About a9l.im
 
 a9l.im is a collection of interactive educational simulations built by a9lim. Each project runs entirely in the browser with no server dependencies, accounts, or installation.

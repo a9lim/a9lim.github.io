@@ -24,3 +24,7 @@
 - [Raiko](https://github.com/a9lim/Raiko): Discord music and chat bot
 - [Faithful](https://github.com/a9lim/faithful): Discord chatbot emulating source material
 - [Catppuccin for SDDM](https://github.com/catppuccin/sddm): Soothing pastel theme for SDDM
+
+## Full Documentation
+
+- [llms-full.txt](https://a9l.im/llms-full.txt): Complete documentation with project details and blog posts

@@ -36,5 +36,12 @@
   "screenshots": [
     {"src": "/og-image.webp", "sizes": "1200x630", "type": "image/webp", "form_factor": "wide"},
     {"src": "/og-image.webp", "sizes": "630x630", "type": "image/webp", "form_factor": "narrow"}
-  ]
+  ],
+  "share_target": {
+    "action": "/scripture/",
+    "method": "GET",
+    "params": {
+      "text": "q"
+    }
+  }
 }

@@ -8,6 +8,7 @@
     <image:image>
       <image:loc>https://a9l.im/og-image.webp</image:loc>
       <image:title>a9l.im</image:title>
+      <image:caption>a9l.im — interactive educational simulations for physics, biology, finance, and political science</image:caption>
     </image:image>
   </url>
   <url>
@@ -36,10 +37,12 @@
     <image:image>
       <image:loc>https://a9l.im/img/geon.webp</image:loc>
       <image:title>geon</image:title>
+      <image:caption>Geon — relativistic N-body particle physics simulator with 11 forces and WebGPU compute shaders</image:caption>
     </image:image>
     <image:image>
       <image:loc>https://a9l.im/geon/og-image.webp</image:loc>
       <image:title>geon</image:title>
+      <image:caption>Geon — relativistic N-body particle physics simulator with 11 forces and WebGPU compute shaders</image:caption>
     </image:image>
   </url>
   <url>
@@ -50,10 +53,12 @@
     <image:image>
       <image:loc>https://a9l.im/img/cyano.webp</image:loc>
       <image:title>cyano</image:title>
+      <image:caption>Cyano — cellular metabolism simulator with twelve biochemical pathways and electron transport</image:caption>
     </image:image>
     <image:image>
       <image:loc>https://a9l.im/cyano/og-image.webp</image:loc>
       <image:title>cyano</image:title>
+      <image:caption>Cyano — cellular metabolism simulator with twelve biochemical pathways and electron transport</image:caption>
     </image:image>
   </url>
   <url>
@@ -64,10 +69,12 @@
     <image:image>
       <image:loc>https://a9l.im/img/gerry.webp</image:loc>
       <image:title>gerry</image:title>
+      <image:caption>Gerry — gerrymandering and electoral fairness simulator with Monte Carlo elections</image:caption>
     </image:image>
     <image:image>
       <image:loc>https://a9l.im/gerry/og-image.webp</image:loc>
       <image:title>gerry</image:title>
+      <image:caption>Gerry — gerrymandering and electoral fairness simulator with Monte Carlo elections</image:caption>
     </image:image>
   </url>
   <url>
@@ -78,10 +85,12 @@
     <image:image>
       <image:loc>https://a9l.im/img/shoals.webp</image:loc>
       <image:title>shoals</image:title>
+      <image:caption>Shoals — options trading simulator with stochastic volatility and 400+ market scenarios</image:caption>
     </image:image>
     <image:image>
       <image:loc>https://a9l.im/shoals/og-image.webp</image:loc>
       <image:title>shoals</image:title>
+      <image:caption>Shoals — options trading simulator with stochastic volatility and 400+ market scenarios</image:caption>
     </image:image>
   </url>
   <url>
@@ -92,10 +101,12 @@
     <image:image>
       <image:loc>https://a9l.im/img/scripture.webp</image:loc>
       <image:title>scripture</image:title>
+      <image:caption>Scripture — sacred text reader with sixteen works from multiple traditions</image:caption>
     </image:image>
     <image:image>
       <image:loc>https://a9l.im/scripture/og-image.webp</image:loc>
       <image:title>scripture</image:title>
+      <image:caption>Scripture — sacred text reader with sixteen works from multiple traditions</image:caption>
     </image:image>
   </url>
   <url>
