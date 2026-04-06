@@ -16,7 +16,12 @@
     <id>https://a9l.im/blog/hello-world</id>
     <published>2026-02-26T00:00:00Z</published>
     <updated>2026-02-26T00:00:00Z</updated>
+    <author>
+      <name>a9lim</name>
+      <uri>https://a9l.im/about</uri>
+    </author>
     <summary>First post on the a9l.im blog — a site tour and markdown feature test.</summary>
+    <category term="meta"/>
     <content type="html"><![CDATA[<p>This is the first post on <strong>a9l.im</strong> — a quick tour of the blog and a test of every markdown feature the parser supports.</p>
 <h2 id="why-a-blog">Why a blog?</h2>
 <p>Building interactive simulations generates a lot of <em>interesting problems</em> — numerical precision, rendering tricks, algorithmic trade-offs. A blog is a good place to write them up.</p>

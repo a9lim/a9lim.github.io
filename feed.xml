@@ -13,6 +13,7 @@
       <link>https://a9l.im</link>
     </image>
     <managingEditor>mx@a9l.im (a9lim)</managingEditor>
+    <ttl>60</ttl>
     <item>
       <title>Hello, World</title>
       <link>https://a9l.im/blog/hello-world</link>

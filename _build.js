@@ -187,34 +187,77 @@ for (const workId of workIds) {
     const start = book.start || 1;
     for (let i = 0; i < book.chapters; i++) {
       const chapterId = `${book.id}-${start + i}`;
-      add(`/scripture/${workId}/${chapterId}`, workLastmod, null, 'yearly', 0.5);
+      add(`/scripture/${workId}/${chapterId}`, workLastmod, null, 'yearly', 0.65);
     }
   }
 }
 
-// --- generate sitemap.xml ---
+// --- generate sitemaps ---
 
-const xml = [
-  '<?xml version="1.0" encoding="UTF-8"?>',
-  '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">',
-  ...urls.map(u => {
-    const parts = [`  <url>\n    <loc>${u.loc}</loc>\n    <lastmod>${u.lastmod}</lastmod>${u.changefreq ? `\n    <changefreq>${u.changefreq}</changefreq>` : ''}${u.priority != null ? `\n    <priority>${u.priority}</priority>` : ''}`];
-    if (u.images) {
-      for (const img of u.images) {
-        const imgTitle = u.loc.replace(SITE, '').replace(/\/$/, '').slice(1) || 'a9l.im';
-        const captionTag = u.imageCaption ? `\n      <image:caption>${escXml(u.imageCaption)}</image:caption>` : '';
-        parts.push(`    <image:image>\n      <image:loc>${SITE}/${img}</image:loc>\n      <image:title>${escXml(imgTitle)}</image:title>${captionTag}\n    </image:image>`);
+// Split URLs into main (root, projects, blog, sims) and scripture (work-level + chapters)
+const scriptureChapterPattern = /^https:\/\/a9l\.im\/scripture\/[^/]+\/.+$/;
+const scriptureWorkPattern = /^https:\/\/a9l\.im\/scripture\/[^/]+$/;
+const scriptureIndexPattern = /^https:\/\/a9l\.im\/scripture\/$/;
+
+const mainUrls = [];
+const scriptureUrls = [];
+
+for (const u of urls) {
+  if ((scriptureChapterPattern.test(u.loc) || scriptureWorkPattern.test(u.loc)) && !scriptureIndexPattern.test(u.loc)) {
+    scriptureUrls.push(u);
+  } else {
+    mainUrls.push(u);
+  }
+}
+
+function renderUrlset(urlList) {
+  return [
+    '<?xml version="1.0" encoding="UTF-8"?>',
+    '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">',
+    ...urlList.map(u => {
+      const parts = [`  <url>\n    <loc>${u.loc}</loc>\n    <lastmod>${u.lastmod}</lastmod>${u.changefreq ? `\n    <changefreq>${u.changefreq}</changefreq>` : ''}${u.priority != null ? `\n    <priority>${u.priority}</priority>` : ''}`];
+      if (u.images) {
+        for (const img of u.images) {
+          const imgTitle = u.loc.replace(SITE, '').replace(/\/$/, '').slice(1) || 'a9l.im';
+          const captionTag = u.imageCaption ? `\n      <image:caption>${escXml(u.imageCaption)}</image:caption>` : '';
+          parts.push(`    <image:image>\n      <image:loc>${SITE}/${img}</image:loc>\n      <image:title>${escXml(imgTitle)}</image:title>${captionTag}\n    </image:image>`);
+        }
       }
-    }
-    parts.push('  </url>');
-    return parts.join('\n');
-  }),
-  '</urlset>',
+      parts.push('  </url>');
+      return parts.join('\n');
+    }),
+    '</urlset>',
+    ''
+  ].join('\n');
+}
+
+writeFileSync(join(ROOT, 'sitemap-main.xml'), renderUrlset(mainUrls));
+console.log(`sitemap-main.xml: ${mainUrls.length} URLs`);
+
+writeFileSync(join(ROOT, 'sitemap-scripture.xml'), renderUrlset(scriptureUrls));
+console.log(`sitemap-scripture.xml: ${scriptureUrls.length} URLs`);
+
+// Sitemap index
+const mainLastmod = mainUrls.reduce((max, u) => u.lastmod > max ? u.lastmod : max, mainUrls[0]?.lastmod || today());
+const scriptureLastmod = scriptureUrls.reduce((max, u) => u.lastmod > max ? u.lastmod : max, scriptureUrls[0]?.lastmod || today());
+
+const sitemapIndex = [
+  '<?xml version="1.0" encoding="UTF-8"?>',
+  '<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',
+  `  <sitemap>`,
+  `    <loc>${SITE}/sitemap-main.xml</loc>`,
+  `    <lastmod>${mainLastmod}</lastmod>`,
+  `  </sitemap>`,
+  `  <sitemap>`,
+  `    <loc>${SITE}/sitemap-scripture.xml</loc>`,
+  `    <lastmod>${scriptureLastmod}</lastmod>`,
+  `  </sitemap>`,
+  '</sitemapindex>',
   ''
 ].join('\n');
 
-writeFileSync(join(ROOT, 'sitemap.xml'), xml);
-console.log(`sitemap.xml: ${urls.length} URLs`);
+writeFileSync(join(ROOT, 'sitemap.xml'), sitemapIndex);
+console.log(`sitemap.xml: sitemap index (${urls.length} total URLs)`);
 
 // --- generate feed.xml (RSS 2.0) ---
 
@@ -253,6 +296,7 @@ const rss = `<?xml version="1.0" encoding="UTF-8"?>
       <link>${SITE}</link>
     </image>
     <managingEditor>mx@a9l.im (a9lim)</managingEditor>
+    <ttl>60</ttl>
 ${postItems.join('\n')}
   </channel>
 </rss>
@@ -267,13 +311,18 @@ const atomEntries = posts.map(p => {
   const mdSrc = readText(`posts/${p.slug}.md`);
   const htmlContent = renderMarkdown(mdSrc);
   const firstPara = p.excerpt || mdSrc.split(/\n\n/)[0].replace(/[*_`\[\]()#>!]/g, '').trim();
+  const categories = (Array.isArray(p.tag) ? p.tag : [p.tag]).filter(Boolean).map(t => `    <category term="${escXml(t)}"/>`).join('\n');
   return `  <entry>
     <title>${escXml(p.title)}</title>
     <link href="${SITE}/blog/${p.slug}" rel="alternate"/>
     <id>${SITE}/blog/${p.slug}</id>
     <published>${isoTimestamp(p.date)}</published>
     <updated>${isoTimestamp(p.updated || p.date)}</updated>
-    <summary>${escXml(firstPara)}</summary>
+    <author>
+      <name>a9lim</name>
+      <uri>${SITE}/about</uri>
+    </author>
+    <summary>${escXml(firstPara)}</summary>${categories ? '\n' + categories : ''}
     <content type="html"><![CDATA[${htmlContent}]]></content>
   </entry>`;
 });

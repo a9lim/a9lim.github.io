@@ -3,6 +3,7 @@
   "short_name": "a9l.im",
   "description": "Interactive simulations for physics, biology, finance, and political science.",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
   "id": "/",
   "lang": "en",
