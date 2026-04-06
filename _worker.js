@@ -39,7 +39,12 @@ const WORK_MENTIONS = {
     { '@type': 'Person', '@id': 'https://www.wikidata.org/wiki/Q170164', name: 'Solomon' },
     { '@type': 'Person', '@id': 'https://www.wikidata.org/wiki/Q830183', name: 'Eve' },
     { '@type': 'Person', '@id': 'https://www.wikidata.org/wiki/Q43292', name: 'Noah' },
+    { '@type': 'Person', '@id': 'https://www.wikidata.org/wiki/Q132694', name: 'Jacob' },
+    { '@type': 'Person', '@id': 'https://www.wikidata.org/wiki/Q133067', name: 'Joseph' },
+    { '@type': 'Person', '@id': 'https://www.wikidata.org/wiki/Q76280', name: 'Job' },
     { '@type': 'Place', '@id': 'https://www.wikidata.org/wiki/Q5765', name: 'Jerusalem' },
+    { '@type': 'Place', '@id': 'https://www.wikidata.org/wiki/Q79', name: 'Egypt' },
+    { '@type': 'Place', '@id': 'https://www.wikidata.org/wiki/Q41547', name: 'Mount Sinai' },
   ],
   nt: [
     { '@type': 'Person', '@id': 'https://www.wikidata.org/wiki/Q302', name: 'Jesus' },
@@ -50,6 +55,9 @@ const WORK_MENTIONS = {
     { '@type': 'Person', '@id': 'https://www.wikidata.org/wiki/Q51667', name: 'John the Baptist' },
     { '@type': 'Person', '@id': 'https://www.wikidata.org/wiki/Q40662', name: 'Judas Iscariot' },
     { '@type': 'Person', '@id': 'https://www.wikidata.org/wiki/Q43600', name: 'Pontius Pilate' },
+    { '@type': 'Person', '@id': 'https://www.wikidata.org/wiki/Q36480', name: 'Luke the Evangelist' },
+    { '@type': 'Person', '@id': 'https://www.wikidata.org/wiki/Q42804', name: 'James, brother of Jesus' },
+    { '@type': 'Place', '@id': 'https://www.wikidata.org/wiki/Q5765', name: 'Jerusalem' },
   ],
   apoc: [
     { '@type': 'Person', '@id': 'https://www.wikidata.org/wiki/Q312747', name: 'Judas Maccabeus' },
@@ -57,6 +65,8 @@ const WORK_MENTIONS = {
     { '@type': 'Person', '@id': 'https://www.wikidata.org/wiki/Q234936', name: 'Judith' },
     { '@type': 'Person', '@id': 'https://www.wikidata.org/wiki/Q170494', name: 'King Solomon' },
     { '@type': 'Person', '@id': 'https://www.wikidata.org/wiki/Q731829', name: 'Baruch' },
+    { '@type': 'Person', '@id': 'https://www.wikidata.org/wiki/Q312764', name: 'Mattathias' },
+    { '@type': 'Person', '@id': 'https://www.wikidata.org/wiki/Q191850', name: 'Raphael (archangel)' },
   ],
   quran: [
     { '@type': 'Person', '@id': 'https://www.wikidata.org/wiki/Q9458', name: 'Muhammad' },
@@ -67,6 +77,9 @@ const WORK_MENTIONS = {
     { '@type': 'Person', '@id': 'https://www.wikidata.org/wiki/Q70899', name: 'Adam' },
     { '@type': 'Person', '@id': 'https://www.wikidata.org/wiki/Q43292', name: 'Nuh (Noah)' },
     { '@type': 'Person', '@id': 'https://www.wikidata.org/wiki/Q133067', name: 'Yusuf (Joseph)' },
+    { '@type': 'Person', '@id': 'https://www.wikidata.org/wiki/Q681647', name: 'Dhul-Qarnayn' },
+    { '@type': 'Person', '@id': 'https://www.wikidata.org/wiki/Q383660', name: 'Luqman' },
+    { '@type': 'Thing', '@id': 'https://www.wikidata.org/wiki/Q475413', name: 'Tawhid (oneness of God)' },
   ],
   bom: [
     { '@type': 'Person', '@id': 'https://www.wikidata.org/wiki/Q3338506', name: 'Nephi' },
@@ -75,6 +88,9 @@ const WORK_MENTIONS = {
     { '@type': 'Person', '@id': 'https://www.wikidata.org/wiki/Q3612482', name: 'Alma' },
     { '@type': 'Person', '@id': 'https://www.wikidata.org/wiki/Q3229489', name: 'Lehi' },
     { '@type': 'Person', '@id': 'https://www.wikidata.org/wiki/Q47230', name: 'Joseph Smith' },
+    { '@type': 'Person', '@id': 'https://www.wikidata.org/wiki/Q3506064', name: 'Ammon' },
+    { '@type': 'Person', '@id': 'https://www.wikidata.org/wiki/Q7410820', name: 'Samuel the Lamanite' },
+    { '@type': 'Person', '@id': 'https://www.wikidata.org/wiki/Q3369005', name: 'Mormon' },
   ],
   dc: [
     { '@type': 'Person', '@id': 'https://www.wikidata.org/wiki/Q47230', name: 'Joseph Smith' },
@@ -82,6 +98,8 @@ const WORK_MENTIONS = {
     { '@type': 'Person', '@id': 'https://www.wikidata.org/wiki/Q1375831', name: 'Sidney Rigdon' },
     { '@type': 'Person', '@id': 'https://www.wikidata.org/wiki/Q302', name: 'Jesus' },
     { '@type': 'Person', '@id': 'https://www.wikidata.org/wiki/Q180962', name: 'Brigham Young' },
+    { '@type': 'Person', '@id': 'https://www.wikidata.org/wiki/Q510911', name: 'Hyrum Smith' },
+    { '@type': 'Person', '@id': 'https://www.wikidata.org/wiki/Q3057990', name: 'John Whitmer' },
   ],
   pgp: [
     { '@type': 'Person', '@id': 'https://www.wikidata.org/wiki/Q9190', name: 'Abraham' },
@@ -89,6 +107,8 @@ const WORK_MENTIONS = {
     { '@type': 'Person', '@id': 'https://www.wikidata.org/wiki/Q213960', name: 'Enoch' },
     { '@type': 'Person', '@id': 'https://www.wikidata.org/wiki/Q70899', name: 'Adam' },
     { '@type': 'Person', '@id': 'https://www.wikidata.org/wiki/Q47230', name: 'Joseph Smith' },
+    { '@type': 'Person', '@id': 'https://www.wikidata.org/wiki/Q830183', name: 'Eve' },
+    { '@type': 'Person', '@id': 'https://www.wikidata.org/wiki/Q43292', name: 'Noah' },
   ],
   fourbooks: [
     { '@type': 'Person', '@id': 'https://www.wikidata.org/wiki/Q4604', name: 'Confucius' },
@@ -96,6 +116,9 @@ const WORK_MENTIONS = {
     { '@type': 'Thing', '@id': 'https://www.wikidata.org/wiki/Q1423605', name: 'Ren (benevolence)' },
     { '@type': 'Thing', '@id': 'https://www.wikidata.org/wiki/Q847895', name: 'Li (ritual propriety)' },
     { '@type': 'Person', '@id': 'https://www.wikidata.org/wiki/Q40519', name: 'Zengzi' },
+    { '@type': 'Person', '@id': 'https://www.wikidata.org/wiki/Q207920', name: 'Zisi' },
+    { '@type': 'Thing', '@id': 'https://www.wikidata.org/wiki/Q1064846', name: 'Junzi (noble person)' },
+    { '@type': 'Thing', '@id': 'https://www.wikidata.org/wiki/Q189746', name: 'Filial piety' },
   ],
   kj: [
     { '@type': 'Thing', '@id': 'https://www.wikidata.org/wiki/Q172640', name: 'Amaterasu' },
@@ -103,6 +126,9 @@ const WORK_MENTIONS = {
     { '@type': 'Thing', '@id': 'https://www.wikidata.org/wiki/Q271451', name: 'Izanagi' },
     { '@type': 'Thing', '@id': 'https://www.wikidata.org/wiki/Q271462', name: 'Izanami' },
     { '@type': 'Person', '@id': 'https://www.wikidata.org/wiki/Q1350314', name: 'Ō no Yasumaro' },
+    { '@type': 'Thing', '@id': 'https://www.wikidata.org/wiki/Q178561', name: 'Tsukuyomi' },
+    { '@type': 'Thing', '@id': 'https://www.wikidata.org/wiki/Q170373', name: 'Ninigi' },
+    { '@type': 'Place', '@id': 'https://www.wikidata.org/wiki/Q641975', name: 'Takamagahara' },
   ],
   ttc: [
     { '@type': 'Person', '@id': 'https://www.wikidata.org/wiki/Q9333', name: 'Laozi' },
@@ -110,6 +136,8 @@ const WORK_MENTIONS = {
     { '@type': 'Thing', '@id': 'https://www.wikidata.org/wiki/Q753442', name: 'Wu wei (non-action)' },
     { '@type': 'Thing', '@id': 'https://www.wikidata.org/wiki/Q43059', name: 'De (virtue)' },
     { '@type': 'Thing', '@id': 'https://www.wikidata.org/wiki/Q131401', name: 'Yin and yang' },
+    { '@type': 'Person', '@id': 'https://www.wikidata.org/wiki/Q8434', name: 'Zhuangzi' },
+    { '@type': 'Thing', '@id': 'https://www.wikidata.org/wiki/Q184410', name: 'Qi (vital energy)' },
   ],
   bund: [
     { '@type': 'Thing', '@id': 'https://www.wikidata.org/wiki/Q79050', name: 'Ahura Mazda' },
@@ -117,6 +145,8 @@ const WORK_MENTIONS = {
     { '@type': 'Person', '@id': 'https://www.wikidata.org/wiki/Q42891', name: 'Zarathustra' },
     { '@type': 'Thing', '@id': 'https://www.wikidata.org/wiki/Q191089', name: 'Amesha Spentas' },
     { '@type': 'Thing', '@id': 'https://www.wikidata.org/wiki/Q319441', name: 'Fravashi' },
+    { '@type': 'Thing', '@id': 'https://www.wikidata.org/wiki/Q169759', name: 'Asha (truth/righteousness)' },
+    { '@type': 'Thing', '@id': 'https://www.wikidata.org/wiki/Q465501', name: 'Chinvat Bridge' },
   ],
   lotus: [
     { '@type': 'Thing', '@id': 'https://www.wikidata.org/wiki/Q9441', name: 'Gautama Buddha' },
@@ -124,6 +154,9 @@ const WORK_MENTIONS = {
     { '@type': 'Thing', '@id': 'https://www.wikidata.org/wiki/Q179723', name: 'Dharma' },
     { '@type': 'Thing', '@id': 'https://www.wikidata.org/wiki/Q46825', name: 'Bodhisattva' },
     { '@type': 'Thing', '@id': 'https://www.wikidata.org/wiki/Q189474', name: 'Avalokiteśvara' },
+    { '@type': 'Thing', '@id': 'https://www.wikidata.org/wiki/Q188891', name: 'Mañjuśrī' },
+    { '@type': 'Thing', '@id': 'https://www.wikidata.org/wiki/Q213363', name: 'Samantabhadra' },
+    { '@type': 'Thing', '@id': 'https://www.wikidata.org/wiki/Q190588', name: 'Upāya (skillful means)' },
   ],
   bop: [
     { '@type': 'Person', '@id': 'https://www.wikidata.org/wiki/Q4604', name: 'Confucius' },
@@ -131,6 +164,8 @@ const WORK_MENTIONS = {
     { '@type': 'Person', '@id': 'https://www.wikidata.org/wiki/Q7412', name: 'King Wen of Zhou' },
     { '@type': 'Person', '@id': 'https://www.wikidata.org/wiki/Q7411', name: 'King Wu of Zhou' },
     { '@type': 'Thing', '@id': 'https://www.wikidata.org/wiki/Q847895', name: 'Li (ritual propriety)' },
+    { '@type': 'Place', '@id': 'https://www.wikidata.org/wiki/Q174923', name: 'Zhou dynasty' },
+    { '@type': 'Thing', '@id': 'https://www.wikidata.org/wiki/Q189746', name: 'Filial piety' },
   ],
   kv: [
     { '@type': 'Thing', '@id': 'https://www.wikidata.org/wiki/Q560885', name: 'Väinämöinen' },
@@ -139,6 +174,8 @@ const WORK_MENTIONS = {
     { '@type': 'Thing', '@id': 'https://www.wikidata.org/wiki/Q1371236', name: 'Lemminkäinen' },
     { '@type': 'Thing', '@id': 'https://www.wikidata.org/wiki/Q1129251', name: 'Sampo' },
     { '@type': 'Person', '@id': 'https://www.wikidata.org/wiki/Q168185', name: 'Elias Lönnrot' },
+    { '@type': 'Place', '@id': 'https://www.wikidata.org/wiki/Q1139498', name: 'Tuonela' },
+    { '@type': 'Place', '@id': 'https://www.wikidata.org/wiki/Q389866', name: 'Pohjola' },
   ],
   poe: [
     { '@type': 'Thing', '@id': 'https://www.wikidata.org/wiki/Q43610', name: 'Odin' },
@@ -147,6 +184,9 @@ const WORK_MENTIONS = {
     { '@type': 'Thing', '@id': 'https://www.wikidata.org/wiki/Q47591', name: 'Freyja' },
     { '@type': 'Thing', '@id': 'https://www.wikidata.org/wiki/Q131721', name: 'Ragnarök' },
     { '@type': 'Thing', '@id': 'https://www.wikidata.org/wiki/Q191077', name: 'Yggdrasil' },
+    { '@type': 'Thing', '@id': 'https://www.wikidata.org/wiki/Q188619', name: 'Fenrir' },
+    { '@type': 'Thing', '@id': 'https://www.wikidata.org/wiki/Q183368', name: 'Jörmungandr' },
+    { '@type': 'Place', '@id': 'https://www.wikidata.org/wiki/Q128285', name: 'Valhalla' },
   ],
   viraf: [
     { '@type': 'Thing', '@id': 'https://www.wikidata.org/wiki/Q79050', name: 'Ahura Mazda' },
@@ -154,6 +194,8 @@ const WORK_MENTIONS = {
     { '@type': 'Thing', '@id': 'https://www.wikidata.org/wiki/Q184579', name: 'Angra Mainyu' },
     { '@type': 'Thing', '@id': 'https://www.wikidata.org/wiki/Q191089', name: 'Amesha Spentas' },
     { '@type': 'Thing', '@id': 'https://www.wikidata.org/wiki/Q1371791', name: 'Arda Viraf' },
+    { '@type': 'Thing', '@id': 'https://www.wikidata.org/wiki/Q465501', name: 'Chinvat Bridge' },
+    { '@type': 'Thing', '@id': 'https://www.wikidata.org/wiki/Q169759', name: 'Asha (truth/righteousness)' },
   ],
 };
 
@@ -197,6 +239,7 @@ const ABOUT_JSONLD = JSON.stringify({
     'https://twitter.com/a9_lim',
   ],
   description: 'Builder of interactive educational simulations exploring physics, biology, finance, and political science.',
+  jobTitle: 'Software Engineer',
   knowsAbout: [
     'Particle physics simulation',
     'Cellular metabolism',
@@ -205,7 +248,24 @@ const ABOUT_JSONLD = JSON.stringify({
     'Sacred text analysis',
     'WebGPU',
     'JavaScript',
+    'Computational science',
+    'Interactive educational tools',
   ],
+  hasOccupation: {
+    '@type': 'Occupation',
+    name: 'Software Engineer',
+    occupationalCategory: '15-1252.00',
+    skills: ['WebGPU', 'JavaScript', 'Numerical simulation', 'Data visualization', 'Cloudflare Workers'],
+  },
+  makesOffer: {
+    '@type': 'Offer',
+    itemOffered: {
+      '@type': 'CreativeWork',
+      name: 'Educational Simulations',
+      description: 'Open-source interactive simulations for physics, biology, finance, and political science',
+      url: 'https://a9l.im/projects',
+    },
+  },
   mainEntityOfPage: { '@type': 'WebPage', '@id': 'https://a9l.im/about' },
 });
 
@@ -519,7 +579,10 @@ export default {
                   ...(ws.author && { author: ws.author }),
                   ...(ws.year && { datePublished: String(ws.year) }),
                   ...(WORK_MENTIONS[workId] && { mentions: WORK_MENTIONS[workId] }),
-                  potentialAction: { '@type': 'ReadAction', target: `https://a9l.im/scripture/${workId}` },
+                  potentialAction: [
+                    { '@type': 'ReadAction', target: `https://a9l.im/scripture/${workId}` },
+                    { '@type': 'SearchAction', target: { '@type': 'EntryPoint', urlTemplate: `https://a9l.im/scripture/?q={search_term_string}` }, 'query-input': 'required name=search_term_string' },
+                  ],
                   license: 'https://creativecommons.org/publicdomain/mark/1.0/',
                   contentRating: 'General',
                 },
@@ -692,6 +755,19 @@ export default {
                         }
                       }
                       meta.ssrVerses = verseHtml + (allVerses.length > maxVerses ? `<p><em>${allVerses.length - maxVerses} more verses\u2026</em></p>` : '');
+                      // Add first-verse Quotation schema for crawlers
+                      if (allVerses.length > 0) {
+                        graph.push({
+                          '@type': 'Quotation',
+                          '@id': `${chapterUrl}:1`,
+                          url: `${chapterUrl}:1`,
+                          text: allVerses[0],
+                          inLanguage: ws.lang || 'en',
+                          position: 1,
+                          ...(translatorPerson && { author: translatorPerson }),
+                          isPartOf: { '@type': 'CreativeWork', name: chapterLabel, url: chapterUrl, isPartOf: { '@type': 'Book', name: workTitle, '@id': `https://a9l.im/scripture/${workId}` } },
+                        });
+                      }
                     }
                   }
                 } catch (_) { /* verse SSR failed — client JS will hydrate */ }

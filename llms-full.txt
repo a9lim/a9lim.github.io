@@ -1,3 +1,12 @@
+---
+title: a9l.im — Full Documentation
+url: https://a9l.im
+description: Complete documentation for a9l.im educational simulations and sacred text reader.
+language: en
+license: AGPL-3.0
+updated: 2026-04-05
+---
+
 # a9l.im — Full Documentation
 
 > Free interactive educational simulations for physics, biology, finance, political science, and sacred texts.

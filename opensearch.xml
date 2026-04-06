@@ -1,8 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <OpenSearchDescription xmlns="http://a9.com/-/spec/opensearch/1.1/">
   <ShortName>a9l.im</ShortName>
-  <LongName>a9l.im — Interactive Educational Simulations</LongName>
-  <Description>Search a9l.im simulations and scripture</Description>
+  <LongName>a9l.im — Search sacred texts across sixteen traditions</LongName>
+  <Description>Search a9l.im simulations and scripture. Full-text search across sixteen sacred texts including the Bible (KJV), Quran (Pickthall), Book of Mormon, Tao Te Ching, and more.</Description>
   <Image width="16" height="16" type="image/x-icon">https://a9l.im/favicon.ico</Image>
   <Url type="text/html" template="https://a9l.im/scripture/?q={searchTerms}"/>
+  <Url type="application/rss+xml" rel="results" template="https://a9l.im/feed.xml"/>
+  <Url type="application/atom+xml" rel="results" template="https://a9l.im/feed.atom"/>
+  <Language>en</Language>
+  <InputEncoding>UTF-8</InputEncoding>
+  <OutputEncoding>UTF-8</OutputEncoding>
 </OpenSearchDescription>

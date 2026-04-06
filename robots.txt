@@ -1,3 +1,15 @@
+User-agent: Googlebot
+Allow: /
+Disallow: /posts/
+Disallow: /fonts/
+Crawl-delay: 1
+
+User-agent: Bingbot
+Allow: /
+Disallow: /posts/
+Disallow: /fonts/
+Crawl-delay: 2
+
 User-agent: *
 Allow: /
 Allow: /llms.txt
