@@ -55,19 +55,10 @@
   Link: </fonts/lato-400.woff2>; rel=preload; as=font; crossorigin
 
 # Subapp Early Hints — shared resources + project-specific CSS and module entry
+# /geon/* omitted: COEP: credentialless invalidates 103 preloads (fetched pre-policy)
+# /scripture/* omitted: Worker SSR delay causes preloads to expire before HTML arrives
 /geon/*
-  Link: </shared-tokens.js>; rel=preload; as=script
-  Link: </shared-base.css>; rel=preload; as=style
-  Link: </geon/styles.css>; rel=preload; as=style
-  Link: </geon/main.js>; rel=modulepreload
-  Link: </fonts/lato-400.woff2>; rel=preload; as=font; crossorigin
   Link: <https://cdn.jsdelivr.net>; rel=preconnect; crossorigin
-/scripture/*
-  Link: </shared-tokens.js>; rel=preload; as=script
-  Link: </shared-base.css>; rel=preload; as=style
-  Link: </scripture/styles.css>; rel=preload; as=style
-  Link: </scripture/main.js>; rel=modulepreload
-  Link: </fonts/lato-400.woff2>; rel=preload; as=font; crossorigin
 /cyano/*
   Link: </shared-tokens.js>; rel=preload; as=script
   Link: </shared-base.css>; rel=preload; as=style
