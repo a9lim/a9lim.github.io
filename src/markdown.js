@@ -60,7 +60,8 @@ export function parseMarkdown(src) {
         const headingMatch = line.match(/^(#{1,6})\s+(.+)$/);
         if (headingMatch) {
             const level = headingMatch[1].length;
-            html.push('<h' + level + '>' + inline(esc(headingMatch[2])) + '</h' + level + '>');
+            const slug = headingMatch[2].toLowerCase().replace(/<[^>]+>/g, '').replace(/&[^;]+;/g, '').replace(/[^\w]+/g, '-').replace(/^-|-$/g, '');
+            html.push('<h' + level + ' id="' + slug + '">' + inline(esc(headingMatch[2])) + '</h' + level + '>');
             i++;
             continue;
         }

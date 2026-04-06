@@ -253,6 +253,7 @@ function initAboutPanel(config) {
         }
 
         document.body.appendChild(overlayEl);
+        document.body.style.overflow = 'hidden';
 
         _previousFocus = document.activeElement;
         requestAnimationFrame(function() {
@@ -272,6 +273,7 @@ function initAboutPanel(config) {
         if (_trapCleanup) { _trapCleanup(); _trapCleanup = null; }
         if (_previousFocus) { _previousFocus.focus(); _previousFocus = null; }
         visible = false;
+        document.body.style.overflow = '';
 
         if (overlayEl) {
             overlayEl.classList.remove('about-overlay-visible');

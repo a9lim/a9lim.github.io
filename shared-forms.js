@@ -19,12 +19,14 @@ var _forms = (function () {
     function bindModeGroup(container, dataAttr, onChange) {
         var btns = container.querySelectorAll('.mode-btn');
         var active = container.querySelector('.mode-btn.active');
+        btns.forEach(function(b) { b.setAttribute('aria-pressed', b === active ? 'true' : 'false'); });
         container.addEventListener('click', function (e) {
             var btn = e.target.closest('.mode-btn');
             if (!btn || btn === active) return;
             if (active) active.classList.remove('active');
             btn.classList.add('active');
             active = btn;
+            btns.forEach(function(b) { b.setAttribute('aria-pressed', b === btn ? 'true' : 'false'); });
             onChange(btn.dataset[dataAttr]);
             if (typeof _haptics !== 'undefined') _haptics.trigger('selection');
         });
@@ -48,9 +50,13 @@ var _forms = (function () {
 
     function bindSlider(slider, display, onChange, format) {
         updateSliderFill(slider);
+        slider.setAttribute('aria-valuenow', slider.value);
+        slider.setAttribute('aria-valuemin', slider.min || '0');
+        slider.setAttribute('aria-valuemax', slider.max || '100');
         slider.addEventListener('input', function () {
             var v = parseFloat(slider.value);
             updateSliderFill(slider);
+            slider.setAttribute('aria-valuenow', slider.value);
             if (display) display.textContent = format ? format(v) : v.toString();
             if (onChange) onChange(v);
         });
