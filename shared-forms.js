@@ -16,9 +16,30 @@ var _forms = (function () {
      * @param {string} dataAttr - The data-* attribute name to read from clicked button.
      * @param {function} onChange - Called with the attribute value string.
      */
+    function positionIndicator(indicator, btn, container) {
+        var cRect = container.getBoundingClientRect();
+        var bRect = btn.getBoundingClientRect();
+        indicator.style.width = bRect.width + 'px';
+        indicator.style.transform = 'translateX(' + (bRect.left - cRect.left - 3) + 'px)';
+    }
+
     function bindModeGroup(container, dataAttr, onChange) {
         var btns = container.querySelectorAll('.mode-btn');
         var active = container.querySelector('.mode-btn.active');
+
+        // Create sliding indicator
+        var indicator = document.createElement('div');
+        indicator.className = 'mode-indicator';
+        container.insertBefore(indicator, container.firstChild);
+        if (active) {
+            // Position without transition on init
+            indicator.style.transition = 'none';
+            positionIndicator(indicator, active, container);
+            // Force reflow then restore transition
+            indicator.offsetHeight; // eslint-disable-line no-unused-expressions
+            indicator.style.transition = '';
+        }
+
         btns.forEach(function(b) { b.setAttribute('aria-pressed', b === active ? 'true' : 'false'); });
         container.addEventListener('click', function (e) {
             var btn = e.target.closest('.mode-btn');
@@ -26,6 +47,7 @@ var _forms = (function () {
             if (active) active.classList.remove('active');
             btn.classList.add('active');
             active = btn;
+            positionIndicator(indicator, btn, container);
             btns.forEach(function(b) { b.setAttribute('aria-pressed', b === btn ? 'true' : 'false'); });
             onChange(btn.dataset[dataAttr]);
             if (typeof _haptics !== 'undefined') _haptics.trigger('selection');

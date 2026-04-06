@@ -195,6 +195,7 @@ ${gen(L, false)}
   --accent-light:  ${P.accentLight};
   --accent-subtle: ${_r(P.accent, 0.078)};
   --accent-glow:   ${_r(P.accent, 0.18)};
+  --text-on-accent: ${L.elevated};
 
   --shadow-xs: 0 1px 2px #00000008;
   --shadow-sm: 0 1px 3px #0000000a, 0 2px 8px #00000008;
@@ -257,6 +258,8 @@ ${gen(D, true)}
   --shadow-glow-lg: 0 0 30px ${_r(P.accent, 0.25)}, 0 0 80px ${_r(P.accent, 0.15)}, 0 0 120px ${_r(P.accent, 0.08)};
 
   --backdrop: #00000080;
+
+  --text-on-accent: ${D.elevated};
 
   --tog-bg:             ${D.panelSolid};
   --tog-thumb-on:       var(--text);

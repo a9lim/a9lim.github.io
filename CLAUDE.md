@@ -12,17 +12,18 @@ Flat, lineless, modern. Every surface is differentiated by **background color**,
 - **Subtle animations** — hover lifts are small (`translateY(-2px)` to `-4px`), no scale transforms on cards. Transitions use `var(--ease-out)` or `var(--ease-spring)`.
 - `.glass` uses `bg-panel` (semi-transparent) with `backdrop-filter: blur(20px) saturate(1.5)` for true glassmorphism. No shimmer inset.
 - Shadow tokens (`--shadow-sm` etc.) contain no `0 0 0 1px` spread rings.
+- **No hardcoded colors** in CSS or JS — use theme tokens (`--text`, `--text-on-accent`, `--accent`, `--shimmer`, `_PAL.light.*`/`_PAL.dark.*`, etc.). Exceptions: shadow hex values (always black + alpha), CSS mask `black`/`white` keywords, `var()` fallbacks, data URI SVGs, and `theme-color` meta tags.
 
 ## Shared Code Policy
 
 All projects share a common design system at this repo's root. **Always prefer shared code over project-specific implementations.** Check `shared-*.js` before adding utility code to a project.
 
 Key shared modules:
-- `shared-tokens.js` — `_PALETTE`, `_FONT`, color math. Extend via `colors.js`, never hardcode colors
+- `shared-tokens.js` — `_PALETTE`, `_FONT`, color math. Extend via `colors.js`, never hardcode colors. Exposes `--text-on-accent` (light/dark) for text on accent-colored backgrounds — use instead of hardcoded `#fff`/`#FDFBF5`
 - `shared-utils.js` — `escapeHtml`, `debounce`, `throttle`, `clamp`, `lerp`, `showToast`, `trapFocus`, `resizeCanvasDPR`, `animateValue`, `initOverlayDismiss`
 - `shared-base.css` — reset, layout tokens, `.glass`, `.tool-btn`, `.ctrl-row`, `.sim-overlay`, toasts, a11y
 - `shared-toolbar.js` — `_toolbar` (theme toggle, sidebar, play/pause, speed)
-- `shared-forms.js` — `_forms` (mode groups, sliders, toggles)
+- `shared-forms.js` — `_forms` (mode groups, sliders, toggles). `bindModeGroup` creates a sliding `.mode-indicator` element inside `.mode-toggles` — accent-colored pill that animates between buttons via `translateX`
 - `shared-icons.js` — unified SVG icon library. Exposes `_ICON` global, renders icons via `data-icon` attribute
 - `shared-tabs.js`, `shared-camera.js`, `shared-info.js`, `shared-shortcuts.js`, `shared-about.js`, `shared-touch.js`, `shared-tooltip.js`, `shared-sparkline.js`, `shared-haptics.js`
 
