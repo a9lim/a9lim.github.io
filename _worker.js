@@ -361,7 +361,7 @@ function rewriteHTML(response, meta) {
         }
       },
     })
-    .on('#reading-pane', {
+    .on('#verses', {
       element(el) {
         if (meta.ssrVerses) el.setInnerContent(meta.ssrVerses, { html: true });
       },
