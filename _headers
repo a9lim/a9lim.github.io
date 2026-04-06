@@ -24,35 +24,30 @@
 
 # Early Hints — preload critical resources for root SPA
 /
-  Link: </fonts/fonts.css>; rel=preload; as=style
   Link: </shared-tokens.js>; rel=preload; as=script
   Link: </shared-base.css>; rel=preload; as=style
   Link: </styles.css>; rel=preload; as=style
   Link: </main.js>; rel=modulepreload
   Link: </fonts/lato-400.woff2>; rel=preload; as=font; crossorigin
 /projects
-  Link: </fonts/fonts.css>; rel=preload; as=style
   Link: </shared-tokens.js>; rel=preload; as=script
   Link: </shared-base.css>; rel=preload; as=style
   Link: </styles.css>; rel=preload; as=style
   Link: </main.js>; rel=modulepreload
   Link: </fonts/lato-400.woff2>; rel=preload; as=font; crossorigin
 /blog
-  Link: </fonts/fonts.css>; rel=preload; as=style
   Link: </shared-tokens.js>; rel=preload; as=script
   Link: </shared-base.css>; rel=preload; as=style
   Link: </styles.css>; rel=preload; as=style
   Link: </main.js>; rel=modulepreload
   Link: </fonts/lato-400.woff2>; rel=preload; as=font; crossorigin
 /blog/*
-  Link: </fonts/fonts.css>; rel=preload; as=style
   Link: </shared-tokens.js>; rel=preload; as=script
   Link: </shared-base.css>; rel=preload; as=style
   Link: </styles.css>; rel=preload; as=style
   Link: </main.js>; rel=modulepreload
   Link: </fonts/lato-400.woff2>; rel=preload; as=font; crossorigin
 /about
-  Link: </fonts/fonts.css>; rel=preload; as=style
   Link: </shared-tokens.js>; rel=preload; as=script
   Link: </shared-base.css>; rel=preload; as=style
   Link: </styles.css>; rel=preload; as=style
@@ -61,7 +56,6 @@
 
 # Subapp Early Hints — shared resources + project-specific CSS and module entry
 /geon/*
-  Link: </fonts/fonts.css>; rel=preload; as=style
   Link: </shared-tokens.js>; rel=preload; as=script
   Link: </shared-base.css>; rel=preload; as=style
   Link: </geon/styles.css>; rel=preload; as=style
@@ -69,14 +63,12 @@
   Link: </fonts/lato-400.woff2>; rel=preload; as=font; crossorigin
   Link: <https://cdn.jsdelivr.net>; rel=preconnect; crossorigin
 /scripture/*
-  Link: </fonts/fonts.css>; rel=preload; as=style
   Link: </shared-tokens.js>; rel=preload; as=script
   Link: </shared-base.css>; rel=preload; as=style
   Link: </scripture/styles.css>; rel=preload; as=style
   Link: </scripture/main.js>; rel=modulepreload
   Link: </fonts/lato-400.woff2>; rel=preload; as=font; crossorigin
 /cyano/*
-  Link: </fonts/fonts.css>; rel=preload; as=style
   Link: </shared-tokens.js>; rel=preload; as=script
   Link: </shared-base.css>; rel=preload; as=style
   Link: </cyano/styles.css>; rel=preload; as=style
@@ -84,7 +76,6 @@
   Link: </fonts/lato-400.woff2>; rel=preload; as=font; crossorigin
   Link: <https://cdn.jsdelivr.net>; rel=preconnect; crossorigin
 /shoals/*
-  Link: </fonts/fonts.css>; rel=preload; as=style
   Link: </shared-tokens.js>; rel=preload; as=script
   Link: </shared-base.css>; rel=preload; as=style
   Link: </shoals/styles.css>; rel=preload; as=style
@@ -92,7 +83,6 @@
   Link: </fonts/lato-400.woff2>; rel=preload; as=font; crossorigin
   Link: <https://cdn.jsdelivr.net>; rel=preconnect; crossorigin
 /gerry/*
-  Link: </fonts/fonts.css>; rel=preload; as=style
   Link: </shared-tokens.js>; rel=preload; as=script
   Link: </shared-base.css>; rel=preload; as=style
   Link: </gerry/styles.css>; rel=preload; as=style
