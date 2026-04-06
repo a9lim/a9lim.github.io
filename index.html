@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>a9l.im</title>
+    <title>a9l.im — Interactive Educational Simulations</title>
     <meta name="description" content="Free interactive simulations for learning physics, biology, finance, and political science. Explore gravity, metabolism, options trading, gerrymandering, and sacred texts — all in the browser, no install required.">
     <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1">
-    <meta property="og:title" content="a9l.im">
+    <meta property="og:title" content="a9l.im — Interactive Educational Simulations">
     <meta property="og:description" content="Free interactive simulations for learning physics, biology, finance, and political science. Explore gravity, metabolism, options trading, gerrymandering, and sacred texts — all in the browser.">
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://a9l.im">
@@ -20,11 +20,15 @@
     <meta property="og:image:alt" content="a9l.im — interactive educational simulations">
     <meta name="twitter:site" content="@a9_lim">
     <meta name="twitter:creator" content="@a9_lim">
+    <meta name="twitter:title" content="a9l.im — Interactive Educational Simulations">
+    <meta name="twitter:description" content="Open-source interactive simulations for physics, biology, finance, political science, and sacred texts — running entirely in the browser.">
     <meta name="author" content="a9lim">
     <meta name="theme-color" content="#C8553D">
     <link rel="canonical" href="https://a9l.im">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <link rel="apple-touch-icon" sizes="192x192" href="/icon-192.png">
+    <meta name="apple-mobile-web-app-title" content="a9l.im">
 
     <link rel="stylesheet" href="fonts/fonts.css">
 
@@ -39,8 +43,10 @@
 
     <link rel="icon" href="favicon.ico">
     <link rel="manifest" href="manifest.json">
+    <link rel="search" type="application/opensearchdescription+xml" title="a9l.im" href="/opensearch.xml">
     <link rel="alternate" type="application/rss+xml" title="a9l.im (RSS)" href="https://a9l.im/feed.xml">
     <link rel="alternate" type="application/atom+xml" title="a9l.im (Atom)" href="https://a9l.im/feed.atom">
+    <link rel="sitemap" type="application/xml" href="/sitemap.xml">
 
     <script type="speculationrules">
     {"prefetch":[{"source":"document","where":{"href_matches":["/projects","/blog","/about","/geon","/cyano","/gerry","/shoals","/scripture","/scripture/*"]},"eagerness":"moderate"}],"prerender":[{"source":"document","where":{"href_matches":["/projects","/blog","/about"]},"eagerness":"conservative"}]}
@@ -55,9 +61,10 @@
           "name": "a9l.im",
           "url": "https://a9l.im",
           "description": "A collection of interactive educational simulations exploring particle physics, cellular metabolism, options trading, redistricting, and sacred texts.",
+          "mainEntityOfPage": {"@type": "WebPage", "@id": "https://a9l.im"},
           "speakable": {
             "@type": "SpeakableSpecification",
-            "cssSelector": [".hero-tagline", ".hero-sub", "meta[name='description']"]
+            "cssSelector": [".hero-tagline", ".hero-sub"]
           },
           "about": [
             {"@type": "Thing", "@id": "https://www.wikidata.org/wiki/Q413", "name": "Physics"},
@@ -66,10 +73,18 @@
             {"@type": "Thing", "@id": "https://www.wikidata.org/wiki/Q5765940", "name": "Gerrymandering"},
             {"@type": "Thing", "@id": "https://www.wikidata.org/wiki/Q179461", "name": "Religious text"}
           ],
+          "potentialAction": {
+            "@type": "SearchAction",
+            "target": {
+              "@type": "EntryPoint",
+              "urlTemplate": "https://www.google.com/search?q=site:a9l.im+{search_term_string}"
+            },
+            "query-input": "required name=search_term_string"
+          },
           "author": {
             "@type": "Person",
             "name": "a9lim",
-            "url": "https://a9l.im/#about",
+            "url": "https://a9l.im/about",
             "sameAs": [
               "https://github.com/a9lim",
               "https://twitter.com/a9_lim"
@@ -116,7 +131,7 @@
           "@type": "Organization",
           "name": "a9l.im",
           "url": "https://a9l.im",
-          "logo": "https://a9l.im/og-image.webp",
+          "logo": {"@type": "ImageObject", "url": "https://a9l.im/icon-192.png", "width": 192, "height": 192},
           "sameAs": [
             "https://github.com/a9lim",
             "https://twitter.com/a9_lim"

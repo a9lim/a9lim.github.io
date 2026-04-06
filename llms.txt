@@ -17,3 +17,10 @@
 ## About
 
 - [About a9lim](https://a9l.im/about): Background, projects, and contact
+
+## GitHub Projects
+
+- [Shannon](https://github.com/a9lim/shannon): Autonomous AI agent for Discord and Signal
+- [Raiko](https://github.com/a9lim/Raiko): Discord music and chat bot
+- [Faithful](https://github.com/a9lim/faithful): Discord chatbot emulating source material
+- [Catppuccin for SDDM](https://github.com/catppuccin/sddm): Soothing pastel theme for SDDM

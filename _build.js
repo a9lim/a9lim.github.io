@@ -89,7 +89,7 @@ function renderMarkdown(src) {
     }
     if (/^\s*$/.test(line)) { i++; continue; }
     const hm = line.match(/^(#{1,6})\s+(.+)$/);
-    if (hm) { html.push('<h' + hm[1].length + '>' + mdInline(mdEsc(hm[2])) + '</h' + hm[1].length + '>'); i++; continue; }
+    if (hm) { const slug = hm[2].toLowerCase().replace(/<[^>]+>/g, '').replace(/&[^;]+;/g, '').replace(/[^\w]+/g, '-').replace(/^-|-$/g, ''); html.push('<h' + hm[1].length + ' id="' + slug + '">' + mdInline(mdEsc(hm[2])) + '</h' + hm[1].length + '>'); i++; continue; }
     if (/^(-{3,}|\*{3,}|_{3,})\s*$/.test(line)) { html.push('<hr>'); i++; continue; }
     if (/^>\s?/.test(line)) {
       const bq = [];
@@ -154,6 +154,13 @@ for (const r of staticRoutes) {
   add(r.path, gitLastmod(r.file), IMAGE_MAP[r.path] || null, r.changefreq, r.priority);
 }
 
+// 1b. Scripture work-level routes
+const workIds = readJSON('scripture/data/works.json');
+for (const workId of workIds) {
+  const workLastmod = gitLastmod(`scripture/data/${workId}/manifest.json`);
+  add(`/scripture/${workId}`, workLastmod, null, 'monthly', 0.7);
+}
+
 // 2. Blog posts
 const posts = readJSON('posts.json');
 for (const p of posts) {
@@ -162,7 +169,6 @@ for (const p of posts) {
 }
 
 // 3. Scripture deep routes
-const workIds = readJSON('scripture/data/works.json');
 
 for (const workId of workIds) {
   const manifest = readJSON(`scripture/data/${workId}/manifest.json`);
@@ -186,7 +192,8 @@ const xml = [
     const parts = [`  <url>\n    <loc>${u.loc}</loc>\n    <lastmod>${u.lastmod}</lastmod>${u.changefreq ? `\n    <changefreq>${u.changefreq}</changefreq>` : ''}${u.priority != null ? `\n    <priority>${u.priority}</priority>` : ''}`];
     if (u.images) {
       for (const img of u.images) {
-        parts.push(`    <image:image>\n      <image:loc>${SITE}/${img}</image:loc>\n    </image:image>`);
+        const imgTitle = u.loc.replace(SITE, '').replace(/\/$/, '').slice(1) || 'a9l.im';
+        parts.push(`    <image:image>\n      <image:loc>${SITE}/${img}</image:loc>\n      <image:title>${escXml(imgTitle)}</image:title>\n    </image:image>`);
       }
     }
     parts.push('  </url>');
@@ -204,7 +211,7 @@ console.log(`sitemap.xml: ${urls.length} URLs`);
 const postItems = posts.map(p => {
   const mdSrc = readText(`posts/${p.slug}.md`);
   const htmlContent = renderMarkdown(mdSrc);
-  const firstPara = mdSrc.split(/\n\n/)[0].replace(/[*_`\[\]()#>!]/g, '').trim();
+  const firstPara = p.excerpt || mdSrc.split(/\n\n/)[0].replace(/[*_`\[\]()#>!]/g, '').trim();
   return `    <item>
       <title>${escXml(p.title)}</title>
       <link>${SITE}/blog/${p.slug}</link>
@@ -216,7 +223,10 @@ const postItems = posts.map(p => {
     </item>`;
 });
 
-const latestDate = rfc2822(today());
+const latestDate = rfc2822(posts.reduce((max, p) => {
+  const d = p.updated || p.date;
+  return d > max ? d : max;
+}, posts[0]?.date || today()));
 
 const rss = `<?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/">
@@ -227,6 +237,12 @@ const rss = `<?xml version="1.0" encoding="UTF-8"?>
     <language>en-us</language>
     <lastBuildDate>${latestDate}</lastBuildDate>
     <atom:link href="${SITE}/feed.xml" rel="self" type="application/rss+xml"/>
+    <image>
+      <url>${SITE}/icon-192.png</url>
+      <title>a9l.im</title>
+      <link>${SITE}</link>
+    </image>
+    <managingEditor>mx@a9l.im (a9lim)</managingEditor>
 ${postItems.join('\n')}
   </channel>
 </rss>
@@ -240,19 +256,22 @@ console.log(`feed.xml: ${posts.length} items`);
 const atomEntries = posts.map(p => {
   const mdSrc = readText(`posts/${p.slug}.md`);
   const htmlContent = renderMarkdown(mdSrc);
-  const firstPara = mdSrc.split(/\n\n/)[0].replace(/[*_`\[\]()#>!]/g, '').trim();
+  const firstPara = p.excerpt || mdSrc.split(/\n\n/)[0].replace(/[*_`\[\]()#>!]/g, '').trim();
   return `  <entry>
     <title>${escXml(p.title)}</title>
     <link href="${SITE}/blog/${p.slug}" rel="alternate"/>
     <id>${SITE}/blog/${p.slug}</id>
     <published>${isoTimestamp(p.date)}</published>
-    <updated>${isoTimestamp(p.date)}</updated>
+    <updated>${isoTimestamp(p.updated || p.date)}</updated>
     <summary>${escXml(firstPara)}</summary>
     <content type="html"><![CDATA[${htmlContent}]]></content>
   </entry>`;
 });
 
-const latestIso = isoTimestamp(today());
+const latestIso = isoTimestamp(posts.reduce((max, p) => {
+  const d = p.updated || p.date;
+  return d > max ? d : max;
+}, posts[0]?.date || today()));
 
 const atom = `<?xml version="1.0" encoding="UTF-8"?>
 <feed xmlns="http://www.w3.org/2005/Atom">

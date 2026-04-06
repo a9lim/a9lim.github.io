@@ -5,39 +5,45 @@
     <link>https://a9l.im</link>
     <description>Interactive educational simulations for physics, biology, finance, and political science.</description>
     <language>en-us</language>
-    <lastBuildDate>Mon, 06 Apr 2026 00:00:00 GMT</lastBuildDate>
+    <lastBuildDate>Thu, 26 Feb 2026 00:00:00 GMT</lastBuildDate>
     <atom:link href="https://a9l.im/feed.xml" rel="self" type="application/rss+xml"/>
+    <image>
+      <url>https://a9l.im/icon-192.png</url>
+      <title>a9l.im</title>
+      <link>https://a9l.im</link>
+    </image>
+    <managingEditor>mx@a9l.im (a9lim)</managingEditor>
     <item>
       <title>Hello, World</title>
       <link>https://a9l.im/blog/hello-world</link>
       <guid isPermaLink="true">https://a9l.im/blog/hello-world</guid>
       <pubDate>Thu, 26 Feb 2026 00:00:00 GMT</pubDate>
       <category>meta</category>
-      <description>This is the first post on a9l.im — a quick tour of the blog and a test of every markdown feature the parser supports.</description>
+      <description>First post on the a9l.im blog — a site tour and markdown feature test.</description>
       <content:encoded><![CDATA[<p>This is the first post on <strong>a9l.im</strong> — a quick tour of the blog and a test of every markdown feature the parser supports.</p>
-<h2>Why a blog?</h2>
+<h2 id="why-a-blog">Why a blog?</h2>
 <p>Building interactive simulations generates a lot of <em>interesting problems</em> — numerical precision, rendering tricks, algorithmic trade-offs. A blog is a good place to write them up.</p>
-<h2>What the parser handles</h2>
-<h3>Text formatting</h3>
+<h2 id="what-the-parser-handles">What the parser handles</h2>
+<h3 id="text-formatting">Text formatting</h3>
 <p>You can write <strong>bold</strong>, <em>italic</em>, and <strong><em>bold italic</em></strong> text. Inline <code>code</code> works too.</p>
-<h3>Links and images</h3>
+<h3 id="links-and-images">Links and images</h3>
 <p>Here's a <a href="https://github.com/a9lim" target="_blank" rel="noopener noreferrer">link to the repo</a> and an image:</p>
 <p><img src="https://placehold.co/600x200/F0EDE4/1A1612?text=a9l.im" alt="Placeholder" loading="lazy"></p>
-<h3>Lists</h3>
+<h3 id="lists">Lists</h3>
 <p>Unordered:</p>
 <ul><li>Zero dependencies</li><li>Vanilla JS only</li><li>No build step</li></ul>
 <p>Ordered:</p>
 <ol><li>Write a markdown file</li><li>Add it to <code>posts.json</code></li><li>Deploy</li></ol>
-<h3>Blockquotes</h3>
+<h3 id="blockquotes">Blockquotes</h3>
 <blockquote><p>The purpose of computation is insight, not numbers.
 — Richard Hamming</p></blockquote>
-<h3>Code blocks</h3>
+<h3 id="code-blocks">Code blocks</h3>
 <pre><code class="language-js">function greet(name) {
   return `Hello, ${name}!`;
 }
 
 console.log(greet('world'));</code></pre>
-<h3>Horizontal rules</h3>
+<h3 id="horizontal-rules">Horizontal rules</h3>
 <hr>
 <p>That covers all the basics. More posts to come.</p>]]></content:encoded>
     </item>

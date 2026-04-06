@@ -12,20 +12,20 @@ const WORK_TITLES = {
 const WORK_SCHEMA = {
   ot:        { translator: 'King James Version', lang: 'en', year: 1611, wikidata: 'Q628' },
   nt:        { translator: 'King James Version', lang: 'en', year: 1611, wikidata: 'Q37922' },
-  apoc:      { translator: 'King James Version', lang: 'en', year: 1611 },
+  apoc:      { translator: 'King James Version', lang: 'en', year: 1611, wikidata: 'Q151616' },
   quran:     { translator: 'Marmaduke Pickthall', lang: 'en', year: 1930, wikidata: 'Q428' },
   bom:       { translator: 'Joseph Smith', lang: 'en', year: 1830, wikidata: 'Q374076' },
   dc:        { lang: 'en', year: 1835, wikidata: 'Q217164' },
   pgp:       { lang: 'en', year: 1851, wikidata: 'Q1332454' },
-  fourbooks: { translator: 'James Legge', lang: 'en', year: 1893 },
+  fourbooks: { translator: 'James Legge', lang: 'en', year: 1893, wikidata: 'Q728094' },
   kj:        { translator: 'Basil Hall Chamberlain', lang: 'en', year: 1919, wikidata: 'Q388841' },
   ttc:       { translator: 'James Legge', lang: 'en', year: 1891, wikidata: 'Q80738' },
-  bund:      { translator: 'Edward William West', lang: 'en', year: 1880 },
-  lotus:     { translator: 'Hendrik Kern', lang: 'en', year: 1884 },
-  bop:       { translator: 'James Legge', lang: 'en', year: 1876 },
-  kv:        { translator: 'John Martin Crawford', lang: 'en', year: 1888 },
-  poe:       { translator: 'Henry Adams Bellows', lang: 'en', year: 1923 },
-  viraf:     { translator: 'Martin Haug & Edward William West', lang: 'en', year: 1872 },
+  bund:      { translator: 'Edward William West', lang: 'en', year: 1880, wikidata: 'Q576019' },
+  lotus:     { translator: 'Hendrik Kern', lang: 'en', year: 1884, wikidata: 'Q1046' },
+  bop:       { translator: 'James Legge', lang: 'en', year: 1876, wikidata: 'Q756386' },
+  kv:        { translator: 'John Martin Crawford', lang: 'en', year: 1888, wikidata: 'Q242309' },
+  poe:       { translator: 'Henry Adams Bellows', lang: 'en', year: 1923, wikidata: 'Q174285' },
+  viraf:     { translator: 'Martin Haug & Edward William West', lang: 'en', year: 1872, wikidata: 'Q1371791' },
 };
 
 // ─── Route metadata for HTMLRewriter SEO injection ───
@@ -60,6 +60,7 @@ const BLOG_META = {
 const ABOUT_JSONLD = JSON.stringify({
   '@context': 'https://schema.org',
   '@type': 'Person',
+  '@id': 'https://a9l.im/about',
   name: 'a9lim',
   url: 'https://a9l.im/about',
   sameAs: [
@@ -138,14 +139,29 @@ function rewriteHTML(response, meta) {
     .on('meta[name="twitter:card"]', {
       element(el) { el.setAttribute('content', 'summary_large_image'); },
     })
+    .on('meta[name="twitter:title"]', {
+      element(el) { el.setAttribute('content', meta.ogTitle); },
+    })
+    .on('meta[name="twitter:description"]', {
+      element(el) { el.setAttribute('content', meta.desc); },
+    })
     .on('link[rel="canonical"]', {
       element(el) { el.setAttribute('href', meta.canonical); },
+    })
+    .on('meta[property="og:type"]', {
+      element(el) { if (meta.ogType) el.setAttribute('content', meta.ogType); },
     })
     .on('head', {
       element(el) {
         if (meta.jsonLd) {
           el.append(`<script type="application/ld+json">${meta.jsonLd}</script>`, { html: true });
         }
+        if (meta.prevUrl) el.append(`<link rel="prev" href="${meta.prevUrl}">`, { html: true });
+        if (meta.nextUrl) el.append(`<link rel="next" href="${meta.nextUrl}">`, { html: true });
+        if (meta.articlePublished) el.append(`<meta property="article:published_time" content="${meta.articlePublished}">`, { html: true });
+        if (meta.articleModified) el.append(`<meta property="article:modified_time" content="${meta.articleModified}">`, { html: true });
+        if (meta.articleAuthor) el.append(`<meta property="article:author" content="${meta.articleAuthor}">`, { html: true });
+        if (meta.articleTag) el.append(`<meta property="article:tag" content="${meta.articleTag}">`, { html: true });
       },
     })
     .on('#reading-pane', {
@@ -173,6 +189,11 @@ function rewriteHTML(response, meta) {
     .on('#blog-listing', {
       element(el) {
         if (meta.ssrContent) el.setAttribute('style', 'display:none');
+      },
+    })
+    .on('#blog-list-container', {
+      element(el) {
+        if (meta.ssrBlogList) el.setInnerContent(meta.ssrBlogList, { html: true });
       },
     })
     .on('.projects-grid', {
@@ -237,6 +258,10 @@ function mdInline(src) {
     .replace(/(^|[\s(])_(.+?)_([\s).,!?]|$)/g, '$1<em>$2</em>$3');
 }
 
+function slugify(text) {
+  return text.toLowerCase().replace(/<[^>]+>/g, '').replace(/&[^;]+;/g, '').replace(/[^\w]+/g, '-').replace(/^-|-$/g, '');
+}
+
 function renderMarkdown(src) {
   const lines = src.replace(/\r\n?/g, '\n').split('\n');
   const html = [];
@@ -258,7 +283,7 @@ function renderMarkdown(src) {
     }
     if (/^\s*$/.test(line)) { i++; continue; }
     const hm = line.match(/^(#{1,6})\s+(.+)$/);
-    if (hm) { html.push('<h' + hm[1].length + '>' + mdInline(mdEsc(hm[2])) + '</h' + hm[1].length + '>'); i++; continue; }
+    if (hm) { html.push('<h' + hm[1].length + ' id="' + slugify(hm[2]) + '">' + mdInline(mdEsc(hm[2])) + '</h' + hm[1].length + '>'); i++; continue; }
     if (/^(-{3,}|\*{3,}|_{3,})\s*$/.test(line)) { html.push('<hr>'); i++; continue; }
     if (/^>\s?/.test(line)) {
       const bq = [];
@@ -294,6 +319,12 @@ function fmtDate(iso) {
   return m[d.getMonth()] + ' ' + d.getDate() + ', ' + d.getFullYear();
 }
 
+const SCRIPTURE_WORKS_SSR = Object.entries(WORK_TITLES).map(([id, title]) => {
+  const ws = WORK_SCHEMA[id] || {};
+  const detail = ws.translator ? `${ws.translator} translation, ${ws.year}` : (ws.year ? String(ws.year) : '');
+  return `<a href="/scripture/${id}" class="work-link"><strong>${title}</strong>${detail ? ` <span>(${detail})</span>` : ''}</a>`;
+}).join('\n');
+
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
@@ -304,10 +335,63 @@ export default {
       const res = await env.ASSETS.fetch(new URL('/scripture/index.html', origin));
       if (env.VIEWS) logView(ctx, env.VIEWS, request, pathname);
 
-      // Inject meta tags, BreadcrumbList JSON-LD, verse excerpt, and visible breadcrumb for chapter URLs
-      const chapterMatch = pathname.match(/^\/scripture\/([a-z]+)\/(.+)-(\d+)$/);
+      // Work-level routes: /scripture/{workId} or /scripture/{workId}/
+      const workMatch = pathname.match(/^\/scripture\/([a-z]+)\/?$/);
+      if (workMatch) {
+        const [, workId] = workMatch;
+        const workTitle = WORK_TITLES[workId];
+        if (workTitle) {
+          const ws = WORK_SCHEMA[workId] || {};
+          const translatorPerson = ws.translator ? { '@type': 'Person', name: ws.translator } : undefined;
+          const meta = {
+            title: `${workTitle} | Scripture`,
+            desc: `Read the ${workTitle}${ws.translator ? ' (' + ws.translator + ' translation, ' + ws.year + ')' : ''} \u2014 full-text search, concordance, verse notes, and cross-tradition comparisons.`,
+            ogTitle: `${workTitle} | Scripture`,
+            canonical: `https://a9l.im/scripture/${workId}`,
+            jsonLd: JSON.stringify({
+              '@context': 'https://schema.org',
+              '@graph': [
+                {
+                  '@type': 'BreadcrumbList',
+                  itemListElement: [
+                    { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://a9l.im' },
+                    { '@type': 'ListItem', position: 2, name: 'Scripture', item: 'https://a9l.im/scripture/' },
+                    { '@type': 'ListItem', position: 3, name: workTitle, item: `https://a9l.im/scripture/${workId}` },
+                  ],
+                },
+                {
+                  '@type': 'Book',
+                  name: workTitle,
+                  url: `https://a9l.im/scripture/${workId}`,
+                  inLanguage: ws.lang || 'en',
+                  '@id': `https://a9l.im/scripture/${workId}`,
+                  ...(ws.wikidata && { translationOfWork: { '@type': 'Book', '@id': `https://www.wikidata.org/wiki/${ws.wikidata}` } }),
+                  ...(translatorPerson && { translator: translatorPerson }),
+                  ...(ws.year && { datePublished: String(ws.year) }),
+                },
+              ],
+            }),
+            ssrBreadcrumb: `<a href="/scripture/">Scripture</a> <span aria-hidden="true">\u203a</span> <span>${mdEsc(workTitle)}</span>`,
+          };
+          try {
+            const manifestRes = await env.ASSETS.fetch(new URL(`/scripture/data/${workId}/manifest.json`, origin));
+            if (manifestRes.ok) {
+              const manifest = await manifestRes.json();
+              const bookList = manifest.books.map(b => {
+                const startCh = b.start || 1;
+                return `<a href="/scripture/${workId}/${b.id}-${startCh}">${mdEsc(b.name)}</a>`;
+              }).join(' ');
+              meta.ssrVerses = `<h1>${mdEsc(workTitle)}</h1><nav class="book-listing">${bookList}</nav>`;
+            }
+          } catch (_) { /* SSR failed — client JS will hydrate */ }
+          return secure(rewriteHTML(res, meta));
+        }
+      }
+
+      // Chapter (and optional verse) routes: /scripture/{workId}/{bookId}-{chapter}[:verse]
+      const chapterMatch = pathname.match(/^\/scripture\/([a-z]+)\/(.+)-(\d+)(?::(\d+))?$/);
       if (chapterMatch) {
-        const [, workId, bookId, chapterNum] = chapterMatch;
+        const [, workId, bookId, chapterNum, verseNum] = chapterMatch;
         const workTitle = WORK_TITLES[workId];
         if (workTitle) {
           try {
@@ -318,59 +402,147 @@ export default {
               if (book) {
                 const chapterLabel = `${book.name} ${chapterNum}`;
                 const ws = WORK_SCHEMA[workId] || {};
+                const translatorPerson = ws.translator ? { '@type': 'Person', name: ws.translator } : undefined;
                 const bookSchema = {
                   '@type': 'Book',
                   name: workTitle,
-                  ...(ws.wikidata && { '@id': `https://www.wikidata.org/wiki/${ws.wikidata}` }),
-                  ...(ws.translator && { translator: { '@type': 'Person', name: ws.translator } }),
+                  url: `https://a9l.im/scripture/${workId}`,
+                  '@id': `https://a9l.im/scripture/${workId}`,
+                  ...(ws.wikidata && { translationOfWork: { '@type': 'Book', '@id': `https://www.wikidata.org/wiki/${ws.wikidata}` } }),
+                  ...(translatorPerson && { translator: translatorPerson }),
                   inLanguage: ws.lang || 'en',
                   ...(ws.year && { datePublished: String(ws.year) }),
                 };
+
+                // Compute prev/next chapter URLs
+                const chapterIdx = parseInt(chapterNum, 10);
+                const bookStart = book.start || 1;
+                const bookIdx = manifest.books.indexOf(book);
+                let prevUrl, nextUrl;
+                if (chapterIdx > bookStart) {
+                  prevUrl = `https://a9l.im/scripture/${workId}/${bookId}-${chapterIdx - 1}`;
+                } else if (bookIdx > 0) {
+                  const prevBook = manifest.books[bookIdx - 1];
+                  const prevStart = prevBook.start || 1;
+                  prevUrl = `https://a9l.im/scripture/${workId}/${prevBook.id}-${prevStart + prevBook.chapters - 1}`;
+                }
+                if (chapterIdx < bookStart + book.chapters - 1) {
+                  nextUrl = `https://a9l.im/scripture/${workId}/${bookId}-${chapterIdx + 1}`;
+                } else if (bookIdx < manifest.books.length - 1) {
+                  const nextBook = manifest.books[bookIdx + 1];
+                  nextUrl = `https://a9l.im/scripture/${workId}/${nextBook.id}-${nextBook.start || 1}`;
+                }
+
+                const chapterUrl = `https://a9l.im/scripture/${workId}/${bookId}-${chapterNum}`;
+                const breadcrumbItems = [
+                  { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://a9l.im' },
+                  { '@type': 'ListItem', position: 2, name: 'Scripture', item: 'https://a9l.im/scripture/' },
+                  { '@type': 'ListItem', position: 3, name: workTitle, item: `https://a9l.im/scripture/${workId}` },
+                  { '@type': 'ListItem', position: 4, name: chapterLabel, item: chapterUrl },
+                ];
+                const graph = [
+                  { '@type': 'BreadcrumbList', itemListElement: breadcrumbItems },
+                  {
+                    '@type': 'Chapter',
+                    name: chapterLabel,
+                    url: chapterUrl,
+                    inLanguage: ws.lang || 'en',
+                    isPartOf: bookSchema,
+                    audience: { '@type': 'Audience', audienceType: 'Students, scholars, readers of sacred texts' },
+                    ...(translatorPerson && { translator: translatorPerson }),
+                  },
+                ];
+
+                const isSingleBook = manifest.books.length === 1;
                 const meta = {
                   title: `${chapterLabel} \u2014 ${workTitle} | Scripture`,
-                  desc: `Read ${chapterLabel} (${workTitle}) \u2014 full-text search, concordance, verse notes, and cross-tradition comparisons.`,
+                  desc: isSingleBook
+                    ? `Read ${chapterLabel} \u2014 full-text search, concordance, verse notes, and cross-tradition comparisons.`
+                    : `Read ${chapterLabel} (${workTitle}) \u2014 full-text search, concordance, verse notes, and cross-tradition comparisons.`,
                   ogTitle: `${chapterLabel} \u2014 ${workTitle} | Scripture`,
                   canonical: `https://a9l.im${pathname}`,
-                  jsonLd: JSON.stringify({
-                    '@context': 'https://schema.org',
-                    '@graph': [
-                      {
-                        '@type': 'BreadcrumbList',
-                        itemListElement: [
-                          { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://a9l.im' },
-                          { '@type': 'ListItem', position: 2, name: 'Scripture', item: 'https://a9l.im/scripture/' },
-                          { '@type': 'ListItem', position: 3, name: workTitle, item: `https://a9l.im/scripture/${workId}` },
-                          { '@type': 'ListItem', position: 4, name: chapterLabel, item: `https://a9l.im${pathname}` },
-                        ],
-                      },
-                      {
-                        '@type': 'CreativeWork',
-                        name: chapterLabel,
-                        url: `https://a9l.im${pathname}`,
-                        inLanguage: 'en',
-                        isPartOf: bookSchema,
-                      },
-                    ],
-                  }),
+                  ogType: 'article',
+                  prevUrl,
+                  nextUrl,
                   ssrBreadcrumb: `<a href="/scripture/">Scripture</a> <span aria-hidden="true">\u203a</span> <a href="/scripture/${workId}">${mdEsc(workTitle)}</a> <span aria-hidden="true">\u203a</span> <span>${mdEsc(chapterLabel)}</span>`,
                 };
 
-                // SSR: inject first ~500 chars of verse text for crawlers
+                // SSR: inject verse text for crawlers
                 try {
                   const chapterRes = await env.ASSETS.fetch(new URL(`/scripture/data/${workId}/chapters/${bookId}-${chapterNum}.json`, origin));
                   if (chapterRes.ok) {
                     const chapter = await chapterRes.json();
-                    const raw = chapter.sections.flatMap(s => s.verses).join(' ');
-                    const excerpt = raw.length > 500 ? raw.slice(0, raw.lastIndexOf(' ', 500)) + '\u2026' : raw;
-                    meta.ssrVerses = `<p>${mdEsc(excerpt)}</p>`;
+                    const allVerses = chapter.sections.flatMap(s => s.verses);
+
+                    // Verse-level deep link
+                    if (verseNum) {
+                      const vi = parseInt(verseNum, 10) - 1;
+                      const verseText = vi >= 0 && vi < allVerses.length ? allVerses[vi] : null;
+                      if (verseText) {
+                        const verseLabel = `${chapterLabel}:${verseNum}`;
+                        meta.title = `${verseLabel} (${workTitle}) | Scripture`;
+                        meta.ogTitle = `${verseLabel} (${workTitle}) | Scripture`;
+                        meta.desc = verseText.length > 160 ? verseText.slice(0, verseText.lastIndexOf(' ', 160)) + '\u2026' : verseText;
+                        meta.ssrVerses = `<p><b>${verseNum}.</b> ${mdEsc(verseText)}</p>`;
+                        breadcrumbItems.push({ '@type': 'ListItem', position: 5, name: `Verse ${verseNum}`, item: `https://a9l.im${pathname}` });
+                        graph.push({
+                          '@type': 'Quotation',
+                          text: verseText,
+                          isPartOf: { '@type': 'CreativeWork', name: chapterLabel, url: chapterUrl },
+                        });
+                      }
+                    } else {
+                      const maxVerses = Math.min(allVerses.length, 10);
+                      const verseHtml = allVerses.slice(0, maxVerses).map((v, i) =>
+                        `<p><b>${i + 1}.</b> ${mdEsc(v)}</p>`
+                      ).join('');
+                      meta.ssrVerses = verseHtml + (allVerses.length > maxVerses ? `<p><em>${allVerses.length - maxVerses} more verses\u2026</em></p>` : '');
+                    }
                   }
                 } catch (_) { /* verse SSR failed — client JS will hydrate */ }
 
+                meta.jsonLd = JSON.stringify({ '@context': 'https://schema.org', '@graph': graph });
                 return secure(rewriteHTML(res, meta));
               }
             }
           } catch (_) { /* fall through to default */ }
         }
+      }
+
+      // Scripture index: /scripture or /scripture/
+      if (pathname === '/scripture' || pathname === '/scripture/') {
+        const indexMeta = {
+          title: 'Scripture — a9l.im',
+          desc: 'Read sixteen sacred texts spanning Abrahamic, East Asian, Zoroastrian, Buddhist, and Nordic traditions. Full-text search, concordance, verse notes, and cross-tradition comparisons.',
+          ogTitle: 'Scripture — Sacred Text Reader',
+          canonical: 'https://a9l.im/scripture/',
+          jsonLd: JSON.stringify({
+            '@context': 'https://schema.org',
+            '@graph': [
+              {
+                '@type': 'CollectionPage',
+                name: 'Scripture',
+                url: 'https://a9l.im/scripture/',
+                description: 'A browser-based reader for sixteen sacred texts.',
+                mainEntity: {
+                  '@type': 'ItemList',
+                  itemListElement: Object.entries(WORK_TITLES).map(([id, title], i) => ({
+                    '@type': 'ListItem', position: i + 1, name: title, url: `https://a9l.im/scripture/${id}`,
+                  })),
+                },
+              },
+              {
+                '@type': 'BreadcrumbList',
+                itemListElement: [
+                  { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://a9l.im' },
+                  { '@type': 'ListItem', position: 2, name: 'Scripture', item: 'https://a9l.im/scripture/' },
+                ],
+              },
+            ],
+          }),
+          ssrVerses: `<h1>Sacred Texts</h1><nav class="work-listing">${SCRIPTURE_WORKS_SSR}</nav>`,
+        };
+        return secure(rewriteHTML(res, indexMeta));
       }
 
       return secure(res);
@@ -392,7 +564,7 @@ export default {
             ogTitle: `${pretty} \u2014 a9l.im`,
           };
         }
-        meta = { ...meta, canonical: `https://a9l.im${pathname}` };
+        meta = { ...meta, canonical: `https://a9l.im${pathname}`, ogType: 'article' };
 
         // SSR: fetch markdown and render to HTML for crawlers
         if (slug && !slug.includes('/') && !slug.includes('..')) {
@@ -412,6 +584,10 @@ export default {
                   const postMeta = posts.find(p => p.slug === slug);
                   if (postMeta) {
                     if (postMeta.excerpt) meta.desc = postMeta.excerpt;
+                    meta.articlePublished = postMeta.date;
+                    meta.articleModified = postMeta.updated || postMeta.date;
+                    meta.articleAuthor = 'https://a9l.im/about';
+                    if (postMeta.tag) meta.articleTag = postMeta.tag;
                     postHeader = `<span class="blog-post-date">${fmtDate(postMeta.date)}${postMeta.tag ? ' &middot; ' + mdEsc(postMeta.tag) : ''}</span><h1 class="blog-post-title">${mdEsc(postMeta.title)}</h1>`;
                     meta.jsonLd = JSON.stringify({
                       '@context': 'https://schema.org',
@@ -424,7 +600,7 @@ export default {
                           description: meta.desc,
                           url: meta.canonical,
                           author: { '@type': 'Person', name: 'a9lim', url: 'https://a9l.im/about', sameAs: ['https://github.com/a9lim', 'https://twitter.com/a9_lim'] },
-                          publisher: { '@type': 'Person', name: 'a9lim', url: 'https://a9l.im' },
+                          publisher: { '@type': 'Organization', name: 'a9l.im', url: 'https://a9l.im', logo: { '@type': 'ImageObject', url: 'https://a9l.im/icon-192.png', width: 192, height: 192 } },
                           isPartOf: { '@type': 'Blog', name: 'a9l.im Blog', url: 'https://a9l.im/blog' },
                           mainEntityOfPage: { '@type': 'WebPage', '@id': meta.canonical },
                         },
@@ -460,8 +636,49 @@ export default {
           const person = JSON.parse(ABOUT_JSONLD);
           delete person['@context'];
           meta.jsonLd = JSON.stringify({ '@context': 'https://schema.org', '@graph': [person, breadcrumb] });
+        } else if (pathname === '/projects') {
+          const projectItems = [
+            { position: 1, name: 'Geon — Relativistic Particle Physics Simulator', url: 'https://a9l.im/geon' },
+            { position: 2, name: 'Cyano — Cellular Biochemistry Simulator', url: 'https://a9l.im/cyano' },
+            { position: 3, name: 'Gerry — Gerrymandering & Electoral Fairness Simulator', url: 'https://a9l.im/gerry' },
+            { position: 4, name: 'Shoals — Options Trading Simulator', url: 'https://a9l.im/shoals' },
+            { position: 5, name: 'Scripture — Sacred Text Reader', url: 'https://a9l.im/scripture/' },
+          ].map(p => ({ '@type': 'ListItem', ...p }));
+          meta.jsonLd = JSON.stringify({
+            '@context': 'https://schema.org',
+            '@graph': [
+              { '@type': 'CollectionPage', name: 'Projects', url: 'https://a9l.im/projects', mainEntity: { '@type': 'ItemList', itemListElement: projectItems } },
+              breadcrumb,
+            ],
+          });
+        } else if (pathname === '/blog') {
+          // Blog listing SSR — will be overridden below if posts.json loads
+          meta.jsonLd = JSON.stringify({ '@context': 'https://schema.org', ...breadcrumb });
         } else {
           meta.jsonLd = JSON.stringify({ '@context': 'https://schema.org', ...breadcrumb });
+        }
+        // SSR blog listing from posts.json
+        if (pathname === '/blog') {
+          try {
+            const postsRes = await env.ASSETS.fetch(new URL('/posts.json', origin));
+            if (postsRes.ok) {
+              const posts = await postsRes.json();
+              meta.ssrBlogList = posts.map(p =>
+                `<article class="blog-post-card"><a href="/blog/${mdEsc(p.slug)}"><h3>${mdEsc(p.title)}</h3><time>${fmtDate(p.date)}</time><p>${mdEsc(p.excerpt || '')}</p></a></article>`
+              ).join('');
+              const blogItems = posts.map((p, i) => ({
+                '@type': 'ListItem', position: i + 1, name: p.title, url: `https://a9l.im/blog/${p.slug}`,
+              }));
+              meta.jsonLd = JSON.stringify({
+                '@context': 'https://schema.org',
+                '@graph': [
+                  { '@type': 'Blog', name: 'a9l.im Blog', url: 'https://a9l.im/blog', blogPost: posts.map(p => ({ '@type': 'BlogPosting', headline: p.title, url: `https://a9l.im/blog/${p.slug}`, datePublished: p.date })) },
+                  { '@type': 'ItemList', itemListElement: blogItems },
+                  breadcrumb,
+                ],
+              });
+            }
+          } catch (_) { /* fall through to basic breadcrumb */ }
         }
       }
 
@@ -472,14 +689,8 @@ export default {
     // Everything else: 404 (not CDN-cached, noindex)
     const page = await env.ASSETS.fetch(new URL('/404.html', origin));
     if (env.VIEWS) logView(ctx, env.VIEWS, request, pathname);
-    const notFound = new HTMLRewriter()
-      .on('head', {
-        element(el) {
-          el.append('<meta name="robots" content="noindex, nofollow">', { html: true });
-        },
-      })
-      .transform(new Response(page.body, { status: 404, headers: page.headers }));
-    return secure(notFound, { 'Cloudflare-CDN-Cache-Control': 'no-store' });
+    const notFound = new Response(page.body, { status: 404, headers: page.headers });
+    return secure(notFound, { 'Cloudflare-CDN-Cache-Control': 'no-store', 'X-Robots-Tag': 'noindex, nofollow' });
   },
 };
 

@@ -7,6 +7,7 @@
     <priority>1</priority>
     <image:image>
       <image:loc>https://a9l.im/og-image.webp</image:loc>
+      <image:title>a9l.im</image:title>
     </image:image>
   </url>
   <url>
@@ -34,9 +35,11 @@
     <priority>0.9</priority>
     <image:image>
       <image:loc>https://a9l.im/img/geon.webp</image:loc>
+      <image:title>geon</image:title>
     </image:image>
     <image:image>
       <image:loc>https://a9l.im/geon/og-image.webp</image:loc>
+      <image:title>geon</image:title>
     </image:image>
   </url>
   <url>
@@ -46,9 +49,11 @@
     <priority>0.9</priority>
     <image:image>
       <image:loc>https://a9l.im/img/cyano.webp</image:loc>
+      <image:title>cyano</image:title>
     </image:image>
     <image:image>
       <image:loc>https://a9l.im/cyano/og-image.webp</image:loc>
+      <image:title>cyano</image:title>
     </image:image>
   </url>
   <url>
@@ -58,9 +63,11 @@
     <priority>0.9</priority>
     <image:image>
       <image:loc>https://a9l.im/img/gerry.webp</image:loc>
+      <image:title>gerry</image:title>
     </image:image>
     <image:image>
       <image:loc>https://a9l.im/gerry/og-image.webp</image:loc>
+      <image:title>gerry</image:title>
     </image:image>
   </url>
   <url>
@@ -70,9 +77,11 @@
     <priority>0.9</priority>
     <image:image>
       <image:loc>https://a9l.im/img/shoals.webp</image:loc>
+      <image:title>shoals</image:title>
     </image:image>
     <image:image>
       <image:loc>https://a9l.im/shoals/og-image.webp</image:loc>
+      <image:title>shoals</image:title>
     </image:image>
   </url>
   <url>
@@ -82,10 +91,108 @@
     <priority>0.9</priority>
     <image:image>
       <image:loc>https://a9l.im/img/scripture.webp</image:loc>
+      <image:title>scripture</image:title>
     </image:image>
     <image:image>
       <image:loc>https://a9l.im/scripture/og-image.webp</image:loc>
+      <image:title>scripture</image:title>
     </image:image>
+  </url>
+  <url>
+    <loc>https://a9l.im/scripture/ot</loc>
+    <lastmod>2026-04-06</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://a9l.im/scripture/apoc</loc>
+    <lastmod>2026-04-06</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://a9l.im/scripture/nt</loc>
+    <lastmod>2026-04-06</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://a9l.im/scripture/quran</loc>
+    <lastmod>2026-04-06</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://a9l.im/scripture/bom</loc>
+    <lastmod>2026-04-06</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://a9l.im/scripture/dc</loc>
+    <lastmod>2026-04-06</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://a9l.im/scripture/pgp</loc>
+    <lastmod>2026-04-06</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://a9l.im/scripture/fourbooks</loc>
+    <lastmod>2026-04-06</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://a9l.im/scripture/kj</loc>
+    <lastmod>2026-04-06</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://a9l.im/scripture/ttc</loc>
+    <lastmod>2026-04-06</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://a9l.im/scripture/bund</loc>
+    <lastmod>2026-04-06</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://a9l.im/scripture/lotus</loc>
+    <lastmod>2026-04-06</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://a9l.im/scripture/bop</loc>
+    <lastmod>2026-04-06</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://a9l.im/scripture/kv</loc>
+    <lastmod>2026-04-06</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://a9l.im/scripture/poe</loc>
+    <lastmod>2026-04-06</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://a9l.im/scripture/viraf</loc>
+    <lastmod>2026-04-06</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
   </url>
   <url>
     <loc>https://a9l.im/blog/hello-world</loc>
