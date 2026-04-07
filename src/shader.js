@@ -1,8 +1,10 @@
 // ─── WebGL Shader Background ───
-// Full-viewport simplex-noise texture rendered to #shader-bg at half resolution
-// (0.5x DPR). On-demand rendering: a rAF loop runs on scroll/resize/theme-change
-// and auto-stops after 1s of inactivity. Initial load runs 2s for entrance anim.
-// Canvas uses alpha blending so the noise is semi-transparent over the page bg.
+// Full-viewport geometric dual-layer system rendered to #shader-bg at half
+// resolution (0.5x DPR): dot grid substrate + topographic contour lines with
+// accent-colored hotspots at contour density peaks (via screen-space derivatives).
+// On-demand rendering: a rAF loop runs on scroll/resize/theme-change and
+// auto-stops after 1s of inactivity. Initial load runs 2s for entrance anim.
+// Canvas uses alpha blending so the layers are semi-transparent over the page bg.
 
 import { getTheme } from './theme.js';
 import { getScrollNorm } from './animations.js';
@@ -21,6 +23,7 @@ const VERT_SRC = `
 //   u_dark        - 0.0 (light) or 1.0 (dark) — lerps canvas bg and alpha
 //   u_scroll      - normalized scroll [0..1] — shifts noise vertically
 const FRAG_SRC = `
+  #extension GL_OES_standard_derivatives : enable
   precision mediump float;
   uniform float u_time;
   uniform vec2  u_res;
@@ -64,38 +67,48 @@ const FRAG_SRC = `
 
   void main() {
     vec2 uv = gl_FragCoord.xy / u_res;
-    float t = u_time * 0.18;
+    float t = u_time * 0.12;
     float sc = u_scroll * 0.5;
 
-    // Three octaves at different scales/speeds for base texture
-    float n1 = snoise(uv * 1.8 + vec2(t * 0.7 + sc, t * 0.3)) * 0.5 + 0.5;   // coarse, slow
-    float n2 = snoise(uv * 3.5 + vec2(-t * 0.5, t * 0.8 + sc * 0.7)) * 0.5 + 0.5; // medium detail
-    float n3 = snoise(uv * 0.8 + vec2(t * 0.2 + sc * 0.3, -t * 0.4)) * 0.5 + 0.5; // broad variation
+    // ── Layer 1: Dot grid substrate ──
+    float gridSize = 25.0;
+    vec2 gridUV = fract(uv * u_res / gridSize);
+    float dotDist = length(gridUV - 0.5);
+    float dot = smoothstep(0.08, 0.02, dotDist);
 
-    float noise = n1 * 0.5 + n2 * 0.3 + n3 * 0.2;
+    // Vary dot brightness with slow noise field
+    float dotNoise = snoise(uv * 3.0 + vec2(t * 0.3, sc)) * 0.5 + 0.5;
+    float dotLayer = dot * dotNoise * mix(0.06, 0.04, u_dark);
 
-    // Domain-warped splotch layer: two noise passes distort the UV to create
-    // drifting accent-colored blobs that move independently of the base
-    float warpX = snoise(uv * 3.0 + vec2(t * 0.8, t * -0.5)) * 0.4;
-    float warpY = snoise(uv * 2.5 + vec2(t * -0.6, t * 0.9)) * 0.4;
-    vec2 splotchUV = uv * 2.4 + vec2(warpX, warpY - sc * 3.0);
-    float splotch = snoise(splotchUV);
-    splotch = smoothstep(-0.2, 0.7, splotch);  // threshold into soft blobs
+    // ── Layer 2: Topographic contours ──
+    float field = snoise(uv * 2.5 + vec2(t * 0.5 + sc, t * 0.2));
+    float field2 = snoise(uv * 1.2 + vec2(-t * 0.3, t * 0.4 + sc * 0.6));
+    float combined = field * 0.6 + field2 * 0.4;
 
+    // Extract isolines: sharp bands at regular intervals
+    float contourFreq = 12.0;
+    float contourRaw = fract(combined * contourFreq);
+    float contour = 1.0 - smoothstep(0.0, 0.06, abs(contourRaw - 0.5) - 0.44);
+
+    // Accent hotspots at contour density peaks
+    float density = abs(dFdx(combined) * u_res.x) + abs(dFdy(combined) * u_res.y);
+    float hotspot = smoothstep(1.5, 4.0, density * contourFreq);
+
+    // ── Compose ──
     vec3 canvasBg = mix(u_canvasLight, u_canvasDark, u_dark);
 
-    // Tint base texture lightly toward accent, then add stronger accent splotches
-    vec3 base = mix(canvasBg, u_accent * 0.3, noise * 0.15);
-    vec3 color = mix(base, u_accent, splotch * 0.3);
+    float contourAlpha = contour * mix(0.08, 0.06, u_dark);
+    vec3 contourColor = mix(vec3(1.0), u_accent, hotspot * 0.6);
 
-    // Vignette darkens edges so the effect fades naturally at viewport borders
-    float vig = 1.0 - length(uv - 0.5) * 0.85;
-    vig = smoothstep(0.0, 0.8, vig);
+    // Angular vignette: corners darken more than edges
+    vec2 vUV = abs(uv - 0.5) * 2.0;
+    float vig = 1.0 - pow(max(vUV.x, vUV.y), 2.5) * 0.6;
 
-    // Overall alpha: subtle in dark mode (0.12) vs light (0.18), splotches add extra
-    float alpha = noise * vig * mix(0.18, 0.12, u_dark)
-                 + splotch * vig * 0.08;
-    gl_FragColor = vec4(color, alpha);
+    // Final composite
+    float alpha = (dotLayer + contourAlpha) * vig;
+    vec3 color = mix(vec3(1.0), contourColor, contour / max(contour + dotLayer * 10.0, 0.001));
+
+    gl_FragColor = vec4(color * canvasBg + contourColor * contourAlpha * 2.0, alpha);
   }
 `;
 
@@ -114,6 +127,7 @@ export function initShader($) {
     const canvas = $.shaderBg;
     const gl = canvas.getContext('webgl', { alpha: true, premultipliedAlpha: false });
     if (!gl) return;
+    gl.getExtension('OES_standard_derivatives');
 
     const vs = compileShader(gl, VERT_SRC, gl.VERTEX_SHADER);
     const fs = compileShader(gl, FRAG_SRC, gl.FRAGMENT_SHADER);
