@@ -199,26 +199,12 @@ ${gen(L, false)}
 
   --shadow-hover: 0 1px 3px #0000000a, 0 2px 8px #00000008;
   --shadow-hover-lg: 0 2px 4px #0000000a, 0 4px 16px #00000012, 0 8px 32px #0000000a;
-  --shadow-glow: 0 0 20px ${_r(P.accent, 0.15)}, 0 0 60px ${_r(P.accent, 0.08)};
-  --shadow-glow-lg: 0 0 30px ${_r(P.accent, 0.2)}, 0 0 80px ${_r(P.accent, 0.12)}, 0 0 120px ${_r(P.accent, 0.06)};
+  --shadow-glow: 0 0 30px ${_r(P.accent, 0.2)}, 0 0 80px ${_r(P.accent, 0.12)}, 0 0 120px ${_r(P.accent, 0.06)};
 
   --tog-bg:             ${togBg};
-  --tog-thumb-on:       ${L.elevated};
-  --tog-border:         ${_r(L.text, 0.059)};
   --tog-shadow:         none;
-  --tog-thumb-shadow:   transparent;
-  --tog-checked-inset:  transparent;
-
-  --backdrop:         #0000004d;
 
   --overlay-base:     ${L.text};
-  --overlay-60:       ${_r(L.text, 0.376)};
-  --overlay-87:       ${_r(L.text, 0.867)};
-  --overlay-full:     ${L.text};
-  --overlay-hover-12: ${_r(L.text, 0.125)};
-  --overlay-hover-25: ${_r(L.text, 0.25)};
-  --overlay-hover-19: ${_r(L.text, 0.188)};
-  --card-bg-end:      ${L.panelSolid};
   --ext-blue:         ${P.extended.blue};
   --ext-green:        ${P.extended.green};
   --ext-slate:        ${P.extended.slate};
@@ -233,11 +219,8 @@ ${gen(L, false)}
   --ext-lime:         ${P.extended.lime};
   --ext-indigo:       ${P.extended.indigo};
   --overlay-text:     #FFFFFF;
-  --overlay-text-dim: ${_r('#FFFFFF', 0.8)};
   --overlay-tint:     ${_r('#FFFFFF', 0.133)};
-  --overlay-tint-dim: ${_r('#FFFFFF', 0.733)};
   --shimmer:          ${_r('#FFFFFF', 0.063)};
-  --shimmer-subtle:   ${_r('#FFFFFF', 0.05)};
   color-scheme: light;
 }
 [data-theme="dark"] {
@@ -245,28 +228,14 @@ ${gen(D, true)}
 
   --shadow-hover: 0 1px 3px #00000033, 0 2px 8px #00000028;
   --shadow-hover-lg: 0 2px 4px #00000033, 0 4px 16px #0000003d, 0 8px 32px #00000028;
-  --shadow-glow: 0 0 20px ${_r(P.accent, 0.2)}, 0 0 60px ${_r(P.accent, 0.1)};
-  --shadow-glow-lg: 0 0 30px ${_r(P.accent, 0.25)}, 0 0 80px ${_r(P.accent, 0.15)}, 0 0 120px ${_r(P.accent, 0.08)};
-
-  --backdrop: #00000080;
+  --shadow-glow: 0 0 30px ${_r(P.accent, 0.25)}, 0 0 80px ${_r(P.accent, 0.15)}, 0 0 120px ${_r(P.accent, 0.08)};
 
   --text-on-accent: ${D.elevated};
 
   --tog-bg:             ${D.panelSolid};
-  --tog-thumb-on:       var(--text);
-  --tog-border:         ${_r(D.text, 0.059)};
   --tog-shadow:         none;
-  --tog-thumb-shadow:   ${_r(L.text, 0.451)};
-  --tog-checked-inset:  ${_r(L.text, 0.2)};
 
   --overlay-base:     ${D.canvas};
-  --overlay-60:       ${_r(D.canvas, 0.314)};
-  --overlay-87:       ${_r(D.canvas, 0.8)};
-  --overlay-full:     ${D.canvas};
-  --overlay-hover-12: ${_r(D.canvas, 0.125)};
-  --overlay-hover-25: ${_r(D.canvas, 0.25)};
-  --overlay-hover-19: ${_r(D.canvas, 0.188)};
-  --card-bg-end:      ${D.elevated};
   color-scheme: dark;
 }`;
   document.head.appendChild(style);
