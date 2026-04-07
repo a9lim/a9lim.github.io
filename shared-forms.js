@@ -16,11 +16,9 @@ var _forms = (function () {
      * @param {string} dataAttr - The data-* attribute name to read from clicked button.
      * @param {function} onChange - Called with the attribute value string.
      */
-    function positionIndicator(indicator, btn, container) {
-        var cRect = container.getBoundingClientRect();
-        var bRect = btn.getBoundingClientRect();
-        indicator.style.width = bRect.width + 'px';
-        indicator.style.transform = 'translateX(' + (bRect.left - cRect.left - 3) + 'px)';
+    function positionIndicator(indicator, btn) {
+        indicator.style.width = btn.offsetWidth + 'px';
+        indicator.style.transform = 'translateX(' + (btn.offsetLeft - 3) + 'px)';
     }
 
     function bindModeGroup(container, dataAttr, onChange) {
@@ -32,12 +30,18 @@ var _forms = (function () {
         indicator.className = 'mode-indicator';
         container.insertBefore(indicator, container.firstChild);
         if (active) {
-            // Position without transition on init
+            // Defer positioning until container has layout (panel may start off-screen)
             indicator.style.transition = 'none';
-            positionIndicator(indicator, active, container);
-            // Force reflow then restore transition
-            indicator.offsetHeight; // eslint-disable-line no-unused-expressions
-            indicator.style.transition = '';
+            var ro = new ResizeObserver(function () {
+                var cur = container.querySelector('.mode-btn.active');
+                if (cur && cur.offsetWidth > 0) {
+                    positionIndicator(indicator, cur);
+                    indicator.offsetHeight; // eslint-disable-line no-unused-expressions
+                    indicator.style.transition = '';
+                    ro.disconnect();
+                }
+            });
+            ro.observe(container);
         }
 
         btns.forEach(function(b) { b.setAttribute('aria-pressed', b === active ? 'true' : 'false'); });
@@ -47,7 +51,7 @@ var _forms = (function () {
             if (active) active.classList.remove('active');
             btn.classList.add('active');
             active = btn;
-            positionIndicator(indicator, btn, container);
+            positionIndicator(indicator, btn);
             btns.forEach(function(b) { b.setAttribute('aria-pressed', b === btn ? 'true' : 'false'); });
             onChange(btn.dataset[dataAttr]);
             if (typeof _haptics !== 'undefined') _haptics.trigger('selection');
