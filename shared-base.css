@@ -1205,7 +1205,8 @@ body {
     padding: 0.3rem 0;
 }
 
-.ctrl-row > label {
+.ctrl-row > label,
+.ctrl-label {
     font-size: var(--font-base);
     color: var(--text);
     font-weight: 400;
