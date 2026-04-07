@@ -209,9 +209,6 @@ ${gen(L, false)}
   --tog-thumb-shadow:   transparent;
   --tog-checked-inset:  transparent;
 
-  --intro-warm:       ${_r(P.accentLight, 0.08)};
-  --intro-warm-hover: ${_r(P.accentLight, 0.12)};
-  --intro-cool:       ${_r(P.extended.blue, 0.04)};
   --backdrop:         #0000004d;
 
   --overlay-base:     ${L.text};

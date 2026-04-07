@@ -14,9 +14,9 @@
 :root {
     --radius: 2px;
 
-    --font-sm: 0.72rem;
-    --font-base: 0.78rem;
-    --font-lg: 0.85rem;
+    --font-sm: 0.78rem;
+    --font-base: 0.85rem;
+    --font-lg: 0.95rem;
 
     --toolbar-h: 52px;
     --panel-w: 350px;
@@ -137,225 +137,15 @@ body {
     to { opacity: 1; transform: translateX(-50%) translateY(0); }
 }
 
-@keyframes introBgPulse {
-    0% { opacity: 0.5; transform: scale(1); }
-    100% { opacity: 1; transform: scale(1.05); }
-}
-
-@keyframes introContentIn {
-    from { opacity: 0; transform: translateY(30px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-
-@keyframes fadeUp {
-    from { opacity: 0; transform: translateY(8px); }
-    to   { opacity: 1; transform: translateY(0); }
-}
-
-/* ─── Intro Screen ─── */
-#intro-screen {
-    position: fixed;
-    inset: 0;
-    z-index: 1000;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: var(--bg-canvas);
-    overflow: hidden;
-    transition: opacity 0.85s var(--ease-out), transform 0.85s var(--ease-out), filter 0.85s var(--ease-out);
-}
-
-#intro-screen.hidden {
-    opacity: 0;
-    transform: scale(1.04);
-    filter: blur(8px);
-    pointer-events: none;
-}
-
-.intro-bg {
-    position: absolute;
-    inset: -10%;
-    background:
-        radial-gradient(ellipse at 20% 30%, var(--intro-warm) 0%, transparent 50%),
-        radial-gradient(ellipse at 80% 70%, var(--intro-cool) 0%, transparent 40%),
-        radial-gradient(ellipse at 50% 50%, var(--accent-subtle) 0%, transparent 60%);
-    animation: introBgPulse 10s ease-in-out infinite alternate;
-}
-
-.intro-content {
-    text-align: center;
-    max-width: 620px;
-    padding: 2.5rem;
-    position: relative;
-    z-index: 1;
-    animation: introContentIn 1s var(--ease-out) 0.15s both;
-}
-
-.intro-overline {
-    display: inline-block;
-    font-family: var(--font-mono);
-    font-size: var(--font-sm);
-    font-weight: 500;
-    letter-spacing: 0.15em;
-    text-transform: uppercase;
-    color: var(--accent);
-    margin-bottom: 1.2rem;
-    padding: 0.3rem 1rem;
-    border: none;
-    border-radius: var(--radius);
-    background: var(--accent-subtle);
-    transition: background 0.3s var(--ease-out), box-shadow 0.3s var(--ease-out);
-}
-
-.intro-title {
-    font-family: var(--font-display);
-    font-size: clamp(3.2rem, 8vw, 5.5rem);
-    font-weight: 400;
-    color: var(--text);
-    line-height: 0.92;
-    letter-spacing: -0.03em;
-    margin-bottom: 1.5rem;
-}
-
-.intro-subtitle {
-    font-size: 0.55em;
-    font-weight: 300;
-    display: block;
-    letter-spacing: 0.04em;
-    color: var(--text-secondary);
-}
-
-.intro-desc {
-    font-family: var(--font-sans);
-    color: var(--text-secondary);
-    font-size: clamp(0.88rem, 1.4vw, 1rem);
-    line-height: 1.7;
-    margin-bottom: 2.8rem;
-    font-weight: 400;
-}
-
-.intro-cards {
-    display: flex;
-    gap: 1rem;
-    margin-bottom: 3rem;
-    justify-content: center;
-    flex-wrap: wrap;
-}
-
-.intro-card {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    padding: 0.7rem 1rem;
-    background: var(--bg-hover);
-    border: none;
-    border-radius: var(--radius);
-    text-align: left;
-    transition: background 0.4s var(--ease-out), transform 0.4s var(--ease-out), box-shadow 0.4s var(--ease-out);
-    animation: fadeUp 0.6s var(--ease-out) both;
-    box-shadow: none;
-}
-
-.intro-card:nth-child(1) { animation-delay: 0.5s; }
-.intro-card:nth-child(2) { animation-delay: 0.62s; }
-.intro-card:nth-child(3) { animation-delay: 0.74s; }
-
-.intro-card:hover {
-    background: var(--bg-elevated);
-    transform: translateY(-2px);
-    box-shadow: var(--shadow-hover);
-}
-
-.intro-card-icon {
-    width: 36px;
-    height: 36px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: var(--radius);
-    background: var(--accent-subtle);
-    color: var(--accent);
-    flex-shrink: 0;
-    transition: transform 0.4s var(--ease-out), background 0.3s var(--ease-out);
-}
-
-.intro-card:hover .intro-card-icon {
-    transform: scale(1.05);
-}
-
-.intro-card-text {
-    display: flex;
-    flex-direction: column;
-}
-
-.intro-card-text strong {
-    color: var(--text);
-    font-size: var(--font-base);
-    font-weight: 600;
-    line-height: 1.2;
-}
-
-.intro-card-text span {
-    color: var(--text-muted);
-    font-size: var(--font-sm);
-    line-height: 1.4;
-}
-
-#intro-start {
-    font-family: var(--font-sans);
-    font-size: var(--font-lg);
-    font-weight: 500;
-    color: var(--text-on-accent);
-    background: linear-gradient(135deg, var(--accent), var(--accent-light));
-    border: none;
-    border-radius: var(--radius);
-    padding: 0.8rem 2.8rem;
-    cursor: pointer;
-    letter-spacing: 0.02em;
-    transition: all 0.35s var(--ease-out);
-    box-shadow: none;
-    animation: fadeUp 0.6s var(--ease-out) 0.9s both;
-    position: relative;
-    overflow: hidden;
-}
-
-/* Shimmer sweep on CTA button */
-#intro-start::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(90deg, transparent, var(--shimmer), transparent);
-    transition: left 0.6s var(--ease-out);
-}
-
-#intro-start:hover::before {
-    left: 100%;
-}
-
-#intro-start:hover {
-    background: linear-gradient(135deg, var(--accent-light), var(--accent));
-    transform: translateY(-2px);
-    box-shadow: var(--shadow-hover-lg);
-}
-
-#intro-start:active {
-    transform: translateY(0) scale(0.98);
-    box-shadow: var(--shadow-hover);
-}
-
 /* ─── Sidebar Patterns ─── */
 .group-label {
     font-family: var(--font-sans);
     font-weight: 600;
-    font-size: var(--font-sm);
+    font-size: var(--font-base);
     text-transform: uppercase;
     letter-spacing: 0.12em;
     color: var(--text-muted);
-    margin-bottom: 8px;
-    padding-bottom: 4px;
+    padding-bottom: 2px;
 }
 
 .stats-header {
@@ -403,6 +193,7 @@ body {
     color: var(--text);
     min-width: 2em;
     text-align: right;
+    transition: transform 0.15s var(--ease-out);
     display: inline-block;
     font-variant-numeric: tabular-nums;
 }
@@ -451,7 +242,7 @@ body {
     border-radius: 0;
     font-family: var(--font-sans);
     font-weight: 500;
-    font-size: clamp(0.62rem, 0.95vw, 0.7rem);
+    font-size: var(--font-base);
     color: var(--text-muted);
     cursor: pointer;
     transition: color 0.28s var(--ease-out);
@@ -496,6 +287,7 @@ body {
     flex: 1;
     overflow-y: auto;
     overflow-x: hidden;
+    font-variant-numeric: tabular-nums;
 }
 
 .tab-panel {
@@ -707,16 +499,17 @@ body {
 .scrollbar-thin::-webkit-scrollbar-track { background: transparent; }
 .scrollbar-thin::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: var(--radius); }
 
-/* Hint text box */
+/* Hint text — italic caption style */
 .panel-hint {
     color: var(--text-muted);
-    font-size: clamp(0.62rem, 0.9vw, 0.7rem);
-    line-height: 1.5;
+    font-family: var(--font-mono);
+    font-size: var(--font-sm);
     font-style: italic;
-    margin-top: 0.5rem;
-    padding: 0.4rem 0.55rem;
-    border-radius: var(--radius);
-    background: var(--accent-subtle);
+    line-height: 1.5;
+    letter-spacing: 0.01em;
+    margin: 0;
+    padding: 2px 0 0;
+    text-align: center;
 }
 
 .hidden {
@@ -1189,6 +982,11 @@ body {
     color: var(--text-secondary);
 }
 
+.sim-body .edu-content {
+    position: absolute;
+    left: -9999px;
+}
+
 .edu-content summary {
     cursor: pointer;
     font-weight: 600;
@@ -1242,6 +1040,7 @@ body {
 .ctrl-row.locked { opacity: 0.4; pointer-events: none; }
 
 /* ─── Select Dropdowns ─── */
+/* Native select — hidden when enhanced by shared-dropdown.js */
 .sim-select {
     width: 100%;
     padding: 6px 10px;
@@ -1259,6 +1058,140 @@ body {
     box-shadow: var(--shadow-hover);
     outline: 2px solid var(--accent);
     outline-offset: 0;
+}
+
+/* ─── Custom Dropdown (shared-dropdown.js) ─── */
+.sim-dropdown {
+    position: relative;
+    width: 100%;
+}
+
+.sim-dropdown.disabled { opacity: 0.4; pointer-events: none; }
+
+.sim-dropdown-trigger {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+    padding: 6px 10px;
+    border-radius: var(--radius);
+    border: none;
+    background: var(--bg-hover);
+    color: var(--text);
+    font-family: var(--font-mono);
+    font-size: var(--font-base);
+    font-variant-numeric: tabular-nums;
+    text-align: left;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    cursor: pointer;
+    transition: background 0.2s var(--ease-out), box-shadow 0.2s var(--ease-out);
+}
+
+.sim-dropdown-trigger:hover {
+    background: var(--bg-elevated);
+}
+
+.sim-dropdown-trigger:focus-visible {
+    background: var(--bg-elevated);
+    box-shadow: var(--shadow-hover);
+    outline: 2px solid var(--accent);
+    outline-offset: 0;
+}
+
+.sim-dropdown-chevron {
+    color: var(--text-muted);
+    font-size: 0.7em;
+    transition: transform 0.2s var(--ease-out);
+}
+
+.sim-dropdown.open .sim-dropdown-chevron {
+    transform: rotate(180deg);
+}
+
+.sim-dropdown.open .sim-dropdown-trigger {
+    border-radius: var(--radius) var(--radius) 0 0;
+    background: var(--bg-panel-solid);
+}
+
+.sim-dropdown-list {
+    display: none;
+    position: absolute;
+    z-index: 300;
+    top: 100%;
+    left: 0;
+    right: 0;
+    max-height: 240px;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: none;
+    -webkit-overflow-scrolling: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border-strong) transparent;
+    background: var(--bg-panel-solid);
+    border-radius: 0 0 var(--radius) var(--radius);
+    padding: 2px 0;
+}
+
+.sim-dropdown.open .sim-dropdown-list {
+    display: block;
+    animation: dropdownIn 0.15s var(--ease-out) both;
+}
+
+.sim-dropdown.closing .sim-dropdown-list {
+    animation: dropdownOut 0.15s var(--ease-in-out) both;
+}
+
+.sim-dropdown.closing .sim-dropdown-trigger {
+    border-radius: var(--radius);
+    background: var(--bg-hover);
+}
+
+@keyframes dropdownIn {
+    from { opacity: 0; max-height: 0; }
+    to   { opacity: 1; max-height: 240px; }
+}
+
+@keyframes dropdownOut {
+    from { opacity: 1; max-height: 240px; }
+    to   { opacity: 0; max-height: 0; }
+}
+
+.sim-dropdown-item {
+    padding: 5px 10px;
+    font-family: var(--font-mono);
+    font-size: var(--font-base);
+    font-variant-numeric: tabular-nums;
+    color: var(--text-secondary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    cursor: pointer;
+    transition: background 0.12s var(--ease-out), color 0.12s var(--ease-out);
+}
+
+.sim-dropdown-item:hover,
+.sim-dropdown-item.focused {
+    background: var(--bg-hover);
+    color: var(--text);
+}
+
+.sim-dropdown-item.selected {
+    color: var(--accent);
+    font-weight: 600;
+}
+
+.sim-dropdown-item.disabled {
+    color: var(--text-muted);
+    cursor: default;
+    opacity: 0.4;
+}
+
+.sim-dropdown-item.disabled:hover {
+    background: transparent;
+    transform: none;
 }
 
 /* ─── Form Controls ─── */
