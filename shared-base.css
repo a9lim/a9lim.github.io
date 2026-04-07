@@ -1539,7 +1539,7 @@ label.control-label {
     width: 42px;
     height: 22px;
     background: var(--tog-bg);
-    border-radius: 9999px;
+    border-radius: var(--radius);
     cursor: pointer;
     position: relative;
     border: none;
@@ -1557,7 +1557,7 @@ label.control-label {
     transform: translateY(-50%);
     width: 14px;
     height: 14px;
-    border-radius: 50%;
+    border-radius: var(--radius);
     background: var(--text-muted);
     box-shadow: 0 1px 3px var(--tog-thumb-shadow);
     transition: all 0.35s var(--ease-out);
@@ -1604,7 +1604,7 @@ label.control-label {
 
 /* Larger touch targets on coarse pointers */
 @media (pointer: coarse) {
-    .tog { --tog-shift: 22px; width: 48px; height: 26px; border-radius: 9999px; }
+    .tog { --tog-shift: 22px; width: 48px; height: 26px; border-radius: var(--radius); }
     .tog-thumb { width: 18px; height: 18px; left: 4px; }
 }
 
