@@ -7,7 +7,7 @@
     box-sizing: border-box;
     margin: 0;
     padding: 0;
-    font-variation-settings: 'MONO' 1, 'CASL' 0;
+    font-variation-settings: 'MONO' 0, 'CASL' 0;
 }
 
 /* ─── Layout Tokens ─── */
@@ -31,7 +31,7 @@ body {
     background: var(--bg-canvas);
     color: var(--text);
     font-family: var(--font-mono);
-    font-variation-settings: 'MONO' 1, 'CASL' 0;
+    font-variation-settings: 'MONO' 0, 'CASL' 0;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     transition: background-color 0.5s var(--ease-out), color 0.4s var(--ease-out);
