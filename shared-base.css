@@ -408,7 +408,10 @@ body {
 }
 
 .stat-group {
-    margin-bottom: 0.6rem;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 10px;
 }
 .stat-group:last-child {
     margin-bottom: 0;
