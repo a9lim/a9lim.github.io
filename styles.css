@@ -380,7 +380,7 @@ a:hover { color: var(--accent-light); }
 .hero-cta:hover {
     background: var(--accent-light);
     transform: translateY(-2px);
-    box-shadow: var(--shadow-md);
+    box-shadow: var(--shadow-hover-lg);
     color: var(--overlay-text);
 }
 
@@ -437,7 +437,7 @@ a:hover { color: var(--accent-light); }
 .project-card:hover,
 .project-card.visible:hover {
     transform: translateY(-4px);
-    box-shadow: var(--shadow-md);
+    box-shadow: var(--shadow-hover-lg);
     color: var(--text);
 }
 
@@ -910,7 +910,7 @@ a:hover { color: var(--accent-light); }
 }
 
 .blog-content img:hover {
-    box-shadow: var(--shadow-md);
+    box-shadow: var(--shadow-hover-lg);
 }
 
 /* ═══════════════════════════════════
@@ -964,7 +964,7 @@ a:hover { color: var(--accent-light); }
 }
 
 .contact-section:hover {
-    box-shadow: var(--shadow-sm);
+    box-shadow: var(--shadow-hover);
     transform: translateY(-2px);
 }
 
@@ -1223,7 +1223,7 @@ a:hover { color: var(--accent-light); }
 
 .carousel-card:hover {
     transform: translateY(-4px) scale(1.01);
-    box-shadow: var(--shadow-md);
+    box-shadow: var(--shadow-hover-lg);
 }
 
 .carousel-card-info {

@@ -97,10 +97,10 @@ function _oklch2hex(L, C, H) {
 // ─── Font stacks ───
 // Left mutable — cyano extends with `emoji` before freezing
 const _FONT = {
-  display: "'Merriweather', Georgia, 'Times New Roman', serif",
-  body:      "'Lato', system-ui, -apple-system, sans-serif",
-  bodySerif: "'Crimson Text', Georgia, 'Times New Roman', serif",
-  mono:      "'Recursive', 'SF Mono', 'Menlo', monospace",
+  display: "'Recursive', 'SF Mono', 'Menlo', monospace",
+  sans:    "'Recursive', 'SF Mono', 'Menlo', monospace",
+  serif:   "'Recursive', 'SF Mono', 'Menlo', monospace",
+  mono:    "'Recursive', 'SF Mono', 'Menlo', monospace",
 };
 
 // ─── Palette ───
@@ -185,8 +185,8 @@ const _PALETTE = {
   style.id = 'palette-vars';
   style.textContent = `:root {
   --font-display: ${_FONT.display};
-  --font-body:    ${_FONT.body};
-  --font-body-serif: ${_FONT.bodySerif};
+  --font-sans:    ${_FONT.sans};
+  --font-serif:   ${_FONT.serif};
   --font-mono:    ${_FONT.mono};
 
 ${gen(L, false)}
@@ -197,11 +197,8 @@ ${gen(L, false)}
   --accent-glow:   ${_r(P.accent, 0.18)};
   --text-on-accent: ${L.elevated};
 
-  --shadow-xs: 0 1px 2px #00000008;
-  --shadow-sm: 0 1px 3px #0000000a, 0 2px 8px #00000008;
-  --shadow-md: 0 2px 4px #0000000a, 0 4px 16px #00000012, 0 8px 32px #0000000a;
-  --shadow-lg: 0 4px 8px #0000000a, 0 8px 24px #00000014, 0 16px 56px #0000001a;
-  --shadow-xl: 0 8px 16px #0000000f, 0 16px 48px #0000001a, 0 32px 80px #00000022;
+  --shadow-hover: 0 1px 3px #0000000a, 0 2px 8px #00000008;
+  --shadow-hover-lg: 0 2px 4px #0000000a, 0 4px 16px #00000012, 0 8px 32px #0000000a;
   --shadow-glow: 0 0 20px ${_r(P.accent, 0.15)}, 0 0 60px ${_r(P.accent, 0.08)};
   --shadow-glow-lg: 0 0 30px ${_r(P.accent, 0.2)}, 0 0 80px ${_r(P.accent, 0.12)}, 0 0 120px ${_r(P.accent, 0.06)};
 
@@ -249,11 +246,8 @@ ${gen(L, false)}
 [data-theme="dark"] {
 ${gen(D, true)}
 
-  --shadow-xs: 0 1px 2px #00000022;
-  --shadow-sm: 0 1px 3px #00000033, 0 2px 8px #00000028;
-  --shadow-md: 0 2px 4px #00000033, 0 4px 16px #0000003d, 0 8px 32px #00000028;
-  --shadow-lg: 0 4px 8px #00000033, 0 8px 24px #00000044, 0 16px 56px #00000055;
-  --shadow-xl: 0 8px 16px #00000044, 0 16px 48px #00000055, 0 32px 80px #00000066;
+  --shadow-hover: 0 1px 3px #00000033, 0 2px 8px #00000028;
+  --shadow-hover-lg: 0 2px 4px #00000033, 0 4px 16px #0000003d, 0 8px 32px #00000028;
   --shadow-glow: 0 0 20px ${_r(P.accent, 0.2)}, 0 0 60px ${_r(P.accent, 0.1)};
   --shadow-glow-lg: 0 0 30px ${_r(P.accent, 0.25)}, 0 0 80px ${_r(P.accent, 0.15)}, 0 0 120px ${_r(P.accent, 0.08)};
 

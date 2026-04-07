@@ -258,7 +258,7 @@ body {
 .intro-card:hover {
     background: var(--bg-elevated);
     transform: translateY(-2px);
-    box-shadow: var(--shadow-sm);
+    box-shadow: var(--shadow-hover);
 }
 
 .intro-card-icon {
@@ -333,12 +333,12 @@ body {
 #intro-start:hover {
     background: linear-gradient(135deg, var(--accent-light), var(--accent));
     transform: translateY(-2px);
-    box-shadow: var(--shadow-md);
+    box-shadow: var(--shadow-hover-lg);
 }
 
 #intro-start:active {
     transform: translateY(0) scale(0.98);
-    box-shadow: var(--shadow-sm);
+    box-shadow: var(--shadow-hover);
 }
 
 /* ─── Sidebar Patterns ─── */
@@ -862,7 +862,7 @@ body {
     border: none;
     color: var(--text);
     font: 500 0.82rem var(--font-sans);
-    box-shadow: var(--shadow-sm);
+    box-shadow: var(--shadow-hover);
     opacity: 0;
     transform: translateY(12px);
     transition: opacity 0.3s var(--ease-out), transform 0.3s var(--ease-out);
@@ -938,7 +938,7 @@ body {
 .info-trigger:focus-visible {
     color: var(--accent);
     background: var(--accent-subtle);
-    box-shadow: var(--shadow-sm);
+    box-shadow: var(--shadow-hover);
 }
 
 /* ─── Sim Tooltip (cursor-following) ─── */
@@ -1247,7 +1247,7 @@ body {
 
 .sim-select:focus {
     background: var(--bg-elevated);
-    box-shadow: var(--shadow-sm);
+    box-shadow: var(--shadow-hover);
     outline: 2px solid var(--accent);
     outline-offset: 0;
 }
@@ -1722,7 +1722,7 @@ html:has(> .sim-body) { overflow: hidden; }
 
 .sim-input:focus {
     background: var(--bg-elevated);
-    box-shadow: var(--shadow-sm);
+    box-shadow: var(--shadow-hover);
     outline: 2px solid var(--accent);
     outline-offset: 0;
 }
@@ -1782,11 +1782,6 @@ html:has(> .sim-body) { overflow: hidden; }
     }
 }
 
-/* ─── Elevation Utilities ─── */
-.elevation-1 { box-shadow: var(--shadow-sm); }
-.elevation-2 { box-shadow: var(--shadow-md); }
-.elevation-3 { box-shadow: var(--shadow-lg); }
-.elevation-4 { box-shadow: var(--shadow-xl); }
 
 /* ─── Additional Keyframes ─── */
 @keyframes scaleIn {
