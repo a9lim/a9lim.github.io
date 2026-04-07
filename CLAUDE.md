@@ -4,26 +4,26 @@ Root site for the **a9l.im** portfolio. Hosted on Cloudflare Workers + Assets wi
 
 ## Design Philosophy
 
-Flat, lineless, modern. Every surface is differentiated by **background color**, never borders. Shadows appear **only on hover/active/focus** — nothing has a resting-state shadow. Elevation is earned through interaction, not decoration.
+Command-center engineering aesthetic. Sharp, geometric, flat. Evangelion NERV HQ meets Palantir Foundry. Every surface is differentiated by **background color**, never borders. Lines are **graphic accents** (underlines, side bars, horizontal rules), never container boundaries. Elevation is earned through interaction, not decoration.
 
-- **No borders** on panels, buttons, inputs, tabs, cards, separators, or toggles. Use `border: none` everywhere. The only exception is `outline` on `:focus-visible` for accessibility.
-- **No resting shadows** — `box-shadow: none` at rest. Hover states may use `var(--shadow-sm)` or `var(--shadow-md)`.
-- **Background differentiation** — use `--bg-hover`, `--bg-elevated`, `--accent-subtle` to distinguish nested surfaces, not lines.
-- **Subtle animations** — hover lifts are small (`translateY(-2px)` to `-4px`), no scale transforms on cards. Transitions use `var(--ease-out)` or `var(--ease-spring)`.
-- `.glass` uses `bg-panel` (semi-transparent) with `backdrop-filter: blur(20px) saturate(1.5)` for true glassmorphism. No shimmer inset.
-- Shadow tokens (`--shadow-sm` etc.) contain no `0 0 0 1px` spread rings.
-- **No hardcoded colors** in CSS or JS — use theme tokens (`--text`, `--text-on-accent`, `--accent`, `--shimmer`, `_PAL.light.*`/`_PAL.dark.*`, etc.). Exceptions: shadow hex values (always black + alpha), CSS mask `black`/`white` keywords, `var()` fallbacks, data URI SVGs, and `theme-color` meta tags.
+- **No borders** on panels, buttons, inputs, tabs, cards, separators, or toggles. Use `border: none` everywhere. The only exception is `outline` on `:focus-visible` for accessibility, and accent underlines/side-lines as graphic elements.
+- **No resting shadows** — `box-shadow: none` at rest. Hover states use `var(--shadow-hover)` or `var(--shadow-hover-lg)`. Accent glow via `var(--shadow-glow)` / `var(--shadow-glow-lg)` for focus/active states.
+- **Two surface modes**: Opaque (cards, content panels, blog, footer — `--bg-elevated` or `--bg-panel-solid`) and HUD overlay (navbar, toolbars, sidebars — `--bg-panel` at 30-35% opacity with `backdrop-filter: blur(8px)`).
+- **Line accents** — accent underlines on active nav links (with subtle glow), side-lines on cards on hover, horizontal rules as structural markers. All lines `border-radius: 0`.
+- **No bounce** — `--ease-spring` and `--ease-elastic` removed. All transitions use `var(--ease-out)`, `var(--ease-in-out)`, or `var(--ease-smooth)`. Hover: `0.2s`. Transforms: `0.3s`.
+- `.glass` uses `--bg-panel` (30-35% opacity) with `backdrop-filter: blur(8px)`. No `saturate()`. Grid/contours visible through HUD elements.
+- **No hardcoded design values** in CSS — use token vars for everything: `--radius` (2px), `--font-sm`/`--font-base`/`--font-lg`, `--shadow-*`, `--ease-*`. Exceptions: `border-radius: 0` (lines), `border-radius: 50%` (circles), display text sizes (>1rem), and shadow hex values.
 
 ## Shared Code Policy
 
 All projects share a common design system at this repo's root. **Always prefer shared code over project-specific implementations.** Check `shared-*.js` before adding utility code to a project.
 
 Key shared modules:
-- `shared-tokens.js` — `_PALETTE`, `_FONT`, color math. Extend via `colors.js`, never hardcode colors. Exposes `--text-on-accent` (light/dark) for text on accent-colored backgrounds — use instead of hardcoded `#fff`/`#FDFBF5`
+- `shared-tokens.js` — `_PALETTE`, `_FONT`, color math. Extend via `colors.js`, never hardcode colors. Exposes `--text-on-accent` (light/dark) for text on accent-colored backgrounds — use instead of hardcoded `#fff`/`#FDFBF5`. `_FONT` has four keys (`display`, `sans`, `serif`, `mono`) all resolving to Recursive. Shadow tokens: `--shadow-hover`, `--shadow-hover-lg`, `--shadow-glow`, `--shadow-glow-lg`.
 - `shared-utils.js` — `escapeHtml`, `debounce`, `throttle`, `clamp`, `lerp`, `showToast`, `trapFocus`, `resizeCanvasDPR`, `animateValue`, `initOverlayDismiss`
-- `shared-base.css` — reset, layout tokens, `.glass`, `.tool-btn`, `.ctrl-row`, `.sim-overlay`, toasts, a11y
+- `shared-base.css` — reset, layout tokens (`--radius: 2px`, `--font-sm`/`--font-base`/`--font-lg`, `--ease-*`), `.glass` (HUD overlay), `.tool-btn`, `.ctrl-row`, `.sim-overlay`, toasts, a11y. Universal `font-variation-settings: 'MONO' 0, 'CASL' 0` on `*` selector.
 - `shared-toolbar.js` — `_toolbar` (theme toggle, sidebar, play/pause, speed)
-- `shared-forms.js` — `_forms` (mode groups, sliders, toggles). `bindModeGroup` creates a sliding `.mode-indicator` element inside `.mode-toggles` — accent-colored pill that animates between buttons via `translateX`
+- `shared-forms.js` — `_forms` (mode groups, sliders, toggles). `bindModeGroup` creates a sliding `.mode-indicator` element inside `.mode-toggles` — accent-colored rectangle (2px radius) that animates between buttons via `translateX`
 - `shared-icons.js` — unified SVG icon library. Exposes `_ICON` global, renders icons via `data-icon` attribute
 - `shared-tabs.js`, `shared-camera.js`, `shared-info.js`, `shared-shortcuts.js`, `shared-about.js`, `shared-touch.js`, `shared-tooltip.js`, `shared-sparkline.js`, `shared-haptics.js`
 
@@ -42,7 +42,7 @@ Single-page portfolio site. Path-based SPA router (`/`, `/projects`, `/blog`, `/
 - **SEO injection**: Per-route `<title>`, `<meta description>`, OG tags, `twitter:title`/`twitter:description`, `article:published_time`/`article:modified_time`/`article:author`/`article:tag` (blog posts — tags support arrays), canonical URLs, `hreflang="en"` + `hreflang="x-default"` self-referential tags, `BlogPosting` + `BreadcrumbList` JSON-LD (blog posts — includes `wordCount`, `image`, `articleSection`, `speakable`, `articleBody` truncated to ~500 chars), `Blog` + `ItemList` JSON-LD (`/blog`), `CollectionPage` + `ItemList` JSON-LD (`/projects`, `/scripture/`), `Person` JSON-LD (`/about` — includes `jobTitle`, `hasOccupation` with SOC code, `makesOffer`), `Book` + `translationOfWork` + `sameAs` + `mentions` + `author` + `ReadAction` + `SearchAction` + `Dataset` JSON-LD (scripture work-level — includes `license`, `contentRating`, and work-scoped search), `Chapter` + `BreadcrumbList` + `Quotation` JSON-LD (scripture chapters — includes `@id`, `position`, section headings with `aria-label`, and first-verse Quotation schema for crawlers), `Quotation` + `author` + `mentions` JSON-LD (verse deep links — includes `@id`, `url`, `inLanguage`, `position`; inherits `WORK_MENTIONS` entities from parent work). `SiteNavigationElement` JSON-LD is injected on all root SPA routes. All entities have `@id` URIs for knowledge graph disambiguation. Visible breadcrumb HTML is SSR'd for `/projects`, `/blog`, `/about` (targeting `#breadcrumb` element in root `index.html`) and all scripture routes.
 - **Security headers** (CSP, HSTS, COOP, etc.) via the `secure()` wrapper — `_headers` only covers static assets. Worker also sets `Vary: Accept-Encoding` and rejects non-GET/HEAD with 405. Scripture manifest/chapter fetches are wrapped in a 2-second timeout (`timedFetch`) to prevent SSR hangs.
 
-Static assets are served directly by the asset layer before the Worker runs (`html_handling: "drop-trailing-slash"`). CDN caching is split from browser caching via `Cloudflare-CDN-Cache-Control`: the CDN caches Worker HTML for 1 hour and static assets indefinitely (purged on deploy), while browsers use short TTLs. Analytics Engine (`VIEWS` binding) logs page views server-side via `waitUntil()` with pathname, country, referer, user-agent, city, and ASN. Speculation Rules in `index.html` prefetch and prerender SPA routes. WebGL simplex noise shader background, project carousel, blog with markdown rendering, SVG world map with animated arc.
+Static assets are served directly by the asset layer before the Worker runs (`html_handling: "drop-trailing-slash"`). CDN caching is split from browser caching via `Cloudflare-CDN-Cache-Control`: the CDN caches Worker HTML for 1 hour and static assets indefinitely (purged on deploy), while browsers use short TTLs. Analytics Engine (`VIEWS` binding) logs page views server-side via `waitUntil()` with pathname, country, referer, user-agent, city, and ASN. Speculation Rules in `index.html` prefetch and prerender SPA routes. WebGL geometric shader background (dot grid + topographic contour lines with accent hotspots), project carousel, blog with markdown rendering, SVG world map with animated arc.
 
 ## Architecture
 
@@ -73,7 +73,7 @@ Both require Puppeteer (installed in `og/` and `cards/`). Source HTML in `og/` a
 
 ### Shader Is On-Demand
 
-Not a continuous loop. Renders on scroll/resize/theme-change, auto-stops after 1s of inactivity. New scroll-reactive elements need `requestRender()` or a scroll/resize event dispatch.
+Geometric dual-layer shader (dot grid substrate + topographic contour isolines with accent hotspots at contour density peaks). Uses `OES_standard_derivatives` for `dFdx`/`dFdy` density detection. Angular vignette (corner emphasis, not radial). Not a continuous loop — renders on scroll/resize/theme-change, auto-stops after 1s of inactivity. New scroll-reactive elements need `requestRender()` or a scroll/resize event dispatch.
 
 ### Carousel
 
@@ -95,7 +95,7 @@ All project sidebars now use `.sidebar-tabs` inside `.stats-header` instead of a
 - `.tog-wrap input` uses `clip: rect(0,0,0,0)` for a11y — do not change to `display: none`
 - The sole `<h1>` is the hero tagline — navbar brand is a `<span>` for heading hierarchy
 - Blog fetches `posts.json` and `posts/{slug}.md` via relative URLs — breaks if served from a subdirectory. The Worker also fetches these for SSR — slug validation rejects `/` and `..` to prevent path traversal.
-- `fonts/` contains self-hosted woff2 files (Merriweather, Lato, Crimson Text, Recursive). `fonts/fonts.css` has the `@font-face` declarations. CSP allows `font-src 'self'` only — no external font domains.
+- `fonts/` contains a single self-hosted woff2: Recursive variable font (5 axes: wght, MONO, CASL, slnt, CRSV). `fonts/fonts.css` has the `@font-face` declaration. CSP allows `font-src 'self'` only — no external font domains. Lato, Merriweather, and Crimson Text have been removed.
 - `_build.js` generates six files — run before deploy. Requires git history for `<lastmod>`:
   - `sitemap.xml` — `<sitemapindex>` pointing to `sitemap-main.xml` and `sitemap-scripture.xml`
   - `sitemap-main.xml` — root routes, project routes, blog, sim routes with `<image:image>` tags
