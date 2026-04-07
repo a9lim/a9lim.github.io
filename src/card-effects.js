@@ -68,13 +68,13 @@ export function initCardTilt(selector, opts) {
             hovering = false;
             targetRx = 0;
             targetRy = 0;
-            card.style.transition = 'transform 0.5s var(--ease-out), box-shadow 0.4s var(--ease-out)';
+            card.style.transition = 'transform 0.3s var(--ease-out), box-shadow 0.2s var(--ease-out)';
             startLoop();
         }
 
         function onEnter() {
             hovering = true;
-            card.style.transition = 'box-shadow 0.4s var(--ease-out)';
+            card.style.transition = 'box-shadow 0.2s var(--ease-out)';
             startLoop();
         }
 
