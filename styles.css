@@ -67,11 +67,11 @@ a:hover { color: var(--accent-light); }
     inset: 0;
     z-index: 0;
     pointer-events: none;
-    opacity: 0.7;
+    opacity: 1.0;
     transition: opacity 0.8s var(--ease-out);
 }
 
-[data-theme="dark"] #shader-bg { opacity: 0.55; }
+[data-theme="dark"] #shader-bg { opacity: 0.9; }
 
 /* ═══════════════════════════════════
    Navigation Bar
@@ -79,7 +79,7 @@ a:hover { color: var(--accent-light); }
 #navbar {
     border-radius: var(--radius);
     padding: 0 12px 0 20px;
-    border-bottom: 1px solid var(--accent-subtle);
+    border-bottom: none;
     transition: background-color 0.2s var(--ease-out), box-shadow 0.2s var(--ease-out);
 }
 
@@ -136,7 +136,7 @@ a:hover { color: var(--accent-light); }
 
 .nav-center .nav-link.active::after,
 .nav-center [aria-current="page"]::after {
-    box-shadow: 0 0 8px var(--accent-glow);
+    box-shadow: none;
 }
 
 .nav-link:hover {
@@ -277,34 +277,6 @@ a:hover { color: var(--accent-light); }
     align-items: center;
     justify-content: center;
     position: relative;
-}
-
-/* Floating decorative orbs */
-.hero-orb {
-    position: absolute;
-    border-radius: 50%;
-    filter: blur(80px);
-    pointer-events: none;
-    opacity: 0;
-    animation: orbFloat 1.2s var(--ease-out) forwards;
-}
-
-.hero-orb-1 {
-    width: 400px;
-    height: 400px;
-    background: radial-gradient(circle, var(--accent-glow), transparent 70%);
-    top: 10%;
-    right: -20%;
-    animation-delay: 0.3s;
-}
-
-.hero-orb-2 {
-    width: 300px;
-    height: 300px;
-    background: radial-gradient(circle, var(--accent-subtle), transparent 70%);
-    bottom: 20%;
-    left: -15%;
-    animation-delay: 0.5s;
 }
 
 @keyframes orbFloat {
@@ -1534,8 +1506,6 @@ a:hover { color: var(--accent-light); }
         width: 130%;
     }
 
-    .hero-orb-1 { width: 250px; height: 250px; }
-    .hero-orb-2 { width: 200px; height: 200px; }
 }
 
 /* 600px: small phone — tighter spacing, stacked blog entries, full-bleed code blocks */
@@ -1579,7 +1549,6 @@ a:hover { color: var(--accent-light); }
         padding: 16px;
     }
 
-    .hero-orb { display: none; }
 }
 
 /* ─── Touch-friendly targets ─── */
