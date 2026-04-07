@@ -1025,7 +1025,7 @@ a:hover { color: var(--accent-light); }
     z-index: 1;
     text-align: center;
     padding: 40px 24px 32px;
-    background: var(--bg-panel-solid);
+    background: var(--bg-canvas);
     color: var(--text-muted);
     font-size: 0.78rem;
     max-width: 1080px;
@@ -1037,7 +1037,7 @@ a:hover { color: var(--accent-light); }
     height: 2px;
     background: var(--accent);
     margin: 0 auto 32px;
-    border-radius: var(--radius);
+    border-radius: 0;
     opacity: 0.3;
 }
 
