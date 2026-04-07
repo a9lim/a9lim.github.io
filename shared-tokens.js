@@ -106,46 +106,48 @@ const _FONT = {
 // ─── Palette ───
 // Left mutable — each project's colors.js adds keys then freezes.
 //
-// OKLCH-harmonized: all neutrals share H=255 (cool blue-gray);
-// extended chromatic colors share L≈0.60–0.67, C≈0.10–0.17 for
-// perceptually uniform brightness & saturation across hues.
+// OKLCH-native: all neutrals share H=270 (cold blue-violet slate);
+// extended chromatic colors locked to L=0.62, C≈0.11 for strict
+// perceptual uniformity across hues. Dual accent: red + blue.
 const _PALETTE = {
-  accent:      '#E11107',  // oklch(0.53  0.225  29)
-  accentLight: '#E95142',  // oklch(0.64  0.19   29)
+  accent:         '#E11107',  // oklch(0.53  0.225  29)  — primary brand
+  accentLight:    '#E95142',  // oklch(0.64  0.19   29)
+  secondary:      '#488ACB',  // oklch(0.62  0.12  250)  — data/status
+  secondaryLight: '#73A9E1',  // oklch(0.72  0.10  250)
 
   light: {
-    canvas:        '#EBEFF4',  // oklch(0.950 0.008 255)
-    panelSolid:    '#F2F5F8',  // oklch(0.968 0.005 255)
-    elevated:      '#F9FAFC',  // oklch(0.985 0.003 255)
-    text:          '#0B1016',  // oklch(0.170 0.015 255)
-    textSecondary: '#4E545C',  // oklch(0.445 0.015 255)
-    textMuted:     '#777C83',  // oklch(0.585 0.012 255)
+    canvas:        '#E6E8ED',  // oklch(0.93 0.008 270)
+    panelSolid:    '#F0F2F6',  // oklch(0.96 0.006 270)
+    elevated:      '#F7F8FB',  // oklch(0.98 0.004 270)
+    text:          '#090B0F',  // oklch(0.15 0.010 270)
+    textSecondary: '#4B4D53',  // oklch(0.42 0.010 270)
+    textMuted:     '#75777C',  // oklch(0.57 0.008 270)
   },
 
   dark: {
-    canvas:        '#080B11',  // oklch(0.150 0.013 255)
-    panelSolid:    '#10151C',  // oklch(0.195 0.015 255)
-    elevated:      '#191F25',  // oklch(0.235 0.015 255)
-    text:          '#E1E5E9',  // oklch(0.920 0.007 255)
-    textSecondary: '#878D94',  // oklch(0.640 0.012 255)
-    textMuted:     '#4E5359',  // oklch(0.440 0.012 255)
+    canvas:        '#06070B',  // oklch(0.13 0.010 270)
+    panelSolid:    '#0E0F14',  // oklch(0.17 0.010 270)
+    elevated:      '#191A1F',  // oklch(0.22 0.010 270)
+    text:          '#E0E1E5',  // oklch(0.91 0.005 270)
+    textSecondary: '#84868B',  // oklch(0.62 0.008 270)
+    textMuted:     '#4B4D52',  // oklch(0.42 0.008 270)
   },
 
-  // Cross-project semantic colors — OKLCH-harmonized (L≈0.60, C≈0.13)
+  // Cross-project semantic colors — OKLCH L=0.62 uniform lightness
   extended: {
-    blue:    '#3590BF',  // oklch(0.62 0.11 235)
-    green:   '#2CA470',  // oklch(0.64 0.13 160)
-    slate:   '#767C85',  // oklch(0.585 0.015 255)
-    orange:  '#C48225',  // oklch(0.66 0.13  70)
-    rose:    '#C5547C',  // oklch(0.60 0.15   0)
-    purple:  '#8160B5',  // oklch(0.56 0.13 300)
-    brown:   '#945D36',  // oklch(0.53 0.09  55)
-    red:     '#C84341',  // oklch(0.57 0.17  25)
-    cyan:    '#31A5A5',  // oklch(0.66 0.10 195)
-    yellow:  '#B9A624',  // oklch(0.72 0.14 100)
-    magenta: '#AA55A4',  // oklch(0.58 0.15 330)
-    lime:    '#5FAB4D',  // oklch(0.67 0.15 140)
-    indigo:  '#5C69BC',  // oklch(0.55 0.13 275)
+    blue:    '#3590BF',  // oklch(0.62 0.11  235)
+    green:   '#3F9A6F',  // oklch(0.62 0.11  160)
+    slate:   '#828690',  // oklch(0.62 0.015 270)
+    orange:  '#B07932',  // oklch(0.62 0.11   70)
+    rose:    '#BB6883',  // oklch(0.62 0.11    0)
+    purple:  '#9076BE',  // oklch(0.62 0.11  300)
+    brown:   '#B07750',  // oklch(0.62 0.09   55)
+    red:     '#C8635D',  // oklch(0.62 0.13   25)
+    cyan:    '#009A9B',  // oklch(0.62 0.11  195)
+    yellow:  '#96872D',  // oklch(0.62 0.11  100)
+    magenta: '#B167AB',  // oklch(0.62 0.13  330)
+    lime:    '#58994A',  // oklch(0.62 0.13  140)
+    indigo:  '#7380C8',  // oklch(0.62 0.11  275)
   },
 };
 
@@ -191,10 +193,14 @@ const _PALETTE = {
 
 ${gen(L, false)}
 
-  --accent:        ${P.accent};
-  --accent-light:  ${P.accentLight};
-  --accent-subtle: ${_r(P.accent, 0.078)};
-  --accent-glow:   ${_r(P.accent, 0.18)};
+  --accent:            ${P.accent};
+  --accent-light:      ${P.accentLight};
+  --accent-subtle:     ${_r(P.accent, 0.078)};
+  --accent-glow:       ${_r(P.accent, 0.18)};
+  --secondary:         ${P.secondary};
+  --secondary-light:   ${P.secondaryLight};
+  --secondary-subtle:  ${_r(P.secondary, 0.078)};
+  --secondary-glow:    ${_r(P.secondary, 0.18)};
   --text-on-accent: ${L.elevated};
 
   --shadow-hover: 0 1px 3px #0000000a, 0 2px 8px #00000008;
