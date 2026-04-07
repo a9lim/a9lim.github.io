@@ -101,7 +101,7 @@ a:hover { color: var(--accent-light); }
 
 .nav-link {
     font-family: var(--font-sans);
-    font-size: 0.82rem;
+    font-size: var(--font-base);
     font-weight: 500;
     letter-spacing: 0.04em;
     text-transform: uppercase;
@@ -241,7 +241,7 @@ a:hover { color: var(--accent-light); }
 /* Uppercase mono label used on every page ("Featured", "Projects", etc.) */
 .section-label {
     font-family: var(--font-mono);
-    font-size: 0.68rem;
+    font-size: var(--font-sm);
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.12em;
@@ -263,7 +263,7 @@ a:hover { color: var(--accent-light); }
     height: 8px;
     border-radius: 50%;
     background: var(--accent);
-    animation: breathe 3s ease-in-out infinite;
+    animation: breathe 3s var(--ease-in-out) infinite;
 }
 
 /* ═══════════════════════════════════
@@ -343,7 +343,7 @@ a:hover { color: var(--accent-light); }
     -webkit-text-fill-color: transparent;
     background-clip: text;
     padding-right: 0.05em; /* prevent italic glyph clipping at right edge */
-    animation: gradientShift 8s ease-in-out infinite;
+    animation: gradientShift 8s var(--ease-in-out) infinite;
 }
 
 @keyframes gradientShift {
@@ -368,7 +368,7 @@ a:hover { color: var(--accent-light); }
     background: var(--accent);
     color: var(--overlay-text);
     font-family: var(--font-sans);
-    font-size: 0.88rem;
+    font-size: var(--font-lg);
     font-weight: 600;
     letter-spacing: 0.02em;
     border: none;
@@ -550,7 +550,7 @@ a:hover { color: var(--accent-light); }
 
 .project-desc {
     color: var(--text-secondary);
-    font-size: 0.92rem;
+    font-size: var(--font-lg);
     line-height: 1.6;
 }
 
@@ -563,7 +563,7 @@ a:hover { color: var(--accent-light); }
 
 .project-tag {
     font-family: var(--font-mono);
-    font-size: 0.72rem;
+    font-size: var(--font-sm);
     padding: 4px 10px;
     border-radius: var(--radius);
     background: var(--bg-hover);
@@ -633,7 +633,7 @@ a:hover { color: var(--accent-light); }
 
 .blog-date {
     font-family: var(--font-mono);
-    font-size: 0.78rem;
+    font-size: var(--font-base);
     color: var(--text-muted);
     white-space: nowrap;
     flex-shrink: 0;
@@ -654,7 +654,7 @@ a:hover { color: var(--accent-light); }
 
 .blog-tag {
     font-family: var(--font-mono);
-    font-size: 0.68rem;
+    font-size: var(--font-sm);
     color: var(--text-muted);
     padding: 2px 8px;
     border-radius: var(--radius);
@@ -742,7 +742,7 @@ a:hover { color: var(--accent-light); }
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    font-size: 0.82rem;
+    font-size: var(--font-base);
     font-weight: 500;
     color: var(--text-secondary);
     margin-bottom: 32px;
@@ -761,7 +761,7 @@ a:hover { color: var(--accent-light); }
 .blog-post-date {
     display: block;
     font-family: var(--font-mono);
-    font-size: 0.78rem;
+    font-size: var(--font-base);
     color: var(--text-muted);
     margin-bottom: 8px;
     font-variant-numeric: tabular-nums;
@@ -838,7 +838,7 @@ a:hover { color: var(--accent-light); }
 .blog-content pre code {
     padding: 0;
     background: none;
-    font-size: 0.85rem;
+    font-size: var(--font-lg);
     color: var(--text);
 }
 
@@ -847,7 +847,7 @@ a:hover { color: var(--accent-light); }
     content: attr(class);
     display: block;
     font-family: var(--font-mono);
-    font-size: 0.68rem;
+    font-size: var(--font-sm);
     color: var(--text-muted);
     text-transform: uppercase;
     letter-spacing: 0.08em;
@@ -999,7 +999,7 @@ a:hover { color: var(--accent-light); }
 
 .contact-section p {
     color: var(--text-secondary);
-    font-size: 0.92rem;
+    font-size: var(--font-lg);
     margin-bottom: 20px;
     position: relative;
 }
@@ -1027,7 +1027,7 @@ a:hover { color: var(--accent-light); }
     padding: 40px 24px 32px;
     background: var(--bg-canvas);
     color: var(--text-muted);
-    font-size: 0.78rem;
+    font-size: var(--font-base);
     max-width: 1080px;
     margin: 0 auto;
 }
@@ -1055,7 +1055,7 @@ a:hover { color: var(--accent-light); }
 
 .footer-nav a {
     font-family: var(--font-sans);
-    font-size: 0.82rem;
+    font-size: var(--font-base);
     font-weight: 500;
     color: var(--text-secondary);
     text-decoration: none;
@@ -1100,7 +1100,7 @@ a:hover { color: var(--accent-light); }
     font-family: var(--font-mono);
     gap: 10px;
     color: var(--text-muted);
-    font-size: 0.68rem;
+    font-size: var(--font-sm);
     letter-spacing: 0.12em;
     text-transform: uppercase;
     animation: heroFadeUp 0.9s var(--ease-out) 0.6s both;
@@ -1280,7 +1280,7 @@ a:hover { color: var(--accent-light); }
 }
 
 .carousel-card-info p {
-    font-size: 0.8rem;
+    font-size: var(--font-base);
     line-height: 1.5;
     color: var(--overlay-text-dim);
     margin-bottom: 8px;
@@ -1294,7 +1294,7 @@ a:hover { color: var(--accent-light); }
 
 .carousel-card-tags span {
     font-family: var(--font-mono);
-    font-size: 0.65rem;
+    font-size: var(--font-sm);
     padding: 2px 7px;
     border-radius: var(--radius);
     background: var(--overlay-tint);
@@ -1396,7 +1396,7 @@ a:hover { color: var(--accent-light); }
 
 .inspire-cite {
     font-family: var(--font-sans);
-    font-size: 0.88rem;
+    font-size: var(--font-lg);
     font-style: normal;
     color: var(--text-muted);
     letter-spacing: 0.04em;
