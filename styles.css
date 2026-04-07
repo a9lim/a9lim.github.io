@@ -1014,9 +1014,6 @@ a:hover { color: var(--accent-light); }
     z-index: 1;
     text-align: center;
     padding: 40px 24px 32px;
-    background: var(--bg-canvas);
-    color: var(--text-muted);
-    font-size: var(--font-base);
     max-width: 1080px;
     margin: 0 auto;
 }
@@ -1025,56 +1022,13 @@ a:hover { color: var(--accent-light); }
     width: 48px;
     height: 2px;
     background: var(--accent);
-    margin: 0 auto 32px;
+    margin: 0 auto 16px;
     border-radius: 0;
-    opacity: 0.3;
-}
-
-.footer-content {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 24px;
-}
-
-.footer-nav {
-    display: flex;
-    gap: 24px;
-}
-
-.footer-nav a {
-    font-family: var(--font-sans);
-    font-size: var(--font-base);
-    font-weight: 500;
-    color: var(--text-secondary);
-    text-decoration: none;
-    transition: color 0.2s var(--ease-out), transform 0.3s var(--ease-out);
-    display: inline-block;
-}
-
-.footer-nav a:hover {
-    color: var(--text);
-    transform: translateY(-2px);
-}
-
-.footer-social {
-    display: flex;
-    gap: 16px;
-}
-
-.footer-social a {
-    color: var(--text-muted);
-    transition: color 0.2s var(--ease-out), transform 0.3s var(--ease-out);
-    display: inline-flex;
-}
-
-.footer-social a:hover {
-    color: var(--accent);
-    transform: translateY(-2px);
 }
 
 .footer-copy {
-    margin-top: 4px;
+    color: var(--text-muted);
+    font-size: var(--font-sm);
 }
 
 /* ═══════════════════════════════════
@@ -1220,7 +1174,7 @@ a:hover { color: var(--accent-light); }
         color-mix(in srgb, var(--overlay-base) 50%, transparent) 65%,
         color-mix(in srgb, var(--overlay-base) 75%, transparent) 80%,
         color-mix(in srgb, var(--overlay-base) 92%, transparent) 92%,
-        var(--overlay-full) 100%
+        var(--overlay-base) 100%
     );
     pointer-events: none;
 }
@@ -1245,7 +1199,7 @@ a:hover { color: var(--accent-light); }
 }
 
 [data-theme="dark"] .carousel-card-visual {
-    background: linear-gradient(160deg, var(--bg-elevated) 0%, var(--card-bg-end) 100%);
+    background: var(--bg-elevated);
 }
 
 .carousel-card:hover {
@@ -1271,7 +1225,7 @@ a:hover { color: var(--accent-light); }
 .carousel-card-info p {
     font-size: var(--font-base);
     line-height: 1.5;
-    color: var(--overlay-text-dim);
+    color: var(--overlay-text);
     margin-bottom: 8px;
 }
 
@@ -1287,7 +1241,7 @@ a:hover { color: var(--accent-light); }
     padding: 2px 7px;
     border-radius: var(--radius);
     background: var(--overlay-tint);
-    color: var(--overlay-tint-dim);
+    color: var(--overlay-text);
 }
 
 .carousel-dots {
@@ -1324,7 +1278,7 @@ a:hover { color: var(--accent-light); }
     content: '';
     position: absolute;
     inset: 0;
-    background: radial-gradient(300px circle at var(--mouse-x, 50%) var(--mouse-y, 50%), var(--shimmer-subtle), transparent 50%);
+    background: radial-gradient(300px circle at var(--mouse-x, 50%) var(--mouse-y, 50%), var(--shimmer), transparent 50%);
     opacity: 0;
     transition: opacity 0.2s var(--ease-out);
     pointer-events: none;
