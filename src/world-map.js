@@ -33,7 +33,7 @@ export function initWorldMap() {
     const container = document.getElementById('world-map-container');
     if (!container) return;
 
-    fetch('world-map.svg')
+    fetch('/world-map.svg')
         .then(r => r.text())
         .then(svgText => {
             const parser = new DOMParser();

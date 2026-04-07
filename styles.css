@@ -249,21 +249,10 @@ a:hover { color: var(--accent-light); }
     margin-bottom: 12px;
     position: relative;
     display: inline-block;
-    padding-left: 20px;
 }
 
-/* Decorative dot before section labels */
 .section-label::before {
-    content: '';
-    position: absolute;
-    left: 0;
-    top: 50%;
-    transform: translateY(-50%);
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background: var(--accent);
-    animation: breathe 3s var(--ease-in-out) infinite;
+    display: none;
 }
 
 /* ═══════════════════════════════════
@@ -600,7 +589,7 @@ a:hover { color: var(--accent-light); }
     gap: 24px;
     padding: 16px;
     border-radius: var(--radius);
-    background: var(--bg-elevated);
+    background: transparent;
     transition: background 0.2s var(--ease-out), transform 0.3s var(--ease-out), box-shadow 0.2s var(--ease-out);
     text-decoration: none;
     color: var(--text);

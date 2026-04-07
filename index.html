@@ -34,19 +34,19 @@
 
     <link rel="dns-prefetch" href="https://github.com">
     <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
-    <link rel="stylesheet" href="fonts/fonts.css">
+    <link rel="stylesheet" href="/fonts/fonts.css">
 
     <!-- Shared tokens inject CSS vars and expose _PALETTE/_FONT before CSS loads -->
-    <script src="shared-tokens.js"></script>
-    <script defer src="shared-utils.js"></script>
-    <script defer src="shared-haptics.js"></script>
-    <script defer src="shared-icons.js"></script>
-    <script defer src="shared-toolbar.js"></script>
-    <link rel="stylesheet" href="shared-base.css">
-    <link rel="stylesheet" href="styles.css">
+    <script src="/shared-tokens.js"></script>
+    <script defer src="/shared-utils.js"></script>
+    <script defer src="/shared-haptics.js"></script>
+    <script defer src="/shared-icons.js"></script>
+    <script defer src="/shared-toolbar.js"></script>
+    <link rel="stylesheet" href="/shared-base.css">
+    <link rel="stylesheet" href="/styles.css">
 
-    <link rel="icon" href="favicon.ico">
-    <link rel="manifest" href="manifest.json">
+    <link rel="icon" href="/favicon.ico">
+    <link rel="manifest" href="/manifest.json">
     <link rel="search" type="application/opensearchdescription+xml" title="a9l.im" href="/opensearch.xml">
     <link rel="alternate" type="application/rss+xml" title="a9l.im (RSS)" href="https://a9l.im/feed.xml">
     <link rel="alternate" type="application/atom+xml" title="a9l.im (Atom)" href="https://a9l.im/feed.atom">
@@ -194,7 +194,7 @@
     <!-- ═══ Navigation ═══ -->
     <nav id="navbar" class="sim-toolbar glass" role="navigation" aria-label="Main navigation">
         <div class="nav-left">
-            <a href="/" class="sim-home" data-page="home"><img src="logo.svg" alt="a9l.im" height="28"></a>
+            <a href="/" class="sim-home" data-page="home"><img src="/logo.svg" alt="a9l.im" height="28"></a>
             <span class="sim-brand">a9l.im</span>
         </div>
 
@@ -251,7 +251,6 @@
 
         <!-- ─── Featured Project Carousel ─── -->
         <div class="carousel-section">
-            <p class="section-label carousel-label scroll-reveal">Featured</p>
             <div class="carousel-viewport">
             <div class="carousel-track"></div>
             </div>
@@ -272,7 +271,6 @@
          ═══════════════════════════════════ -->
     <section id="page-projects" class="page-section" aria-label="Projects">
         <div class="page-container">
-            <p class="section-label fade-in">Projects</p>
 
             <div class="projects-grid"></div>
         </div>
@@ -285,7 +283,6 @@
         <div class="page-container">
             <!-- Listing / post views toggled by blog.js -->
             <div id="blog-listing">
-                <p class="section-label fade-in">Blog</p>
                 <div id="blog-list-container" class="blog-list fade-in"></div>
             </div>
 
@@ -304,7 +301,6 @@
          ═══════════════════════════════════ -->
     <section id="page-about" class="page-section" aria-label="About">
         <div class="page-container">
-            <p class="section-label fade-in">About</p>
 
             <div class="about-layout">
                 <div class="about-bio fade-in">
@@ -355,6 +351,6 @@
     </footer>
 
     <!-- ═══ Main Script ═══ -->
-    <script type="module" src="main.js"></script>
+    <script type="module" src="/main.js"></script>
 </body>
 </html>

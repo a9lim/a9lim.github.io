@@ -34,7 +34,7 @@ Key shared modules:
 cd path/to/a9lim.github.io && python -m http.server
 ```
 
-Root site uses relative paths for shared files; sub-projects use absolute paths (`/shared-*.js`).
+Root site and sub-projects both use absolute paths (`/shared-*.js`, `/fonts/fonts.css`, etc.). Relative paths break on deep SPA routes like `/blog/hello-world` because the Worker serves `index.html` and the browser resolves relative URLs under `/blog/`.
 
 ## Overview
 
@@ -95,7 +95,7 @@ All project sidebars now use `.sidebar-tabs` inside `.stats-header` instead of a
 - `data-theme` is on `<html>` — the shader's MutationObserver watches `document.documentElement`
 - `.tog-wrap input` uses `clip: rect(0,0,0,0)` for a11y — do not change to `display: none`
 - The sole `<h1>` is the hero tagline — navbar brand is a `<span>` for heading hierarchy
-- Blog fetches `posts.json` and `posts/{slug}.md` via relative URLs — breaks if served from a subdirectory. The Worker also fetches these for SSR — slug validation rejects `/` and `..` to prevent path traversal.
+- Blog fetches `/posts.json` and `/posts/{slug}.md` via absolute URLs. The Worker also fetches these for SSR — slug validation rejects `/` and `..` to prevent path traversal.
 - `fonts/` contains a single self-hosted woff2: Recursive variable font (5 axes: wght, MONO, CASL, slnt, CRSV). `fonts/fonts.css` has the `@font-face` declaration. CSP allows `font-src 'self'` only — no external font domains. Lato, Merriweather, and Crimson Text have been removed.
 - `_build.js` generates six files — run before deploy. Requires git history for `<lastmod>`:
   - `sitemap.xml` — `<sitemapindex>` pointing to `sitemap-main.xml` and `sitemap-scripture.xml`

@@ -44,7 +44,7 @@ export async function showBlogListing($) {
     if (!postsCache) {
         $.blogListCt.innerHTML = skeletonEntries(5);
         try {
-            const res = await fetchWithTimeout('posts.json', FETCH_TIMEOUT);
+            const res = await fetchWithTimeout('/posts.json', FETCH_TIMEOUT);
             postsCache = await res.json();
         } catch (e) {
             const msg = e.name === 'AbortError'
@@ -86,7 +86,7 @@ export async function showBlogPost(slug, $) {
 
     if (!mdCache[slug]) {
         try {
-            const res = await fetchWithTimeout('posts/' + encodeURIComponent(slug) + '.md', FETCH_TIMEOUT);
+            const res = await fetchWithTimeout('/posts/' + encodeURIComponent(slug) + '.md', FETCH_TIMEOUT);
             if (!res.ok) throw new Error(res.status);
             mdCache[slug] = await res.text();
         } catch (e) {
@@ -102,7 +102,7 @@ export async function showBlogPost(slug, $) {
     // Metadata is optional for rendering — post body works without it
     if (!postsCache) {
         try {
-            const res = await fetchWithTimeout('posts.json', FETCH_TIMEOUT);
+            const res = await fetchWithTimeout('/posts.json', FETCH_TIMEOUT);
             postsCache = await res.json();
         } catch (e) { /* continue without metadata */ }
     }
