@@ -1539,7 +1539,7 @@ label.control-label {
     width: 42px;
     height: 22px;
     background: var(--tog-bg);
-    border-radius: var(--radius);
+    border-radius: 9999px;
     cursor: pointer;
     position: relative;
     border: none;
@@ -1604,7 +1604,7 @@ label.control-label {
 
 /* Larger touch targets on coarse pointers */
 @media (pointer: coarse) {
-    .tog { --tog-shift: 22px; width: 48px; height: 26px; border-radius: var(--radius); }
+    .tog { --tog-shift: 22px; width: 48px; height: 26px; border-radius: 9999px; }
     .tog-thumb { width: 18px; height: 18px; left: 4px; }
 }
 
