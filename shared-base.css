@@ -354,8 +354,8 @@ body {
     text-transform: uppercase;
     letter-spacing: 0.12em;
     color: var(--text-muted);
-    margin-bottom: 0.65rem;
-    padding-bottom: 0.4rem;
+    margin-bottom: 8px;
+    padding-bottom: 4px;
 }
 
 .stats-header {
@@ -497,7 +497,7 @@ body {
 
 .tab-panel {
     display: none;
-    padding: 12px 16px;
+    padding: 10px 12px;
 }
 
 .tab-panel.active {
@@ -1203,7 +1203,7 @@ body {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 0.3rem 0;
+    padding: 4px 0;
 }
 
 .ctrl-row > label,
@@ -1220,15 +1220,15 @@ body {
 .ctrl-disabled { opacity: 0.4; pointer-events: none; }
 
 .ctrl-group {
-    margin-bottom: 0.7rem;
+    margin-bottom: 10px;
 }
 .ctrl-group:last-child { margin-bottom: 0; }
 
 .panel-section {
-    margin-bottom: 0.7rem;
+    margin-bottom: 10px;
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 6px;
 }
 .panel-section:last-of-type { margin-bottom: 0; }
 
@@ -1525,7 +1525,7 @@ label.control-label {
 .control-group {
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 6px;
 }
 
 /* ─── Toggle Switches ─── */
@@ -1616,6 +1616,7 @@ label.control-label {
 
 /* ─── Touch Device Overrides ─── */
 @media (pointer: coarse) {
+  .ctrl-row { padding: 6px 0; }
   .tool-btn { width: 44px; height: 44px; }
   .info-trigger { min-width: 32px; min-height: 32px; padding: 8px; }
   .tab-btn { min-height: 44px; }
