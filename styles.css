@@ -123,7 +123,7 @@ a:hover { color: var(--accent-light); }
     width: 0;
     height: 2px;
     background: var(--accent);
-    border-radius: var(--radius);
+    border-radius: 0;
     transition: width 0.3s var(--ease-out), left 0.3s var(--ease-out);
 }
 
