@@ -141,6 +141,7 @@ a:hover { color: var(--accent-light); }
 
 .nav-link:hover {
     color: var(--text);
+    transform: translateY(-2px);
 }
 
 .nav-link.active {
@@ -161,10 +162,6 @@ a:hover { color: var(--accent-light); }
     border: none;
     color: var(--text-secondary);
     transition: color 0.2s var(--ease-out), transform 0.3s var(--ease-out);
-}
-
-.tool-btn:hover {
-    transform: translateY(-2px);
 }
 
 .tool-btn[aria-label="Twitter"] svg,
@@ -410,7 +407,7 @@ a:hover { color: var(--accent-light); }
 .project-card:hover,
 .project-card.visible:hover {
     transform: translateY(-4px);
-    box-shadow: var(--shadow-hover-lg);
+    box-shadow: var(--shadow-hover);
     color: var(--text);
 }
 
@@ -885,7 +882,7 @@ a:hover { color: var(--accent-light); }
 }
 
 .blog-content img:hover {
-    box-shadow: var(--shadow-hover-lg);
+    box-shadow: var(--shadow-hover);
 }
 
 /* ═══════════════════════════════════
@@ -930,24 +927,8 @@ a:hover { color: var(--accent-light); }
     transition: box-shadow 0.2s var(--ease-out), transform 0.3s var(--ease-out), background 0.2s var(--ease-out);
 }
 
-/* Subtle gradient shimmer on contact card */
-.contact-section::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(135deg, var(--accent-subtle), transparent 60%);
-    opacity: 0;
-    transition: opacity 0.2s var(--ease-out);
-    pointer-events: none;
-}
-
 .contact-section:hover {
     box-shadow: var(--shadow-hover);
-    transform: translateY(-2px);
-}
-
-.contact-section:hover::before {
-    opacity: 1;
 }
 
 .contact-section h3 {
@@ -1176,7 +1157,7 @@ a:hover { color: var(--accent-light); }
 
 .carousel-card:hover {
     transform: translateY(-4px) scale(1.01);
-    box-shadow: var(--shadow-hover-lg);
+    box-shadow: var(--shadow-hover);
 }
 
 .carousel-card-info {

@@ -154,6 +154,7 @@ export function initCarousel() {
 
     initCardTilt('.carousel-card');
     initCardTilt('.project-card');
+    initCardTilt('.contact-section');
 
     // Debounced resize: reset transform mode when crossing the 900px breakpoint
     window.addEventListener('resize', debounce(() => {

@@ -27,24 +27,32 @@ export function initCardTilt(selector, opts) {
     cards.forEach(card => {
         let targetRx = 0, targetRy = 0;
         let currentRx = 0, currentRy = 0;
+        let currentScale = 1;
         let mouseX = 0.5, mouseY = 0.5;
         let hovering = false;
         let rafId = null;
 
+        card.style.transition = 'box-shadow 0.2s var(--ease-out)';
+
         function animate() {
-            if (!hovering && Math.abs(currentRx) < 0.01 && Math.abs(currentRy) < 0.01) {
+            currentRx += (targetRx - currentRx) * LERP_FACTOR;
+            currentRy += (targetRy - currentRy) * LERP_FACTOR;
+            const targetScale = hovering ? scale : 1;
+            currentScale += (targetScale - currentScale) * LERP_FACTOR;
+
+            if (!hovering &&
+                Math.abs(currentRx) < 0.01 &&
+                Math.abs(currentRy) < 0.01 &&
+                Math.abs(currentScale - 1) < 0.001) {
                 currentRx = 0;
                 currentRy = 0;
+                currentScale = 1;
                 card.style.transform = '';
                 rafId = null;
                 return;
             }
 
-            // Smooth lerp toward target rotation
-            currentRx += (targetRx - currentRx) * LERP_FACTOR;
-            currentRy += (targetRy - currentRy) * LERP_FACTOR;
-
-            card.style.transform = `perspective(${perspective}px) rotateX(${currentRx}deg) rotateY(${currentRy}deg) scale(${hovering ? scale : 1})`;
+            card.style.transform = `perspective(${perspective}px) rotateX(${currentRx}deg) rotateY(${currentRy}deg) scale(${currentScale})`;
             card.style.setProperty('--mouse-x', (mouseX * 100) + '%');
             card.style.setProperty('--mouse-y', (mouseY * 100) + '%');
 
@@ -68,13 +76,11 @@ export function initCardTilt(selector, opts) {
             hovering = false;
             targetRx = 0;
             targetRy = 0;
-            card.style.transition = 'transform 0.3s var(--ease-out), box-shadow 0.2s var(--ease-out)';
             startLoop();
         }
 
         function onEnter() {
             hovering = true;
-            card.style.transition = 'box-shadow 0.2s var(--ease-out)';
             startLoop();
         }
 

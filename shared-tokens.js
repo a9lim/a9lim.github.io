@@ -203,8 +203,7 @@ ${gen(L, false)}
   --secondary-glow:    ${_r(P.secondary, 0.18)};
   --text-on-accent: ${L.elevated};
 
-  --shadow-hover: 0 1px 3px #0000000a, 0 2px 8px #00000008;
-  --shadow-hover-lg: 0 2px 4px #0000000a, 0 4px 16px #00000012, 0 8px 32px #0000000a;
+  --shadow-hover: 0 2px 4px #0000000a, 0 4px 16px #00000012, 0 8px 32px #0000000a;
   --shadow-glow: 0 0 30px ${_r(P.accent, 0.2)}, 0 0 80px ${_r(P.accent, 0.12)}, 0 0 120px ${_r(P.accent, 0.06)};
 
   --tog-bg:             ${togBg};
@@ -232,8 +231,7 @@ ${gen(L, false)}
 [data-theme="dark"] {
 ${gen(D, true)}
 
-  --shadow-hover: 0 1px 3px #00000033, 0 2px 8px #00000028;
-  --shadow-hover-lg: 0 2px 4px #00000033, 0 4px 16px #0000003d, 0 8px 32px #00000028;
+  --shadow-hover: 0 2px 4px #00000033, 0 4px 16px #0000003d, 0 8px 32px #00000028;
   --shadow-glow: 0 0 30px ${_r(P.accent, 0.25)}, 0 0 80px ${_r(P.accent, 0.15)}, 0 0 120px ${_r(P.accent, 0.08)};
 
   --text-on-accent: ${D.elevated};

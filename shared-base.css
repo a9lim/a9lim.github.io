@@ -19,7 +19,7 @@
     --font-lg: 0.95rem;
 
     --toolbar-h: 52px;
-    --panel-w: 350px;
+    --panel-w: 360px;
 
     --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
     --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
@@ -63,7 +63,7 @@ body {
     flex-shrink: 0;
     outline: none;
     -webkit-appearance: none;
-    transition: color 0.2s var(--ease-out), background 0.2s var(--ease-out), opacity 0.2s, box-shadow 0.25s var(--ease-out), transform 0.2s var(--ease-out);
+    transition: color 0.2s var(--ease-out), background 0.2s var(--ease-out), opacity 0.2s, box-shadow 0.25s var(--ease-out), transform 0.3s var(--ease-out);
 }
 
 .tool-btn svg {
@@ -79,6 +79,7 @@ body {
 
 .tool-btn:hover {
     color: var(--text);
+    transform: translateY(-2px);
 }
 
 .tool-btn:active {
@@ -354,11 +355,11 @@ body {
 .sim-home img {
     height: 28px;
     width: auto;
-    transition: opacity 0.2s var(--ease-out);
+    transition: transform 0.3s var(--ease-out);
 }
 
 .sim-home:hover img {
-    opacity: 0.7;
+    transform: rotate(15deg) scale(1.1);
 }
 
 /* Ensure brand wrapper is a flex row when logo is present */
@@ -1312,6 +1313,43 @@ input[type=range]::-moz-range-thumb {
 .mode-btn.active {
     color: var(--text-on-accent);
 }
+
+/* Settings dropdown (shared-settings.js) */
+.settings-dd {
+    position: fixed;
+    z-index: 100;
+    padding: 1rem;
+    border-radius: var(--radius);
+    background: var(--bg-panel);
+    backdrop-filter: blur(8px);
+}
+
+.settings-dd-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+}
+
+.settings-dd-row:last-child { margin-bottom: 0; }
+
+.settings-dd-label {
+    font-family: var(--font-sans);
+    font-size: var(--font-base);
+    color: var(--text-muted);
+    min-width: 80px;
+    flex-shrink: 0;
+}
+
+.settings-dd-val {
+    font-family: var(--font-mono);
+    font-size: var(--font-sm);
+    color: var(--text-secondary);
+    min-width: 40px;
+    text-align: right;
+}
+
+.settings-dd-row .sim-slider { flex: 1; }
 
 /* Checkbox label layout (standalone checkboxes, not .tog toggles) */
 .checkbox-label {
