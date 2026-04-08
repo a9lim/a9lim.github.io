@@ -111,8 +111,8 @@ var _ICON = (function () {
         modeCyano:   s('<line x1="6" y1="12" x2="17" y2="12"/><polyline points="14,8 18,12 14,16"/>', ' class="mode-fwd"' + M20) +
                      s('<line x1="7" y1="12" x2="18" y2="12"/><polyline points="10,8 6,12 10,16"/>', ' class="mode-rev"' + M20),
 
-        modeShoals:  s('<polyline points="2,14 6,10 10,12 15.4,4.8"/><polyline points="12,4 16,4 16,8"/>', ' id="mode-icon-buy" width="20" height="18" viewBox="0 0 20 18"' + A.slice(A.indexOf(' fill'))) +
-                     s('<polyline points="2,4 6,8 10,6 15.4,13.2"/><polyline points="12,14 16,14 16,10"/>', ' id="mode-icon-sell" width="20" height="18" viewBox="0 0 20 18"' + A.slice(A.indexOf(' fill')) + ' style="display:none"'),
+        modeShoals:  s('<polyline points="2,14 6,10 10,10 15,5"/><polyline points="12,4 16,4 16,8"/>', ' id="mode-icon-buy" width="20" height="18" viewBox="0 0 20 18"' + A.slice(A.indexOf(' fill'))) +
+                     s('<polyline points="2,4 6,8 10,8 15,13"/><polyline points="12,14 16,14 16,10"/>', ' id="mode-icon-sell" width="20" height="18" viewBox="0 0 20 18"' + A.slice(A.indexOf(' fill')) + ' style="display:none"'),
 
         // ── Project icons (portfolio cards) ──
         projGeon:       '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><line x1="1" y1="12" x2="23" y2="12"/></svg>',
