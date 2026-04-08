@@ -7,8 +7,46 @@ import { triggerFadeIns } from './animations.js';
 
 let postsCache = null;   // posts.json result (fetched once)
 const mdCache = {};      // slug -> raw markdown text
+let katexLoaded = false;
 
 const FETCH_TIMEOUT = 10000;
+const KATEX_VERSION = '0.16.11';
+const KATEX_BASE = 'https://cdn.jsdelivr.net/npm/katex@' + KATEX_VERSION + '/dist';
+
+function loadKaTeX() {
+    if (katexLoaded) return Promise.resolve();
+    katexLoaded = true;
+    const css = document.createElement('link');
+    css.rel = 'stylesheet';
+    css.href = KATEX_BASE + '/katex.min.css';
+    css.crossOrigin = 'anonymous';
+    document.head.appendChild(css);
+    return new Promise(function (resolve) {
+        const js = document.createElement('script');
+        js.src = KATEX_BASE + '/katex.min.js';
+        js.crossOrigin = 'anonymous';
+        js.onload = function () {
+            const ar = document.createElement('script');
+            ar.src = KATEX_BASE + '/contrib/auto-render.min.js';
+            ar.crossOrigin = 'anonymous';
+            ar.onload = resolve;
+            document.head.appendChild(ar);
+        };
+        document.head.appendChild(js);
+    });
+}
+
+function renderMath(el) {
+    if (typeof renderMathInElement === 'function') {
+        renderMathInElement(el, {
+            delimiters: [
+                { left: '$$', right: '$$', display: true },
+                { left: '$', right: '$', display: false }
+            ],
+            throwOnError: false
+        });
+    }
+}
 
 function formatDate(iso) {
     // Append time to avoid timezone-shift date drift
@@ -117,6 +155,13 @@ export async function showBlogPost(slug, $) {
     }
     header += '</div>';
 
-    $.blogContent.innerHTML = header + '<div class="blog-content">' + parseMarkdown(mdCache[slug]) + '</div>';
+    const rendered = parseMarkdown(mdCache[slug]);
+    // Content is from trusted local markdown files (posts/*.md), not user input
+    $.blogContent.innerHTML = header + '<div class="blog-content">' + rendered + '</div>';
+
+    if (/\$/.test(mdCache[slug])) {
+        loadKaTeX().then(function () { renderMath($.blogContent); });
+    }
+
     triggerFadeIns(document.getElementById('page-blog'));
 }

@@ -5,6 +5,19 @@
 // Limitations: no nested lists, no tables, no reference-style links,
 // no HTML passthrough, no setext headings.
 
+/** Stash $$ and $ math delimiters before escaping, restore after. */
+var _mathStash = [];
+function stashMath(s) {
+    _mathStash = [];
+    return s.replace(/\$\$[\s\S]+?\$\$|\$[^$\n]+?\$/g, function (m) {
+        _mathStash.push(m);
+        return '\x00MATH' + (_mathStash.length - 1) + '\x00';
+    });
+}
+function unstashMath(s) {
+    return s.replace(/\x00MATH(\d+)\x00/g, function (_, i) { return _mathStash[i]; });
+}
+
 function esc(s) {
     return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
@@ -32,6 +45,8 @@ function inline(src) {
  * @returns {string}    HTML string
  */
 export function parseMarkdown(src) {
+    // Stash math expressions before any escaping
+    src = stashMath(src);
     const lines = src.replace(/\r\n?/g, '\n').split('\n');
     const html = [];
     let i = 0;
@@ -56,6 +71,19 @@ export function parseMarkdown(src) {
         }
 
         if (/^\s*$/.test(line)) { i++; continue; }
+
+        // Display math block: $$ on its own line
+        if (/^\$\$/.test(line) && !/^\$\$.*\$\$/.test(line)) {
+            const mathLines = [line];
+            i++;
+            while (i < len && !/\$\$\s*$/.test(lines[i])) {
+                mathLines.push(lines[i]);
+                i++;
+            }
+            if (i < len) { mathLines.push(lines[i]); i++; }
+            html.push('<p>' + unstashMath(mathLines.join('\n')) + '</p>');
+            continue;
+        }
 
         const headingMatch = line.match(/^(#{1,6})\s+(.+)$/);
         if (headingMatch) {
@@ -115,5 +143,5 @@ export function parseMarkdown(src) {
         }
     }
 
-    return html.join('\n');
+    return unstashMath(html.join('\n'));
 }

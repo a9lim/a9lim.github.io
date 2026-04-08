@@ -45,6 +45,14 @@ function escXml(s) {
 
 // --- Markdown renderer (duplicated from _worker.js — update both when changing) ---
 
+let _mdMathStash = [];
+function mdStashMath(s) {
+  _mdMathStash = [];
+  return s.replace(/\$\$[\s\S]+?\$\$|\$[^$\n]+?\$/g, m => { _mdMathStash.push(m); return '\x00MATH' + (_mdMathStash.length - 1) + '\x00'; });
+}
+function mdUnstashMath(s) {
+  return s.replace(/\x00MATH(\d+)\x00/g, (_, i) => _mdMathStash[i]);
+}
 function mdEsc(s) {
   return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
@@ -69,6 +77,7 @@ function mdInline(src) {
 }
 
 function renderMarkdown(src) {
+  src = mdStashMath(src);
   const lines = src.replace(/\r\n?/g, '\n').split('\n');
   const html = [];
   let i = 0;
@@ -88,6 +97,13 @@ function renderMarkdown(src) {
       continue;
     }
     if (/^\s*$/.test(line)) { i++; continue; }
+    if (/^\$\$/.test(line) && !/^\$\$.*\$\$/.test(line)) {
+      const ml = [line]; i++;
+      while (i < len && !/\$\$\s*$/.test(lines[i])) { ml.push(lines[i]); i++; }
+      if (i < len) { ml.push(lines[i]); i++; }
+      html.push('<p>' + mdUnstashMath(ml.join('\n')) + '</p>');
+      continue;
+    }
     const hm = line.match(/^(#{1,6})\s+(.+)$/);
     if (hm) { const slug = hm[2].toLowerCase().replace(/<[^>]+>/g, '').replace(/&[^;]+;/g, '').replace(/[^\w]+/g, '-').replace(/^-|-$/g, ''); html.push('<h' + hm[1].length + ' id="' + slug + '">' + mdInline(mdEsc(hm[2])) + '</h' + hm[1].length + '>'); i++; continue; }
     if (/^(-{3,}|\*{3,}|_{3,})\s*$/.test(line)) { html.push('<hr>'); i++; continue; }
@@ -116,7 +132,7 @@ function renderMarkdown(src) {
     }
     if (p.length) html.push('<p>' + mdInline(mdEsc(p.join('\n'))) + '</p>');
   }
-  return html.join('\n');
+  return mdUnstashMath(html.join('\n'));
 }
 
 // --- collect URLs ---
