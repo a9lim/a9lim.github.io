@@ -6,9 +6,16 @@
    ═══════════════════════════════════════════════ */
 
 var _haptics = (function () {
-    var vibrate = typeof navigator !== 'undefined' && navigator.vibrate
-        ? function (p) { navigator.vibrate(p); }
-        : function () {};
+    var canVibrate = typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function';
+    var hadGesture = false;
+
+    if (canVibrate) {
+        var unlock = function () {
+            hadGesture = true;
+            document.removeEventListener('pointerdown', unlock, true);
+        };
+        document.addEventListener('pointerdown', unlock, true);
+    }
 
     var patterns = {
         // Notification (task outcomes)
@@ -29,7 +36,9 @@ var _haptics = (function () {
     };
 
     return {
-        trigger: function (type) { vibrate(patterns[type] || patterns.medium); },
+        trigger: function (type) {
+            if (canVibrate && hadGesture) navigator.vibrate(patterns[type] || patterns.medium);
+        },
         patterns: patterns,
     };
 })();
