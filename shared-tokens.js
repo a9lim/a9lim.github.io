@@ -107,8 +107,9 @@ const _FONT = {
 // Left mutable — each project's colors.js adds keys then freezes.
 //
 // OKLCH-native: all neutrals share H=270 (cold blue-violet slate);
-// extended chromatic colors locked to L=0.62, C≈0.11 for strict
-// perceptual uniformity across hues. Dual accent: red + blue.
+// extended chromatic colors locked to L=0.62, C=0.17 for strict
+// perceptual uniformity across hues (gamut-capped where needed).
+// Dual accent: red + blue.
 const _PALETTE = {
   accent:         '#E11107',  // oklch(0.53  0.225  29)  — primary brand
   accentLight:    '#E95142',  // oklch(0.64  0.19   29)
@@ -133,21 +134,22 @@ const _PALETTE = {
     textMuted:     '#4B4D52',  // oklch(0.42 0.008 270)
   },
 
-  // Cross-project semantic colors — OKLCH L=0.62 uniform lightness
+  // Cross-project semantic colors — OKLCH L=0.62, C=0.17 uniform
+  // (gamut-capped to sRGB ceiling where needed)
   extended: {
-    blue:    '#3590BF',  // oklch(0.62 0.11  235)
-    green:   '#3F9A6F',  // oklch(0.62 0.11  160)
-    slate:   '#828690',  // oklch(0.62 0.015 270)
-    orange:  '#B07932',  // oklch(0.62 0.11   70)
-    rose:    '#BB6883',  // oklch(0.62 0.11    0)
-    purple:  '#9076BE',  // oklch(0.62 0.11  300)
-    brown:   '#B07750',  // oklch(0.62 0.09   55)
-    red:     '#C8635D',  // oklch(0.62 0.13   25)
-    cyan:    '#009A9B',  // oklch(0.62 0.11  195)
-    yellow:  '#96872D',  // oklch(0.62 0.11  100)
-    magenta: '#B167AB',  // oklch(0.62 0.13  330)
-    lime:    '#58994A',  // oklch(0.62 0.13  140)
-    indigo:  '#7380C8',  // oklch(0.62 0.11  275)
+    blue:    '#0091C9',  // oklch(0.62 0.132 235)  — gamut max
+    green:   '#009F68',  // oklch(0.62 0.140 160)  — gamut max
+    slate:   '#808696',  // oklch(0.62 0.025 270)  — intentionally muted
+    orange:  '#B97500',  // oklch(0.62 0.134  70)  — gamut max
+    rose:    '#D35182',  // oklch(0.62 0.170   0)
+    purple:  '#9769DC',  // oklch(0.62 0.170 300)
+    brown:   '#CA6800',  // oklch(0.62 0.154  55)  — gamut max
+    red:     '#DA534F',  // oklch(0.62 0.170  25)
+    cyan:    '#009A9A',  // oklch(0.62 0.106 195)  — gamut max
+    yellow:  '#998700',  // oklch(0.62 0.129 100)  — gamut max
+    magenta: '#BD5AB6',  // oklch(0.62 0.170 330)
+    lime:    '#449D2E',  // oklch(0.62 0.170 140)
+    indigo:  '#6B79EA',  // oklch(0.62 0.170 275)
   },
 };
 
