@@ -140,10 +140,10 @@ const _PALETTE = {
     blue:    '#0091C9',  // oklch(0.62 0.132 235)  — gamut max
     green:   '#009F68',  // oklch(0.62 0.140 160)  — gamut max
     slate:   '#808696',  // oklch(0.62 0.025 270)  — intentionally muted
-    orange:  '#B97500',  // oklch(0.62 0.134  70)  — gamut max
+    orange:  '#CA6800',  // oklch(0.62 0.154  55)  — gamut max
     rose:    '#D35182',  // oklch(0.62 0.170   0)
     purple:  '#9769DC',  // oklch(0.62 0.170 300)
-    brown:   '#CA6800',  // oklch(0.62 0.154  55)  — gamut max
+    brown:   '#B97500',  // oklch(0.62 0.134  70)  — gamut max
     red:     '#DA534F',  // oklch(0.62 0.170  25)
     cyan:    '#009A9A',  // oklch(0.62 0.106 195)  — gamut max
     yellow:  '#998700',  // oklch(0.62 0.129 100)  — gamut max
