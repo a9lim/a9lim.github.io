@@ -18,6 +18,7 @@ var _settings = (function () {
      * Row types:
      *   { type: 'slider', label, min, max, step, value, format(v), onChange(v) }
      *   { type: 'mode',   label, dataAttr, buttons: [{ value, label, active }], onChange(val) }
+     *   { type: 'toggle', label, id, checked, disabled, onChange(checked) }
      *
      * @returns {HTMLElement} the dropdown element (already appended to body)
      */
@@ -31,6 +32,7 @@ var _settings = (function () {
         rows.forEach(function (r) {
             if (r.type === 'slider') addSlider(dd, r);
             else if (r.type === 'mode') addModeGroup(dd, r);
+            else if (r.type === 'toggle') addToggle(dd, r);
         });
 
         document.body.appendChild(dd);
@@ -104,6 +106,7 @@ var _settings = (function () {
 
         var group = document.createElement('div');
         group.className = 'mode-toggles';
+        if (r.id) group.id = r.id;
         group.setAttribute('data-scope', r.dataAttr);
 
         r.buttons.forEach(function (b) {
@@ -120,6 +123,43 @@ var _settings = (function () {
         if (typeof _forms !== 'undefined') {
             _forms.bindModeGroup(group, r.dataAttr, r.onChange);
         }
+    }
+
+    function addToggle(dd, r) {
+        var row = document.createElement('div');
+        row.className = 'settings-dd-row';
+
+        var lbl = document.createElement('label');
+        lbl.className = 'settings-dd-label';
+        lbl.textContent = r.label;
+        if (r.id) lbl.htmlFor = r.id;
+
+        var wrap = document.createElement('div');
+        wrap.className = 'tog-wrap';
+
+        var cb = document.createElement('input');
+        cb.type = 'checkbox';
+        if (r.id) cb.id = r.id;
+        cb.checked = !!r.checked;
+        if (r.disabled) cb.disabled = true;
+        cb.setAttribute('role', 'switch');
+        cb.setAttribute('aria-checked', String(!!r.checked));
+
+        var togLabel = document.createElement('label');
+        if (r.id) togLabel.htmlFor = r.id;
+        togLabel.className = 'tog';
+        var thumb = document.createElement('span');
+        thumb.className = 'tog-thumb';
+        togLabel.appendChild(thumb);
+
+        wrap.append(cb, togLabel);
+        row.append(lbl, wrap);
+        dd.appendChild(row);
+
+        cb.addEventListener('change', function () {
+            cb.setAttribute('aria-checked', String(cb.checked));
+            if (r.onChange) r.onChange(cb.checked);
+        });
     }
 
     return { create: create };
