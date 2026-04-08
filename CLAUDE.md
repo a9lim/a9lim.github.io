@@ -7,7 +7,7 @@ Root site for the **a9l.im** portfolio. Hosted on Cloudflare Workers + Assets wi
 Command-center engineering aesthetic. Sharp, geometric, flat. Evangelion NERV HQ meets Palantir Foundry. Every surface is differentiated by **background color**, never borders. Lines are **graphic accents** (underlines, side bars, horizontal rules), never container boundaries. Elevation is earned through interaction, not decoration.
 
 - **No borders** on panels, buttons, inputs, tabs, cards, separators, or toggles. Use `border: none` everywhere. The only exception is `outline` on `:focus-visible` for accessibility, and accent underlines/side-lines as graphic elements.
-- **No resting shadows** — `box-shadow: none` at rest. Hover states use `var(--shadow-hover)` or `var(--shadow-hover-lg)`. Accent glow via `var(--shadow-glow)` for focus/active states.
+- **No resting shadows** — `box-shadow: none` at rest. Hover states use `var(--shadow-hover)`. Accent glow via `var(--shadow-glow)` for focus/active states.
 - **Two surface modes**: Opaque (cards, content panels, blog, footer — `--bg-elevated` or `--bg-panel-solid`) and HUD overlay (navbar, toolbars, sidebars — `--bg-panel` at 30-35% opacity with `backdrop-filter: blur(8px)`).
 - **Line accents** — accent underlines on active nav links (with subtle glow), side-lines on cards on hover, horizontal rules as structural markers. All lines `border-radius: 0`.
 - **No bounce** — `--ease-spring` and `--ease-elastic` removed. All transitions use `var(--ease-out)`, `var(--ease-in-out)`, or `var(--ease-smooth)`. Hover: `0.2s`. Transforms: `0.3s`.
@@ -19,13 +19,14 @@ Command-center engineering aesthetic. Sharp, geometric, flat. Evangelion NERV HQ
 All projects share a common design system at this repo's root. **Always prefer shared code over project-specific implementations.** Check `shared-*.js` before adding utility code to a project.
 
 Key shared modules:
-- `shared-tokens.js` — `_PALETTE`, `_FONT`, color math. Extend via `colors.js`, never hardcode colors. Exposes `--text-on-accent` (light/dark) for text on accent-colored backgrounds — use instead of hardcoded `#fff`/`#FDFBF5`. `_FONT` has four keys (`display`, `sans`, `serif`, `mono`) all resolving to Recursive. Shadow tokens: `--shadow-hover`, `--shadow-hover-lg`, `--shadow-glow`.
+- `shared-tokens.js` — `_PALETTE`, `_FONT`, color math. Extend via `colors.js`, never hardcode colors. Exposes `--text-on-accent` (light/dark) for text on accent-colored backgrounds — use instead of hardcoded `#fff`/`#FDFBF5`. `_FONT` has four keys (`display`, `sans`, `serif`, `mono`) all resolving to Recursive. Shadow tokens: `--shadow-hover`, `--shadow-glow`.
 - `shared-utils.js` — `escapeHtml`, `debounce`, `throttle`, `clamp`, `lerp`, `showToast`, `trapFocus`, `resizeCanvasDPR`, `animateValue`, `initOverlayDismiss`
 - `shared-base.css` — reset, layout tokens (`--radius: 2px`, `--font-sm`/`--font-base`/`--font-lg`, `--ease-*`), `.glass` (HUD overlay), `.tool-btn`, `.ctrl-row`, `.sim-overlay`, `.panel-hint` (italic mono caption), `.sim-dropdown` (custom dropdown styles), toasts, a11y. Universal `font-variation-settings: 'MONO' 0, 'CASL' 0` on `*` selector. `.stat-value` has `transition: transform 0.15s` globally for animation support. `.tab-panels` has `font-variant-numeric: tabular-nums` globally.
 - `shared-toolbar.js` — `_toolbar` (theme toggle, sidebar, play/pause, speed)
 - `shared-forms.js` — `_forms` (mode groups, sliders, toggles). `bindModeGroup` creates a sliding `.mode-indicator` element inside `.mode-toggles` — accent-colored rectangle (2px radius) that animates between buttons via `translateX`
 - `shared-icons.js` — unified SVG icon library. Exposes `_ICON` global, renders icons via `data-icon` attribute
 - `shared-dropdown.js` — auto-enhances `select.sim-select` into custom styled dropdowns. Fires native `change` events so existing JS works untouched. Exposes `_dropdown.enhance(el)` for dynamically created selects. Uses MutationObserver to sync when options change programmatically.
+- `shared-settings.js` — `_settings.create(triggerBtn, rows, opts)` builds a fixed-position settings dropdown with slider and mode-group rows, click-outside/Escape dismiss. CSS classes: `.settings-dd`, `.settings-dd-row`, `.settings-dd-label`, `.settings-dd-val`.
 - `shared-tabs.js`, `shared-camera.js`, `shared-info.js`, `shared-shortcuts.js`, `shared-about.js`, `shared-touch.js`, `shared-tooltip.js`, `shared-sparkline.js`, `shared-haptics.js`
 
 ## Running Locally
