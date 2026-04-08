@@ -73,6 +73,15 @@ Both require Puppeteer (installed in `og/` and `cards/`). Source HTML in `og/` a
 - **All `shared-*.js` and `shared-base.css` files** — consumed by all projects. Changing public APIs or class names (`.tab-btn`, `.tab-panel`, `data-tab`, `.glass`, `.tool-btn`, `.about-*`, `.sim-dropdown`, `.panel-hint`) breaks all sims
 - `_toolbar`, `_forms`, `_dropdown`, `initAboutPanel(config)` — changing these APIs breaks all consumers. `initAboutPanel` now accepts `lastUpdated` (optional)
 
+### External Identifiers Must Be Verified
+
+**Never generate Wikidata QIDs or DOIs from memory.** LLMs hallucinate identifiers at ~88% rates. Every QID and DOI in JSON-LD structured data must be verified against the live source before committing:
+- **Wikidata QIDs**: Search `https://www.wikidata.org/w/api.php?action=wbsearchentities&search=ENTITY&language=en&format=json`, then confirm the result label matches by fetching `https://www.wikidata.org/wiki/Special:EntityData/QXXXXX.json`.
+- **DOIs**: Verify via `https://api.crossref.org/works/DOI` or `https://doi.org/DOI` — check the resolved title matches the claimed paper.
+- **Other URLs** (NCBI, JSTOR, SSRN): Fetch and confirm they don't return 404/410.
+
+This applies to all `@id` URIs in JSON-LD (`_worker.js` WORK_SCHEMA/WORK_MENTIONS, sim `index.html` about arrays, `isBasedOn` references, edu-content References sections). If no Wikidata entity exists for a concept, omit it rather than guess.
+
 ### Shader Is On-Demand
 
 Geometric dual-layer shader (dot grid substrate + topographic contour isolines with accent hotspots at contour density peaks). Uses `OES_standard_derivatives` for `dFdx`/`dFdy` density detection. Angular vignette (corner emphasis, not radial). Not a continuous loop — renders on scroll/resize/theme-change, auto-stops after 1s of inactivity. New scroll-reactive elements need `requestRender()` or a scroll/resize event dispatch.
