@@ -101,10 +101,85 @@ var _forms = (function () {
         });
     }
 
+    /**
+     * Bind declarative dependencies between form controls.
+     * Supports two relationship types:
+     *   show — animated reveal/collapse of a target element
+     *   enable — enable/disable with cascading uncheck for toggles
+     *
+     * @param {Array<Object>} deps - Dependency definitions, evaluated in order.
+     *   { target: string|Element, show: () => boolean }   — visible when fn returns true
+     *   { target: string|Element, enable: () => boolean } — enabled when fn returns true
+     * @param {Object} [opts]
+     * @param {function} [opts.onDisable] - Called with (element) when a checked toggle is
+     *   force-unchecked by a disable dep. Use for sim-specific state sync.
+     * @returns {function} updateDeps — call to re-evaluate all dependencies
+     */
+    function bindDeps(deps, opts) {
+        opts = opts || {};
+
+        var resolved = deps.map(function (d) {
+            var el = typeof d.target === 'string' ? document.getElementById(d.target) : d.target;
+            var wrap = null;
+
+            if (d.show) {
+                // Clear any pre-existing hiding so the wrapper controls visibility
+                el.style.display = '';
+                el.classList.remove('hidden');
+
+                // Wrap target in a grid container for animated collapse
+                wrap = document.createElement('div');
+                wrap.className = 'dep-reveal dep-init';
+                el.parentNode.insertBefore(wrap, el);
+                wrap.appendChild(el);
+            }
+
+            return { el: el, wrap: wrap, show: d.show || null, enable: d.enable || null };
+        });
+
+        function update() {
+            for (var i = 0; i < resolved.length; i++) {
+                var dep = resolved[i];
+
+                if (dep.enable) {
+                    var enabled = dep.enable();
+                    var disabled = !enabled;
+                    dep.el.disabled = disabled;
+                    var row = dep.el.closest('.ctrl-row') || dep.el.closest('.settings-dd-row') || dep.el.closest('.checkbox-label');
+                    if (row) row.classList.toggle('ctrl-disabled', disabled);
+                    // Cascade: uncheck disabled toggles
+                    if (disabled && dep.el.type === 'checkbox' && dep.el.checked) {
+                        dep.el.checked = false;
+                        dep.el.setAttribute('aria-checked', 'false');
+                        if (opts.onDisable) opts.onDisable(dep.el);
+                    }
+                }
+
+                if (dep.show) {
+                    var visible = dep.show();
+                    dep.wrap.classList.toggle('dep-hidden', !visible);
+                }
+            }
+        }
+
+        // Set initial state without transitions
+        update();
+
+        // Enable transitions after initial layout
+        requestAnimationFrame(function () {
+            for (var i = 0; i < resolved.length; i++) {
+                if (resolved[i].wrap) resolved[i].wrap.classList.remove('dep-init');
+            }
+        });
+
+        return update;
+    }
+
     return {
         bindModeGroup: bindModeGroup,
         bindSlider: bindSlider,
         updateSliderFill: updateSliderFill,
-        bindToggle: bindToggle
+        bindToggle: bindToggle,
+        bindDeps: bindDeps
     };
 })();

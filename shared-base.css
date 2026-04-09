@@ -1019,7 +1019,33 @@ body {
 .ctrl-sub { padding-left: 20px; }
 .ctrl-sub > label { font-size: var(--font-sm); color: var(--text-secondary); }
 
-.ctrl-disabled { opacity: 0.4; pointer-events: none; }
+.ctrl-disabled { opacity: 0.4; pointer-events: none; transition: opacity 0.2s var(--ease-out); }
+
+/* ─── Dependency Reveal (shared-forms.js bindDeps) ─── */
+.dep-reveal {
+    display: grid;
+    grid-template-rows: 1fr;
+}
+.dep-reveal:not(.dep-init) {
+    transition: grid-template-rows 0.25s var(--ease-out);
+}
+.dep-reveal > * {
+    overflow: hidden;
+    min-height: 0;
+}
+.dep-reveal:not(.dep-init) > * {
+    transition: opacity 0.2s var(--ease-out) 0.05s;
+}
+.dep-reveal.dep-hidden {
+    grid-template-rows: 0fr;
+    pointer-events: none;
+}
+.dep-reveal.dep-hidden > * {
+    opacity: 0;
+}
+.dep-reveal.dep-hidden:not(.dep-init) > * {
+    transition: opacity 0.1s var(--ease-out);
+}
 
 .ctrl-group {
     margin-bottom: 10px;
@@ -1038,7 +1064,7 @@ body {
 .stat-sub .stat-label { font-size: var(--font-sm); color: var(--text-muted); }
 .stat-sub .stat-value { font-size: var(--font-sm); color: var(--text-secondary); }
 
-.ctrl-row.locked { opacity: 0.4; pointer-events: none; }
+.ctrl-row.locked { opacity: 0.4; pointer-events: none; transition: opacity 0.2s var(--ease-out); }
 
 /* ─── Select Dropdowns ─── */
 /* Native select — hidden when enhanced by shared-dropdown.js */
