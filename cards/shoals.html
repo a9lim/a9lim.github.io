@@ -8,7 +8,7 @@
     width: 960px;
     height: 600px;
     overflow: hidden;
-    background: #EBEFF4;
+    background: #E6E8ED;
   }
   canvas { display: block; width: 960px; height: 600px; }
 </style>
@@ -20,8 +20,8 @@
     const ctx = canvas.getContext('2d');
     const W = canvas.width, H = canvas.height;
 
-    const UP = '#2CA470';
-    const DOWN = '#C5547C';
+    const UP = '#009F68';
+    const DOWN = '#D35182';
 
     let _seed = 42;
     function _rand() { _seed = (_seed * 16807 + 0) % 2147483647; return (_seed - 1) / 2147483646; }
@@ -60,7 +60,7 @@
     }
 
     // Subtle horizontal grid
-    ctx.strokeStyle = 'rgba(11, 16, 22, 0.04)';
+    ctx.strokeStyle = 'rgba(9, 11, 15, 0.04)';
     ctx.lineWidth = 1;
     for (let i = 0; i <= 8; i++) {
       const y = padT + (chartH / 8) * i;
@@ -82,7 +82,7 @@
 
       // Subtle glow
       const glowGrad = ctx.createRadialGradient(x, priceToY((c.h + c.l) / 2), 0, x, priceToY((c.h + c.l) / 2), candleW * 1.2);
-      glowGrad.addColorStop(0, isUp ? 'rgba(44,164,112,0.06)' : 'rgba(197,84,124,0.06)');
+      glowGrad.addColorStop(0, isUp ? 'rgba(0,159,104,0.06)' : 'rgba(211,81,130,0.06)');
       glowGrad.addColorStop(1, 'transparent');
       ctx.fillStyle = glowGrad;
       ctx.fillRect(x - candleW, priceToY(c.h) - 10, candleW * 2, priceToY(c.l) - priceToY(c.h) + 20);

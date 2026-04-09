@@ -8,7 +8,7 @@
     width: 960px;
     height: 600px;
     overflow: hidden;
-    background: #EBEFF4;
+    background: #E6E8ED;
   }
   canvas { display: block; width: 960px; height: 600px; }
 </style>
@@ -28,8 +28,8 @@
     const memY        = H / 2 - memH / 2;
     const tailLen     = (memH - 6 * S - headRadius * 2) / 2;
 
-    const HEAD_COLOR = 'rgba(78, 84, 92, 0.25)';
-    const TAIL_COLOR = 'rgba(78, 84, 92, 0.12)';
+    const HEAD_COLOR = 'rgba(75, 77, 83, 0.25)';
+    const TAIL_COLOR = 'rgba(75, 77, 83, 0.12)';
 
     const t = 1.5;
 
@@ -74,10 +74,10 @@
 
     // Scatter some molecule-like dots outside the membrane
     const MOLECULE_COLORS = [
-      'rgba(200, 83, 61, 0.18)',  // reddish — ATP
-      'rgba(53, 144, 191, 0.15)', // blue — NADH
-      'rgba(185, 166, 36, 0.14)', // yellow — photon
-      'rgba(95, 171, 77, 0.16)',  // green — CO2
+      'rgba(218, 83, 79, 0.18)',  // red — ATP
+      'rgba(0, 145, 201, 0.15)', // blue — NADH
+      'rgba(153, 135, 0, 0.14)', // yellow — photon
+      'rgba(0, 159, 104, 0.16)', // green — CO2
     ];
     let seed = 7;
     function rand() { seed = (seed * 16807) % 2147483647; return (seed - 1) / 2147483646; }

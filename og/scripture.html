@@ -2,17 +2,18 @@
 <html>
 <head>
 <meta charset="utf-8">
-<link href="https://fonts.googleapis.com/css2?family=Recursive:wght@300..700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Recursive:CASL,MONO,wght@0,0,300..700;0,1,300..700&display=swap" rel="stylesheet">
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body {
     width: 1200px;
     height: 630px;
     overflow: hidden;
-    background: #EBEFF4;
+    background: #E6E8ED;
     display: flex;
     align-items: center;
-    font-family: system-ui;
+    font-family: 'Recursive', sans-serif;
+    font-variation-settings: 'MONO' 0, 'CASL' 0;
     position: relative;
   }
   .flair {
@@ -36,7 +37,7 @@
     top: 0; right: 0;
     width: 100px;
     height: 100%;
-    background: linear-gradient(90deg, transparent, #EBEFF4);
+    background: linear-gradient(90deg, transparent, #E6E8ED);
     pointer-events: none;
   }
   .text-side {
@@ -48,10 +49,11 @@
     padding: 0 60px;
   }
   .project-name {
-    font-family: 'Noto Serif', serif;
+    font-family: 'Recursive', sans-serif;
+    font-variation-settings: 'MONO' 0, 'CASL' 0;
     font-weight: 700;
     font-size: 120px;
-    color: #0B1016;
+    color: #090B0F;
     letter-spacing: -3px;
     line-height: 1;
   }
@@ -63,9 +65,10 @@
     margin-top: 28px;
   }
   .site-brand {
-    font-family: 'Noto Sans Mono', monospace;
+    font-family: 'Recursive', monospace;
+    font-variation-settings: 'MONO' 1, 'CASL' 0;
     font-size: 22px;
-    color: #777C83;
+    color: #75777C;
     margin-top: 16px;
     letter-spacing: 0.5px;
   }
@@ -103,7 +106,7 @@
     // Left page
     const lx = cx - gutter - pageW;
     const ly = cy - pageH / 2;
-    ctx.fillStyle = 'rgba(78, 84, 92, 0.04)';
+    ctx.fillStyle = 'rgba(75, 77, 83, 0.04)';
     ctx.fillRect(lx, ly, pageW, pageH);
 
     // Right page
@@ -111,7 +114,7 @@
     ctx.fillRect(rx, ly, pageW, pageH);
 
     // Spine line
-    ctx.strokeStyle = 'rgba(78, 84, 92, 0.12)';
+    ctx.strokeStyle = 'rgba(75, 77, 83, 0.12)';
     ctx.lineWidth = 3;
     ctx.beginPath();
     ctx.moveTo(cx, ly - 10);
@@ -139,14 +142,14 @@
 
       while (y + lineH < py + ph - margin) {
         // Verse number
-        ctx.fillStyle = 'rgba(78, 84, 92, 0.18)';
+        ctx.fillStyle = 'rgba(75, 77, 83, 0.18)';
         ctx.fillRect(px + margin, y + 4, 14, 6);
 
         // 2-4 text lines per verse
         const lines = 2 + Math.floor(rand() * 3);
         for (let l = 0; l < lines && y + lineH < py + ph - margin; l++) {
           const w = l === lines - 1 ? maxW * (0.3 + rand() * 0.5) : maxW * (0.85 + rand() * 0.15);
-          ctx.fillStyle = 'rgba(78, 84, 92, 0.10)';
+          ctx.fillStyle = 'rgba(75, 77, 83, 0.10)';
           ctx.fillRect(textStart, y + 4, w, 6);
           y += lineH;
         }
@@ -160,15 +163,15 @@
 
     // --- Top fade ---
     const fadeTop = ctx.createLinearGradient(0, 0, 0, 120);
-    fadeTop.addColorStop(0, 'rgba(235, 239, 244, 1)');
-    fadeTop.addColorStop(1, 'rgba(235, 239, 244, 0)');
+    fadeTop.addColorStop(0, 'rgba(230, 232, 237, 1)');
+    fadeTop.addColorStop(1, 'rgba(230, 232, 237, 0)');
     ctx.fillStyle = fadeTop;
     ctx.fillRect(0, 0, W, 120);
 
     // --- Bottom fade ---
     const fadeBot = ctx.createLinearGradient(0, H - 160, 0, H);
-    fadeBot.addColorStop(0, 'rgba(235, 239, 244, 0)');
-    fadeBot.addColorStop(1, 'rgba(235, 239, 244, 1)');
+    fadeBot.addColorStop(0, 'rgba(230, 232, 237, 0)');
+    fadeBot.addColorStop(1, 'rgba(230, 232, 237, 1)');
     ctx.fillStyle = fadeBot;
     ctx.fillRect(0, H - 160, W, 160);
   </script>

@@ -8,7 +8,7 @@
     width: 960px;
     height: 600px;
     overflow: hidden;
-    background: #EBEFF4;
+    background: #E6E8ED;
   }
   canvas { display: block; width: 960px; height: 600px; }
 </style>
@@ -35,12 +35,12 @@
     const rx = cx + gutter;
 
     // Page fills
-    ctx.fillStyle = 'rgba(78, 84, 92, 0.035)';
+    ctx.fillStyle = 'rgba(75, 77, 83, 0.035)';
     ctx.fillRect(lx, ly, pageW, pageH);
     ctx.fillRect(rx, ly, pageW, pageH);
 
     // Spine
-    ctx.strokeStyle = 'rgba(78, 84, 92, 0.09)';
+    ctx.strokeStyle = 'rgba(75, 77, 83, 0.09)';
     ctx.lineWidth = 2.5;
     ctx.beginPath();
     ctx.moveTo(cx, ly - 16);
@@ -60,7 +60,7 @@
 
       while (y + lineH < py + ph - margin) {
         // Verse number — small rounded rect
-        ctx.fillStyle = 'rgba(78, 84, 92, 0.14)';
+        ctx.fillStyle = 'rgba(75, 77, 83, 0.14)';
         const numW = 12 + rand() * 8;
         ctx.beginPath();
         ctx.roundRect(px + margin, y + 3, numW, 8, 3);
@@ -72,7 +72,7 @@
           const w = l === lines - 1
             ? maxW * (0.2 + rand() * 0.55)
             : maxW * (0.8 + rand() * 0.2);
-          ctx.fillStyle = 'rgba(78, 84, 92, 0.07)';
+          ctx.fillStyle = 'rgba(75, 77, 83, 0.07)';
           ctx.beginPath();
           ctx.roundRect(textStart, y + 3, w, 8, 3);
           ctx.fill();

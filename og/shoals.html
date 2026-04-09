@@ -2,17 +2,18 @@
 <html>
 <head>
 <meta charset="utf-8">
-<link href="https://fonts.googleapis.com/css2?family=Recursive:wght@300..700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Recursive:CASL,MONO,wght@0,0,300..700;0,1,300..700&display=swap" rel="stylesheet">
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body {
     width: 1200px;
     height: 630px;
     overflow: hidden;
-    background: #EBEFF4;
+    background: #E6E8ED;
     display: flex;
     align-items: center;
-    font-family: system-ui;
+    font-family: 'Recursive', sans-serif;
+    font-variation-settings: 'MONO' 0, 'CASL' 0;
     position: relative;
   }
   .flair {
@@ -36,7 +37,7 @@
     top: 0; right: 0;
     width: 100px;
     height: 100%;
-    background: linear-gradient(90deg, transparent, #EBEFF4);
+    background: linear-gradient(90deg, transparent, #E6E8ED);
     pointer-events: none;
   }
   .text-side {
@@ -48,10 +49,11 @@
     padding: 0 60px;
   }
   .project-name {
-    font-family: 'Noto Serif', serif;
+    font-family: 'Recursive', sans-serif;
+    font-variation-settings: 'MONO' 0, 'CASL' 0;
     font-weight: 700;
     font-size: 156px;
-    color: #0B1016;
+    color: #090B0F;
     letter-spacing: -3px;
     line-height: 1;
   }
@@ -63,9 +65,10 @@
     margin-top: 28px;
   }
   .site-brand {
-    font-family: 'Noto Sans Mono', monospace;
+    font-family: 'Recursive', monospace;
+    font-variation-settings: 'MONO' 1, 'CASL' 0;
     font-size: 22px;
-    color: #777C83;
+    color: #75777C;
     margin-top: 16px;
     letter-spacing: 0.5px;
   }
@@ -93,8 +96,8 @@
     const ctx = canvas.getContext('2d');
     const W = canvas.width, H = canvas.height;
 
-    const UP = '#2CA470';
-    const DOWN = '#C5547C';
+    const UP = '#009F68';
+    const DOWN = '#D35182';
 
     // Seeded PRNG for deterministic wick sizing
     let _seed = 42;
@@ -132,7 +135,7 @@
     }
 
     // Subtle horizontal grid
-    ctx.strokeStyle = 'rgba(11, 16, 22, 0.05)';
+    ctx.strokeStyle = 'rgba(9, 11, 15, 0.05)';
     ctx.lineWidth = 1;
     for (let i = 0; i <= 6; i++) {
       const y = padT + (chartH / 6) * i;
@@ -154,7 +157,7 @@
 
       // Subtle glow
       const glowGrad = ctx.createRadialGradient(x, priceToY((c.h + c.l) / 2), 0, x, priceToY((c.h + c.l) / 2), candleW * 1.2);
-      glowGrad.addColorStop(0, isUp ? 'rgba(44,164,112,0.08)' : 'rgba(197,84,124,0.08)');
+      glowGrad.addColorStop(0, isUp ? 'rgba(0,159,104,0.08)' : 'rgba(211,81,130,0.08)');
       glowGrad.addColorStop(1, 'transparent');
       ctx.fillStyle = glowGrad;
       ctx.fillRect(x - candleW, priceToY(c.h) - 10, candleW * 2, priceToY(c.l) - priceToY(c.h) + 20);
@@ -180,15 +183,15 @@
 
     // Fade bottom
     const fadeBot = ctx.createLinearGradient(0, H - 100, 0, H);
-    fadeBot.addColorStop(0, 'rgba(235, 239, 244, 0)');
-    fadeBot.addColorStop(1, 'rgba(235, 239, 244, 1)');
+    fadeBot.addColorStop(0, 'rgba(230, 232, 237, 0)');
+    fadeBot.addColorStop(1, 'rgba(230, 232, 237, 1)');
     ctx.fillStyle = fadeBot;
     ctx.fillRect(0, H - 100, W, 100);
 
     // Fade top
     const fadeTop = ctx.createLinearGradient(0, 0, 0, 60);
-    fadeTop.addColorStop(0, 'rgba(235, 239, 244, 1)');
-    fadeTop.addColorStop(1, 'rgba(235, 239, 244, 0)');
+    fadeTop.addColorStop(0, 'rgba(230, 232, 237, 1)');
+    fadeTop.addColorStop(1, 'rgba(230, 232, 237, 0)');
     ctx.fillStyle = fadeTop;
     ctx.fillRect(0, 0, W, 60);
   </script>
