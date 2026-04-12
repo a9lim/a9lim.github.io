@@ -1,5 +1,13 @@
 [
   {
+    "slug": "how-liahona-works",
+    "title": "How Liahona Works",
+    "date": "2026-04-12",
+    "updated": "2026-04-12",
+    "tag": ["ai", "interpretability", "python"],
+    "excerpt": "Activation steering lets you shift an LLM's behavior by adding direction vectors to its hidden states. Liahona is an open-source toolkit for extracting and applying them."
+  },
+  {
     "slug": "how-geon-works",
     "title": "How Geon Works",
     "date": "2026-04-07",

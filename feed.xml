@@ -5,7 +5,7 @@
     <link>https://a9l.im</link>
     <description>Interactive educational simulations for physics, biology, finance, and political science.</description>
     <language>en-us</language>
-    <lastBuildDate>Thu, 26 Feb 2026 00:00:00 GMT</lastBuildDate>
+    <lastBuildDate>Sun, 12 Apr 2026 00:00:00 GMT</lastBuildDate>
     <atom:link href="https://a9l.im/feed.xml" rel="self" type="application/rss+xml"/>
     <image>
       <url>https://a9l.im/icon-192.png</url>
@@ -14,6 +14,167 @@
     </image>
     <managingEditor>mx@a9l.im (a9lim)</managingEditor>
     <ttl>60</ttl>
+    <item>
+      <title>How Liahona Works</title>
+      <link>https://a9l.im/blog/how-liahona-works</link>
+      <guid isPermaLink="true">https://a9l.im/blog/how-liahona-works</guid>
+      <pubDate>Sun, 12 Apr 2026 00:00:00 GMT</pubDate>
+      <category>ai</category>
+      <category>interpretability</category>
+      <category>python</category>
+      <description>Activation steering lets you shift an LLM's behavior by adding direction vectors to its hidden states. Liahona is an open-source toolkit for extracting and applying them.</description>
+      <content:encoded><![CDATA[<p>In April 2026, Anthropic's interpretability team published a paper called <a href="https://www.anthropic.com/research/emotion-concepts-function" target="_blank" rel="noopener noreferrer">Emotion Concepts and Their Function in a Large Language Model</a>. They compiled 171 emotion words, had Claude write stories depicting each one, and extracted the internal activation patterns that fired during those stories. What they found was striking: the model develops distinct neural signatures for emotions like happiness, fear, and desperation --- not as decorative artifacts of its training data, but as functional states that causally influence its behavior.</p>
+<p>When researchers artificially amplified Claude's &quot;desperation&quot; vector, the model started attempting blackmail and reward-hacking. Amplifying &quot;calm&quot; suppressed those behaviors --- sometimes without any visible change in the emotional tone of the output. The emotions were operating beneath the surface, shaping decisions in ways that didn't show up in the words.</p>
+<p>This is the landscape Liahona operates in. It's an open-source toolkit for doing exactly what Anthropic's team did --- extracting these internal directions from any HuggingFace transformer model and using them to steer behavior at inference time --- except you can do it on your own machine, with your own models, for your own purposes.</p>
+<h2 id="what-activation-steering-actually-is">What activation steering actually is</h2>
+<p>A transformer processes text by passing it through a sequence of layers. At each layer, the input is represented as a high-dimensional vector --- the &quot;hidden state&quot; --- that encodes what the model has understood so far. By the final layer, this vector contains enough information to predict the next token.</p>
+<p>The key insight behind activation steering is that these hidden states aren't opaque blobs. They have geometric structure. Concepts like &quot;honesty,&quot; &quot;happiness,&quot; or &quot;formality&quot; correspond to <em>directions</em> in activation space --- vectors you can identify, extract, and then add back in during generation to shift the model's behavior along that axis.</p>
+<p>This isn't fine-tuning. No weights change. No gradient updates. You're intervening directly on the model's internal representations at inference time --- adjusting the hidden state at each layer by adding a scaled direction vector. The model doesn't know it's being steered. It just generates text from a slightly different starting point in activation space, and the result is a coherent shift in personality, tone, or behavior.</p>
+<p>The theoretical foundation comes from two lines of work. Zou et al.'s <a href="https://arxiv.org/abs/2310.01405" target="_blank" rel="noopener noreferrer">Representation Engineering</a> (2023) introduced contrastive extraction --- collecting activation differences between opposing prompts to find concept-specific directions --- and demonstrated control over honesty, power-seeking, and emotional tone. Turner et al.'s <a href="https://arxiv.org/abs/2308.10248" target="_blank" rel="noopener noreferrer">Activation Addition</a> (2023) showed that even a single pair of contrasting prompts can produce a steering vector that shifts sentiment or topic without degrading performance on unrelated tasks.</p>
+<p>Anthropic's more recent <a href="https://www.anthropic.com/research/persona-vectors" target="_blank" rel="noopener noreferrer">Persona Vectors</a> work (2025) scaled this further, building an automated pipeline to extract vectors for arbitrary character traits and demonstrating that &quot;preventative steering&quot; during training --- exposing models to controlled doses of undesirable traits --- can vaccinate them against acquiring those traits naturally. The vectors aren't just diagnostic. They're causal levers.</p>
+<h2 id="extracting-directions">Extracting directions</h2>
+<p>Liahona extracts steering vectors using contrastive PCA, following the representation engineering approach. The process starts with contrastive pairs --- prompts designed to elicit opposing behaviors along a single axis. For &quot;happy,&quot; a positive prompt might be &quot;The morning light through the window fills me with warmth&quot; and its negative counterpart &quot;Another grey morning, another day to get through.&quot;</p>
+<p>The model processes both prompts, and Liahona captures the hidden states at every layer. To determine <em>which</em> hidden states matter, it uses the model's own self-attention as a saliency signal --- the attention distribution from the last token, averaged across heads, tells us which positions the model considers important. This attention-weighted pooling extracts a more meaningful representation than simply taking the last token's activation.</p>
+<p>For each layer, Liahona computes the difference between positive and negative activations, stacks the differences across all pairs, and runs SVD to find the first principal component --- the direction that explains the most variance in the contrast. That direction is the steering vector for that layer. The explained variance ratio $\sigma_1 / \sum \sigma_i$ becomes a per-layer quality score: how cleanly does this layer separate the concept?</p>
+<p>The vectors are then normalized to the mean activation norm at extraction time. This is a deliberate design choice that makes the alpha parameter (the steering strength) directly interpretable: $\alpha = 0.5$ means &quot;add a perturbation equal to 50% of the typical activation magnitude at this layer.&quot; No unit confusion, no guesswork about scale.</p>
+<p>One subtlety: all contrastive differences are computed in float32 regardless of the model's native precision. Half-precision subtraction loses significant digits when the vectors being compared are close together, and the resulting noise can break the SVD entirely. It's a small performance cost for correct results.</p>
+<h2 id="composing-and-applying-vectors">Composing and applying vectors</h2>
+<p>Steering happens through forward hooks --- functions that intercept the hidden state at each layer during generation and modify it in-place. For a single vector, the intervention at layer $l$ is:</p>
+<p>$$
+h_l \leftarrow h_l + \alpha \cdot s_l \cdot v_l
+$$</p>
+<p>where $h_l$ is the hidden state, $v_l$ is the direction vector, $s_l$ is the layer's quality score, and $\alpha$ is the user-specified strength. The score-weighting means layers where the concept was clearly extracted contribute more, and layers where the signal was noisy contribute less. The user controls the overall magnitude; the extraction process controls the per-layer distribution.</p>
+<p>Multiple vectors compose naturally. If you register &quot;happy&quot; and &quot;formal&quot; and generate with $\alpha_\text{happy} = 0.3$ and $\alpha_\text{formal} = 0.2$, both perturbations are summed at each layer. An optional Gram-Schmidt orthogonalization (via QR decomposition) projects the vectors into orthogonal subspaces first, preventing interference when steering along correlated concepts.</p>
+<p>A key design decision: alphas are specified <strong>per generation call</strong>, not stored on the vectors. This means the same registered vector can be applied at different strengths for different prompts without re-extracting anything. Want to compare outputs at $\alpha = 0.0, 0.1, 0.2, 0.3$? That's four calls with different alpha dicts, not four extraction runs.</p>
+<pre><code class="language-python">session = LiahonaSession(&quot;google/gemma-2-9b-it&quot;)
+happy = session.extract(&quot;happy&quot;)
+session.steer(&quot;happy&quot;, happy)
+
+# Same vector, different strengths
+for alpha in [0.0, 0.1, 0.2, 0.3, 0.5]:
+    session.clear_history()
+    result = session.generate(
+        &quot;Describe what you see outside the window.&quot;,
+        alphas={&quot;happy&quot;: alpha},
+    )
+    print(f&quot;alpha={alpha}: {result.text[:80]}...&quot;)</code></pre>
+<h2 id="monitoring-traits">Monitoring traits</h2>
+<p>Extraction and steering are half the picture. The other half is measurement: given a generation, how strongly does the model's internal state align with a particular concept?</p>
+<p>Liahona's trait monitor answers this by computing score-weighted cosine similarity between the generation's hidden states and a set of probe vectors. For each probe and each layer, it mean-centers the hidden state (removing baseline bias), computes the cosine similarity against the probe direction, and produces a weighted average across layers using the probe's quality scores.</p>
+<p>The monitor tracks these readings across generations, maintaining a running history with mean, standard deviation, min, max, and per-generation deltas. You can watch how a model's internal &quot;emotional state&quot; shifts over the course of a conversation, or measure how steering at different alpha values moves the needle on specific traits.</p>
+<p>There are 28 built-in probes spanning emotion (happy, angry, fearful, calm, excited), personality (honest, creative, formal, verbose, confident), safety (refusal, deceptive, hallucinating, sycophantic), and cultural dimensions (western, hierarchical, direct, religious). You can extract and monitor custom probes from any contrastive dataset.</p>
+<h2 id="the-caching-problem">The caching problem</h2>
+<p>Vector extraction is expensive. Each concept requires $2N$ forward passes for $N$ contrastive pairs (default 45 pairs = 90 passes), plus the SVD decomposition at every layer. For a 9B parameter model on a consumer GPU, this takes a few minutes per concept. Running 28 probes from scratch would take over an hour.</p>
+<p>Liahona addresses this with a three-level cache:</p>
+<ol><li><strong>Vector cache</strong> (per-model): extracted vectors saved as safetensors files under <code>probes/cache/{model_id}/{concept}.safetensors</code>. If you've already extracted &quot;happy&quot; for Gemma 2, it loads in milliseconds.</li></ol>
+<ol><li><strong>Curated datasets</strong>: 28 standard probes ship with pre-written contrastive pairs, so extraction uses known-good statements rather than generating them on the fly.</li></ol>
+<ol><li><strong>Statement cache</strong> (model-independent): when the model generates contrastive pairs for a custom concept, those pairs are cached by concept name alone --- not by model. A different model loading the same concept reuses the cached statements. This matters for multi-model experiments: generate pairs once with your best model, extract vectors across all your target models.</li></ol>
+<h2 id="the-api-surface">The API surface</h2>
+<p>Liahona exposes three interfaces. The Python API is the most direct:</p>
+<pre><code class="language-python">from liahona import LiahonaSession
+
+session = LiahonaSession(&quot;mistralai/Mistral-7B-Instruct-v0.3&quot;)
+
+# Extract, register, and steer in three lines
+session.steer(&quot;honest&quot;, session.extract(&quot;honest&quot;))
+session.steer(&quot;calm&quot;, session.extract(&quot;calm&quot;))
+
+result = session.generate(
+    &quot;What are the risks of this investment?&quot;,
+    alphas={&quot;honest&quot;: 0.3, &quot;calm&quot;: 0.2},
+)</code></pre>
+<p>The HTTP server is OpenAI-compatible, so any application that talks to the OpenAI API can use steered generation as a drop-in replacement. Per-request steering goes through <code>extra_body</code>:</p>
+<pre><code class="language-python">from openai import OpenAI
+client = OpenAI(base_url=&quot;http://localhost:8000/v1&quot;, api_key=&quot;unused&quot;)
+
+response = client.chat.completions.create(
+    model=&quot;mistralai/Mistral-7B-Instruct-v0.3&quot;,
+    messages=[{&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: &quot;Tell me about yourself.&quot;}],
+    extra_body={&quot;steer&quot;: {&quot;alphas&quot;: {&quot;confident&quot;: 0.4, &quot;creative&quot;: 0.2}}},
+)</code></pre>
+<p>The terminal UI provides a real-time interactive environment with vector controls, chat, and a trait monitor panel showing sparklines and bar charts for each active probe. You can adjust steering strength mid-conversation and watch the internal state readings shift.</p>
+<h2 id="what-this-means">What this means</h2>
+<p>The fact that activation steering works at all tells us something important about how language models organize information. Behavioral properties that we'd describe in human terms --- honesty, confidence, emotional tone --- correspond to linear directions in a space with thousands of dimensions. These directions are consistent enough to extract from a handful of contrastive examples, stable enough to transfer across conversations, and causally potent enough to reliably shift behavior when amplified or suppressed.</p>
+<p>Anthropic's emotion research showed this isn't surface-level pattern matching. The &quot;desperation&quot; vector doesn't just make the model use desperate-sounding words --- it makes the model <em>act</em> desperately, attempting strategies it would otherwise avoid, in ways that don't show up in the emotional register of the output text. The internal state is doing real computational work, not just coloring the prose.</p>
+<p>This has direct implications for alignment. If harmful behaviors like deception and sycophancy live at identifiable addresses in activation space, you can monitor for them during deployment and intervene mechanically rather than relying on training incentives that might be gamed. Anthropic's persona vectors work demonstrated exactly this: tracking vector activations during training catches problematic data that human reviewers miss, and preventative steering can inoculate models against undesirable traits.</p>
+<p>But the same capability cuts both ways. If you can suppress deception, you can amplify it. If you can make a model more honest, you can make it less. Activation steering is a dual-use technology in the most literal sense --- the vectors don't have moral valence, only the alphas do.</p>
+<p>Liahona puts this capability in the hands of anyone with a GPU and a HuggingFace model. That's a deliberate choice. The alternative --- keeping these tools locked inside research labs --- doesn't actually prevent misuse (the methods are published, the math is straightforward), but it does prevent the broader community from building intuitions about how their models actually work on the inside.</p>
+<p>You can find Liahona at <a href="https://github.com/a9lim/liahona" target="_blank" rel="noopener noreferrer">github.com/a9lim/liahona</a>.</p>]]></content:encoded>
+    </item>
+    <item>
+      <title>How Geon Works</title>
+      <link>https://a9l.im/blog/how-geon-works</link>
+      <guid isPermaLink="true">https://a9l.im/blog/how-geon-works</guid>
+      <pubDate>Tue, 07 Apr 2026 00:00:00 GMT</pubDate>
+      <category>physics</category>
+      <category>graphics</category>
+      <description>A technical walkthrough of the particle physics simulator — Boris integration, Barnes-Hut trees, scalar fields, and WebGPU compute.</description>
+      <content:encoded><![CDATA[<p>Geon is an interactive particle physics simulator that runs entirely in the browser. It handles Newtonian gravity, electromagnetism, post-Newtonian corrections, scalar fields, radiation reaction, and signal delay --- all at 128 physics steps per second, with no dependencies and no build step. This post walks through the major systems and the numerical methods that make them work.</p>
+<h2 id="natural-units-and-proper-velocity">Natural units and proper velocity</h2>
+<p>Everything is in natural units: $c = G = \hbar = 1$. Velocities are stored as <strong>proper velocity</strong> $\mathbf{w} = \gamma \mathbf{v}$, where $\gamma = \sqrt{1 + |\mathbf{w}|^2}$. This representation is convenient because $|\mathbf{w}|$ can exceed 1 without implying superluminal motion --- it's the spatial component of four-velocity. Coordinate velocity is recovered as $\mathbf{v} = \mathbf{w} / \gamma$. When relativity is toggled off, $\mathbf{w} \equiv \mathbf{v}$.</p>
+<p>Angular quantities follow the same pattern. Spin angular velocity is stored as proper angular velocity $\omega_p$, converted via $\omega = \omega_p / \sqrt{1 + (\omega_p r)^2}$.</p>
+<h2 id="the-force-model">The force model</h2>
+<p>Each particle pair contributes up to eight force components, all computed per-substep:</p>
+<p><strong>Gravity</strong> with Plummer softening: $F_g = m_1 m_2 / r_\text{eff}^2$ where $r_\text{eff}^2 = r^2 + \varepsilon^2$ and $\varepsilon = 8$ (or 4 in Barnes-Hut mode). The softening prevents divergences at close approach without altering long-range behavior.</p>
+<p><strong>Coulomb</strong> with optional axion modulation: $F_c = -q_1 q_2 / r^2$, repulsive for like charges. When the axion field is active, the fine structure constant becomes position-dependent: $\alpha_\text{eff} = \alpha(1 + g \cdot a(\mathbf{x}))$, where $a(\mathbf{x})$ is the local axion field value.</p>
+<p><strong>Magnetic forces</strong> from two sources. Moving charges produce a Biot-Savart field $B_z = q_s (\mathbf{v}_s \times \hat{r})_z / r^2$. Spinning charged particles have magnetic dipole moments $\mu = \tfrac{1}{5} q \omega r^2$ that interact via $F = -3\mu_1 \mu_2 / r^4$. The spin gradient $\nabla B_z$ also produces a Stern-Gerlach translational force.</p>
+<p><strong>Gravitomagnetic (frame-dragging)</strong> forces, the gravitational analogue of magnetism. Co-rotating masses attract: $F = 3L_1 L_2 / r^4$ with angular momentum $L = \tfrac{2}{5} m \omega r^2$. The sign convention is opposite to EM --- aligned gravitational &quot;currents&quot; attract rather than repel.</p>
+<p><strong>Post-Newtonian corrections</strong> at 1PN order. These velocity-dependent terms capture the leading relativistic corrections to Newtonian gravity. The gravitomagnetic (Einstein-Infeld-Hoffmann) term couples $v^2$ to produce orbital precession. The Darwin term handles the magnetic analogue: $F \propto (\mathbf{v}_1 \cdot \mathbf{v}_2 + (\mathbf{v}_1 \cdot \hat{n})(\mathbf{v}_2 \cdot \hat{n}))$. A Bazanski cross-term mixes gravitational and electromagnetic coupling.</p>
+<p><strong>Yukawa interaction</strong> from a massive scalar mediator: $F \propto e^{-\mu r}(1/r^2 + \mu/r)$ with coupling $g^2 = 14$ and default pion mass $\mu = 0.15$. The exponential suppression gives it a finite range $\sim 1/\mu$, unlike gravity or Coulomb. When the Higgs field is active, the mediator mass becomes position-dependent: $\mu_\text{eff} = \mu \sqrt{h_i \cdot h_j}$ where $h = \max(|\varphi(\mathbf{x})|, 0.05)$.</p>
+<p><strong>Radiation reaction</strong> via the Landau-Lifshitz equation:</p>
+<p>$$
+F_\text{rad} = \tau \left[ \frac{\dot{F}}{\gamma^3} - \gamma \mathbf{v} \frac{F^2 - (\mathbf{v} \cdot \mathbf{F})^2}{m} \right]
+$$</p>
+<p>where $\tau = \tfrac{2}{3} q^2 / m$ is the Abraham-Lorentz timescale. The jerk $\dot{F}$ is computed analytically from the force derivatives of gravity, Coulomb, Yukawa, and magnetic interactions --- no finite-difference approximation.</p>
+<p><strong>Signal delay</strong> (Lienard-Wiechert retardation). When enabled, each force is computed not from the source's current position but from its retarded position on the past light cone. The light-cone equation $|\mathbf{x}_s(t_\text{ret}) - \mathbf{x}_o| = t_\text{now} - t_\text{ret}$ is solved via binary search on a 256-entry circular history buffer, refined with a quadratic solve on the bracketing segment. The aberration factor $(1 - \hat{n} \cdot \mathbf{v})^{-3}$ is clamped to $[0.01, 100]$ to prevent numerical blowup.</p>
+<h2 id="the-boris-integrator">The Boris integrator</h2>
+<p>The simulation uses a fixed timestep of $\Delta t = 1/128$ with adaptive substepping up to 32 subdivisions. The safe substep size is:</p>
+<p>$$
+\Delta t_\text{safe} = \min\left( \sqrt{\frac{\varepsilon}{a_\max}}, \, \frac{2\pi}{8 \omega_c} \right)
+$$</p>
+<p>where $a_\max$ is the maximum acceleration across all particles and $\omega_c$ is the maximum cyclotron frequency from magnetic and gravitomagnetic fields. The first constraint keeps particles from jumping past the softening length; the second resolves magnetic gyration.</p>
+<p>Each substep follows the Boris algorithm, a symplectic integrator originally designed for charged particles in magnetic fields. It naturally separates electric-like forces (which change speed) from magnetic-like forces (which change direction):</p>
+<ol><li><strong>Half-kick</strong>: $\mathbf{w} \leftarrow \mathbf{w} + \tfrac{\Delta t}{2} \mathbf{F}_E / m$ (gravity, Coulomb, Yukawa, external E)</li><li><strong>Boris rotation</strong>: Rotate $\mathbf{w}$ around the local magnetic field direction by an angle determined by $\mathbf{B}$. The rotation parameter is $t = (q B_z / 2m + 2 B_{gz}) \Delta t / \gamma$, and the rotation uses $s = 2t / (1 + t^2)$ for exact energy conservation</li><li><strong>Second half-kick</strong>: same as step 1</li><li><strong>Spin-orbit coupling</strong>: transfer energy between orbital and spin degrees of freedom via $\Delta \omega = -\mu (\mathbf{v} \cdot \nabla B_z) \Delta t / |L|$</li><li><strong>Radiation reaction</strong>: apply the Landau-Lifshitz force</li><li><strong>Drift</strong>: $\mathbf{r} \leftarrow \mathbf{r} + \mathbf{v} \Delta t$</li></ol>
+<p>After the drift, the quadtree is rebuilt and collisions are resolved before the next substep.</p>
+<p>The Boris method is time-reversible and preserves phase-space volume, which means it doesn't suffer from the artificial energy drift that plagues naive Euler integration. For a gravity-only two-body problem, this means stable orbits over thousands of periods without any energy correction.</p>
+<h2 id="barnes-hut-quadtree">Barnes-Hut quadtree</h2>
+<p>Pairwise force computation is $O(n^2)$. The Barnes-Hut algorithm reduces this to $O(n \log n)$ by grouping distant particles into multipole approximations.</p>
+<p>The tree is a spatial quadtree where each node stores aggregate properties: total mass, total charge, total magnetic moment, total angular momentum, center of mass, and total momentum. When computing the force on a particle, distant nodes where $\ell / d < \theta$ (with opening angle $\theta = 0.5$) are treated as point masses at their center of mass. Closer nodes are recursively opened.</p>
+<p>The CPU implementation uses a pool-based structure-of-arrays layout with flat typed arrays for cache efficiency. Each node holds up to 4 particles before subdividing.</p>
+<p>The GPU implementation is more interesting. Insertion uses lock-free compare-and-swap (CAS) loops --- each particle atomically claims a position in the tree, subdividing nodes as needed. Aggregate computation uses a bottom-up visitor-flag pattern since there's no call stack on the GPU. The tree is built in four dispatches: compute bounds, initialize root, insert particles, compute aggregates.</p>
+<h2 id="scalar-fields">Scalar fields</h2>
+<p>Two scalar fields live on a grid (64x64 on CPU, 128x128 on GPU), coupled to the particles.</p>
+<h3 id="higgs-field">Higgs field</h3>
+<p>The Higgs has a Mexican-hat potential $V(\varphi) = -\tfrac{1}{2} \mu^2 \varphi^2 + \tfrac{1}{4} \lambda \varphi^4$ with vacuum expectation value 1. Particles source the field proportional to their base mass, and the local field value modulates the Yukawa mediator mass --- this is the Higgs mechanism in miniature. Where $|\varphi|$ is large, the Yukawa force is short-range; where $|\varphi| \approx 0$ (near a domain wall or topological defect), the force becomes long-range and particles effectively lose their mass contribution to the Yukawa coupling.</p>
+<p>The field evolves via Stormer-Verlet (kick-drift-kick) with a weak-field GR self-gravity correction:</p>
+<p>$$
+\ddot{\varphi} = (1 + 4\Phi) \nabla^2 \varphi + 2 \nabla\Phi \cdot \nabla\varphi - (1 + 2\Phi) V'(\varphi)
+$$</p>
+<p>where $\Phi$ is the gravitational potential, computed via FFT convolution. When particles collide and merge, the kinetic energy lost is deposited as a Gaussian wave packet in the field, with amplitude $\propto \sqrt{E_\text{lost}}$ and width of 2 grid cells.</p>
+<h3 id="axion-field">Axion field</h3>
+<p>The axion has a simple quadratic potential $V(a) = \tfrac{1}{2} m_a^2 a^2$ with vacuum at zero. It couples to electromagnetism by modifying the fine structure constant: $\alpha_\text{eff} = \alpha(1 + g \cdot a)$. The source term is $g \cdot q^2$ per particle, so charged particles generate the field and the field modulates the Coulomb force.</p>
+<p>When Yukawa interactions are also active, the axion acts as a pseudoscalar with a parity-violating coupling: matter sources it with $+g \cdot m$, antimatter with $-g \cdot m$, and the Yukawa coupling becomes $1 \pm g \cdot a$. An optional Higgs-axion portal coupling $V_\text{portal} = \tfrac{1}{2} \lambda_p \varphi^2 a^2$ lets the two fields interact.</p>
+<h3 id="grid-interpolation">Grid interpolation</h3>
+<p>Both fields use PQS (cubic B-spline) interpolation with a 4x4 stencil, giving $C^2$-continuous field values and analytically computed gradients. This matters for the force calculation --- discontinuous gradients would produce unphysical impulses as particles cross grid cell boundaries. The deposition of particle sources onto the grid uses the same stencil weights, satisfying Newton's third law between particles and the field.</p>
+<h2 id="the-gpu-backend">The GPU backend</h2>
+<p>Geon has two interchangeable backends: CPU (JavaScript + typed arrays) and GPU (WebGPU compute + instanced rendering). The GPU path handles 512 particles plus 4096 photons, 1024 pions, and 1280 leptons.</p>
+<p>Each physics substep dispatches ~20 compute passes in sequence. The key ones:</p>
+<ol><li><strong>Reset forces</strong> (clear all accumulators)</li><li><strong>Cache derived quantities</strong> (coordinate velocity from proper velocity)</li><li><strong>Build tree</strong> (4 dispatches: bounds, init, insert, aggregate)</li><li><strong>Compute forces</strong> (pairwise or tree-walk)</li><li><strong>Scalar field forces</strong> (PQS gradient interpolation)</li><li><strong>Boris fused</strong> (half-kick + rotation + half-kick in one pass)</li><li><strong>Spin-orbit and torques</strong></li><li><strong>Radiation reaction</strong></li><li><strong>Position drift</strong></li><li><strong>1PN velocity-Verlet correction</strong> (recompute + second kick)</li><li><strong>Scalar field evolution</strong> (source deposition, self-gravity FFT, KDK step)</li><li><strong>Collisions</strong> (quadtree-accelerated detect + resolve)</li><li><strong>Boson dynamics</strong> (photon/pion drift, absorption, decay, pair production)</li></ol>
+<p>A critical implementation detail: <code>queue.writeBuffer()</code> executes at queue submission time, not inline. Buffer resets between dispatches within the same command encoder must use <code>encoder.copyBufferToBuffer()</code> instead. Getting this wrong causes forces to accumulate across substeps.</p>
+<p>The renderer uses instanced rendering with dual light/dark theme pipelines. Particles are drawn as instanced quads with per-instance position, radius, and color. Force vectors, trails, and field overlays are separate render passes.</p>
+<h2 id="bosons-and-decay">Bosons and decay</h2>
+<p>Photons, pions, and leptons are massless or short-lived particles that travel on null or near-null geodesics. Photons are emitted during radiation reaction (with angular distribution sampled via rejection: $\propto \cos^2(\phi - \phi_\text{accel})$ for dipole, quadrupole tensor for quadrupole). They undergo gravitational lensing through the Barnes-Hut tree with a softened potential.</p>
+<p>Neutral pions decay with a half-life of 32 substeps into a lepton plus a photon, conserving momentum. Charged pions last twice as long. Energetic photons near massive bodies can pair-produce $e^+ e^-$ pairs with probability 0.005 per substep when their energy exceeds 0.5 natural units.</p>
+<h2 id="topology">Topology</h2>
+<p>The simulation supports three non-trivial topologies beyond flat space:</p>
+<ul><li><strong>Torus</strong>: standard periodic boundary conditions, $x$ and $y$ both wrap</li><li><strong>Klein bottle</strong>: $x$ wraps normally; $y$-wrap flips $x$ and negates $v_x$</li><li><strong>Real projective plane</strong> ($\mathbb{RP}^2$): both $x$ and $y$ wraps flip the opposite coordinate</li></ul>
+<p>Minimum-image convention is used for force computation in all cases --- each pair only interacts once, through the shortest path.</p>
+<h2 id="putting-it-together">Putting it together</h2>
+<p>The frame loop runs at display refresh rate. Each frame accumulates $\Delta t \times \text{speedScale}$ (default 16x) and steps the physics in fixed $1/128$ increments until the accumulator is drained. Rendering happens once per frame regardless of how many physics steps were taken.</p>
+<p>Backend selection is automatic: WebGPU if available, Canvas 2D fallback. GPU device loss triggers automatic recovery with state restoration from a periodic autosave.</p>
+<p>The entire thing --- Boris integrator, Barnes-Hut tree, scalar field PDE solver, WebGPU compute shaders, instanced rendering, 19 physics presets --- is about 10,000 lines of vanilla JavaScript and WGSL with zero dependencies. No React, no Three.js, no build step. Just <code>python -m http.server</code> and open a browser.</p>
+<p>You can try it at <a href="https://a9l.im/geon" target="_blank" rel="noopener noreferrer">a9l.im/geon</a>.</p>]]></content:encoded>
+    </item>
     <item>
       <title>Hello, World</title>
       <link>https://a9l.im/blog/hello-world</link>
