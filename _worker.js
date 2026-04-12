@@ -215,7 +215,7 @@ const ROUTE_META = {
   },
   '/about': {
     title: 'About \u2014 a9l.im',
-    desc: 'About a9lim \u2014 building open-source interactive simulations for understanding complex systems in physics, biology, finance, and political science.',
+    desc: 'About a9lim \u2014 Singaporean developer building simulations, AI agents, and browser tools across physics, biology, finance, religion, and more. Mostly vibe-coded with Claude.',
     ogTitle: 'About \u2014 a9l.im',
   },
 };
@@ -238,7 +238,7 @@ const ABOUT_JSONLD = JSON.stringify({
     'https://github.com/a9lim',
     'https://twitter.com/a9_lim',
   ],
-  description: 'Builder of interactive educational simulations exploring physics, biology, finance, and political science.',
+  description: 'Singaporean developer building simulations, AI agents, and browser tools across physics, biology, finance, religion, and more.',
   jobTitle: 'Software Engineer',
   knowsAbout: [
     'Particle physics simulation',
@@ -246,8 +246,11 @@ const ABOUT_JSONLD = JSON.stringify({
     'Options pricing',
     'Gerrymandering and electoral fairness',
     'Sacred text analysis',
+    'AI agents',
+    'Activation steering',
     'WebGPU',
     'JavaScript',
+    'Python',
     'Computational science',
     'Interactive educational tools',
   ],
@@ -270,6 +273,7 @@ const ABOUT_JSONLD = JSON.stringify({
 });
 
 const PROJECTS_SSR = `
+<div class="project-card fade-in visible"><a href="https://github.com/a9lim/liahona" target="_blank" rel="noopener noreferrer"><h3>Liahona</h3><p>Activation steering and trait monitoring for HuggingFace transformer models.</p><span class="tag">python</span><span class="tag">llm</span><span class="tag">interpretability</span></a></div>
 <div class="project-card fade-in visible"><a href="/geon"><h3>Geon</h3><p>Relativistic N-body simulator with 11 forces, scalar fields, and WebGPU compute shaders.</p><span class="tag">physics</span><span class="tag">webgpu</span><span class="tag">relativity</span><span class="tag">canvas</span></a></div>
 <div class="project-card fade-in visible"><a href="/cyano"><h3>Cyano</h3><p>Cellular metabolism simulator with twelve biochemical pathways, allosteric regulation, and cofactor tracking.</p><span class="tag">biology</span><span class="tag">biochemistry</span><span class="tag">canvas</span></a></div>
 <div class="project-card fade-in visible"><a href="/gerry"><h3>Gerry</h3><p>Draw districts on a procedural hex map and stress-test them with Monte Carlo elections and fairness metrics.</p><span class="tag">politics</span><span class="tag">svg</span><span class="tag">monte carlo</span></a></div>

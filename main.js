@@ -6,9 +6,8 @@ import { initTheme } from './src/theme.js';
 import { initMobileMenu } from './src/mobile-menu.js';
 import { triggerFadeIns, initNavbarScroll, initScrollReveal } from './src/animations.js';
 import { initShader } from './src/shader.js';
-import { initCarousel, renderCarouselCards } from './src/carousel.js';
+import { initCardTilt } from './src/card-effects.js';
 import { showBlogListing, showBlogPost } from './src/blog.js';
-import { initWorldMap } from './src/world-map.js';
 import { PROJECTS } from './src/projects.js';
 import { renderProjectCards } from './src/projects-page.js';
 
@@ -29,8 +28,6 @@ const $ = {
 const navLinks = document.querySelectorAll('.nav-link');
 const pages    = document.querySelectorAll('.page-section');
 
-// Both carousel (home) and project grid share the PROJECTS data array
-renderCarouselCards(document.querySelector('.carousel-track'), PROJECTS);
 renderProjectCards(document.querySelector('.projects-grid'), PROJECTS);
 
 // ─── Init ───
@@ -49,5 +46,5 @@ initRouter({
 
 initShader($);
 initScrollReveal();
-initCarousel();
-initWorldMap();
+initCardTilt('.project-card');
+initCardTilt('.contact-section');

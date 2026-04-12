@@ -3,6 +3,16 @@
 
 export const PROJECTS = [
     {
+        href: 'https://github.com/a9lim/liahona',
+        title: 'Liahona',
+        shortDesc: 'Activation steering and trait monitoring for HuggingFace transformer models.',
+        longDesc: 'Activation steering toolkit for HuggingFace transformers. Extract steering vectors, apply them during generation with per-call alpha control, and monitor how activations shift across behavioral probes. Includes a Python API, HTTP server, and interactive terminal interface.',
+        tags: ['python', 'llm', 'interpretability'],
+        image: 'img/liahona.webp',
+        icon: _ICON.projLiahona,
+        external: true,
+    },
+    {
         href: '/geon',
         title: 'Geon',
         shortDesc: 'Relativistic N-body simulator with 11 forces, scalar fields, and WebGPU compute shaders.',
