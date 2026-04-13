@@ -16,7 +16,7 @@ All simulations use vanilla JavaScript with no frameworks. Shared design system 
 
 ## Contact
 
-mx@a9l.im | [GitHub](https://github.com/a9lim) | [Twitter](https://twitter.com/a9_lim)
+mx@a9l.im | [GitHub](https://github.com/a9lim) | [Twitter](https://twitter.com/_a9lim)
 
 ## License
 

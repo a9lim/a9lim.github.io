@@ -241,7 +241,7 @@ const ABOUT_JSONLD = JSON.stringify({
   url: 'https://a9l.im/about',
   sameAs: [
     'https://github.com/a9lim',
-    'https://twitter.com/a9_lim',
+    'https://twitter.com/_a9lim',
   ],
   description: 'Singaporean developer building simulations, AI agents, and browser tools across physics, biology, finance, religion, and more.',
   jobTitle: 'Software Engineer',
@@ -924,7 +924,7 @@ export default {
                           ...(postMeta.tag && { articleSection: Array.isArray(postMeta.tag) ? postMeta.tag[0] : postMeta.tag }),
                           speakable: { '@type': 'SpeakableSpecification', cssSelector: ['.blog-post-title', '.blog-content p:first-of-type'] },
                           image: 'https://a9l.im/og-image.webp',
-                          author: { '@type': 'Person', name: 'a9lim', url: 'https://a9l.im/about', sameAs: ['https://github.com/a9lim', 'https://twitter.com/a9_lim'] },
+                          author: { '@type': 'Person', name: 'a9lim', url: 'https://a9l.im/about', sameAs: ['https://github.com/a9lim', 'https://twitter.com/_a9lim'] },
                           publisher: { '@type': 'Organization', name: 'a9l.im', url: 'https://a9l.im', logo: { '@type': 'ImageObject', url: 'https://a9l.im/icon-192.png', width: 192, height: 192 } },
                           isPartOf: { '@type': 'Blog', name: 'a9l.im Blog', url: 'https://a9l.im/blog' },
                           mainEntityOfPage: { '@type': 'WebPage', '@id': meta.canonical },

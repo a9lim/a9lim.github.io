@@ -104,7 +104,7 @@ export async function showBlogListing($) {
         return '<a href="/blog/' + escapeHtml(p.slug) + '" class="blog-entry" data-page="blog">'
             + '<span class="blog-date">' + formatDate(p.date) + '</span>'
             + '<span class="blog-title">' + escapeHtml(p.title) + '</span>'
-            + (p.tag ? '<span class="blog-tag">' + escapeHtml(p.tag) + '</span>' : '')
+            + (p.tag ? (Array.isArray(p.tag) ? p.tag : [p.tag]).map(t => '<span class="blog-tag">' + escapeHtml(t) + '</span>').join('') : '')
             + '</a>';
     }).join('');
 
@@ -150,7 +150,7 @@ export async function showBlogPost(slug, $) {
     let header = '<div class="blog-post-header">';
     if (meta) {
         header += '<span class="blog-post-date">' + formatDate(meta.date)
-            + (meta.tag ? ' &middot; ' + escapeHtml(meta.tag) : '') + '</span>';
+            + (meta.tag ? ' &middot; ' + (Array.isArray(meta.tag) ? meta.tag : [meta.tag]).map(escapeHtml).join(', ') : '') + '</span>';
         header += '<h1 class="blog-post-title">' + escapeHtml(meta.title) + '</h1>';
     }
     header += '</div>';
