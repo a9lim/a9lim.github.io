@@ -29,7 +29,7 @@ updated: 2026-04-05
 
 ## GitHub Projects
 
-- [Liahona](https://github.com/a9lim/liahona): Activation steering and trait monitoring for HuggingFace transformers
+- [Saklas](https://github.com/a9lim/saklas): Activation steering and trait monitoring for HuggingFace transformers
 - [Shannon](https://github.com/a9lim/shannon): Autonomous AI agent for Discord and Signal
 - [Raiko](https://github.com/a9lim/Raiko): Discord music and chat bot
 - [Faithful](https://github.com/a9lim/faithful): Discord chatbot emulating source material

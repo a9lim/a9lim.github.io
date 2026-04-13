@@ -3,13 +3,13 @@
 
 export const PROJECTS = [
     {
-        href: 'https://github.com/a9lim/liahona',
-        title: 'Liahona',
+        href: 'https://github.com/a9lim/saklas',
+        title: 'Saklas',
         shortDesc: 'Activation steering and trait monitoring for HuggingFace transformer models.',
-        longDesc: 'Activation steering toolkit for HuggingFace transformers. Extract steering vectors, apply them during generation with per-call alpha control, and monitor how activations shift across behavioral probes. Includes a Python API, HTTP server, and interactive terminal interface.',
+        longDesc: 'Activation steering toolkit for HuggingFace transformers. Extract steering vectors, apply them during generation with per-call alpha control, and monitor how activations shift across behavioral probes. Includes a Python API, OpenAI-compatible HTTP server, and interactive terminal interface. 53 architectures supported.',
         tags: ['python', 'llm', 'interpretability'],
-        image: 'img/liahona.webp',
-        icon: _ICON.projLiahona,
+        image: 'img/saklas.webp',
+        icon: _ICON.projSaklas,
         external: true,
     },
     {

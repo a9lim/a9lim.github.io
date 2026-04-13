@@ -115,7 +115,7 @@ var _ICON = (function () {
                      s('<polyline points="2,4 6,8 10,8 15,13"/><polyline points="12,14 16,14 16,10"/>', ' id="mode-icon-sell" width="20" height="18" viewBox="0 0 20 18"' + A.slice(A.indexOf(' fill')) + ' style="display:none"'),
 
         // ── Project icons (portfolio cards) ──
-        projLiahona:    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="square" stroke-linejoin="miter"><line x1="12" y1="2" x2="12" y2="22"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="12" y1="2" x2="6" y2="8"/><line x1="12" y1="2" x2="18" y2="8"/></svg>',
+        projSaklas:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="square" stroke-linejoin="miter"><circle cx="12" cy="7" r="5"/><line x1="12" y1="12" x2="12" y2="22"/><line x1="6" y1="15" x2="18" y2="15"/></svg>',
         projGeon:       '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><line x1="1" y1="12" x2="23" y2="12"/></svg>',
         projCyano:      '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4"/></svg>',
         projGerry:      '<svg viewBox="0 0 24 24"><path d="M12 2l5.2 3v6L12 14 6.8 11V5zM6.8 11L1.6 14v6l5.2 3 5.2-3v-6M17.2 11l5.2 3v6l-5.2 3-5.2-3v-6"/></svg>',

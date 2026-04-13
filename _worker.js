@@ -221,10 +221,10 @@ const ROUTE_META = {
 };
 
 const BLOG_META = {
-  'how-liahona-works': {
-    title: 'How Liahona Works \u2014 a9l.im',
-    desc: 'Activation steering lets you shift an LLM\u2019s behavior by adding direction vectors to its hidden states. Liahona is an open-source toolkit for extracting and applying them.',
-    ogTitle: 'How Liahona Works \u2014 a9l.im',
+  'how-saklas-works': {
+    title: 'How Saklas Works \u2014 a9l.im',
+    desc: 'Activation steering lets you shift an LLM\u2019s behavior by adding direction vectors to its hidden states. Saklas is an open-source toolkit for extracting and applying them.',
+    ogTitle: 'How Saklas Works \u2014 a9l.im',
   },
   'hello-world': {
     title: 'Hello, World \u2014 a9l.im',
@@ -278,7 +278,7 @@ const ABOUT_JSONLD = JSON.stringify({
 });
 
 const PROJECTS_SSR = `
-<div class="project-card fade-in visible"><a href="https://github.com/a9lim/liahona" target="_blank" rel="noopener noreferrer"><h3>Liahona</h3><p>Activation steering and trait monitoring for HuggingFace transformer models.</p><span class="tag">python</span><span class="tag">llm</span><span class="tag">interpretability</span></a></div>
+<div class="project-card fade-in visible"><a href="https://github.com/a9lim/saklas" target="_blank" rel="noopener noreferrer"><h3>Saklas</h3><p>Activation steering and trait monitoring for HuggingFace transformer models.</p><span class="tag">python</span><span class="tag">llm</span><span class="tag">interpretability</span></a></div>
 <div class="project-card fade-in visible"><a href="/geon"><h3>Geon</h3><p>Relativistic N-body simulator with 11 forces, scalar fields, and WebGPU compute shaders.</p><span class="tag">physics</span><span class="tag">webgpu</span><span class="tag">relativity</span><span class="tag">canvas</span></a></div>
 <div class="project-card fade-in visible"><a href="/cyano"><h3>Cyano</h3><p>Cellular metabolism simulator with twelve biochemical pathways, allosteric regulation, and cofactor tracking.</p><span class="tag">biology</span><span class="tag">biochemistry</span><span class="tag">canvas</span></a></div>
 <div class="project-card fade-in visible"><a href="/gerry"><h3>Gerry</h3><p>Draw districts on a procedural hex map and stress-test them with Monte Carlo elections and fairness metrics.</p><span class="tag">politics</span><span class="tag">svg</span><span class="tag">monte carlo</span></a></div>

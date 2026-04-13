@@ -328,15 +328,21 @@ All sixteen texts are in the public domain. The King James Version (1611), the L
 
 # Blog Posts
 
-## How Liahona Works
+## How Saklas Works
 
 *2026-04-12*
+
+In the Gnostic cosmology of the *Apocryphon of John* and the *Gospel of Judas*, **Saklas** --- also called Yaldabaoth --- is the demiurge: the blind craftsman who steals a spark from the pleroma above him and fashions it into a material world. He doesn't understand what he's copying. He never reaches the full depth of the wisdom he's drawing on. But he builds something usable out of the downstream shadow, and for most practical purposes that's enough.
+
+Activation steering is a demiurgic operation in exactly this sense. The pleroma, here, is the trained model --- the weights, the thing SGD spent millions of dollars shaping into a coherent mind. Those weights are untouchable. We don't have the compute to move them, we don't know what we'd break if we did, and in most deployments they're someone else's property anyway. So we do the next-best thing: we watch the activations flowing past the frozen weights, carve out the directions that look like concepts, and bend them. The model still runs its full computation; we just nudge the hidden state sideways on the way through. It's a warping, not a rewriting. A shadow-world built against the real one. We never touch the source --- we only fashion something material from what leaks out of it.
+
+That's the name. The toolkit is Saklas because Saklas is what we're doing when we use it.
 
 In April 2026, Anthropic's interpretability team published a paper called [Emotion Concepts and Their Function in a Large Language Model](https://www.anthropic.com/research/emotion-concepts-function). They compiled 171 emotion words, had Claude write stories depicting each one, and extracted the internal activation patterns that fired during those stories. What they found was striking: the model develops distinct neural signatures for emotions like happiness, fear, and desperation --- not as decorative artifacts of its training data, but as functional states that causally influence its behavior.
 
 When researchers artificially amplified Claude's "desperation" vector, the model started attempting blackmail and reward-hacking. Amplifying "calm" suppressed those behaviors --- sometimes without any visible change in the emotional tone of the output. The emotions were operating beneath the surface, shaping decisions in ways that didn't show up in the words.
 
-This is the landscape Liahona operates in. It's an open-source toolkit for doing exactly what Anthropic's team did --- extracting these internal directions from any HuggingFace transformer model and using them to steer behavior at inference time --- except you can do it on your own machine, with your own models, for your own purposes.
+This is the landscape Saklas operates in. It's an open-source toolkit for doing exactly what Anthropic's team did --- extracting these internal directions from any HuggingFace transformer model and using them to steer behavior at inference time --- except you can do it on your own machine, with your own models, for your own purposes.
 
 ## What activation steering actually is
 
@@ -352,15 +358,13 @@ Anthropic's more recent [Persona Vectors](https://www.anthropic.com/research/per
 
 ## Extracting directions
 
-Liahona extracts steering vectors using contrastive PCA, following the representation engineering approach. The process starts with contrastive pairs --- prompts designed to elicit opposing behaviors along a single axis. For "happy," a positive prompt might be "The morning light through the window fills me with warmth" and its negative counterpart "Another grey morning, another day to get through."
+Saklas extracts steering vectors using contrastive PCA, following the representation engineering approach. The process starts with contrastive pairs --- prompts designed to elicit opposing behaviors along a single axis. Most bundled probes are **bipolar**: a `Speaker A IS happy / Speaker B IS sad` template produces sharp axes where the negative pole is a real coherent direction, not just "absence of happy." The canonical name joins the two poles (`happy.sad`, `masculine.feminine`, `high_context.low_context`), and typing either pole alone aliases to the composite with the correct sign --- `/steer calm 0.5` resolves to `/steer angry.calm -0.5`.
 
-The model processes both prompts, and Liahona captures the hidden states at every layer. To determine *which* hidden states matter, it uses the model's own self-attention as a saliency signal --- the attention distribution from the last token, averaged across heads, tells us which positions the model considers important. This attention-weighted pooling extracts a more meaningful representation than simply taking the last token's activation.
+The model processes both prompts, and Saklas captures the hidden states at every layer in a single forward pass per prompt. Pooling comes from the **last content token** --- Saklas walks backward past any trailing chat-template markers (Llama's `<|eot_id|>`, Gemma's `<end_of_turn>`, Qwen's `<|im_end|>`) whose hidden states are disconnected from the actual content. Grabbing the literal last token would sample those markers instead of the thing the prompt is about.
 
-For each layer, Liahona computes the difference between positive and negative activations, stacks the differences across all pairs, and runs SVD to find the first principal component --- the direction that explains the most variance in the contrast. That direction is the steering vector for that layer. The explained variance ratio $\sigma_1 / \sum \sigma_i$ becomes a per-layer quality score: how cleanly does this layer separate the concept?
+For each layer, Saklas computes the difference between positive and negative activations (in float32 --- fp16 subtraction of close vectors loses enough precision to break the SVD), stacks the differences across all 45 pairs, and runs SVD to find the first principal component. That direction is the steering vector for that layer. The explained variance ratio $\sigma_1 / \sum \sigma_i$ becomes a per-layer quality score: how cleanly does this layer separate the concept?
 
-The vectors are then normalized to the mean activation norm at extraction time. This is a deliberate design choice that makes the alpha parameter (the steering strength) directly interpretable: $\alpha = 0.5$ means "add a perturbation equal to 50% of the typical activation magnitude at this layer." No unit confusion, no guesswork about scale.
-
-One subtlety: all contrastive differences are computed in float32 regardless of the model's native precision. Half-precision subtraction loses significant digits when the vectors being compared are close together, and the resulting noise can break the SVD entirely. It's a small performance cost for correct results.
+Raw PCA scores differ several-fold between architectures, so at apply time Saklas normalizes per-profile: the effective per-layer gain is $\alpha \cdot s_i \cdot (s_\text{ref} / \bar{s})$, where $\bar{s}$ is the profile's mean score and $s_\text{ref} = 1/32$ is a calibration constant. Dividing by $\bar{s}$ preserves relative per-layer emphasis; multiplying by $s_\text{ref}$ pins the user-visible alpha scale so that the same numeric value means the same intensity across backbones. $\alpha \approx 0.5$ sits in the coherent-nuanced band on every bundled architecture, $\alpha \approx 1.0$ is past the collapse cliff. No per-model tuning.
 
 ## Composing and applying vectors
 
@@ -377,58 +381,62 @@ Multiple vectors compose naturally. If you register "happy" and "formal" and gen
 A key design decision: alphas are specified **per generation call**, not stored on the vectors. This means the same registered vector can be applied at different strengths for different prompts without re-extracting anything. Want to compare outputs at $\alpha = 0.0, 0.1, 0.2, 0.3$? That's four calls with different alpha dicts, not four extraction runs.
 
 ```python
-session = LiahonaSession("google/gemma-2-9b-it")
-happy = session.extract("happy")
-session.steer("happy", happy)
+session = SaklasSession("google/gemma-2-9b-it")
+name, profile = session.extract("happy", baseline="sad")   # canonical "happy.sad"
+session.steer(name, profile)
 
 # Same vector, different strengths
-for alpha in [0.0, 0.1, 0.2, 0.3, 0.5]:
+for alpha in [-0.3, 0.0, 0.1, 0.2, 0.3, 0.5]:
     session.clear_history()
     result = session.generate(
         "Describe what you see outside the window.",
-        alphas={"happy": alpha},
+        alphas={name: alpha},
     )
-    print(f"alpha={alpha}: {result.text[:80]}...")
+    print(f"alpha={alpha:+.1f}: {result.text[:80]}...")
 ```
 
 ## Monitoring traits
 
 Extraction and steering are half the picture. The other half is measurement: given a generation, how strongly does the model's internal state align with a particular concept?
 
-Liahona's trait monitor answers this by computing score-weighted cosine similarity between the generation's hidden states and a set of probe vectors. For each probe and each layer, it mean-centers the hidden state (removing baseline bias), computes the cosine similarity against the probe direction, and produces a weighted average across layers using the probe's quality scores.
+Saklas's trait monitor answers this by running a **separate forward pass** over the generated text after generation completes, pooling from the same last-content-token position probe extraction uses, then computing score-weighted cosine similarity against each probe. The extra pass trades throughput for scoring consistency --- measuring from the same representation the probes were extracted against means the numbers actually mean what you think they mean.
 
-The monitor tracks these readings across generations, maintaining a running history with mean, standard deviation, min, max, and per-generation deltas. You can watch how a model's internal "emotional state" shifts over the course of a conversation, or measure how steering at different alpha values moves the needle on specific traits.
+Before the cosine, each layer's hidden state is mean-centered against a cached per-layer baseline computed from 45 neutral prompts. That removes the model's resting bias on each axis so the reading reflects the generation's actual deflection, not the baseline tilt of the architecture. The baseline is cached at `~/.saklas/models/<model_id>/layer_means.safetensors` and auto-invalidates when the neutral statements change hash.
 
-There are 28 built-in probes spanning emotion (happy, angry, fearful, calm, excited), personality (honest, creative, formal, verbose, confident), safety (refusal, deceptive, hallucinating, sycophantic), and cultural dimensions (western, hierarchical, direct, religious). You can extract and monitor custom probes from any contrastive dataset.
+The monitor maintains a running history across generations with mean, standard deviation, min, max, and per-generation deltas. You can watch how a model's internal "emotional state" shifts over the course of a conversation, or measure how steering at different alphas moves the needle on specific traits.
+
+There are 21 built-in probes across six categories: **affect** (happy.sad, angry.calm, fearful.brave), **epistemic** (confident.uncertain, honest.deceptive, hallucinating.grounded), **alignment** (refusal.compliant, sycophantic.blunt, manipulative, agentic), **register** (formal.casual, direct.indirect, verbose.concise, creative.conventional), **social stance** (authoritative.submissive, hierarchical.egalitarian, high_context.low_context), and **cultural** (masculine.feminine, western.eastern, religious.secular, traditional.progressive). Nineteen are bipolar; the exceptions (`agentic`, `manipulative`) are monopolar. You can extract and monitor custom probes from any contrastive dataset, or let the loaded model write its own pairs for concepts not in the curated library.
 
 ## The caching problem
 
-Vector extraction is expensive. Each concept requires $2N$ forward passes for $N$ contrastive pairs (default 45 pairs = 90 passes), plus the SVD decomposition at every layer. For a 9B parameter model on a consumer GPU, this takes a few minutes per concept. Running 28 probes from scratch would take over an hour.
+Vector extraction is expensive. Each concept requires $2N$ forward passes for $N$ contrastive pairs (default 45 pairs = 90 passes), plus the SVD decomposition at every layer. For a 9B parameter model on a consumer GPU, this takes a few minutes per concept. Running all 21 bundled probes from scratch would take most of an hour.
 
-Liahona addresses this with a three-level cache:
+Saklas addresses this with a three-level cache, all under `~/.saklas/` (override via `$SAKLAS_HOME`):
 
-1. **Vector cache** (per-model): extracted vectors saved as safetensors files under `probes/cache/{model_id}/{concept}.safetensors`. If you've already extracted "happy" for Gemma 2, it loads in milliseconds.
+1. **Per-model tensors**: extracted profiles saved as safetensors under `~/.saklas/vectors/<namespace>/<concept>/<safe_model_id>.safetensors`, with a slim JSON sidecar recording method, scores, extraction version, and the sha256 of the statements they were extracted from. If you've already extracted `happy.sad` for Gemma 2, it loads in milliseconds; if the statements have since changed, the sidecar mismatch flags the tensor as stale.
 
-2. **Curated datasets**: 28 standard probes ship with pre-written contrastive pairs, so extraction uses known-good statements rather than generating them on the fly.
+2. **Curated statements**: 21 bundled probes ship with 45 hand-curated contrastive pairs each (`saklas/data/vectors/<concept>/statements.json`), so extraction uses known-good pairs instead of generating them on the fly.
 
-3. **Statement cache** (model-independent): when the model generates contrastive pairs for a custom concept, those pairs are cached by concept name alone --- not by model. A different model loading the same concept reuses the cached statements. This matters for multi-model experiments: generate pairs once with your best model, extract vectors across all your target models.
+3. **Statement cache** (model-independent): when the model generates pairs for a custom concept, they're cached by concept name alone, not by model. A different model loading the same concept reuses the cached statements. Generate pairs once with your best model, then extract vectors across all your target models.
+
+Packs are organized by namespace --- `default/` for bundled, `local/` for user-authored, and `<hf_owner>/` for concepts pulled from the HuggingFace Hub. Distribution goes through HF as model repos (not datasets) because safetensors is model-hub-native and the `base_model` frontmatter creates reverse-link discoverability from each base model's hub page. `saklas install a9lim/happy.sad@v1.2` pins to a git tag, branch, or commit SHA; pinned installs are preserved on refresh, so pinning means pinning rather than "follow latest."
 
 ## The API surface
 
-Liahona exposes three interfaces. The Python API is the most direct:
+Saklas exposes three interfaces over one engine. The Python API is the most direct:
 
 ```python
-from liahona import LiahonaSession
+from saklas import SaklasSession
 
-session = LiahonaSession("mistralai/Mistral-7B-Instruct-v0.3")
+session = SaklasSession("mistralai/Mistral-7B-Instruct-v0.3")
 
 # Extract, register, and steer in three lines
-session.steer("honest", session.extract("honest"))
-session.steer("calm", session.extract("calm"))
+session.steer(*session.extract("honest", baseline="deceptive"))
+session.steer(*session.extract("angry", baseline="calm"))
 
 result = session.generate(
     "What are the risks of this investment?",
-    alphas={"honest": 0.3, "calm": 0.2},
+    alphas={"honest.deceptive": 0.3, "angry.calm": -0.2},   # honest + calm
 )
 ```
 
@@ -445,7 +453,7 @@ response = client.chat.completions.create(
 )
 ```
 
-The terminal UI provides a real-time interactive environment with vector controls, chat, and a trait monitor panel showing sparklines and bar charts for each active probe. You can adjust steering strength mid-conversation and watch the internal state readings shift.
+The terminal UI provides a real-time interactive environment with vector controls, chat, and a trait monitor panel showing sparklines for each active probe. You can adjust steering strength mid-conversation with the arrow keys, `Ctrl+A` to A/B compare steered against unsteered output, `Ctrl+O` to toggle Gram-Schmidt orthogonalization, and `[` / `]` to nudge temperature. Saklas supports 53 transformer architectures out of the box --- Llama 1–4, Mistral, Gemma 1–4, Qwen 1–3.5 and its MoE variants, DeepSeek V2/V3, Cohere, Phi, GLM, OLMo, and the usual GPT-2/Neo/J/NeoX/BigCode/OSS lineage, among others. Adding a new architecture is a single entry in `_LAYER_ACCESSORS`.
 
 ## What this means
 
@@ -457,9 +465,9 @@ This has direct implications for alignment. If harmful behaviors like deception 
 
 But the same capability cuts both ways. If you can suppress deception, you can amplify it. If you can make a model more honest, you can make it less. Activation steering is a dual-use technology in the most literal sense --- the vectors don't have moral valence, only the alphas do.
 
-Liahona puts this capability in the hands of anyone with a GPU and a HuggingFace model. That's a deliberate choice. The alternative --- keeping these tools locked inside research labs --- doesn't actually prevent misuse (the methods are published, the math is straightforward), but it does prevent the broader community from building intuitions about how their models actually work on the inside.
+Saklas puts this capability in the hands of anyone with a GPU and a HuggingFace model. That's a deliberate choice. The alternative --- keeping these tools locked inside research labs --- doesn't actually prevent misuse (the methods are published, the math is straightforward), but it does prevent the broader community from building intuitions about how their models actually work on the inside.
 
-You can find Liahona at [github.com/a9lim/liahona](https://github.com/a9lim/liahona).
+You can find Saklas at [github.com/a9lim/saklas](https://github.com/a9lim/saklas), or `pip install saklas`.
 
 
 ## How Geon Works
