@@ -53,7 +53,7 @@
     <link rel="sitemap" type="application/xml" href="/sitemap.xml">
 
     <script type="speculationrules">
-    {"prefetch":[{"source":"document","where":{"href_matches":["/projects","/blog","/about","/geon","/cyano","/gerry","/shoals","/scripture","/scripture/*"]},"eagerness":"moderate"}],"prerender":[{"source":"document","where":{"href_matches":["/projects","/blog","/about"]},"eagerness":"conservative"}]}
+    {"prefetch":[{"source":"document","where":{"href_matches":["/projects","/blog","/about","/resume","/geon","/cyano","/gerry","/shoals","/scripture","/scripture/*"]},"eagerness":"moderate"}],"prerender":[{"source":"document","where":{"href_matches":["/projects","/blog","/about","/resume"]},"eagerness":"conservative"}]}
     </script>
 
     <script type="application/ld+json">
@@ -177,6 +177,7 @@
         {"@type": "WebPage", "name": "Projects", "url": "https://a9l.im/projects"},
         {"@type": "WebPage", "name": "Blog", "url": "https://a9l.im/blog"},
         {"@type": "WebPage", "name": "About", "url": "https://a9l.im/about"},
+        {"@type": "WebPage", "name": "Resume", "url": "https://a9l.im/resume"},
         {"@type": "WebPage", "name": "Scripture", "url": "https://a9l.im/scripture/"}
       ]
     }
@@ -203,6 +204,7 @@
             <a href="/projects" class="nav-link" data-page="projects">Projects</a>
             <a href="/blog" class="nav-link" data-page="blog">Blog</a>
             <a href="/about" class="nav-link" data-page="about">About</a>
+            <a href="/resume" class="nav-link" data-page="resume">Resume</a>
         </div>
 
         <div class="nav-right">
@@ -289,26 +291,220 @@
         <div class="page-container">
 
             <div class="about-layout">
-                <div class="about-bio fade-in">
-                    <h2>I build things to understand <em style="font-family:var(--font-display);background:linear-gradient(135deg,var(--accent),var(--accent-light));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">how things work</em>.</h2>
-                    <p>
-                        I'm a9lim, a Singaporean developer with an unreasonable number of interests. Physics, biology, finance, political science, religion, AI, music — if it has structure worth exploring, I've probably tried to simulate it.
-                    </p>
-                    <p>
-                        Most of what you see here is vibe-coded with Claude — I steer the direction, Claude writes the bulk of the code, and we iterate until it works. The result is a collection of open-source, zero-dependency browser tools that run anywhere without frameworks or build steps.
-                    </p>
-                    <p>
-                        Beyond simulations, I build AI agents, discord bots, sacred text readers, and whatever else catches my attention. I care more about shipping things that are useful than about doing things the "proper" way.
-                    </p>
-
-                </div>
-
                 <div class="contact-section glass fade-in">
                     <h3>Get in touch</h3>
-                    <p>Have a question about a project or want to collaborate? Feel free to reach out.</p>
-                    <a href="mailto:mx@a9l.im" class="contact-email">mx@a9l.im</a>
+                    <p>I'm looking for collaborators first, users second. If you want to build something together &mdash; a sim, a tool, a weird research thing &mdash; email is the fastest way to me.</p>
+                    <ul class="contact-socials">
+                        <li><a href="mailto:mx@a9l.im" class="contact-social"><span data-icon="mail" data-icon-size="16" aria-hidden="true"></span><span>mx@a9l.im</span></a></li>
+                        <li><a href="https://github.com/a9lim" target="_blank" rel="noopener noreferrer" class="contact-social"><span data-icon="github" data-icon-size="16" aria-hidden="true"></span><span>github.com/a9lim</span></a></li>
+                        <li><a href="https://twitter.com/_a9lim" target="_blank" rel="noopener noreferrer" class="contact-social"><span data-icon="twitter" data-icon-size="16" aria-hidden="true"></span><span>@_a9lim</span></a></li>
+                        <li><span class="contact-social contact-social-static"><span data-icon="discord" data-icon-size="16" aria-hidden="true"></span><span>@a9lim</span></span></li>
+                    </ul>
+                </div>
+                <div class="about-bio fade-in">
+                    <h2>I build things to understand <em style="font-family:var(--font-display);background:linear-gradient(135deg,var(--accent),var(--accent-light));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">how things work</em>.</h2>
+
+                    <p>I'm a9lim. Born in Palo Alto, raised in Singapore, college in San Diego &mdash; third culture kid by way of an international school education. Singapore isn't quite home, but it's the closest thing I have to one.</p>
+
+                    <p>My interests run uncomfortably wide: physics, biology, finance, geopolitics, religion, AI, music. The throughline is that I'm drawn to systems and structure, and to the unifying narratives that hold a field together. ZFC. The Standard Model Lagrangian. Black&ndash;Scholes. The Whig theory of history. Different subjects, same shape &mdash; a small set of axioms doing a lot of work.</p>
+
+                    <p>I got into building as a kid clicking around Colorado Boulder's <a href="https://phet.colorado.edu" target="_blank" rel="noopener noreferrer">PhET</a> sims for hours at a time. Learned a frankly unreasonable amount of science by dragging sliders, and decided fairly early that letting people touch a thing is the best way to teach it. The simulations on this site are an attempt to pay that forward.</p>
+
+                    <p>In high school I started building seriously: a physics engine that would eventually become Geon, an SIR&ndash;with&ndash;zombies epidemiology sim, an Asteroids clone with special relativity. Then I spent four years at UCSD getting a math degree, which I mostly coasted through. Things picked up again in late 2025 and I've been shipping ever since.</p>
+
+                    <h3 class="about-h3">On vibe&ndash;coding</h3>
+                    <p>Almost everything here is built with Claude. I steer, Claude writes, we iterate until it works. I'm loud about this because I think it's the future and I want other people to feel licensed to try it. I've learned as much about code from reading what Claude writes as I would have writing it myself, and the productivity ceiling is somewhere I haven't found yet. If you have a thing you want to build, build it. The tools are here.</p>
+
+                    <h3 class="about-h3">Currently</h3>
+                    <p>Reading David Chalmers on mechanistic interpretability &mdash; he dropped a paper recently that's been rattling around in my head. Betting AGI by end of 2027; if I had to wager, the Anthropic mythos is one or two model generations out. Listening to garage punk. Thinking about how to make scripture more navigable.</p>
+
+                    <h3 class="about-h3">Other things, in no particular order</h3>
+                    <ul class="about-misc">
+                        <li>I have an academic obsession with the LDS faith and its history &mdash; same energy as someone obsessed with Gnosticism. The scripture project on this site is comparative religion, not devotional.</li>
+                        <li>I once built a conlang called <em>dung'amyon</em> &mdash; a Sinitic / Sino&ndash;Xenic Esperanto based on simplified Middle Chinese. Got semi&ndash;fluent in it. The repo got deleted at some point, which I'm choosing to be relaxed about.</li>
+                        <li>I don't get along with everyone, and I've made peace with that. I hold opinions strongly and update them readily when someone gives me a real argument. I act idiosyncratically &mdash; some people vibe with that, most don't. Both groups are correct.</li>
+                        <li>The handle is the front of my UCSD email username. I kept it because it rolls off the tongue, and because the <em>lim</em> is satisfyingly Singaporean.</li>
+                    </ul>
                 </div>
             </div>
+        </div>
+    </section>
+
+    <!-- ═══════════════════════════════════
+         Page: Resume
+         ═══════════════════════════════════ -->
+    <section id="page-resume" class="page-section" aria-label="Resume">
+        <div class="page-container">
+            <article class="resume fade-in">
+                <header class="resume-header">
+                    <h2 class="resume-name">a9lim</h2>
+                    <p class="resume-meta">
+                        <span>Singapore</span>
+                        <span aria-hidden="true">·</span>
+                        <a href="mailto:mx@a9l.im">mx@a9l.im</a>
+                        <span aria-hidden="true">·</span>
+                        <a href="https://github.com/a9lim" target="_blank" rel="noopener noreferrer">github.com/a9lim</a>
+                        <span aria-hidden="true">·</span>
+                        <a href="https://twitter.com/_a9lim" target="_blank" rel="noopener noreferrer">@_a9lim</a>
+                        <span aria-hidden="true">·</span>
+                        <span>@a9lim (Discord)</span>
+                    </p>
+                </header>
+
+                <section class="resume-section">
+                    <h3 class="resume-h3">Profile</h3>
+                    <p>Independent developer building interactive educational simulations and browser tools at <a href="/" data-page="home">a9l.im</a>. Specialized in zero&ndash;dependency, no&ndash;build web apps shipped collaboratively with agentic AI. Open to freelance and collaboration on DIY&ndash;flavored work &mdash; research tools, simulations, and browser experiments.</p>
+                </section>
+
+                <section class="resume-section">
+                    <h3 class="resume-h3">Experience</h3>
+
+                    <div class="resume-job">
+                        <div class="resume-job-head">
+                            <h4 class="resume-job-title">Independent Developer &mdash; <a href="/" data-page="home">a9l.im</a></h4>
+                            <span class="resume-job-dates">Feb 2026 &ndash; Present</span>
+                        </div>
+                        <ul class="resume-bullets">
+                            <li>Built and maintain a portfolio of open&ndash;source interactive simulations and tools (see Selected Projects below) plus the shared design system and component library used across all of them &mdash; vanilla JavaScript, no frameworks, no build pipeline, no transpiler.</li>
+                            <li>Architected the SSR layer on Cloudflare Workers + Assets: per&ndash;route HTMLRewriter injection, edge&ndash;rendered markdown, structured data, per&ndash;route security headers, and Analytics Engine logging.</li>
+                            <li>Maintains the entire stack solo, infrastructure to typography, in collaboration with Claude.</li>
+                        </ul>
+                    </div>
+
+                    <div class="resume-job">
+                        <div class="resume-job-head">
+                            <h4 class="resume-job-title">SDDM Theme Maintainer &mdash; <a href="https://github.com/catppuccin/sddm" target="_blank" rel="noopener noreferrer">Catppuccin</a></h4>
+                            <span class="resume-job-dates">2025 &ndash; Present</span>
+                        </div>
+                        <ul class="resume-bullets">
+                            <li>Led rewrite and modernization of Catppuccin's SDDM display manager theme in QtQuick.</li>
+                            <li>Implemented dynamic accent color and per&ndash;user icon integration.</li>
+                            <li>Automated theme generation across the four Catppuccin flavors to streamline maintenance.</li>
+                            <li>Designed vector backgrounds and user iconography.</li>
+                        </ul>
+                    </div>
+                </section>
+
+                <section class="resume-section">
+                    <h3 class="resume-h3">Selected Projects</h3>
+
+                    <div class="resume-job">
+                        <div class="resume-job-head">
+                            <h4 class="resume-job-title"><a href="https://github.com/a9lim/saklas" target="_blank" rel="noopener noreferrer">Saklas</a></h4>
+                            <span class="resume-job-dates">PyPI &middot; Python</span>
+                        </div>
+                        <ul class="resume-bullets">
+                            <li>Activation steering and trait monitoring for HuggingFace transformers &mdash; extracts contrastive steering vectors and adds them to hidden states at generation time, no fine&ndash;tuning required.</li>
+                            <li>Three interfaces: a terminal UI with live alpha knobs and probe sparklines, an HTTP server speaking both OpenAI <code>/v1/*</code> and Ollama <code>/api/*</code> wire formats on the same port, and a Python API for scripted experiments.</li>
+                            <li>Ships 21 pre&ndash;built probes scoring affect, epistemic stance, register, and alignment in&ndash;flight; tested on Qwen, Gemma, Ministral, gpt&ndash;oss, Llama, and GLM.</li>
+                            <li>Implements the contrastive&ndash;PCA reading procedure from <a href="https://arxiv.org/abs/2310.01405" target="_blank" rel="noopener noreferrer">Zou et al. (2023)</a>; published to PyPI under AGPL&ndash;3.0 with CI, type checking, and llama.cpp GGUF interchange.</li>
+                        </ul>
+                    </div>
+
+                    <div class="resume-job">
+                        <div class="resume-job-head">
+                            <h4 class="resume-job-title"><a href="/geon" data-page="home">Geon</a> &mdash; Relativistic Particle Physics</h4>
+                            <span class="resume-job-dates">JavaScript &middot; WebGPU</span>
+                        </div>
+                        <ul class="resume-bullets">
+                            <li>Real&ndash;time N&ndash;body simulator running on WebGPU compute shaders, modeling 11 force types &mdash; Newtonian gravity, gravitomagnetism, Coulomb, Lorentz, Yukawa, Higgs and axion field couplings, Hubble expansion, 1PN general&ndash;relativistic corrections, spin&ndash;orbit, and radiation reaction.</li>
+                            <li>Barnes&ndash;Hut tree acceleration for O(N log N) scaling; Boris integrator preserving phase&ndash;space volume.</li>
+                            <li>Black&ndash;hole mode with Kerr&ndash;Newman event horizons, Hawking radiation, Schwinger pair&ndash;production discharge, and superradiant axion clouds. Nineteen curated presets demonstrate Keplerian orbits, Rutherford scattering, Higgs wells, gravitational&ndash;wave inspiral, and more.</li>
+                        </ul>
+                    </div>
+
+                    <div class="resume-job">
+                        <div class="resume-job-head">
+                            <h4 class="resume-job-title"><a href="/cyano" data-page="home">Cyano</a> &mdash; Cellular Metabolism</h4>
+                            <span class="resume-job-dates">JavaScript</span>
+                        </div>
+                        <ul class="resume-bullets">
+                            <li>Interactive biochemistry simulator covering twelve metabolic pathways &mdash; glycolysis, gluconeogenesis, PPP, Krebs, beta&ndash;oxidation, fatty acid synthesis, the Calvin cycle, the light reactions, fermentation, the urea cycle, and amino acid catabolism &mdash; connected through shared metabolite pools.</li>
+                            <li>14&ndash;complex electron transport chain with proton motive force, oxidative phosphorylation, uncoupling, leak, and reactive oxygen species generation; allosteric regulation gates every reaction (PFK, PDH, ICDH).</li>
+                            <li>Six organism presets including a cancer&ndash;cell preset that demonstrates the Warburg effect.</li>
+                        </ul>
+                    </div>
+
+                    <div class="resume-job">
+                        <div class="resume-job-head">
+                            <h4 class="resume-job-title"><a href="/shoals" data-page="home">Shoals</a> &mdash; Options Trading</h4>
+                            <span class="resume-job-dates">JavaScript</span>
+                        </div>
+                        <ul class="resume-bullets">
+                            <li>Derivatives pricing simulator combining Heston stochastic volatility and Merton jump diffusion with a Vasicek mean&ndash;reverting interest rate. American options priced via 128&ndash;step Cox&ndash;Ross&ndash;Rubinstein binomial tree with term&ndash;structure volatility, moneyness skew, and discrete dividends.</li>
+                            <li>25&ndash;strike options chain with real&ndash;time Greeks, multi&ndash;leg strategy builder (spreads, straddles, condors, butterflies), payoff diagrams, and portfolio&ndash;level margin tracking.</li>
+                            <li>Narrative event engine with 400+ curated scenarios &mdash; earnings, monetary policy, geopolitics, sector rotation, technical signals, black swans &mdash; chained via a Poisson scheduler with trait&ndash;aware likelihood weighting.</li>
+                        </ul>
+                    </div>
+
+                    <div class="resume-job">
+                        <div class="resume-job-head">
+                            <h4 class="resume-job-title"><a href="/gerry" data-page="home">Gerry</a> &mdash; Redistricting &amp; Electoral Fairness</h4>
+                            <span class="resume-job-dates">JavaScript</span>
+                        </div>
+                        <ul class="resume-bullets">
+                            <li>Interactive gerrymandering simulator on a procedural hex&ndash;tile electorate. Players paint districts and evaluate them against six fairness metrics: efficiency gap, partisan symmetry, competitive&ndash;district count, Polsby&ndash;Popper compactness, contiguity, and majority&ndash;minority districts.</li>
+                            <li>Automated modes include pack&ndash;and&ndash;crack and a simulated&ndash;annealing fair&ndash;draw optimizer; Monte Carlo election stress tests run thousands of simulated elections with turnout noise to evaluate map robustness.</li>
+                            <li>Procedural maps generated via seeded Perlin noise with configurable urban clustering and minority density, reproducible by URL hash.</li>
+                        </ul>
+                    </div>
+
+                    <div class="resume-job">
+                        <div class="resume-job-head">
+                            <h4 class="resume-job-title"><a href="/scripture/" data-page="home">Scripture</a> &mdash; Sacred Text Reader</h4>
+                            <span class="resume-job-dates">JavaScript</span>
+                        </div>
+                        <ul class="resume-bullets">
+                            <li>Browser&ndash;based reader for sixteen sacred texts spanning Christian, Islamic, LDS, Confucian, Taoist, Shinto, Zoroastrian, Buddhist, Finnish, and Norse traditions &mdash; ~50&nbsp;MB of static JSON, loaded on demand per chapter.</li>
+                            <li>Full&ndash;text search across all sixteen works, TF&ndash;IDF concordance for related passage discovery, verse&ndash;linked notes, text&ndash;to&ndash;speech, and deep linking to any verse via URL.</li>
+                            <li>Edge&ndash;SSR'd verse content with per&ndash;chapter <code>Chapter</code> JSON&ndash;LD and per&ndash;verse <code>Quotation</code> structured data so the corpus is crawlable without JavaScript execution.</li>
+                        </ul>
+                    </div>
+
+                </section>
+
+                <section class="resume-section">
+                    <h3 class="resume-h3">Education</h3>
+
+                    <div class="resume-job">
+                        <div class="resume-job-head">
+                            <h4 class="resume-job-title">University of California, San Diego</h4>
+                            <span class="resume-job-dates">March 2026</span>
+                        </div>
+                        <p class="resume-edu-line">B.S. in Mathematics &middot; GPA 3.75 &middot; GRE 335 (170Q, 165V)</p>
+                    </div>
+
+                    <div class="resume-job">
+                        <div class="resume-job-head">
+                            <h4 class="resume-job-title">Singapore American School</h4>
+                            <span class="resume-job-dates">Class of 2023</span>
+                        </div>
+                        <p class="resume-edu-line">Summa Cum Laude &middot; GPA 4.50</p>
+                    </div>
+                </section>
+
+                <section class="resume-section">
+                    <h3 class="resume-h3">Skills</h3>
+                    <dl class="resume-skills">
+                        <dt>Building with agentic AI</dt>
+                        <dd>Daily driver: Claude Code. Comfortable directing, reviewing, and integrating large volumes of AI&ndash;generated code at production scale.</dd>
+
+                        <dt>Languages</dt>
+                        <dd>JavaScript (vanilla, ES modules, Canvas, WebGL, GLSL), Python (NumPy, Matplotlib, ML tooling), Java, QtQuick / QML, LaTeX, HTML, CSS.</dd>
+
+                        <dt>Web &amp; infrastructure</dt>
+                        <dd>Cloudflare Workers, Workers Assets, Analytics Engine, edge SSR via HTMLRewriter, structured data (JSON&ndash;LD, schema.org, OpenGraph), self&ndash;hosted typography, no&ndash;build pipelines.</dd>
+
+                        <dt>Other</dt>
+                        <dd>Technical writing, vector graphics, soldering, Spanish (novice), conlang construction.</dd>
+                    </dl>
+                </section>
+
+                <section class="resume-section">
+                    <h3 class="resume-h3">Open to</h3>
+                    <p>Freelance and collaborations &mdash; sims, tools, research&ndash;flavored DIY work. Reach out at <a href="mailto:mx@a9l.im">mx@a9l.im</a>.</p>
+                </section>
+            </article>
         </div>
     </section>
     </main>
