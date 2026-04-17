@@ -49,4 +49,4 @@ console.log(greet('world'));
 
 ---
 
-That's basically everything. More posts coming.
+That's basically everything.

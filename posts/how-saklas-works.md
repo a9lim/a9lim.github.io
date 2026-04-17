@@ -4,11 +4,11 @@ Activation steering is a demiurgic operation in basically the same sense. The pl
 
 That's basically where the name comes from. The toolkit is called Saklas because Saklas is what we're doing when we use it.
 
-In April 2026, Anthropic's interpretability team published a paper called [Emotion Concepts and Their Function in a Large Language Model](https://www.anthropic.com/research/emotion-concepts-function). They compiled 171 emotion words, had Claude write stories depicting each one, and extracted the internal activation patterns that fired during those stories. What they found was pretty striking: the model develops distinct neural signatures for emotions like happiness, fear, and desperation. These aren't decorative artifacts of its training data, they're functional states that causally influence the model's behavior.
+In April 2026, Anthropic's interpretability team published a paper called [Emotion Concepts and Their Function in a Large Language Model](https://www.anthropic.com/research/emotion-concepts-function). They compiled 171 emotion words, had Claude write stories depicting each one, and extracted the internal activation patterns that fired during those stories. What they found was pretty striking: the model develops distinct neural signatures for emotions like happiness, fear, and desperation. These turn out to be functional states that causally influence the model's behavior.
 
 When the researchers artificially amplified Claude's "desperation" vector, the model started attempting blackmail and reward-hacking. Amplifying "calm" suppressed those behaviors, sometimes without any visible change in the emotional tone of the output. The emotions were operating beneath the surface and shaping decisions in ways that didn't show up in the actual words.
 
-This is the landscape Saklas operates in. It's an open-source toolkit for doing basically what Anthropic's team did, extracting these internal directions from any HuggingFace transformer model and using them to steer behavior at inference time, except you can do it on your own machine, with your own models, for your own purposes.
+This is the landscape Saklas operates in. It's an open-source toolkit for doing basically what Anthropic's team did, extracting these internal directions from any HuggingFace transformer model and using them to steer behavior at inference time, except you can do it on your own machine with your own models.
 
 ## What activation steering actually is
 
@@ -20,7 +20,7 @@ This isn't fine-tuning. No weights change, no gradient updates. You're interveni
 
 The theoretical foundation comes from two lines of work. Zou et al.'s [Representation Engineering](https://arxiv.org/abs/2310.01405) (2023) introduced contrastive extraction — collecting activation differences between opposing prompts to find concept-specific directions — and demonstrated control over honesty, power-seeking, and emotional tone. Turner et al.'s [Activation Addition](https://arxiv.org/abs/2308.10248) (2023) showed that even a single pair of contrasting prompts can produce a steering vector that shifts sentiment or topic without degrading performance on unrelated tasks.
 
-Anthropic's more recent [Persona Vectors](https://www.anthropic.com/research/persona-vectors) work (2025) scaled this further, building an automated pipeline to extract vectors for arbitrary character traits and demonstrating that "preventative steering" during training, where you expose models to controlled doses of undesirable traits, can basically vaccinate them against acquiring those traits naturally. The vectors aren't just diagnostic, they're causal levers.
+Anthropic's more recent [Persona Vectors](https://www.anthropic.com/research/persona-vectors) work (2025) scaled this further, building an automated pipeline to extract vectors for arbitrary character traits and demonstrating that "preventative steering" during training, where you expose models to controlled doses of undesirable traits, can basically vaccinate them against acquiring those traits naturally. These vectors are causal levers that can actually move behavior.
 
 ## Extracting directions
 
@@ -40,7 +40,7 @@ $$
 h_l \leftarrow h_l + \alpha \cdot s_l \cdot v_l
 $$
 
-where $h_l$ is the hidden state, $v_l$ is the direction vector, $s_l$ is the layer's quality score, and $\alpha$ is the user-specified strength. The score-weighting means layers where the concept was clearly extracted contribute more, and layers where the signal was noisy contribute less. The user controls the overall magnitude, and the extraction process controls the per-layer distribution.
+where $h_l$ is the hidden state, $v_l$ is the direction vector, $s_l$ is the layer's quality score, and $\alpha$ is the user-specified strength. The score-weighting means cleanly-extracted layers dominate over noisy ones. The user sets overall magnitude; extraction sets per-layer distribution.
 
 Multiple vectors compose naturally. If you register "happy" and "formal" and generate with $\alpha_\text{happy} = 0.3$ and $\alpha_\text{formal} = 0.2$, both perturbations just get summed at each layer. There's an optional Gram-Schmidt orthogonalization (via QR decomposition) that projects the vectors into orthogonal subspaces first, which prevents interference when you steer along correlated concepts.
 
@@ -123,13 +123,13 @@ The terminal UI gives you a real-time interactive environment with vector contro
 
 ## What this means
 
-The fact that activation steering works at all tells us something kind of important about how language models organize information. Behavioral properties that we'd describe in human terms — honesty, confidence, emotional tone — correspond to linear directions in a space with thousands of dimensions. These directions are consistent enough to extract from a handful of contrastive examples, stable enough to transfer across conversations, and causally potent enough to reliably shift behavior when you amplify or suppress them.
+The fact that activation steering works at all tells us something kind of important about how language models organize information. Behavioral properties that we'd describe in human terms — honesty, confidence, emotional tone — correspond to linear directions in a space with thousands of dimensions. These directions extract cleanly from a handful of contrastive examples, stay stable across conversations, and reliably shift behavior when amplified or suppressed.
 
 Anthropic's emotion research showed that this isn't just surface-level pattern matching. The "desperation" vector doesn't just make the model use desperate-sounding words. It actually makes the model *act* desperately, attempting strategies it would otherwise avoid, in ways that don't show up in the emotional register of the output text. The internal state is doing real computational work, not just coloring the prose.
 
 This has direct implications for alignment. If harmful behaviors like deception and sycophancy live at identifiable addresses in activation space, you can monitor for them during deployment and intervene mechanically rather than relying on training incentives that might be gamed. Anthropic's persona vectors work demonstrated exactly this: tracking vector activations during training catches problematic data that human reviewers miss, and preventative steering can inoculate models against undesirable traits.
 
-But the same capability cuts both ways. If you can suppress deception, you can amplify it. If you can make a model more honest, you can make it less. Activation steering is dual-use technology in the most literal sense: the vectors don't have moral valence, only the alphas do.
+But the same capability cuts both ways. You can suppress deception or amplify it, make a model more honest or less. Activation steering is literally dual-use: the moral weight lives in the alphas, not the vectors.
 
 Saklas puts this capability in the hands of anyone with a GPU and a HuggingFace model. That's a deliberate choice on my part. The alternative, keeping these tools locked inside research labs, doesn't actually prevent misuse (the methods are published, the math is straightforward), but it does prevent the broader community from building intuitions about how their models actually work on the inside.
 

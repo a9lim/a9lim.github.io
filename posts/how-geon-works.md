@@ -63,7 +63,7 @@ The tree is a spatial quadtree where each node stores aggregate properties: tota
 
 The CPU implementation uses a pool-based structure-of-arrays layout with flat typed arrays for cache efficiency. Each node holds up to 4 particles before subdividing.
 
-The GPU implementation is more interesting. Insertion uses lock-free compare-and-swap (CAS) loops, where each particle atomically claims a position in the tree, subdividing nodes as needed. Aggregate computation uses a bottom-up visitor-flag pattern since there's no call stack on the GPU. The tree gets built in four dispatches: compute bounds, initialize root, insert particles, compute aggregates.
+The GPU implementation uses lock-free compare-and-swap (CAS) loops for insertion: each particle atomically claims a position in the tree, subdividing nodes as needed. Aggregate computation uses a bottom-up visitor-flag pattern since there's no call stack on the GPU. The tree gets built in four dispatches: compute bounds, initialize root, insert particles, compute aggregates.
 
 ## Scalar fields
 
