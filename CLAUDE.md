@@ -29,6 +29,10 @@ Key shared modules:
 - `shared-settings.js` — `_settings.create(triggerBtn, rows, opts)` builds a fixed-position settings dropdown with slider and mode-group rows, click-outside/Escape dismiss. CSS classes: `.settings-dd`, `.settings-dd-row`, `.settings-dd-label`, `.settings-dd-val`.
 - `shared-tabs.js`, `shared-camera.js`, `shared-info.js`, `shared-shortcuts.js`, `shared-about.js`, `shared-touch.js`, `shared-tooltip.js`, `shared-sparkline.js`, `shared-haptics.js`
 
+## Prose Voice
+
+User-facing prose (blog posts in `posts/`, the `/about` section, the `/resume` Profile blurb, hero tagline + sub, contact blurbs) is written in a9lim's voice. When rewriting or drafting this content, invoke the `/a9writing` skill — it has the full voice rubric, anti-patterns, and before/after examples. Scope excludes sim `about.md` files and the `<details class="edu-content">` sections in each sim's `index.html` (those stay in technical-reference register). Functional resume bullets also stay action-verb-led unless explicitly asked otherwise.
+
 ## Running Locally
 
 ```bash
