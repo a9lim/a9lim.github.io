@@ -1,14 +1,14 @@
-This is the first post on **a9l.im** — a quick tour of the blog and a test of every markdown feature the parser supports.
+This is the first post on **a9l.im**. Mostly a quick tour of the blog and a test of every markdown feature the parser supports.
 
 ## Why a blog?
 
-Building interactive simulations generates a lot of *interesting problems* — numerical precision, rendering tricks, algorithmic trade-offs. A blog is a good place to write them up.
+I build a lot of interactive sims and I run into a lot of weird problems while making them: numerical precision stuff, rendering tricks, weird algorithmic tradeoffs that don't have a clean answer. A blog seemed like a good place to write some of it down.
 
 ## What the parser handles
 
 ### Text formatting
 
-You can write **bold**, *italic*, and ***bold italic*** text. Inline `code` works too.
+You can do **bold**, *italic*, and ***bold italic*** text. Inline `code` works too.
 
 ### Links and images
 
@@ -49,4 +49,4 @@ console.log(greet('world'));
 
 ---
 
-That covers all the basics. More posts to come.
+That's basically everything. More posts coming.
