@@ -1,5 +1,5 @@
 # Dependencies
-og/node_modules/
+**/node_modules/
 
 # OS
 .DS_Store
@@ -14,6 +14,9 @@ Thumbs.db
 
 # Logs
 *.log
+
+# Generated docs
+docs/
 
 # Claude Code
 .claude/
