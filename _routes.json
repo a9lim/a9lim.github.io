@@ -16,6 +16,7 @@
     "/cyano/*",
     "/gerry/*",
     "/shoals/*",
+    "/asteroids/*",
     "/.well-known/*",
     "/*.txt",
     "/*.md",

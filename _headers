@@ -79,6 +79,12 @@
   Link: </gerry/styles.css>; rel=preload; as=style
   Link: </gerry/main.js>; rel=modulepreload
   Link: </fonts/recursive-variable.woff2>; rel=preload; as=font; crossorigin
+/asteroids/*
+  Link: </shared-tokens.js>; rel=preload; as=script
+  Link: </shared-base.css>; rel=preload; as=style
+  Link: </asteroids/styles.css>; rel=preload; as=style
+  Link: </asteroids/main.js>; rel=preload; as=script
+  Link: </fonts/recursive-variable.woff2>; rel=preload; as=font; crossorigin
 
 # Shared design system — short browser TTL, CDN caches until next deploy
 /shared-*.js
@@ -111,6 +117,12 @@
   Cache-Control: public, max-age=86400, stale-while-revalidate=604800
   Cloudflare-CDN-Cache-Control: public, max-age=31536000, immutable
 /shoals/*.css
+  Cache-Control: public, max-age=86400, stale-while-revalidate=604800
+  Cloudflare-CDN-Cache-Control: public, max-age=31536000, immutable
+/asteroids/*.js
+  Cache-Control: public, max-age=86400, stale-while-revalidate=604800
+  Cloudflare-CDN-Cache-Control: public, max-age=31536000, immutable
+/asteroids/*.css
   Cache-Control: public, max-age=86400, stale-while-revalidate=604800
   Cloudflare-CDN-Cache-Control: public, max-age=31536000, immutable
 /scripture/*.js

@@ -1,0 +1,263 @@
+/* Asteroids — game-specific overlay styling.
+   The toolbar/panel/canvas-container come from /shared-base.css. */
+
+main {
+  position: fixed;
+  inset: 0;
+  display: block;
+}
+
+#sim-container {
+  position: absolute;
+  inset: 0;
+}
+
+#sim-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* ─── Toolbar tweaks ─── */
+.sim-tagline {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  letter-spacing: 0.02em;
+  margin-left: 4px;
+}
+
+.tool-btn.text-btn {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--text);
+  padding: 0 10px;
+  height: 30px;
+  min-width: 32px;
+  width: auto;
+  border-radius: var(--radius);
+  background: transparent;
+}
+
+.tool-btn.text-btn:hover { background: var(--bg-hover); }
+
+/* ─── Game HUD (top-left of canvas) ─── */
+.game-hud {
+  position: absolute;
+  top: calc(12px + var(--toolbar-h) + 16px);
+  left: 16px;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  pointer-events: none;
+  font-family: var(--font-mono);
+  text-shadow: 0 0 8px var(--bg-canvas);
+}
+
+.hud-row {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 0.95rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.hud-label {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  letter-spacing: 0.12em;
+}
+
+.hud-val { color: var(--text); font-weight: 600; }
+.hud-val.accent { color: var(--accent); letter-spacing: 0.15em; }
+.hud-sep { color: var(--text-muted); }
+
+/* ─── Relativistic stat readout (bottom-left) ─── */
+.rel-hud {
+  position: absolute;
+  bottom: 16px;
+  left: 16px;
+  z-index: 10;
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  text-shadow: 0 0 8px var(--bg-canvas);
+  pointer-events: none;
+  min-width: 168px;
+}
+
+.rel-row {
+  display: grid;
+  grid-template-columns: 60px 1fr auto;
+  align-items: baseline;
+  gap: 6px;
+  font-variant-numeric: tabular-nums;
+}
+
+.rel-row > span:first-child {
+  color: var(--text-muted);
+  letter-spacing: 0.04em;
+}
+
+.rel-row > span:nth-child(2) {
+  color: var(--text);
+  text-align: right;
+  font-weight: 600;
+}
+
+.rel-unit { color: var(--text-muted); font-size: 0.7rem; }
+
+.rel-row.dim { opacity: 0.7; margin-top: 4px; padding-top: 4px; }
+
+/* ─── Touch buttons (mobile) ─── */
+.touch-pad {
+  position: absolute;
+  bottom: 16px;
+  right: 16px;
+  display: none;
+  gap: 6px;
+  z-index: 12;
+}
+
+.touch-btn {
+  width: 56px;
+  height: 56px;
+  border: none;
+  border-radius: var(--radius);
+  background: var(--bg-panel);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  color: var(--text);
+  font-size: 1.4rem;
+  font-weight: 600;
+  cursor: pointer;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.touch-btn:active { background: var(--bg-hover); }
+.touch-btn.fire   { color: var(--accent); }
+
+@media (pointer: coarse) {
+  .touch-pad { display: flex; }
+}
+
+/* ─── Pause / game-over overlay ─── */
+.game-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+  background: color-mix(in srgb, var(--bg-canvas) 60%, transparent);
+}
+
+.game-overlay[hidden] { display: none; }
+
+.overlay-card {
+  padding: 32px 44px;
+  border-radius: var(--radius);
+  text-align: center;
+  min-width: 280px;
+}
+
+.overlay-card h2 {
+  font-family: var(--font-display);
+  font-size: 1.8rem;
+  font-weight: 400;
+  letter-spacing: -0.02em;
+  margin: 0 0 8px;
+  color: var(--text);
+}
+
+.overlay-card p {
+  margin: 0 0 18px;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.overlay-card p b { color: var(--text); font-weight: 600; }
+
+.overlay-btn {
+  border: none;
+  background: var(--accent);
+  color: var(--text-on-accent);
+  padding: 10px 22px;
+  border-radius: var(--radius);
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+  text-transform: uppercase;
+}
+
+.overlay-btn:hover { background: var(--accent-light); }
+
+/* ─── Sidebar tweaks ─── */
+.panel-title {
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-weight: 500;
+  color: var(--text);
+  letter-spacing: -0.01em;
+}
+
+.key-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 0;
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+}
+
+.key-row kbd {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--text);
+  background: var(--bg-hover);
+  padding: 2px 6px;
+  border-radius: var(--radius);
+  min-width: 28px;
+  text-align: center;
+  border: none;
+}
+
+.key-row span { margin-left: 6px; color: var(--text-muted); }
+
+.ref-line {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  margin: 4px 0;
+  line-height: 1.5;
+}
+
+.ref-line.dim { color: var(--text-muted); }
+
+/* ─── Mobile layout — collapse sidebar to bottom sheet ─── */
+@media (max-width: 900px) {
+  .sim-panel {
+    width: 100vw;
+    right: 0;
+    top: auto;
+    bottom: 0;
+    height: 50vh;
+    transform: translateY(100%);
+    border-radius: var(--radius) var(--radius) 0 0;
+  }
+  .sim-panel.open { transform: translateY(0); }
+  .game-hud { top: calc(12px + var(--toolbar-h) + 8px); }
+  .rel-hud { bottom: calc(50vh + 80px); }
+  .touch-pad { bottom: calc(50vh + 16px); }
+}

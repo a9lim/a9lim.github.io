@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Asteroids — Special Relativity in the Cockpit | a9l.im</title>
+  <meta name="description" content="">
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="icon" href="/favicon.ico">
+  <meta name="theme-color" content="#E11107">
+  <meta name="apple-mobile-web-app-title" content="Asteroids">
+  <link rel="manifest" href="/manifest.json">
+  <link rel="stylesheet" href="/fonts/fonts.css">
+  <link rel="stylesheet" href="/shared-base.css">
+  <link rel="stylesheet" href="styles.css">
+  <script src="/shared-tokens.js"></script>
+</head>
+
+<body class="sim-body app-ready">
+  <a href="#sim-canvas" class="skip-link">Skip to game</a>
+
+  <header id="top-bar" class="sim-toolbar glass" role="toolbar" aria-label="Game controls">
+    <div class="header-brand">
+      <a href="/" class="sim-home" title="a9l.im"><img src="/logo.svg" alt="a9l.im" height="28"></a>
+      <h1 class="sim-brand">Asteroids</h1>
+      <span class="sim-tagline">/ relativistic</span>
+    </div>
+    <div class="header-tools sim-toolbar-actions">
+      <button id="view-btn" class="tool-btn text-btn" aria-label="Toggle view frame" title="Toggle view (V)">Ship frame</button>
+      <button id="play-btn" class="tool-btn text-btn" aria-label="Pause" title="Pause (P)">⏸</button>
+      <button id="reset-btn" class="tool-btn text-btn" aria-label="Reset" title="Reset (R)">↻</button>
+    </div>
+  </header>
+
+  <main>
+    <div id="sim-container" class="canvas-container">
+      <canvas id="sim-canvas" aria-label="Relativistic Asteroids game canvas"></canvas>
+
+      <!-- Game HUD overlay -->
+      <div id="game-hud" class="game-hud">
+        <div class="hud-row">
+          <span class="hud-label">SCORE</span>
+          <span id="hud-score" class="hud-val">000000</span>
+        </div>
+        <div class="hud-row">
+          <span class="hud-label">LV</span>
+          <span id="hud-level" class="hud-val">1</span>
+          <span class="hud-sep">·</span>
+          <span id="hud-lives" class="hud-val accent">◆◆◆</span>
+        </div>
+      </div>
+
+      <!-- Relativistic readout (bottom-left) -->
+      <div id="rel-hud" class="rel-hud">
+        <div class="rel-row"><span>β</span><span id="stat-beta">0.0000</span></div>
+        <div class="rel-row"><span>γ</span><span id="stat-gamma">1.000</span></div>
+        <div class="rel-row"><span>τ<sub>ship</sub></span><span id="stat-prop">0.00</span><span class="rel-unit">s</span></div>
+        <div class="rel-row"><span>t<sub>lab</sub></span><span id="stat-lab">0.00</span><span class="rel-unit">s</span></div>
+        <div class="rel-row dim"><span>dilation</span><span id="stat-dilation">1.000×</span></div>
+      </div>
+
+      <!-- Touch joystick (mobile) -->
+      <div class="touch-pad" aria-hidden="true">
+        <button id="touch-left"   class="touch-btn">◀</button>
+        <button id="touch-thrust" class="touch-btn">▲</button>
+        <button id="touch-right"  class="touch-btn">▶</button>
+        <button id="touch-fire"   class="touch-btn fire">●</button>
+      </div>
+
+      <!-- Pause / game-over overlay -->
+      <div id="overlay" class="game-overlay" hidden>
+        <div class="overlay-card glass">
+          <h2 id="overlay-title">Paused</h2>
+          <p id="overlay-sub">Press P to resume</p>
+          <button id="overlay-action" class="overlay-btn">Resume</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right sidebar: physics toggles + reference -->
+    <aside id="dashboard" class="sim-panel glass open" role="complementary" aria-label="Physics dashboard">
+      <div class="stats-header">
+        <span class="panel-title">Physics</span>
+      </div>
+
+      <div class="tab-panels scrollbar-thin">
+        <div class="ctrl-group">
+          <div class="group-label">Render effects</div>
+          <div class="ctrl-row">
+            <label for="fx-aberr">Aberration of light</label>
+            <div class="tog-wrap">
+              <input type="checkbox" id="fx-aberr">
+              <label for="fx-aberr" class="tog"><span class="tog-thumb"></span></label>
+            </div>
+          </div>
+          <div class="ctrl-row">
+            <label for="fx-contract">Length contraction</label>
+            <div class="tog-wrap">
+              <input type="checkbox" id="fx-contract">
+              <label for="fx-contract" class="tog"><span class="tog-thumb"></span></label>
+            </div>
+          </div>
+          <div class="ctrl-row">
+            <label for="fx-doppler">Doppler tint</label>
+            <div class="tog-wrap">
+              <input type="checkbox" id="fx-doppler">
+              <label for="fx-doppler" class="tog"><span class="tog-thumb"></span></label>
+            </div>
+          </div>
+          <div class="ctrl-row">
+            <label for="fx-lightcone">Light-cone delay</label>
+            <div class="tog-wrap">
+              <input type="checkbox" id="fx-lightcone">
+              <label for="fx-lightcone" class="tog"><span class="tog-thumb"></span></label>
+            </div>
+          </div>
+          <div class="ctrl-row">
+            <label for="fx-beam">Headlight beaming (stars)</label>
+            <div class="tog-wrap">
+              <input type="checkbox" id="fx-beam">
+              <label for="fx-beam" class="tog"><span class="tog-thumb"></span></label>
+            </div>
+          </div>
+          <p class="panel-hint">All five effects act on what your ship's sensors would actually see. Time dilation always applies — see τ<sub>ship</sub> drift behind t<sub>lab</sub>.</p>
+        </div>
+
+        <div class="ctrl-group">
+          <div class="group-label">Controls</div>
+          <div class="key-row"><kbd>W</kbd><kbd>↑</kbd><span>Thrust</span></div>
+          <div class="key-row"><kbd>A</kbd><kbd>D</kbd><span>Rotate</span></div>
+          <div class="key-row"><kbd>S</kbd><kbd>↓</kbd><span>Retro-thrust</span></div>
+          <div class="key-row"><kbd>Space</kbd><span>Fire</span></div>
+          <div class="key-row"><kbd>P</kbd><span>Pause</span></div>
+          <div class="key-row"><kbd>V</kbd><span>Toggle view</span></div>
+          <div class="key-row"><kbd>R</kbd><span>Reset</span></div>
+        </div>
+
+        <div class="ctrl-group">
+          <div class="group-label">Reference</div>
+          <p class="ref-line">c &nbsp;= 600 px / s in this universe.</p>
+          <p class="ref-line">γ = (1 − β²)<sup>−½</sup></p>
+          <p class="ref-line">cos θ′ = (cos θ + β) / (1 + β cos θ)</p>
+          <p class="ref-line">D = γ (1 + β cos θ)</p>
+          <p class="ref-line">L′ = L / γ along v̂</p>
+          <p class="ref-line">τ = ∫ dt / γ</p>
+        </div>
+
+        <div class="ctrl-group">
+          <div class="group-label">Notes</div>
+          <p class="ref-line">
+            Bullets are fired as photons in the ship's frame and travel at c in the lab frame
+            (with aberrated direction). Asteroids drift sub-luminally and rotate. Your ship's
+            momentum is integrated relativistically — thrust climbs |v| toward c without ever
+            crossing it.
+          </p>
+          <p class="ref-line dim">
+            The ship-frame view uses the snapshot light-cone for each visible object; the
+            full Penrose-Terrell rotation of extended bodies is approximated by 1/γ axial
+            contraction — close enough for combat, not strictly photographic.
+          </p>
+        </div>
+      </div>
+    </aside>
+  </main>
+
+  <script src="main.js"></script>
+</body>
+
+</html>

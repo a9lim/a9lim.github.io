@@ -1308,6 +1308,16 @@ a.contact-social:hover {
     font-size: var(--font-sm);
 }
 
+.footer-copy .egg,
+.footer-copy .egg:hover,
+.footer-copy .egg:focus,
+.footer-copy .egg:visited {
+    color: inherit;
+    text-decoration: none;
+    cursor: text;
+    outline: none;
+}
+
 /* ═══════════════════════════════════
    Scroll Hint
    ═══════════════════════════════════ */
