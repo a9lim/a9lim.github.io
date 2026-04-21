@@ -264,10 +264,7 @@ a:hover { color: var(--accent-light); }
    Hero / Landing Page
    ═══════════════════════════════════ */
 #page-home.active {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    text-align: center;
+    display: block;
     padding-top: 0;
     padding-bottom: 0;
 }
@@ -1329,9 +1326,49 @@ a.contact-social:hover {
     border-radius: 0;
 }
 
+.footer-tech {
+    color: var(--text-muted);
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.02em;
+    margin: 0 0 6px;
+    line-height: 1.6;
+}
+
 .footer-copy {
     color: var(--text-muted);
     font-size: var(--font-sm);
+    margin: 0;
+}
+
+.footer-deploy {
+    color: var(--text-muted);
+}
+
+.footer-deploy-hash {
+    font-family: var(--font-mono);
+    color: var(--text-secondary);
+}
+
+.footer-deploy-hash:hover {
+    color: var(--accent);
+}
+
+.footer-hint {
+    margin: 10px 0 0;
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    opacity: 0.7;
+}
+
+.footer-hint kbd {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    padding: 1px 5px;
+    background: var(--accent-subtle);
+    color: var(--accent);
+    border-radius: var(--radius);
+    border: none;
 }
 
 .footer-copy .egg,
@@ -1893,4 +1930,646 @@ a.contact-social:hover {
 /* ─── Touch-friendly targets ─── */
 @media (pointer: coarse) {
     .carousel-dot { min-width: 44px; min-height: 44px; }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   Home — dense personal page
+   Left-aligned, info-per-square-inch high, sans body with
+   mono reserved for hashes, numbers, and stats.
+   ═══════════════════════════════════════════════════════════ */
+.home-wrap {
+    max-width: 760px;
+    margin: 0 auto;
+    padding: calc(var(--toolbar-h) + 48px) 24px 96px;
+    font-family: var(--font-sans);
+    font-size: 15px;
+    line-height: 1.6;
+    color: var(--text);
+}
+
+/* ── Head: handle + tagline + status ──────────────────────── */
+.home-head {
+    margin-bottom: 32px;
+}
+
+.home-tag {
+    color: var(--text);
+    font-size: clamp(1.4rem, 3vw, 1.75rem);
+    font-weight: 500;
+    letter-spacing: -0.01em;
+    line-height: 1.3;
+    margin: 0 0 12px;
+    text-wrap: balance;
+}
+
+.home-status {
+    margin: 0;
+    font-size: 0.95rem;
+    color: var(--text);
+}
+
+.home-status-label {
+    color: var(--text-muted);
+    margin-right: 4px;
+}
+
+.home-status-text {
+    color: var(--text);
+}
+
+/* ── Bio: tidy two-column label/value ─────────────────────── */
+.home-bio {
+    display: grid;
+    grid-template-columns: 7rem 1fr;
+    column-gap: 16px;
+    row-gap: 4px;
+    margin: 20px 0 8px;
+    font-size: 0.95rem;
+}
+
+.home-bio-k,
+.home-now-k {
+    color: var(--text-muted);
+    font-weight: 500;
+    margin: 0;
+}
+
+.home-bio-v,
+.home-now-v {
+    margin: 0;
+    color: var(--text);
+}
+
+/* ── Section ──────────────────────────────────────────────── */
+.home-section {
+    margin: 36px 0;
+}
+
+.home-h {
+    font-family: var(--font-sans);
+    font-size: 0.85rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+    margin: 0 0 14px;
+    padding-bottom: 6px;
+    position: relative;
+}
+
+.home-h::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    width: 24px;
+    height: 2px;
+    background: var(--accent);
+    border-radius: 0;
+}
+
+/* ── Now: same shape as bio ───────────────────────────────── */
+.home-now {
+    display: grid;
+    grid-template-columns: 7rem 1fr;
+    column-gap: 16px;
+    row-gap: 4px;
+    margin: 0;
+    font-size: 0.95rem;
+}
+
+/* ── Hyperfixation block ──────────────────────────────────── */
+.home-fix {
+    padding: 16px 18px;
+    background: var(--accent-subtle);
+    border-radius: var(--radius);
+}
+
+.home-fix-title {
+    font-family: var(--font-sans);
+    font-size: 1.05rem;
+    font-weight: 600;
+    margin: 0 0 8px;
+    color: var(--text);
+    letter-spacing: -0.01em;
+}
+
+.home-fix-body {
+    margin: 0 0 10px;
+    color: var(--text);
+    line-height: 1.6;
+}
+
+.home-fix-link {
+    color: var(--accent);
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+.home-fix-link::after {
+    content: ' →';
+    opacity: 0.7;
+}
+
+.home-fix-link:hover {
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+
+/* ── Sims list ────────────────────────────────────────────── */
+.home-sims {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.home-sims li {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    padding: 6px 0;
+    color: var(--text);
+}
+
+.home-sims a {
+    color: var(--accent);
+    font-weight: 600;
+}
+
+.home-sims a:hover {
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+
+.home-sims-tag {
+    display: inline-block;
+    flex: 0 0 auto;
+    padding: 2px 8px;
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    border-radius: var(--radius);
+    background: var(--accent-subtle);
+    color: var(--accent);
+    min-width: 56px;
+    text-align: center;
+}
+
+.home-sims-tag[data-tag="planned"] {
+    background: var(--bg-hover);
+    color: var(--text-muted);
+}
+
+.home-sims-desc {
+    color: var(--text-secondary);
+}
+
+.home-sims-muted {
+    color: var(--text-muted);
+}
+
+.home-more {
+    display: inline-block;
+    margin-top: 12px;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+.home-more:hover {
+    color: var(--accent);
+}
+
+/* ── Takes ────────────────────────────────────────────────── */
+.home-takes {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.home-take {
+    padding: 4px 0;
+    color: var(--text);
+    display: flex;
+    gap: 12px;
+    align-items: baseline;
+}
+
+.home-take-d {
+    color: var(--text-muted);
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    font-variant-numeric: tabular-nums;
+    flex: 0 0 auto;
+    white-space: nowrap;
+}
+
+/* ── Posts ────────────────────────────────────────────────── */
+.home-posts {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.home-post {
+    margin: 0 0 16px;
+}
+
+.home-post-link {
+    display: block;
+    color: var(--text);
+}
+
+.home-post-d {
+    color: var(--text-muted);
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    font-variant-numeric: tabular-nums;
+    margin-right: 10px;
+}
+
+.home-post-t {
+    color: var(--accent);
+    font-weight: 600;
+    font-size: 1rem;
+}
+
+.home-post-link:hover .home-post-t {
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+
+.home-post-x {
+    margin: 4px 0 0;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    line-height: 1.55;
+}
+
+/* ── Commits ──────────────────────────────────────────────── */
+.home-commits {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.home-commit {
+    padding: 4px 0;
+    color: var(--text);
+    display: flex;
+    gap: 10px;
+    align-items: baseline;
+    font-size: 0.9rem;
+}
+
+.home-commit-h {
+    color: var(--accent);
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    font-weight: 600;
+    flex: 0 0 7ch;
+}
+
+.home-commit-h:hover {
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+
+.home-commit-t {
+    color: var(--text-muted);
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    font-variant-numeric: tabular-nums;
+    flex: 0 0 5ch;
+    white-space: nowrap;
+}
+
+.home-commit-s {
+    color: var(--text-secondary);
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* ── Predictions table ────────────────────────────────────── */
+.home-pred {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+    margin: 0;
+}
+
+.home-pred thead th {
+    text-align: left;
+    color: var(--text-muted);
+    font-weight: 500;
+    font-size: 0.75rem;
+    padding: 4px 12px 8px 0;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    border: none;
+    border-bottom: 1px solid var(--border);
+}
+
+.home-pred tbody td {
+    padding: 6px 12px 6px 0;
+    color: var(--text);
+    border: none;
+    vertical-align: top;
+}
+
+.home-pred-p {
+    color: var(--accent);
+    font-weight: 600;
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+    width: 5ch;
+}
+
+.home-pred-b {
+    color: var(--text-muted);
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+    font-size: 0.85rem;
+    white-space: nowrap;
+}
+
+.home-pred-note {
+    margin: 10px 0 0;
+    color: var(--text-muted);
+    font-size: 0.8rem;
+    font-style: italic;
+}
+
+/* ── Ask me about chips ───────────────────────────────────── */
+.home-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 0 0 12px;
+}
+
+.home-chip {
+    display: inline-block;
+    padding: 3px 10px;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    background: var(--bg-hover);
+    border-radius: var(--radius);
+    cursor: default;
+    transition: background 0.15s var(--ease-out), color 0.15s var(--ease-out);
+}
+
+.home-chip:hover {
+    background: var(--accent-subtle);
+    color: var(--accent);
+}
+
+.home-chips-hint {
+    margin: 10px 0 0;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+/* ── Claude's corner ──────────────────────────────────────── */
+.home-claude {
+    padding: 16px 18px;
+    background: var(--bg-hover);
+    border-radius: var(--radius);
+    font-size: 0.95rem;
+    color: var(--text-secondary);
+    line-height: 1.6;
+}
+
+.home-claude p {
+    margin: 0 0 10px;
+}
+
+.home-claude p:last-child {
+    margin-bottom: 0;
+}
+
+.home-claude-sig {
+    color: var(--text-muted);
+    font-style: italic;
+    margin-top: 14px;
+}
+
+/* ── Stats strip ──────────────────────────────────────────── */
+.home-stats {
+    margin: 40px 0 28px;
+    padding: 14px 0;
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    text-align: center;
+    letter-spacing: 0.02em;
+}
+
+.home-stats-p {
+    color: var(--text-secondary);
+}
+
+.home-stats-sep {
+    color: var(--text-muted);
+    opacity: 0.4;
+}
+
+/* ── Scripture block (rotating daily) ─────────────────────── */
+.home-scripture {
+    margin: 32px 0 24px;
+    padding: 24px 16px;
+    text-align: center;
+}
+
+.home-scripture-q {
+    font-family: var(--font-sans);
+    font-size: 1.05rem;
+    font-style: italic;
+    color: var(--text);
+    margin: 0 0 8px;
+    line-height: 1.5;
+    text-wrap: balance;
+    padding: 0;
+    background: none;
+    border: none;
+    font-weight: 400;
+}
+
+.home-scripture-c {
+    font-family: var(--font-sans);
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    font-style: normal;
+}
+
+/* ── Doggy ────────────────────────────────────────────────── */
+.home-doggy {
+    display: block;
+    margin: 40px auto 0;
+    max-width: 120px;
+    text-align: center;
+    opacity: 0.75;
+    transition: opacity 0.25s var(--ease-out);
+}
+
+.home-doggy:hover {
+    opacity: 1;
+}
+
+.home-doggy img {
+    display: block;
+    width: 100%;
+    height: auto;
+    border-radius: var(--radius);
+}
+
+.home-doggy figcaption {
+    margin-top: 4px;
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    font-style: italic;
+    letter-spacing: 0.01em;
+}
+
+/* Home-colophon + hint are merged into .site-footer — see Footer section. */
+
+/* ── Cheatsheet overlay ───────────────────────────────────── */
+.home-cheat {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    background: color-mix(in srgb, var(--bg-canvas) 70%, transparent);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: cheatFade 0.15s var(--ease-out);
+}
+
+@keyframes cheatFade {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.home-cheat-panel {
+    max-width: 420px;
+    width: calc(100% - 40px);
+    padding: 24px 28px;
+    background: var(--bg-elevated);
+    border-radius: var(--radius);
+    outline: none;
+    font-family: var(--font-mono);
+}
+
+.home-cheat-panel:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+
+.home-cheat-h {
+    font-family: var(--font-sans);
+    font-size: 0.85rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+    margin: 0 0 16px;
+    padding-bottom: 6px;
+    position: relative;
+}
+
+.home-cheat-h::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    width: 24px;
+    height: 2px;
+    background: var(--accent);
+}
+
+.home-cheat-dl {
+    display: grid;
+    grid-template-columns: max-content 1fr;
+    column-gap: 18px;
+    row-gap: 6px;
+    margin: 0;
+    font-size: 13px;
+}
+
+.home-cheat-k {
+    margin: 0;
+}
+
+.home-cheat-k kbd {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    padding: 2px 6px;
+    background: var(--accent-subtle);
+    color: var(--accent);
+    border-radius: var(--radius);
+    border: none;
+    font-weight: 600;
+}
+
+.home-cheat-v {
+    margin: 0;
+    color: var(--text);
+    align-self: center;
+}
+
+.home-cheat-hint {
+    margin: 18px 0 0;
+    font-size: 11px;
+    color: var(--text-muted);
+    font-style: italic;
+}
+
+/* ── Mobile ───────────────────────────────────────────────── */
+@media (max-width: 600px) {
+    .home-wrap {
+        padding-left: 16px;
+        padding-right: 16px;
+        font-size: 14px;
+    }
+
+    .home-bio,
+    .home-now {
+        grid-template-columns: minmax(5.5rem, max-content) 1fr;
+        column-gap: 12px;
+    }
+
+    .home-sims li {
+        flex-wrap: wrap;
+        row-gap: 2px;
+    }
+
+    .home-sims-desc,
+    .home-sims-muted {
+        flex-basis: 100%;
+        padding-left: 66px;
+    }
+
+    .home-commit {
+        flex-wrap: wrap;
+    }
+
+    .home-commit-s {
+        flex-basis: 100%;
+        padding-left: calc(7ch + 5ch + 20px);
+        white-space: normal;
+    }
+
+    .home-pred {
+        font-size: 0.85rem;
+    }
+
+    .home-pred thead th,
+    .home-pred tbody td {
+        padding-right: 8px;
+    }
 }

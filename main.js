@@ -10,6 +10,7 @@ import { initCardTilt } from './src/card-effects.js';
 import { showBlogListing, showBlogPost } from './src/blog.js';
 import { PROJECTS } from './src/projects.js';
 import { renderProjectCards } from './src/projects-page.js';
+import { initHome } from './src/home.js';
 
 // ─── DOM Cache ───
 // Passed into subsystem init functions so they never call getElementById themselves
@@ -48,3 +49,4 @@ initShader($);
 initScrollReveal();
 initCardTilt('.project-card');
 initCardTilt('.contact-section');
+initHome();

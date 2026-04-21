@@ -410,6 +410,69 @@ for (const p of posts) {
 writeFileSync(join(ROOT, 'llms-full.txt'), llmsParts.join('\n'));
 console.log('llms-full.txt: generated');
 
+// --- generate home-data.json (baked-in commit feed + live-ish stats) ---
+
+function gitCommits(n) {
+  try {
+    const raw = execFileSync(
+      'git',
+      ['log', `-${n}`, '--format=%h\x1f%aI\x1f%s'],
+      { cwd: ROOT, encoding: 'utf8' }
+    ).trim();
+    if (!raw) return [];
+    return raw.split('\n').map(line => {
+      const [hash, iso, subject] = line.split('\x1f');
+      return { hash, iso, subject };
+    });
+  } catch { return []; }
+}
+
+function countScriptureChapters() {
+  let total = 0;
+  try {
+    for (const workId of workIds) {
+      const manifest = readJSON(`scripture/data/${workId}/manifest.json`);
+      for (const book of manifest.books) total += book.chapters;
+    }
+  } catch { /* ignore */ }
+  return total;
+}
+
+function countSourceLines() {
+  try {
+    const files = execFileSync(
+      'git',
+      ['ls-files', '*.js', '*.css', '*.html'],
+      { cwd: ROOT, encoding: 'utf8' }
+    ).trim().split('\n').filter(Boolean);
+    let total = 0;
+    for (const f of files) {
+      try {
+        total += readText(f).split('\n').length;
+      } catch { /* ignore */ }
+    }
+    return total;
+  } catch { return 0; }
+}
+
+const commits = gitCommits(6);
+const lastDeploy = commits[0] || null;
+const homeData = {
+  generatedAt: new Date().toISOString(),
+  lastDeploy,
+  commits,
+  stats: {
+    sims: 5,
+    posts: posts.length,
+    scriptureWorks: workIds.length,
+    scriptureChapters: countScriptureChapters(),
+    sourceLines: countSourceLines(),
+  },
+};
+
+writeFileSync(join(ROOT, 'home-data.json'), JSON.stringify(homeData, null, 2) + '\n');
+console.log(`home-data.json: ${commits.length} commits, ${homeData.stats.scriptureChapters} scripture chapters, ${homeData.stats.sourceLines} source lines`);
+
 // --- build resume.pdf via tectonic (skips gracefully if absent) ---
 
 const resumeBuild = spawnSync('bash', [join(ROOT, 'resume/build.sh')], { stdio: 'inherit' });

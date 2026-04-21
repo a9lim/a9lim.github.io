@@ -1,0 +1,47 @@
+{
+  "generatedAt": "2026-04-21T22:29:14.303Z",
+  "lastDeploy": {
+    "hash": "5effe2c",
+    "iso": "2026-04-21T12:19:46-07:00",
+    "subject": "feat: add LaTeX resume PDF, swap Shannon for Kenoma and Rlaif"
+  },
+  "commits": [
+    {
+      "hash": "5effe2c",
+      "iso": "2026-04-21T12:19:46-07:00",
+      "subject": "feat: add LaTeX resume PDF, swap Shannon for Kenoma and Rlaif"
+    },
+    {
+      "hash": "b38fa25",
+      "iso": "2026-04-18T22:05:26-07:00",
+      "subject": "content: rewrite all READMEs in a9lim voice"
+    },
+    {
+      "hash": "244a875",
+      "iso": "2026-04-17T04:24:31-07:00",
+      "subject": "chore: broaden node_modules ignore, regroup docs/"
+    },
+    {
+      "hash": "de4e3b7",
+      "iso": "2026-04-17T00:06:25-07:00",
+      "subject": "content: further voice pass on site copy, resume, and blog posts"
+    },
+    {
+      "hash": "7d8daa0",
+      "iso": "2026-04-16T23:45:48-07:00",
+      "subject": "feat: add /asteroids easter egg — relativistic Asteroids game"
+    },
+    {
+      "hash": "5dd9dd3",
+      "iso": "2026-04-16T22:14:49-07:00",
+      "subject": "docs: audit CLAUDE.md coverage"
+    }
+  ],
+  "stats": {
+    "sims": 5,
+    "posts": 3,
+    "scriptureWorks": 16,
+    "scriptureChapters": 2724,
+    "sourceLines": 14438
+  }
+}
