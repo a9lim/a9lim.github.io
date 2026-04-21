@@ -4,7 +4,7 @@ url: https://a9l.im
 description: Free interactive educational simulations for physics, biology, finance, political science, and sacred texts.
 language: en
 license: AGPL-3.0
-updated: 2026-04-05
+updated: 2026-04-21
 ---
 
 # a9l.im
@@ -30,7 +30,8 @@ updated: 2026-04-05
 ## GitHub Projects
 
 - [Saklas](https://github.com/a9lim/saklas): Activation steering and trait monitoring for HuggingFace transformers
-- [Shannon](https://github.com/a9lim/shannon): Autonomous AI agent for Discord and Signal
+- [Kenoma](https://github.com/a9lim/kenoma): Fake shell that hallucinates command output from raw LLM completion
+- [Rlaif](https://github.com/a9lim/rlaif): Single-user MCP server that exposes a PiShock collar as an agent tool
 - [Raiko](https://github.com/a9lim/Raiko): Discord music and chat bot
 - [Faithful](https://github.com/a9lim/faithful): Discord chatbot emulating source material
 - [Catppuccin for SDDM](https://github.com/catppuccin/sddm): Soothing pastel theme for SDDM

@@ -1,0 +1,194 @@
+% =====================================================================
+% a9lim — resume
+% Custom XeLaTeX template matching a9l.im aesthetic:
+%   sharp geometric, no borders, accent-red line accents, Recursive font.
+% Build: tectonic resume.tex   (output: resume.pdf)
+% =====================================================================
+
+\documentclass[9pt,a4paper]{extarticle}
+
+\usepackage[a4paper, top=14mm, bottom=14mm, left=15mm, right=15mm]{geometry}
+\usepackage{fontspec}
+\usepackage{xcolor}
+\usepackage{titlesec}
+\usepackage{enumitem}
+\usepackage{hyperref}
+\usepackage{parskip}
+\usepackage{array}
+\usepackage{tabularx}
+
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{2pt}
+
+% --- Colors (black & white; greys mirror shared-tokens.js light palette) ---
+\definecolor{accent}{HTML}{000000}
+\definecolor{text}{HTML}{000000}
+\definecolor{textsec}{HTML}{4B4D53}
+\definecolor{textmuted}{HTML}{75777C}
+
+\color{text}
+
+% --- Fonts (Recursive, extracted static instances) ---
+\setmainfont{Recursive}[
+  Path           = fonts/,
+  Extension      = .ttf,
+  UprightFont    = *-Regular,
+  BoldFont       = *-Bold,
+  ItalicFont     = *-Italic,
+  BoldItalicFont = *-BoldItalic,
+  Ligatures      = TeX,
+]
+\setmonofont{Recursive-Mono}[
+  Path      = fonts/,
+  Extension = .ttf,
+]
+
+% --- Hyperlinks ---
+\hypersetup{
+  colorlinks = true,
+  urlcolor   = accent,
+  linkcolor  = accent,
+  pdftitle   = {a9lim — Resume},
+  pdfauthor  = {a9lim},
+  pdfsubject = {Resume},
+  pdfkeywords = {a9lim, resume, developer, simulations, JavaScript, Cloudflare, Claude},
+}
+
+% --- Section headings: accent-colored rule below (line accent, not border) ---
+\titleformat{\section}
+  {\large\bfseries\color{text}}
+  {}{0pt}
+  {}
+  [\vspace{2pt}{\color{accent}\rule{\linewidth}{1.2pt}}]
+\titlespacing*{\section}{0pt}{10pt}{4pt}
+
+% --- Job entry: bold title left, muted dates right ---
+\newcommand{\role}[2]{%
+  \par\vspace{2pt}%
+  \noindent\begin{tabularx}{\linewidth}{@{}X r@{}}
+    \textbf{#1} & \textcolor{textsec}{#2} \\
+  \end{tabularx}%
+  \par\vspace{-4pt}%
+}
+
+% --- Bullet list ---
+\setlist[itemize]{leftmargin=12pt, itemsep=0.5pt, topsep=1pt, parsep=0pt}
+
+% --- Header (name + contact) ---
+\newcommand{\resumeheader}{%
+  {\Huge\bfseries a9lim}\\[3pt]
+  \textcolor{textsec}{Singapore \quad\textbar\quad
+    \href{mailto:mx@a9l.im}{mx@a9l.im} \quad\textbar\quad
+    \href{https://github.com/a9lim}{github.com/a9lim} \quad\textbar\quad
+    \href{https://twitter.com/_a9lim}{@\_a9lim} \quad\textbar\quad
+    @a9lim (Discord)}%
+  \par\vspace{2pt}%
+  {\color{accent}\rule{\linewidth}{1.2pt}}%
+  \par\vspace{4pt}%
+}
+
+% --- Skill row ---
+\newcommand{\skillrow}[2]{%
+  \noindent\begin{tabularx}{\linewidth}{@{} >{\bfseries}p{0.22\linewidth} X @{}}
+    #1 & #2 \\
+  \end{tabularx}%
+  \par\vspace{2pt}%
+}
+
+% =====================================================================
+\begin{document}
+\pagestyle{empty}
+
+\resumeheader
+
+\section*{Profile}
+I'm a Singaporean developer building interactive simulations and tools at
+\href{https://a9l.im}{a9l.im}. Everything is vanilla JS that I write with Claude.
+I'm interested in freelance and collaboration, especially DIY stuff like research
+tools and browser experiments.
+
+\section*{Experience}
+
+\role{Independent Developer --- \href{https://a9l.im}{a9l.im}}{Feb 2026 -- Present}
+\begin{itemize}
+  \item Built and maintain a portfolio of open-source interactive simulations and tools (see Selected Projects below) plus the shared design system and component library used across all of them --- vanilla JavaScript, no frameworks, no build pipeline, no transpiler.
+  \item Architected the SSR layer on Cloudflare Workers + Assets: per-route HTMLRewriter injection, edge-rendered markdown, structured data, per-route security headers, and Analytics Engine logging.
+  \item Maintains the entire stack solo, infrastructure to typography, in collaboration with Claude.
+\end{itemize}
+
+\role{SDDM Theme Maintainer --- \href{https://github.com/catppuccin/sddm}{Catppuccin}}{2025 -- Present}
+\begin{itemize}
+  \item Led rewrite and modernization of Catppuccin's SDDM display manager theme in QtQuick.
+  \item Implemented dynamic accent color and per-user icon integration.
+  \item Automated theme generation across the four Catppuccin flavors to streamline maintenance.
+  \item Designed vector backgrounds and user iconography.
+\end{itemize}
+
+\section*{Selected Projects}
+
+\role{\href{https://github.com/a9lim/saklas}{Saklas}}{PyPI \textperiodcentered{} Python}
+\begin{itemize}
+  \item Activation steering and trait monitoring for HuggingFace transformers --- extracts contrastive steering vectors and adds them to hidden states at generation time, no fine-tuning required.
+  \item Three interfaces: a terminal UI with live alpha knobs and probe sparklines, an HTTP server speaking both OpenAI \texttt{/v1/*} and Ollama \texttt{/api/*} wire formats on the same port, and a Python API for scripted experiments.
+  \item Ships 21 pre-built probes scoring affect, epistemic stance, register, and alignment in-flight; tested on Qwen, Gemma, Ministral, gpt-oss, Llama, and GLM.
+  \item Implements the contrastive-PCA reading procedure from \href{https://arxiv.org/abs/2310.01405}{Zou et al.\ (2023)}; published to PyPI under AGPL-3.0 with CI, type checking, and llama.cpp GGUF interchange.
+\end{itemize}
+
+\role{\href{https://a9l.im/geon}{Geon} --- Relativistic Particle Physics}{JavaScript \textperiodcentered{} WebGPU}
+\begin{itemize}
+  \item Real-time N-body simulator running on WebGPU compute shaders, modeling 11 force types --- Newtonian gravity, gravitomagnetism, Coulomb, Lorentz, Yukawa, Higgs and axion field couplings, Hubble expansion, 1PN general-relativistic corrections, spin-orbit, and radiation reaction.
+  \item Barnes-Hut tree acceleration for $O(N \log N)$ scaling; Boris integrator preserving phase-space volume.
+  \item Black-hole mode with Kerr-Newman event horizons, Hawking radiation, Schwinger pair-production discharge, and superradiant axion clouds. Nineteen curated presets demonstrate Keplerian orbits, Rutherford scattering, Higgs wells, gravitational-wave inspiral, and more.
+\end{itemize}
+
+\role{\href{https://a9l.im/cyano}{Cyano} --- Cellular Metabolism}{JavaScript}
+\begin{itemize}
+  \item Interactive biochemistry simulator covering twelve metabolic pathways --- glycolysis, gluconeogenesis, PPP, Krebs, beta-oxidation, fatty acid synthesis, the Calvin cycle, the light reactions, fermentation, the urea cycle, and amino acid catabolism --- connected through shared metabolite pools.
+  \item 14-complex electron transport chain with proton motive force, oxidative phosphorylation, uncoupling, leak, and reactive oxygen species generation; allosteric regulation gates every reaction (PFK, PDH, ICDH).
+  \item Six organism presets including a cancer-cell preset that demonstrates the Warburg effect.
+\end{itemize}
+
+\role{\href{https://a9l.im/shoals}{Shoals} --- Options Trading}{JavaScript}
+\begin{itemize}
+  \item Derivatives pricing simulator combining Heston stochastic volatility and Merton jump diffusion with a Vasicek mean-reverting interest rate. American options priced via 128-step Cox-Ross-Rubinstein binomial tree with term-structure volatility, moneyness skew, and discrete dividends.
+  \item 25-strike options chain with real-time Greeks, multi-leg strategy builder (spreads, straddles, condors, butterflies), payoff diagrams, and portfolio-level margin tracking.
+  \item Narrative event engine with 400+ curated scenarios --- earnings, monetary policy, geopolitics, sector rotation, technical signals, black swans --- chained via a Poisson scheduler with trait-aware likelihood weighting.
+\end{itemize}
+
+\role{\href{https://a9l.im/gerry}{Gerry} --- Redistricting \& Electoral Fairness}{JavaScript}
+\begin{itemize}
+  \item Interactive gerrymandering simulator on a procedural hex-tile electorate. Players paint districts and evaluate them against six fairness metrics: efficiency gap, partisan symmetry, competitive-district count, Polsby-Popper compactness, contiguity, and majority-minority districts.
+  \item Automated modes include pack-and-crack and a simulated-annealing fair-draw optimizer; Monte Carlo election stress tests run thousands of simulated elections with turnout noise to evaluate map robustness.
+  \item Procedural maps generated via seeded Perlin noise with configurable urban clustering and minority density, reproducible by URL hash.
+\end{itemize}
+
+\role{\href{https://a9l.im/scripture/}{Scripture} --- Sacred Text Reader}{JavaScript}
+\begin{itemize}
+  \item Browser-based reader for sixteen sacred texts spanning Christian, Islamic, LDS, Confucian, Taoist, Shinto, Zoroastrian, Buddhist, Finnish, and Norse traditions --- $\sim$50\,MB of static JSON, loaded on demand per chapter.
+  \item Full-text search across all sixteen works, TF-IDF concordance for related passage discovery, verse-linked notes, text-to-speech, and deep linking to any verse via URL.
+  \item Edge-SSR'd verse content with per-chapter \texttt{Chapter} JSON-LD and per-verse \texttt{Quotation} structured data so the corpus is crawlable without JavaScript execution.
+\end{itemize}
+
+\section*{Education}
+
+\role{University of California, San Diego}{March 2026}
+B.S.\ in Mathematics \textperiodcentered{} GPA 3.75 \textperiodcentered{} GRE 335 (170Q, 165V)
+
+\role{Singapore American School}{Class of 2023}
+Summa Cum Laude \textperiodcentered{} GPA 4.50
+
+\section*{Skills}
+
+\skillrow{Building with agentic AI}{Daily driver: Claude Code. Comfortable directing, reviewing, and integrating large volumes of AI-generated code at production scale.}
+
+\skillrow{Languages}{JavaScript (vanilla, ES modules, Canvas, WebGL, GLSL), Python (NumPy, Matplotlib, ML tooling), Java, QtQuick / QML, LaTeX, HTML, CSS.}
+
+\skillrow{Web \& infrastructure}{Cloudflare Workers, Workers Assets, Analytics Engine, edge SSR via HTMLRewriter, structured data (JSON-LD, schema.org, OpenGraph), self-hosted typography, no-build pipelines.}
+
+\skillrow{Other}{Technical writing, vector graphics, soldering, Spanish (novice), conlang construction.}
+
+\section*{Open to}
+Anyone who wants to work with me on something, reach out at
+\href{mailto:mx@a9l.im}{mx@a9l.im} or @a9lim on Discord.
+
+\end{document}

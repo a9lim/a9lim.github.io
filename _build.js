@@ -2,7 +2,7 @@
 'use strict';
 
 const { readFileSync, writeFileSync, existsSync } = require('fs');
-const { execFileSync } = require('child_process');
+const { execFileSync, spawnSync } = require('child_process');
 const { join } = require('path');
 
 const ROOT = __dirname;
@@ -409,3 +409,10 @@ for (const p of posts) {
 
 writeFileSync(join(ROOT, 'llms-full.txt'), llmsParts.join('\n'));
 console.log('llms-full.txt: generated');
+
+// --- build resume.pdf via tectonic (skips gracefully if absent) ---
+
+const resumeBuild = spawnSync('bash', [join(ROOT, 'resume/build.sh')], { stdio: 'inherit' });
+if (resumeBuild.status !== 0) {
+  console.error('resume.pdf: build failed (exit ' + resumeBuild.status + ')');
+}

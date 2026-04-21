@@ -20,6 +20,7 @@
     "/.well-known/*",
     "/*.txt",
     "/*.md",
+    "/*.pdf",
     "/scripture/*.js",
     "/scripture/*.css",
     "/scripture/*.md",

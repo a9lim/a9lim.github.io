@@ -1086,7 +1086,7 @@ a.contact-social:hover {
     bottom: 0;
     width: 48px;
     height: 2px;
-    background: var(--accent);
+    background: #E11107;
 }
 
 .resume-name {
@@ -1118,6 +1118,32 @@ a.contact-social:hover {
 
 .resume-meta a:hover {
     color: var(--accent);
+}
+
+.resume-download {
+    margin: 16px 0 0;
+    font-family: var(--font-mono);
+    font-size: var(--font-sm);
+}
+
+.resume-download a {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--accent);
+    text-decoration: none;
+    transition: color 0.2s var(--ease-out), letter-spacing 0.3s var(--ease-out);
+}
+
+.resume-download a:hover {
+    color: var(--accent-light);
+    letter-spacing: 0.02em;
+}
+
+.resume-download [data-icon] {
+    display: inline-flex;
+    align-items: center;
+    pointer-events: none;
 }
 
 .resume-section {
