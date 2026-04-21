@@ -1,11 +1,16 @@
 {
-  "generatedAt": "2026-04-21T22:29:14.303Z",
+  "generatedAt": "2026-04-21T22:30:11.606Z",
   "lastDeploy": {
-    "hash": "5effe2c",
-    "iso": "2026-04-21T12:19:46-07:00",
-    "subject": "feat: add LaTeX resume PDF, swap Shannon for Kenoma and Rlaif"
+    "hash": "887c889",
+    "iso": "2026-04-21T15:30:02-07:00",
+    "subject": "feat: rebuild homepage as dense personal page; voice pass on projects"
   },
   "commits": [
+    {
+      "hash": "887c889",
+      "iso": "2026-04-21T15:30:02-07:00",
+      "subject": "feat: rebuild homepage as dense personal page; voice pass on projects"
+    },
     {
       "hash": "5effe2c",
       "iso": "2026-04-21T12:19:46-07:00",
@@ -30,11 +35,6 @@
       "hash": "7d8daa0",
       "iso": "2026-04-16T23:45:48-07:00",
       "subject": "feat: add /asteroids easter egg — relativistic Asteroids game"
-    },
-    {
-      "hash": "5dd9dd3",
-      "iso": "2026-04-16T22:14:49-07:00",
-      "subject": "docs: audit CLAUDE.md coverage"
     }
   ],
   "stats": {
@@ -42,6 +42,6 @@
     "posts": 3,
     "scriptureWorks": 16,
     "scriptureChapters": 2724,
-    "sourceLines": 14438
+    "sourceLines": 14787
   }
 }
