@@ -2013,19 +2013,6 @@ a.contact-social:hover {
     text-transform: uppercase;
     color: var(--text-secondary);
     margin: 0 0 14px;
-    padding-bottom: 6px;
-    position: relative;
-}
-
-.home-h::after {
-    content: '';
-    position: absolute;
-    left: 0;
-    bottom: 0;
-    width: 24px;
-    height: 2px;
-    background: var(--accent);
-    border-radius: 0;
 }
 
 /* ── Now: same shape as bio ───────────────────────────────── */
