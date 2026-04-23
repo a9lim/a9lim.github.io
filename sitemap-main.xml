@@ -91,18 +91,6 @@
     </image:image>
   </url>
   <url>
-    <loc>https://a9l.im/blog/how-saklas-works</loc>
-    <lastmod>2026-04-17</lastmod>
-    <changefreq>yearly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://a9l.im/blog/how-geon-works</loc>
-    <lastmod>2026-04-22</lastmod>
-    <changefreq>yearly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  <url>
     <loc>https://a9l.im/blog/hello-world</loc>
     <lastmod>2026-04-22</lastmod>
     <changefreq>yearly</changefreq>

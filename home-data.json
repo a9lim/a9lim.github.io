@@ -1,11 +1,16 @@
 {
-  "generatedAt": "2026-04-23T00:36:49.554Z",
+  "generatedAt": "2026-04-23T00:44:14.556Z",
   "lastDeploy": {
-    "hash": "01c334a",
-    "iso": "2026-04-22T17:10:36-07:00",
-    "subject": "content: revise about/resume/posts voice, drop AGENTS.md"
+    "hash": "27bc439",
+    "iso": "2026-04-22T17:37:18-07:00",
+    "subject": "refactor: purge carousel, world map, and inspire dead code"
   },
   "commits": [
+    {
+      "hash": "27bc439",
+      "iso": "2026-04-22T17:37:18-07:00",
+      "subject": "refactor: purge carousel, world map, and inspire dead code"
+    },
     {
       "hash": "01c334a",
       "iso": "2026-04-22T17:10:36-07:00",
@@ -30,18 +35,13 @@
       "hash": "c1c9844",
       "iso": "2026-04-21T15:30:17-07:00",
       "subject": "chore: regenerate home-data.json after homepage rebuild commit"
-    },
-    {
-      "hash": "887c889",
-      "iso": "2026-04-21T15:30:02-07:00",
-      "subject": "feat: rebuild homepage as dense personal page; voice pass on projects"
     }
   ],
   "stats": {
     "sims": 5,
-    "posts": 3,
+    "posts": 1,
     "scriptureWorks": 16,
     "scriptureChapters": 2724,
-    "sourceLines": 13407
+    "sourceLines": 13402
   }
 }

@@ -1,21 +1,5 @@
 [
   {
-    "slug": "how-saklas-works",
-    "title": "How Saklas Works",
-    "date": "2026-04-12",
-    "updated": "2026-04-13",
-    "tag": ["ai", "interpretability", "python"],
-    "excerpt": "Activation steering lets you shift an LLM's behavior by adding direction vectors to its hidden states. Saklas is an open-source toolkit for extracting and applying them."
-  },
-  {
-    "slug": "how-geon-works",
-    "title": "How Geon Works",
-    "date": "2026-04-07",
-    "updated": "2026-04-07",
-    "tag": ["physics", "graphics"],
-    "excerpt": "A technical walkthrough of the particle physics simulator — Boris integration, Barnes-Hut trees, scalar fields, and WebGPU compute."
-  },
-  {
     "slug": "hello-world",
     "title": "Hello, World",
     "date": "2026-02-26",

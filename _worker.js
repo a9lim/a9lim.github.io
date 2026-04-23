@@ -226,11 +226,6 @@ const ROUTE_META = {
 };
 
 const BLOG_META = {
-  'how-saklas-works': {
-    title: 'How Saklas Works \u2014 a9l.im',
-    desc: 'Activation steering lets you shift an LLM\u2019s behavior by adding direction vectors to its hidden states. Saklas is an open-source toolkit for extracting and applying them.',
-    ogTitle: 'How Saklas Works \u2014 a9l.im',
-  },
   'hello-world': {
     title: 'Hello, World \u2014 a9l.im',
     desc: 'First post on the a9l.im blog.',
