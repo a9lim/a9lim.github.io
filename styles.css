@@ -741,7 +741,7 @@ a:hover { color: var(--accent-light); }
 
 /* Rendered markdown from parseMarkdown() — scoped to .blog-content */
 .blog-content {
-    max-width: 680px;
+    max-width: 1080px;
     line-height: 1.75;
     color: var(--text-secondary);
 }
@@ -1017,7 +1017,7 @@ a:hover { color: var(--accent-light); }
     top: 0.85em;
     width: 10px;
     height: 1px;
-    background: var(--accent);
+    background: var(--text-muted);
 }
 
 .contact-socials {
@@ -1540,7 +1540,7 @@ a.contact-social:hover {
    mono reserved for hashes, numbers, and stats.
    ═══════════════════════════════════════════════════════════ */
 .home-wrap {
-    max-width: 760px;
+    max-width: 1080px;
     margin: 0 auto;
     padding: calc(var(--toolbar-h) + 48px) 24px 96px;
     font-family: var(--font-sans);

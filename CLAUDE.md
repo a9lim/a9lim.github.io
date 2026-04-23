@@ -31,7 +31,7 @@ Key shared modules:
 
 ## Prose Voice
 
-User-facing prose (blog posts in `posts/`, the `/about` section, the `/resume` Profile blurb, hero tagline + sub, contact blurbs) is written in a9lim's voice. When rewriting or drafting this content, invoke the `/a9writing` skill — it has the full voice rubric, anti-patterns, and before/after examples. Scope excludes sim `about.md` files and the `<details class="edu-content">` sections in each sim's `index.html` (those stay in technical-reference register). Functional resume bullets also stay action-verb-led unless explicitly asked otherwise.
+User-facing prose (blog posts in `posts/`, the `/about` section, the `/resume` Profile blurb, homepage copy including `home.json` content, contact blurbs) is written in a9lim's voice. When rewriting or drafting this content, invoke the `/writing` skill — it has the full voice rubric, anti-patterns, and before/after examples. Scope excludes sim `about.md` files and the `<details class="edu-content">` sections in each sim's `index.html` (those stay in technical-reference register). Functional resume bullets also stay action-verb-led unless explicitly asked otherwise.
 
 ## Running Locally
 
@@ -48,24 +48,25 @@ Single-page portfolio site. Path-based SPA router (`/`, `/projects`, `/blog`, `/
 - **SEO injection**: Per-route `<title>`, `<meta description>`, OG tags, `twitter:title`/`twitter:description`, `article:published_time`/`article:modified_time`/`article:author`/`article:tag` (blog posts — tags support arrays), canonical URLs, `hreflang="en"` + `hreflang="x-default"` self-referential tags, `BlogPosting` + `BreadcrumbList` JSON-LD (blog posts — includes `wordCount`, `image`, `articleSection`, `speakable`, `articleBody` truncated to ~500 chars), `Blog` + `ItemList` JSON-LD (`/blog`), `CollectionPage` + `ItemList` JSON-LD (`/projects`, `/scripture/`), `Person` JSON-LD (`/about` — includes `jobTitle`, `hasOccupation` with SOC code, `makesOffer`), `Book` + `translationOfWork` + `sameAs` + `mentions` + `author` + `ReadAction` + `SearchAction` + `Dataset` JSON-LD (scripture work-level — includes `license`, `contentRating`, and work-scoped search), `Chapter` + `BreadcrumbList` + `Quotation` JSON-LD (scripture chapters — includes `@id`, `position`, section headings with `aria-label`, and first-verse Quotation schema for crawlers), `Quotation` + `author` + `mentions` JSON-LD (verse deep links — includes `@id`, `url`, `inLanguage`, `position`; inherits `WORK_MENTIONS` entities from parent work). `SiteNavigationElement` JSON-LD is injected on all root SPA routes. All entities have `@id` URIs for knowledge graph disambiguation. Visible breadcrumb HTML is SSR'd for `/projects`, `/blog`, `/about` (targeting `#breadcrumb` element in root `index.html`) and all scripture routes.
 - **Security headers** (CSP, HSTS, COOP, etc.) via the `secure()` wrapper — `_headers` only covers static assets. Worker also sets `Vary: Accept-Encoding` and rejects non-GET/HEAD with 405. Scripture manifest/chapter fetches are wrapped in a 2-second timeout (`timedFetch`) to prevent SSR hangs.
 
-Static assets are served directly by the asset layer before the Worker runs (`html_handling: "drop-trailing-slash"`). CDN caching is split from browser caching via `Cloudflare-CDN-Cache-Control`: the CDN caches Worker HTML for 1 hour and static assets indefinitely (purged on deploy), while browsers use short TTLs. Analytics Engine (`VIEWS` binding) logs page views server-side via `waitUntil()` with pathname, country, referer, user-agent, city, and ASN. Speculation Rules in `index.html` prefetch and prerender SPA routes. WebGL geometric shader background (dot grid + topographic contour lines with accent hotspots), project carousel, blog with markdown rendering, SVG world map with animated arc.
+Static assets are served directly by the asset layer before the Worker runs (`html_handling: "drop-trailing-slash"`). CDN caching is split from browser caching via `Cloudflare-CDN-Cache-Control`: the CDN caches Worker HTML for 1 hour and static assets indefinitely (purged on deploy), while browsers use short TTLs. Analytics Engine (`VIEWS` binding) logs page views server-side via `waitUntil()` with pathname, country, referer, user-agent, city, and ASN. Speculation Rules in `index.html` prefetch and prerender SPA routes. WebGL geometric shader background (dot grid + topographic contour lines with accent hotspots), dense personal homepage hydrated from `home-data.json`, projects grid, blog with markdown rendering.
 
 ## Architecture
 
 - `main.js` creates `$` DOM cache, passed to all init functions. Modules never call `getElementById` for shared elements.
-- `src/projects.js` exports `PROJECTS` array — single source of truth for carousel and projects page. **Also duplicated** as `PROJECTS_SSR` in `_worker.js` for crawler SSR — update both when adding/editing projects.
+- `src/projects.js` exports `PROJECTS` array — single source of truth for the `/projects` grid. **Also duplicated** as `PROJECTS_SSR` in `_worker.js` for crawler SSR — update both when adding/editing projects.
 - `src/markdown.js` is the client-side markdown parser. **Also duplicated** as `mdEsc`/`mdInline`/`renderMarkdown` in `_worker.js` (blog SSR) and `_build.js` (feed generation) — update all three when changing the parser.
+- `src/home.js` populates the homepage (Now, Hyperfixation, Posts, Commits, Predictions, Chips, Stats, rotating Scripture) by fetching `/home-data.json`. The static shell (bio `<dl>`, sims list, Claude's corner, doggy, tagline) is inlined in `index.html`.
+- `home.json` is the hand-edited source for dynamic homepage content. `home-data.json` is the build artifact — merges `home.json` with recent git commits, source-line stats, and scripture chapter count via `_build.js`. The live site fetches `home-data.json`, not `home.json`. Edit `home.json` → run `node _build.js` → commit both. The `#home-fix-label` span in `index.html` is an SSR fallback; client JS overrides it with `home.json.hyperfixation.label` on hydration, so update both if you want crawlers to see the new label.
 - `shared-tokens.js` is a synchronous `<script>` tag (no `defer`) — it must run before CSS parses to inject CSS custom properties. All other `shared-*.js` use `defer`. Both expose globals on `window`. ES6 modules access these directly. Converting them to modules would break all consumers.
 
 ## Image Generation
 
 ```bash
 node og/generate.js      # OG images (1200×630) → each project's og-image.webp + PWA icons (192/512px PNG)
-node cards/generate.js   # Card images (1920×1200) → img/{project}.webp
-node _build.js           # Sitemap, feeds, llms-full.txt (see below)
+node _build.js           # Sitemap, feeds, llms-full.txt, home-data.json (see below)
 ```
 
-Both require Puppeteer (installed in `og/` and `cards/`). Source HTML in `og/` and `cards/` respectively — self-contained pages with hardcoded colors, no shared imports. OG images are WebP (quality 90). PWA icons are PNG with transparent background and `#e11107` logo fill (`og/icon.html`). Each `index.html` references its `og-image.webp` via `<meta property="og:image">` with absolute `https://a9l.im/` URLs. Card images are referenced by `src/projects.js` for the carousel and projects page.
+`og/generate.js` requires Puppeteer (installed in `og/`). Source HTML in `og/` — self-contained pages with hardcoded colors, no shared imports. OG images are WebP (quality 90). PWA icons are PNG with transparent background and `#e11107` logo fill (`og/icon.html`). Each `index.html` references its `og-image.webp` via `<meta property="og:image">` with absolute `https://a9l.im/` URLs.
 
 ## Gotchas
 
@@ -90,11 +91,6 @@ This applies to all `@id` URIs in JSON-LD (`_worker.js` WORK_SCHEMA/WORK_MENTION
 
 Geometric dual-layer shader (dot grid substrate + topographic contour isolines with accent hotspots at contour density peaks). Uses `OES_standard_derivatives` for `dFdx`/`dFdy` density detection. Angular vignette (corner emphasis, not radial). Not a continuous loop — renders on scroll/resize/theme-change, auto-stops after 1s of inactivity. New scroll-reactive elements need `requestRender()` or a scroll/resize event dispatch.
 
-### Carousel
-
-- `.carousel-track` must NOT have `overflow: hidden` — it would move the clipping boundary with `translateX`
-- Mobile (<=900px) sets `transform: none !important` and enables native scroll-snap
-
 ### Specificity
 
 - `.fade-in.visible` (0,2,0) beats `.project-card:hover` (0,1,1). Hover selectors must include `.visible` (e.g., `.my-element.visible:hover`)
@@ -111,13 +107,14 @@ All project sidebars now use `.sidebar-tabs` inside `.stats-header` instead of a
 - The sole `<h1>` is the hero tagline — navbar brand is a `<span>` for heading hierarchy
 - Blog fetches `/posts.json` and `/posts/{slug}.md` via absolute URLs. The Worker also fetches these for SSR — slug validation rejects `/` and `..` to prevent path traversal.
 - `fonts/` contains a single self-hosted woff2: Recursive variable font (5 axes: wght, MONO, CASL, slnt, CRSV). `fonts/fonts.css` has the `@font-face` declaration. CSP allows `font-src 'self'` only — no external font domains. Lato, Merriweather, and Crimson Text have been removed.
-- `_build.js` generates six files — run before deploy. Requires git history for `<lastmod>`:
+- `_build.js` generates seven files — run before deploy. Requires git history for `<lastmod>` and for the homepage commit feed:
   - `sitemap.xml` — `<sitemapindex>` pointing to `sitemap-main.xml` and `sitemap-scripture.xml`
-  - `sitemap-main.xml` — root routes, project routes, blog, sim routes with `<image:image>` tags
+  - `sitemap-main.xml` — root routes, project routes, blog, sim routes with `<image:image>` tags (OG images only; card images removed)
   - `sitemap-scripture.xml` — 2740+ scripture work-level (priority 0.7) and chapter (priority 0.65) URLs with git-dated `<lastmod>` and `<changefreq>`
   - `feed.xml` — RSS 2.0 with `content:encoded` full HTML from rendered markdown, `lastBuildDate` from most recent post (not build date), `<channel><image>`, `<managingEditor>`, `<ttl>60</ttl>`, uses `posts.json` `excerpt` for `<description>`
   - `feed.atom` — Atom feed with same rendered content, `<updated>` uses `p.updated || p.date`, per-entry `<author>` and `<category>` elements
   - `llms-full.txt` — concatenated markdown of all project `about.md` files and blog posts (for LLM consumption). Links back to `llms.txt`.
+  - `home-data.json` — merges `home.json` with recent git commits, source-line stats, and scripture chapter counts for the homepage Commits and Stats panels.
 - `llms.txt` is a static site map for LLMs (per llmstxt.org spec). Links to canonical HTML URLs for each hosted project plus external GitHub projects. Links to `llms-full.txt` for expanded docs. Update when adding projects.
 - `.well-known/security.txt` — RFC 9116. Update the `Expires` date annually.
 - Each sim's `index.html` has `twitter:title`, `twitter:description`, keyword-rich `<title>`, `og:locale`, `hreflang="en"` self-referential tags, `apple-mobile-web-app-title`, and `<link rel="modulepreload" href="main.js">`. KaTeX-using sims (geon, cyano, shoals) also have `dns-prefetch` + `preconnect` for cdn.jsdelivr.net in HTML `<head>`. Four JSON-LD blocks: `["WebApplication", "LearningResource"]` (with `teaches`, `about` array of Wikidata entities, `inLanguage`, `interactivityType`, `datePublished`, `dateModified`, `codeRepository`, `license`, `sameAs`, `isBasedOn` scholarly articles with DOI links, `educationalAlignment` to 3+ standards (AP/NGSS/professional — Shoals adds GARP FRM, Gerry adds CCSS, Cyano adds IB Biology HL) with `targetUrl` links, `accessibilityFeature`, `accessibilityHazard`, `relatedLink` cross-sim references; Shoals additionally has `@type: "Game"` plus `gameItem`/`genre`/`numberOfPlayers` for its narrative system), `FAQPage` (domain-specific, not boilerplate), `BreadcrumbList`, and `HowTo` (3-5 steps for using the sim). All `about` concepts have Wikidata `@id` URIs. Update `dateModified` and FAQ content when making significant sim changes.

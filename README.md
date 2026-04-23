@@ -1,6 +1,6 @@
 # a9l.im
 
-Portfolio and project hub at **[a9l.im](https://a9l.im)**. A single-page app with a WebGL shader background, project carousel, markdown blog, and about page. Vanilla JS, HTML, and CSS served as-is, with no build step and no dependencies.
+Portfolio and project hub at **[a9l.im](https://a9l.im)**. A single-page app with a WebGL shader background, a dense personal homepage, projects grid, markdown blog, about page, and resume. Vanilla JS, HTML, and CSS served from Cloudflare Workers + Assets, with no framework, no build step for the client, and no dependencies in the browser.
 
 ## Projects
 

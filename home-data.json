@@ -1,11 +1,16 @@
 {
-  "generatedAt": "2026-04-23T00:44:14.556Z",
+  "generatedAt": "2026-04-23T01:11:29.028Z",
   "lastDeploy": {
-    "hash": "27bc439",
-    "iso": "2026-04-22T17:37:18-07:00",
-    "subject": "refactor: purge carousel, world map, and inspire dead code"
+    "hash": "792b14a",
+    "iso": "2026-04-22T17:44:26-07:00",
+    "subject": "content: tear down how-saklas-works and how-geon-works posts"
   },
   "commits": [
+    {
+      "hash": "792b14a",
+      "iso": "2026-04-22T17:44:26-07:00",
+      "subject": "content: tear down how-saklas-works and how-geon-works posts"
+    },
     {
       "hash": "27bc439",
       "iso": "2026-04-22T17:37:18-07:00",
@@ -30,11 +35,6 @@
       "hash": "711bf51",
       "iso": "2026-04-21T15:46:48-07:00",
       "subject": "content: tighten home bio, retarget Building line"
-    },
-    {
-      "hash": "c1c9844",
-      "iso": "2026-04-21T15:30:17-07:00",
-      "subject": "chore: regenerate home-data.json after homepage rebuild commit"
     }
   ],
   "stats": {

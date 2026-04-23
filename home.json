@@ -16,12 +16,12 @@
   "hyperfixation": {
     "label": "Special interest of the month",
     "title": "Propositional interpretability",
-    "body": "Chalmers' thing is basically: the right unit of analysis for \"what does a model believe\" is propositions, not features or circuits. I'm not sure he's right, but it's the most honest frame anyone's offered. If you believe propositions are real, then mechinterp is closer to cognitive science than to compiler analysis, and Saklas-style steering is closer to persuasion than to patching.",
+    "body": "Chalmers' argues that the right unit to understand \"what a model believes\" is propositions instead of features or circuits. I personally doubt he's right, but I think his position is at least a little compelling. If you think propositions are real, then mechinterp is more like cognitive science/psychology than compiler analysis.",
     "link": "https://arxiv.org/abs/2501.19222",
     "linkLabel": "Paper (arxiv)"
   },
   "predictions": [
-    ["AGI (weak internal def)",                           "0.60", "2027-12-31"],
+    ["AGI (personal def)",                           	  "0.90", "2027-12-31"],
     ["Claude can count the number of p's in strawperry",  "0.40", "2026-12-31"],
     ["I finish the Chalmers paper",                       "0.70", "2026-04-30"],
     ["I ship a new sim",                                  "0.50", "2026-07-01"]
@@ -29,14 +29,13 @@
   "askMeAbout": [
     "mechinterp", "steering vectors", "the warburg effect",
     "middle chinese", "LDS history", "comparative religion",
-    "heston models", "conlangs", "cloudflare workers",
-    "recursive vf", "catppuccin sddm"
+    "heston models", "conlangs", "cyanobacterial metabolism",
+    "doggy", "catppuccin sddm"
   ],
   "scriptureRotation": [
     { "verse": "By small and simple things are great things brought to pass.", "cite": "Alma 37:6" },
     { "verse": "The whole of the work of righteousness on earth is one grand whole.", "cite": "D&C 128:15" },
-    { "verse": "The glory of God is intelligence, or, in other words, light and truth.", "cite": "D&C 93:36" },
-    { "verse": "And all things denote there is a God.", "cite": "Alma 30:44" }
+    { "verse": "The glory of God is intelligence, or, in other words, light and truth.", "cite": "D&C 93:36" }
   ],
   "colophon": "recursive vf · vanilla js · cloudflare workers · zero frameworks · zero trackers · vibe-coded with claude · AGPL-3.0"
 }
