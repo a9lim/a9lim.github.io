@@ -1,11 +1,31 @@
 {
-  "generatedAt": "2026-04-21T22:30:11.606Z",
+  "generatedAt": "2026-04-23T00:09:45.128Z",
   "lastDeploy": {
-    "hash": "887c889",
-    "iso": "2026-04-21T15:30:02-07:00",
-    "subject": "feat: rebuild homepage as dense personal page; voice pass on projects"
+    "hash": "925a6b2",
+    "iso": "2026-04-21T19:43:36-07:00",
+    "subject": "revert: restore bio content to 711bf51"
   },
   "commits": [
+    {
+      "hash": "925a6b2",
+      "iso": "2026-04-21T19:43:36-07:00",
+      "subject": "revert: restore bio content to 711bf51"
+    },
+    {
+      "hash": "f4c887b",
+      "iso": "2026-04-21T17:54:24-07:00",
+      "subject": "style: drop red accents from homepage; bio tweaks"
+    },
+    {
+      "hash": "711bf51",
+      "iso": "2026-04-21T15:46:48-07:00",
+      "subject": "content: tighten home bio, retarget Building line"
+    },
+    {
+      "hash": "c1c9844",
+      "iso": "2026-04-21T15:30:17-07:00",
+      "subject": "chore: regenerate home-data.json after homepage rebuild commit"
+    },
     {
       "hash": "887c889",
       "iso": "2026-04-21T15:30:02-07:00",
@@ -15,26 +35,6 @@
       "hash": "5effe2c",
       "iso": "2026-04-21T12:19:46-07:00",
       "subject": "feat: add LaTeX resume PDF, swap Shannon for Kenoma and Rlaif"
-    },
-    {
-      "hash": "b38fa25",
-      "iso": "2026-04-18T22:05:26-07:00",
-      "subject": "content: rewrite all READMEs in a9lim voice"
-    },
-    {
-      "hash": "244a875",
-      "iso": "2026-04-17T04:24:31-07:00",
-      "subject": "chore: broaden node_modules ignore, regroup docs/"
-    },
-    {
-      "hash": "de4e3b7",
-      "iso": "2026-04-17T00:06:25-07:00",
-      "subject": "content: further voice pass on site copy, resume, and blog posts"
-    },
-    {
-      "hash": "7d8daa0",
-      "iso": "2026-04-16T23:45:48-07:00",
-      "subject": "feat: add /asteroids easter egg — relativistic Asteroids game"
     }
   ],
   "stats": {
@@ -42,6 +42,6 @@
     "posts": 3,
     "scriptureWorks": 16,
     "scriptureChapters": 2724,
-    "sourceLines": 14787
+    "sourceLines": 14770
   }
 }

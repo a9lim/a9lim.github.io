@@ -113,7 +113,7 @@ response = client.chat.completions.create(
       <category>physics</category>
       <category>graphics</category>
       <description>A technical walkthrough of the particle physics simulator — Boris integration, Barnes-Hut trees, scalar fields, and WebGPU compute.</description>
-      <content:encoded><![CDATA[<p>Geon is an interactive particle physics sim that runs entirely in the browser. It does Newtonian gravity, electromagnetism, post-Newtonian corrections, scalar fields, radiation reaction, and signal delay, all at 128 physics steps per second. No dependencies, no build step. In this post I'll walk through the major systems and the numerical methods I used to make them work.</p>
+      <content:encoded><![CDATA[<p>Geon is an interactive particle physics sim that runs entirely in the browser. It does Newtonian gravity, electromagnetism, post-Newtonian corrections, scalar fields, radiation reaction, and signal delay, all at 128 physics steps per second. It has no dependencies or build step outside of the root repo. In this post I'll walk through the major systems and the numerical methods I used to make them work.</p>
 <h2 id="natural-units-and-proper-velocity">Natural units and proper velocity</h2>
 <p>I use natural units throughout: $c = G = \hbar = 1$. Velocities are stored as <strong>proper velocity</strong> $\mathbf{w} = \gamma \mathbf{v}$, where $\gamma = \sqrt{1 + |\mathbf{w}|^2}$. I like this representation because $|\mathbf{w}|$ can exceed 1 without implying superluminal motion; it's just the spatial component of four-velocity. You recover coordinate velocity as $\mathbf{v} = \mathbf{w} / \gamma$. When relativity is toggled off, $\mathbf{w} \equiv \mathbf{v}$.</p>
 <p>Angular quantities work the same way. Spin angular velocity is stored as proper angular velocity $\omega_p$, converted via $\omega = \omega_p / \sqrt{1 + (\omega_p r)^2}$.</p>
@@ -186,9 +186,9 @@ $$</p>
       <pubDate>Thu, 26 Feb 2026 00:00:00 GMT</pubDate>
       <category>meta</category>
       <description>First post on the a9l.im blog — a site tour and markdown feature test.</description>
-      <content:encoded><![CDATA[<p>This is the first post on <strong>a9l.im</strong>. Mostly a quick tour of the blog and a test of every markdown feature the parser supports.</p>
+      <content:encoded><![CDATA[<p>This is the first post on <strong>a9l.im</strong>. It is mostly a quick tour of the blog and a test of all the markdown features.</p>
 <h2 id="why-a-blog">Why a blog?</h2>
-<p>I build a lot of interactive sims and I run into a lot of weird problems while making them: numerical precision stuff, rendering tricks, weird algorithmic tradeoffs that don't have a clean answer. A blog seemed like a good place to write some of it down.</p>
+<p>I build a lot of interactive projects and I run into a lot of weird problems while making them: numerical stability, rendering, performance. A blog seems like a good place to write some of it down.</p>
 <h2 id="what-the-parser-handles">What the parser handles</h2>
 <h3 id="text-formatting">Text formatting</h3>
 <p>You can do <strong>bold</strong>, <em>italic</em>, and <strong><em>bold italic</em></strong> text. Inline <code>code</code> works too.</p>
@@ -197,12 +197,12 @@ $$</p>
 <p><img src="https://placehold.co/600x200/F0EDE4/1A1612?text=a9l.im" alt="Placeholder" loading="lazy"></p>
 <h3 id="lists">Lists</h3>
 <p>Unordered:</p>
-<ul><li>Zero dependencies</li><li>Vanilla JS only</li><li>No build step</li></ul>
+<ul><li>doggy</li><li>kitty</li><li>bunny</li></ul>
 <p>Ordered:</p>
-<ol><li>Write a markdown file</li><li>Add it to <code>posts.json</code></li><li>Deploy</li></ol>
+<ol><li>froggy</li><li>hoggy</li><li>fishy</li></ol>
 <h3 id="blockquotes">Blockquotes</h3>
-<blockquote><p>The purpose of computation is insight, not numbers.
-— Richard Hamming</p></blockquote>
+<blockquote><p>&lt;&gt;&lt; 
+that's a fish</p></blockquote>
 <h3 id="code-blocks">Code blocks</h3>
 <pre><code class="language-js">function greet(name) {
   return `Hello, ${name}!`;
@@ -211,7 +211,7 @@ $$</p>
 console.log(greet('world'));</code></pre>
 <h3 id="horizontal-rules">Horizontal rules</h3>
 <hr>
-<p>That's basically everything.</p>]]></content:encoded>
+<p>That's everything!</p>]]></content:encoded>
     </item>
   </channel>
 </rss>

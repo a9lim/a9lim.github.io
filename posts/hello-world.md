@@ -1,8 +1,8 @@
-This is the first post on **a9l.im**. Mostly a quick tour of the blog and a test of every markdown feature the parser supports.
+This is the first post on **a9l.im**. It is mostly a quick tour of the blog and a test of all the markdown features.
 
 ## Why a blog?
 
-I build a lot of interactive sims and I run into a lot of weird problems while making them: numerical precision stuff, rendering tricks, weird algorithmic tradeoffs that don't have a clean answer. A blog seemed like a good place to write some of it down.
+I build a lot of interactive projects and I run into a lot of weird problems while making them: numerical stability, rendering, performance. A blog seems like a good place to write some of it down.
 
 ## What the parser handles
 
@@ -20,20 +20,20 @@ Here's a [link to the repo](https://github.com/a9lim) and an image:
 
 Unordered:
 
-- Zero dependencies
-- Vanilla JS only
-- No build step
+- doggy
+- kitty
+- bunny
 
 Ordered:
 
-1. Write a markdown file
-2. Add it to `posts.json`
-3. Deploy
+1. froggy
+2. hoggy
+3. fishy
 
 ### Blockquotes
 
-> The purpose of computation is insight, not numbers.
-> — Richard Hamming
+> <>< 
+> that's a fish
 
 ### Code blocks
 
@@ -49,4 +49,4 @@ console.log(greet('world'));
 
 ---
 
-That's basically everything.
+That's everything!

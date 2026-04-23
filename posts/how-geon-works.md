@@ -1,4 +1,4 @@
-Geon is an interactive particle physics sim that runs entirely in the browser. It does Newtonian gravity, electromagnetism, post-Newtonian corrections, scalar fields, radiation reaction, and signal delay, all at 128 physics steps per second. No dependencies, no build step. In this post I'll walk through the major systems and the numerical methods I used to make them work.
+Geon is an interactive particle physics sim that runs entirely in the browser. It does Newtonian gravity, electromagnetism, post-Newtonian corrections, scalar fields, radiation reaction, and signal delay, all at 128 physics steps per second. It has no dependencies or build step outside of the root repo. In this post I'll walk through the major systems and the numerical methods I used to make them work.
 
 ## Natural units and proper velocity
 
