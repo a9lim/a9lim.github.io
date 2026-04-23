@@ -1,5 +1,5 @@
 // Entry point for a9l.im portfolio. Wires DOM cache, renders dynamic cards,
-// and boots all subsystems (router, shader, carousel, etc.).
+// and boots all subsystems (router, shader, home, etc.).
 
 import { initRouter } from './src/router.js';
 import { initTheme } from './src/theme.js';

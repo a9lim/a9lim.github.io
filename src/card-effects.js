@@ -1,7 +1,8 @@
 // ─── Card Effects ───
-// 3D perspective tilt + shimmer hover + cursor glow for carousel and project cards.
-// Skipped on touch devices (no mousemove). The shimmer radial gradient
-// follows --mouse-x/--mouse-y CSS custom properties set here.
+// 3D perspective tilt + shimmer hover + cursor glow for project cards
+// and the contact section. Skipped on touch devices (no mousemove).
+// The shimmer radial gradient follows --mouse-x/--mouse-y CSS custom
+// properties set here.
 
 const TILT_PERSPECTIVE = 800;
 const TILT_MAX_DEG = 12;

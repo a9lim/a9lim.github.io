@@ -2,7 +2,7 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
   <url>
     <loc>https://a9l.im/</loc>
-    <lastmod>2026-04-21</lastmod>
+    <lastmod>2026-04-22</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1</priority>
     <image:image>
@@ -13,25 +13,25 @@
   </url>
   <url>
     <loc>https://a9l.im/projects</loc>
-    <lastmod>2026-04-21</lastmod>
+    <lastmod>2026-04-22</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://a9l.im/blog</loc>
-    <lastmod>2026-04-21</lastmod>
+    <lastmod>2026-04-22</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://a9l.im/about</loc>
-    <lastmod>2026-04-21</lastmod>
+    <lastmod>2026-04-22</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://a9l.im/resume</loc>
-    <lastmod>2026-04-21</lastmod>
+    <lastmod>2026-04-22</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
@@ -40,11 +40,6 @@
     <lastmod>2026-04-23</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.9</priority>
-    <image:image>
-      <image:loc>https://a9l.im/img/geon.webp</image:loc>
-      <image:title>geon</image:title>
-      <image:caption>Geon — relativistic N-body particle physics simulator with 11 forces and WebGPU compute shaders</image:caption>
-    </image:image>
     <image:image>
       <image:loc>https://a9l.im/geon/og-image.webp</image:loc>
       <image:title>geon</image:title>
@@ -57,11 +52,6 @@
     <changefreq>monthly</changefreq>
     <priority>0.9</priority>
     <image:image>
-      <image:loc>https://a9l.im/img/cyano.webp</image:loc>
-      <image:title>cyano</image:title>
-      <image:caption>Cyano — cellular metabolism simulator with twelve biochemical pathways and electron transport</image:caption>
-    </image:image>
-    <image:image>
       <image:loc>https://a9l.im/cyano/og-image.webp</image:loc>
       <image:title>cyano</image:title>
       <image:caption>Cyano — cellular metabolism simulator with twelve biochemical pathways and electron transport</image:caption>
@@ -72,11 +62,6 @@
     <lastmod>2026-04-23</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.9</priority>
-    <image:image>
-      <image:loc>https://a9l.im/img/gerry.webp</image:loc>
-      <image:title>gerry</image:title>
-      <image:caption>Gerry — gerrymandering and electoral fairness simulator with Monte Carlo elections</image:caption>
-    </image:image>
     <image:image>
       <image:loc>https://a9l.im/gerry/og-image.webp</image:loc>
       <image:title>gerry</image:title>
@@ -89,11 +74,6 @@
     <changefreq>monthly</changefreq>
     <priority>0.9</priority>
     <image:image>
-      <image:loc>https://a9l.im/img/shoals.webp</image:loc>
-      <image:title>shoals</image:title>
-      <image:caption>Shoals — options trading simulator with stochastic volatility and 400+ market scenarios</image:caption>
-    </image:image>
-    <image:image>
       <image:loc>https://a9l.im/shoals/og-image.webp</image:loc>
       <image:title>shoals</image:title>
       <image:caption>Shoals — options trading simulator with stochastic volatility and 400+ market scenarios</image:caption>
@@ -104,11 +84,6 @@
     <lastmod>2026-04-23</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.9</priority>
-    <image:image>
-      <image:loc>https://a9l.im/img/scripture.webp</image:loc>
-      <image:title>scripture</image:title>
-      <image:caption>Scripture — sacred text reader with sixteen works from multiple traditions</image:caption>
-    </image:image>
     <image:image>
       <image:loc>https://a9l.im/scripture/og-image.webp</image:loc>
       <image:title>scripture</image:title>
@@ -123,13 +98,13 @@
   </url>
   <url>
     <loc>https://a9l.im/blog/how-geon-works</loc>
-    <lastmod>2026-04-17</lastmod>
+    <lastmod>2026-04-22</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
     <loc>https://a9l.im/blog/hello-world</loc>
-    <lastmod>2026-04-17</lastmod>
+    <lastmod>2026-04-22</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.6</priority>
   </url>

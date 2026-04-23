@@ -1,11 +1,16 @@
 {
-  "generatedAt": "2026-04-23T00:09:45.128Z",
+  "generatedAt": "2026-04-23T00:36:49.554Z",
   "lastDeploy": {
-    "hash": "925a6b2",
-    "iso": "2026-04-21T19:43:36-07:00",
-    "subject": "revert: restore bio content to 711bf51"
+    "hash": "01c334a",
+    "iso": "2026-04-22T17:10:36-07:00",
+    "subject": "content: revise about/resume/posts voice, drop AGENTS.md"
   },
   "commits": [
+    {
+      "hash": "01c334a",
+      "iso": "2026-04-22T17:10:36-07:00",
+      "subject": "content: revise about/resume/posts voice, drop AGENTS.md"
+    },
     {
       "hash": "925a6b2",
       "iso": "2026-04-21T19:43:36-07:00",
@@ -30,11 +35,6 @@
       "hash": "887c889",
       "iso": "2026-04-21T15:30:02-07:00",
       "subject": "feat: rebuild homepage as dense personal page; voice pass on projects"
-    },
-    {
-      "hash": "5effe2c",
-      "iso": "2026-04-21T12:19:46-07:00",
-      "subject": "feat: add LaTeX resume PDF, swap Shannon for Kenoma and Rlaif"
     }
   ],
   "stats": {
@@ -42,6 +42,6 @@
     "posts": 3,
     "scriptureWorks": 16,
     "scriptureChapters": 2724,
-    "sourceLines": 14770
+    "sourceLines": 13407
   }
 }

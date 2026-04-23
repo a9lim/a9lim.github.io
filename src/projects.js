@@ -1,5 +1,6 @@
-// Single source of truth for all project cards. Consumed by both the home
-// carousel (renderCarouselCards) and the projects grid (renderProjectCards).
+// Single source of truth for all project cards. Consumed by the projects
+// grid (renderProjectCards in projects-page.js) and the SSR duplicate
+// (PROJECTS_SSR in _worker.js).
 
 export const PROJECTS = [
     {
@@ -8,7 +9,6 @@ export const PROJECTS = [
         shortDesc: 'Activation steering and trait monitoring for HuggingFace transformer models.',
         longDesc: 'Activation steering for HuggingFace transformers. Pulls contrastive steering vectors and adds them to hidden states when it’s time to generate, so no fine-tuning is needed. Ships with a Python API, an OpenAI-compatible HTTP server, and a terminal UI with live alpha knobs and probe sparklines; supports 53 model architectures.',
         tags: ['python', 'llm', 'interpretability'],
-        image: 'img/saklas.webp',
         icon: _ICON.projSaklas,
         external: true,
     },
@@ -18,7 +18,6 @@ export const PROJECTS = [
         shortDesc: 'Fake shell that hallucinates command output from raw LLM completion, using the real shell prompt as the stop token.',
         longDesc: 'Fake shell powered by raw LLM completion. Captures the real PS1 at startup and uses it as the stop string; the model hallucinates command output until it emits the next prompt. Seeds from tmux scrollback or shell history, reuses the KV cache across turns, and supports bitsandbytes 4-bit and 8-bit quantization on CUDA.',
         tags: ['python', 'llm', 'shell'],
-        image: 'img/kenoma.webp',
         icon: _ICON.projKenoma,
         external: true,
     },
@@ -28,7 +27,6 @@ export const PROJECTS = [
         shortDesc: 'Single-user MCP server that exposes a PiShock collar as a tool an agent can call to shock you.',
         longDesc: 'Single-user MCP server with three tools: one fires a shock, two are read-only for device state and the ops log. Caps intensity and duration, enforces a token-bucket rate limit, and requires an explicit consent flag to raise the conservative defaults. Code-level ceilings make the caps unreachable even by editing config. Please use with care.',
         tags: ['python', 'mcp', 'agent'],
-        image: 'img/rlaif.webp',
         icon: _ICON.projRlaif,
         external: true,
     },
@@ -36,9 +34,8 @@ export const PROJECTS = [
         href: '/geon',
         title: 'Geon',
         shortDesc: 'Relativistic N-body simulator with 11 forces, scalar fields, and WebGPU compute shaders.',
-        longDesc: 'Relativistic particle simulator with Boris integration, 1PN corrections, and Barnes-Hut O(N\u2009log\u2009N) spatial partitioning. Includes signal delay via light-cone solving, Higgs and axion scalar fields, pion force carriers, Kerr-Newman black holes with Hawking radiation, and a WebGPU compute pipeline with WGSL shaders.',
+        longDesc: 'Relativistic particle simulator with Boris integration, 1PN corrections, and Barnes-Hut O(N log N) spatial partitioning. Includes signal delay via light-cone solving, Higgs and axion scalar fields, pion force carriers, Kerr-Newman black holes with Hawking radiation, and a WebGPU compute pipeline with WGSL shaders.',
         tags: ['physics', 'webgpu', 'relativity', 'canvas'],
-        image: 'img/geon.webp',
         icon: _ICON.projGeon,
         external: false,
     },
@@ -48,7 +45,6 @@ export const PROJECTS = [
         shortDesc: 'Cellular metabolism simulator with twelve biochemical pathways, allosteric regulation, and cofactor tracking.',
         longDesc: 'Interactive metabolism simulator mapping glycolysis, Krebs, Calvin, beta-oxidation, and eight more pathways onto a shared metabolite grid. Has a 14-complex electron transport chain, five organism presets, reactive oxygen species, and allosteric enzyme regulation gating every reaction.',
         tags: ['biology', 'biochemistry', 'canvas'],
-        image: 'img/cyano.webp',
         icon: _ICON.projCyano,
         external: false,
     },
@@ -58,7 +54,6 @@ export const PROJECTS = [
         shortDesc: 'Draw districts on a procedural hex map and stress-test them with Monte Carlo elections and fairness metrics.',
         longDesc: 'Gerrymandering sandbox with three parties, eight districts, and six fairness metrics like efficiency gap and partisan symmetry. Comes with automated pack-and-crack, a simulated-annealing fair-draw optimizer, Monte Carlo election stress tests, and seeded procedural map generation.',
         tags: ['politics', 'svg', 'monte carlo'],
-        image: 'img/gerry.webp',
         icon: _ICON.projGerry,
         external: false,
     },
@@ -68,7 +63,6 @@ export const PROJECTS = [
         shortDesc: 'Options trading simulator with stochastic volatility, a multi-leg strategy builder, and narrative market events.',
         longDesc: 'Trading simulator with GBM, Merton jumps, Heston stochastic volatility, and Vasicek rates driving a CRR binomial tree for American option pricing with discrete dividends. Has a 25-strike options chain, a multi-leg strategy builder with payoff diagrams and Greek overlays, a margin portfolio, and a narrative event engine with over 400 curated scenarios.',
         tags: ['finance', 'options pricing', 'canvas'],
-        image: 'img/shoals.webp',
         icon: _ICON.projShoals,
         external: false,
     },
@@ -78,7 +72,6 @@ export const PROJECTS = [
         shortDesc: 'Sacred text reader with sixteen works from multiple traditions, full-text search, concordance, and text-to-speech.',
         longDesc: 'Sacred text reader with sixteen works: KJV Old and New Testaments, Apocrypha, Quran (Pickthall), Book of Mormon, Doctrine & Covenants, Pearl of Great Price, Four Books (Legge), Tao Te Ching, Kojiki, Bundahis, Lotus Sutra (Kern), Arda Viraf (Haug & West), Book of Poetry (Legge), Kalevala (Crawford), and Poetic Edda (Bellows). Has concordance, TF-IDF related passages, text-to-speech, verse-linked notes, data export, and full-text search across everything.',
         tags: ['reader', 'text', 'religion'],
-        image: 'img/scripture.webp',
         icon: _ICON.projScripture,
         external: false,
     },
@@ -88,7 +81,6 @@ export const PROJECTS = [
         shortDesc: 'Discord music and chat bot with queue management and conversational AI.',
         longDesc: 'Discord music and chat bot I used to run for my friends. Plays audio from YouTube, SoundCloud, and elsewhere, with queue management, playlists, and some conversational AI stuff bolted on.',
         tags: ['discord', 'java', 'music'],
-        image: 'img/raiko.webp',
         icon: _ICON.projRaiko,
         external: true,
     },
@@ -98,7 +90,6 @@ export const PROJECTS = [
         shortDesc: 'Discord chatbot that emulates given messages in the style of source material.',
         longDesc: 'Discord chatbot that emulates a given user. Feed it a corpus of text and it generates responses in the style of the source material.',
         tags: ['discord', 'chatbot', 'nlp'],
-        image: 'img/faithful.webp',
         icon: _ICON.projFaithful,
         external: true,
     },
@@ -108,7 +99,6 @@ export const PROJECTS = [
         shortDesc: 'Soothing pastel theme for the SDDM display manager with all four flavor variants.',
         longDesc: 'Catppuccin’s theme for the SDDM display manager. I rewrote it in QtQuick with dynamic accent colors and per-user icon integration, and automated theme generation across all four Catppuccin flavors so maintenance stays cheap.',
         tags: ['linux', 'theme', 'catppuccin'],
-        image: 'img/catppuccin.webp',
         icon: _ICON.projCatppuccin,
         external: true,
     },

@@ -139,14 +139,14 @@ function renderMarkdown(src) {
 
 const urls = [];
 
-// Image map: sim paths → [card image, OG image]
+// Image map: sim paths → [OG image(s)]
 const IMAGE_MAP = {
   '/':          ['og-image.webp'],
-  '/geon':      ['img/geon.webp', 'geon/og-image.webp'],
-  '/cyano':     ['img/cyano.webp', 'cyano/og-image.webp'],
-  '/gerry':     ['img/gerry.webp', 'gerry/og-image.webp'],
-  '/shoals':    ['img/shoals.webp', 'shoals/og-image.webp'],
-  '/scripture/': ['img/scripture.webp', 'scripture/og-image.webp'],
+  '/geon':      ['geon/og-image.webp'],
+  '/cyano':     ['cyano/og-image.webp'],
+  '/gerry':     ['gerry/og-image.webp'],
+  '/shoals':    ['shoals/og-image.webp'],
+  '/scripture/': ['scripture/og-image.webp'],
 };
 
 function add(path, lastmod, images, changefreq, priority, imageCaption) {
