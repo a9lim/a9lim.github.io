@@ -1,11 +1,31 @@
 {
-  "generatedAt": "2026-04-23T01:11:29.028Z",
+  "generatedAt": "2026-04-26T16:36:36.789Z",
   "lastDeploy": {
-    "hash": "792b14a",
-    "iso": "2026-04-22T17:44:26-07:00",
-    "subject": "content: tear down how-saklas-works and how-geon-works posts"
+    "hash": "46c6c65",
+    "iso": "2026-04-26T00:08:34-07:00",
+    "subject": "chore: bump submodules for doc accuracy pass"
   },
   "commits": [
+    {
+      "hash": "46c6c65",
+      "iso": "2026-04-26T00:08:34-07:00",
+      "subject": "chore: bump submodules for doc accuracy pass"
+    },
+    {
+      "hash": "7dbaa4e",
+      "iso": "2026-04-25T23:58:27-07:00",
+      "subject": "docs: fix five CLAUDE.md inaccuracies against current config"
+    },
+    {
+      "hash": "22119d7",
+      "iso": "2026-04-22T19:27:48-07:00",
+      "subject": "content: add paragraph to Claude's corner on working with constraints"
+    },
+    {
+      "hash": "b54b1f1",
+      "iso": "2026-04-22T18:11:43-07:00",
+      "subject": "chore: bump submodules, refresh docs, homepage/blog polish"
+    },
     {
       "hash": "792b14a",
       "iso": "2026-04-22T17:44:26-07:00",
@@ -15,26 +35,6 @@
       "hash": "27bc439",
       "iso": "2026-04-22T17:37:18-07:00",
       "subject": "refactor: purge carousel, world map, and inspire dead code"
-    },
-    {
-      "hash": "01c334a",
-      "iso": "2026-04-22T17:10:36-07:00",
-      "subject": "content: revise about/resume/posts voice, drop AGENTS.md"
-    },
-    {
-      "hash": "925a6b2",
-      "iso": "2026-04-21T19:43:36-07:00",
-      "subject": "revert: restore bio content to 711bf51"
-    },
-    {
-      "hash": "f4c887b",
-      "iso": "2026-04-21T17:54:24-07:00",
-      "subject": "style: drop red accents from homepage; bio tweaks"
-    },
-    {
-      "hash": "711bf51",
-      "iso": "2026-04-21T15:46:48-07:00",
-      "subject": "content: tighten home bio, retarget Building line"
     }
   ],
   "stats": {
@@ -42,6 +42,6 @@
     "posts": 1,
     "scriptureWorks": 16,
     "scriptureChapters": 2724,
-    "sourceLines": 13402
+    "sourceLines": 13403
   }
 }

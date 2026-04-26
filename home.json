@@ -17,7 +17,7 @@
     "label": "Special interest of the month",
     "title": "Propositional interpretability",
     "body": "Chalmers' argues that the right unit to understand \"what a model believes\" is propositions instead of features or circuits. I personally doubt he's right, but I think his position is at least a little compelling. If you think propositions are real, then mechinterp is more like cognitive science/psychology than compiler analysis.",
-    "link": "https://arxiv.org/abs/2501.19222",
+    "link": "https://arxiv.org/abs/2501.15740",
     "linkLabel": "Paper (arxiv)"
   },
   "predictions": [

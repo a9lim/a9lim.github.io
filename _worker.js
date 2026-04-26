@@ -114,7 +114,7 @@ const WORK_MENTIONS = {
     { '@type': 'Person', '@id': 'https://www.wikidata.org/wiki/Q4604', name: 'Confucius' },
     { '@type': 'Person', '@id': 'https://www.wikidata.org/wiki/Q188903', name: 'Mencius' },
     { '@type': 'Thing', '@id': 'https://www.wikidata.org/wiki/Q1196421', name: 'Ren (benevolence)' },
-    { '@type': 'Thing', '@id': 'https://www.wikidata.org/wiki/Q862758', name: 'Li (ritual propriety)' },
+    { '@type': 'Thing', '@id': 'https://www.wikidata.org/wiki/Q796873', name: 'Li (ritual propriety)' },
     { '@type': 'Person', '@id': 'https://www.wikidata.org/wiki/Q1207671', name: 'Zengzi' },
     { '@type': 'Person', '@id': 'https://www.wikidata.org/wiki/Q1147803', name: 'Zisi' },
     { '@type': 'Thing', '@id': 'https://www.wikidata.org/wiki/Q1208000', name: 'Junzi (noble person)' },
@@ -163,7 +163,7 @@ const WORK_MENTIONS = {
     { '@type': 'Person', '@id': 'https://www.wikidata.org/wiki/Q468747', name: 'Duke of Zhou' },
     { '@type': 'Person', '@id': 'https://www.wikidata.org/wiki/Q698909', name: 'King Wen of Zhou' },
     { '@type': 'Person', '@id': 'https://www.wikidata.org/wiki/Q1061289', name: 'King Wu of Zhou' },
-    { '@type': 'Thing', '@id': 'https://www.wikidata.org/wiki/Q862758', name: 'Li (ritual propriety)' },
+    { '@type': 'Thing', '@id': 'https://www.wikidata.org/wiki/Q796873', name: 'Li (ritual propriety)' },
     { '@type': 'Place', '@id': 'https://www.wikidata.org/wiki/Q35216', name: 'Zhou dynasty' },
     { '@type': 'Thing', '@id': 'https://www.wikidata.org/wiki/Q614263', name: 'Filial piety' },
   ],
@@ -242,7 +242,7 @@ const ABOUT_JSONLD = JSON.stringify({
   nationality: { '@type': 'Country', name: 'Singapore' },
   alumniOf: [
     { '@type': 'CollegeOrUniversity', name: 'University of California, San Diego', '@id': 'https://www.wikidata.org/wiki/Q622664' },
-    { '@type': 'EducationalOrganization', name: 'Singapore American School', '@id': 'https://www.wikidata.org/wiki/Q3485961' },
+    { '@type': 'EducationalOrganization', name: 'Singapore American School', '@id': 'https://www.wikidata.org/wiki/Q7522875' },
   ],
   sameAs: [
     'https://github.com/a9lim',
