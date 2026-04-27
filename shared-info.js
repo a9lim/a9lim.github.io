@@ -256,6 +256,9 @@ function initReferenceOverlay(overlayEl, titleEl, bodyEl, closeBtn, referenceDat
     });
     _refObserver.observe(overlayEl, { attributes: true, attributeFilter: ['hidden'] });
 
+    // Allow consumers to invalidate cached rendered HTML (e.g. when the
+    // language switches and the strings backing referenceData have changed).
+    openReference.clearCache = function() { cache = {}; };
     return openReference;
 }
 
