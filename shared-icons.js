@@ -125,6 +125,7 @@ var _ICON = (function () {
         projScripture:  '<svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/><line x1="8" y1="7" x2="16" y2="7"/><line x1="8" y1="11" x2="14" y2="11"/></svg>',
         projKenoma:     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="square" stroke-linejoin="miter"><rect x="2" y="4" width="20" height="16"/><polyline points="6,10 9,12 6,14"/><line x1="11" y1="14" x2="17" y2="14"/></svg>',
         projRlaif:      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="square" stroke-linejoin="miter"><path d="M13 2 L6 13 L11 13 L10 22 L18 10 L13 10 L14 2 Z"/></svg>',
+        projLlmoji:     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="square" stroke-linejoin="miter"><circle cx="8" cy="8.5" r="1" fill="currentColor"/><circle cx="8" cy="15.5" r="1" fill="currentColor"/><path d="M13 5 C 19 5, 19 12, 13 12 C 19 12, 19 19, 13 19"/></svg>',
         projRaiko:      '<svg viewBox="0 0 24 24"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>',
         projFaithful:   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="square" stroke-linejoin="miter"><path d="M21 15V3H3v18l4-4h12a2 2 0 002-2z"/></svg>',
         projCatppuccin: '<svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>',
