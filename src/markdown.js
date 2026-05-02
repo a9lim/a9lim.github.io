@@ -1,9 +1,16 @@
 // ─── Lightweight Markdown → HTML Parser ───
 // Regex-based, single-pass. Supports: headings, fenced code blocks (with
-// language class), blockquotes (recursive), ordered/unordered lists,
-// horizontal rules, images, links, inline code, bold, italic, bold-italic.
-// Limitations: no nested lists, no tables, no reference-style links,
-// no HTML passthrough, no setext headings.
+// language class), iframe directive (fenced block with `iframe` lang —
+// emits a same-origin iframe figure), switcher directive (fenced block
+// with `switcher` lang — CSS-only radio-tabbed image gallery),
+// blockquotes (recursive), ordered/unordered lists, GFM-style pipe
+// tables (no column alignment), horizontal rules, images (single or
+// theme-paired via `light.png|dark.png`), links, inline code, bold,
+// italic, bold-italic.
+// Limitations: no nested lists, no reference-style links, no HTML
+// passthrough, no setext headings.
+
+let _switcherCounter = 0;
 
 /** Stash $$ and $ math delimiters before escaping, restore after. */
 var _mathStash = [];
@@ -27,7 +34,15 @@ function inline(src) {
     // Order matters: images before links (share bracket syntax), bold-italic
     // before bold before italic to avoid partial matches
     return src
-        .replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '<img src="$2" alt="$1" loading="lazy">')
+        .replace(/!\[([^\]]*)\]\(([^)]+)\)/g, (_, alt, url) => {
+            const pi = url.indexOf('|');
+            if (pi !== -1) {
+                const l = url.slice(0, pi).trim();
+                const d = url.slice(pi + 1).trim();
+                return '<img src="' + l + '" alt="' + alt + '" loading="lazy" class="theme-light"><img src="' + d + '" alt="' + alt + '" loading="lazy" class="theme-dark">';
+            }
+            return '<img src="' + url + '" alt="' + alt + '" loading="lazy">';
+        })
         .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>')
         .replace(/`([^`]+)`/g, '<code>$1</code>')
         .replace(/\*{3}(.+?)\*{3}/g, '<strong><em>$1</em></strong>')
@@ -45,6 +60,10 @@ function inline(src) {
  * @returns {string}    HTML string
  */
 export function parseMarkdown(src) {
+    // Reset switcher counter so SSR + client-side renders produce
+    // identical IDs for the same input (CSS-only switcher tabs use
+    // these IDs to scope the radio button groups).
+    _switcherCounter = 0;
     // Stash math expressions before any escaping
     src = stashMath(src);
     const lines = src.replace(/\r\n?/g, '\n').split('\n');
@@ -58,13 +77,77 @@ export function parseMarkdown(src) {
         if (/^(`{3,}|~{3,})(.*)$/.test(line)) {
             const fence = RegExp.$1;
             const lang = RegExp.$2.trim();
+            const isIframe = /^iframe(\s|$)/.test(lang);
             const code = [];
             i++;
             while (i < len && lines[i].indexOf(fence) !== 0) {
-                code.push(esc(lines[i]));
+                code.push(isIframe ? lines[i] : esc(lines[i]));
                 i++;
             }
             i++;
+            if (isIframe) {
+                // Same-origin paths only. URL-safe chars; reject anything else silently.
+                // Multiple non-empty body lines render as a side-by-side pair.
+                const PATH_RE = /^\/[A-Za-z0-9_./?&=%#-]*$/;
+                const paths = code.map(l => l.trim()).filter(Boolean).filter(l => PATH_RE.test(l));
+                if (paths.length) {
+                    const h = (lang.match(/height=(\d+)/) || [])[1] || '720';
+                    const t = (lang.match(/title="([^"]*)"/) || [])[1] || '';
+                    const c = (lang.match(/caption="([^"]*)"/) || [])[1] || t;
+                    if (paths.length === 1) {
+                        html.push('<figure class="iframe-figure">'
+                            + '<iframe src="' + esc(paths[0]) + '" title="' + esc(t) + '" height="' + h + '" loading="lazy"></iframe>'
+                            + (c ? '<figcaption>' + inline(esc(c)) + '</figcaption>' : '')
+                            + '</figure>');
+                    } else {
+                        let inner = '';
+                        for (const p of paths) {
+                            inner += '<div class="iframe-pair-item"><iframe src="' + esc(p) + '" title="' + esc(t) + '" height="' + h + '" loading="lazy"></iframe></div>';
+                        }
+                        html.push('<figure class="iframe-figure iframe-figure-pair">'
+                            + inner
+                            + (c ? '<figcaption>' + inline(esc(c)) + '</figcaption>' : '')
+                            + '</figure>');
+                    }
+                }
+                continue;
+            }
+            if (/^switcher(\s|$)/.test(lang)) {
+                const labelsMatch = lang.match(/labels="([^"]*)"/);
+                const captionMatch = lang.match(/caption="([^"]*)"/);
+                const labels = (labelsMatch ? labelsMatch[1] : '').split('|').map(l => l.trim()).filter(Boolean);
+                const caption = captionMatch ? captionMatch[1] : '';
+                const tabs = code.map(l => l.trim()).filter(Boolean);
+                if (tabs.length) {
+                    _switcherCounter++;
+                    let out = '<figure class="switcher-figure"><div class="mode-toggles">';
+                    for (let n = 0; n < tabs.length; n++) {
+                        const label = labels[n] || ('panel ' + (n + 1));
+                        out += '<button class="mode-btn' + (n === 0 ? ' active' : '') + '" data-panel="' + n + '">' + esc(label) + '</button>';
+                    }
+                    out += '</div><div class="switcher-panels">';
+                    for (let n = 0; n < tabs.length; n++) {
+                        const urls = tabs[n].split('|').map(u => u.trim());
+                        const lt = urls[0];
+                        const dk = urls[1] || urls[0];
+                        const altText = (labels[n] || '') + (caption ? ' — ' + caption : '');
+                        const cls = 'switcher-panel' + (n === 0 ? ' active' : '');
+                        if (lt === dk) {
+                            out += '<div class="' + cls + '"><img src="' + lt + '" alt="' + esc(altText) + '" loading="lazy"></div>';
+                        } else {
+                            out += '<div class="' + cls + '">'
+                                + '<img src="' + lt + '" alt="' + esc(altText) + '" loading="lazy" class="theme-light">'
+                                + '<img src="' + dk + '" alt="' + esc(altText) + '" loading="lazy" class="theme-dark">'
+                                + '</div>';
+                        }
+                    }
+                    out += '</div>';
+                    if (caption) out += '<figcaption>' + inline(esc(caption)) + '</figcaption>';
+                    out += '</figure>';
+                    html.push(out);
+                }
+                continue;
+            }
             const langAttr = lang ? ' class="language-' + esc(lang) + '"' : '';
             html.push('<pre><code' + langAttr + '>' + code.join('\n') + '</code></pre>');
             continue;
@@ -118,6 +201,24 @@ export function parseMarkdown(src) {
                 i++;
             }
             html.push('<ul>' + items.map(it => '<li>' + inline(esc(it)) + '</li>').join('') + '</ul>');
+            continue;
+        }
+
+        // GFM-style pipe table: header row, separator row of dashes, body rows.
+        if (/^\|.+\|\s*$/.test(line) && i + 1 < len && /^\|[\s:|-]+\|\s*$/.test(lines[i + 1])) {
+            const splitRow = (s) => s.replace(/^\||\|\s*$/g, '').split('|').map(c => c.trim());
+            const headers = splitRow(line);
+            i += 2;
+            const bodyRows = [];
+            while (i < len && /^\|.+\|\s*$/.test(lines[i])) {
+                bodyRows.push(splitRow(lines[i]));
+                i++;
+            }
+            html.push('<table><thead><tr>'
+                + headers.map(h => '<th>' + inline(esc(h)) + '</th>').join('')
+                + '</tr></thead><tbody>'
+                + bodyRows.map(row => '<tr>' + row.map(c => '<td>' + inline(esc(c)) + '</td>').join('') + '</tr>').join('')
+                + '</tbody></table>');
             continue;
         }
 

@@ -46,6 +46,7 @@ function escXml(s) {
 // --- Markdown renderer (duplicated from _worker.js — update both when changing) ---
 
 let _mdMathStash = [];
+let _switcherCounter = 0;
 function mdStashMath(s) {
   _mdMathStash = [];
   return s.replace(/\$\$[\s\S]+?\$\$|\$[^$\n]+?\$/g, m => { _mdMathStash.push(m); return '\x00MATH' + (_mdMathStash.length - 1) + '\x00'; });
@@ -65,7 +66,15 @@ function mdSafeUrl(u) {
 
 function mdInline(src) {
   return src
-    .replace(/!\[([^\]]*)\]\(([^)]+)\)/g, (_, alt, url) => `<img src="${mdSafeUrl(url)}" alt="${alt}" loading="lazy">`)
+    .replace(/!\[([^\]]*)\]\(([^)]+)\)/g, (_, alt, url) => {
+      const pi = url.indexOf('|');
+      if (pi !== -1) {
+        const l = mdSafeUrl(url.slice(0, pi).trim());
+        const d = mdSafeUrl(url.slice(pi + 1).trim());
+        return `<img src="${l}" alt="${alt}" loading="lazy" class="theme-light"><img src="${d}" alt="${alt}" loading="lazy" class="theme-dark">`;
+      }
+      return `<img src="${mdSafeUrl(url)}" alt="${alt}" loading="lazy">`;
+    })
     .replace(/\[([^\]]+)\]\(([^)]+)\)/g, (_, text, url) => { const s = mdSafeUrl(url); return s ? `<a href="${s}" target="_blank" rel="noopener noreferrer">${text}</a>` : text; })
     .replace(/`([^`]+)`/g, '<code>$1</code>')
     .replace(/\*{3}(.+?)\*{3}/g, '<strong><em>$1</em></strong>')
@@ -77,6 +86,7 @@ function mdInline(src) {
 }
 
 function renderMarkdown(src) {
+  _switcherCounter = 0;
   src = mdStashMath(src);
   const lines = src.replace(/\r\n?/g, '\n').split('\n');
   const html = [];
@@ -88,10 +98,72 @@ function renderMarkdown(src) {
     if (fenceMatch) {
       const fence = fenceMatch[1];
       const lang = fenceMatch[2].trim();
+      const isIframe = /^iframe(\s|$)/.test(lang);
       const code = [];
       i++;
-      while (i < len && lines[i].indexOf(fence) !== 0) { code.push(mdEsc(lines[i])); i++; }
+      while (i < len && lines[i].indexOf(fence) !== 0) { code.push(isIframe ? lines[i] : mdEsc(lines[i])); i++; }
       i++;
+      if (isIframe) {
+        const PATH_RE = /^\/[A-Za-z0-9_./?&=%#-]*$/;
+        const paths = code.map(l => l.trim()).filter(Boolean).filter(l => PATH_RE.test(l));
+        if (paths.length) {
+          const h = (lang.match(/height=(\d+)/) || [])[1] || '720';
+          const t = (lang.match(/title="([^"]*)"/) || [])[1] || '';
+          const c = (lang.match(/caption="([^"]*)"/) || [])[1] || t;
+          if (paths.length === 1) {
+            html.push('<figure class="iframe-figure">'
+              + '<iframe src="' + mdEsc(paths[0]) + '" title="' + mdEsc(t) + '" height="' + h + '" loading="lazy"></iframe>'
+              + (c ? '<figcaption>' + mdInline(mdEsc(c)) + '</figcaption>' : '')
+              + '</figure>');
+          } else {
+            let inner = '';
+            for (const p of paths) {
+              inner += '<div class="iframe-pair-item"><iframe src="' + mdEsc(p) + '" title="' + mdEsc(t) + '" height="' + h + '" loading="lazy"></iframe></div>';
+            }
+            html.push('<figure class="iframe-figure iframe-figure-pair">'
+              + inner
+              + (c ? '<figcaption>' + mdInline(mdEsc(c)) + '</figcaption>' : '')
+              + '</figure>');
+          }
+        }
+        continue;
+      }
+      if (/^switcher(\s|$)/.test(lang)) {
+        const labelsMatch = lang.match(/labels="([^"]*)"/);
+        const captionMatch = lang.match(/caption="([^"]*)"/);
+        const labels = (labelsMatch ? labelsMatch[1] : '').split('|').map(l => l.trim()).filter(Boolean);
+        const caption = captionMatch ? captionMatch[1] : '';
+        const tabs = code.map(l => l.trim()).filter(Boolean);
+        if (tabs.length) {
+          _switcherCounter++;
+          let out = '<figure class="switcher-figure"><div class="mode-toggles">';
+          for (let n = 0; n < tabs.length; n++) {
+            const label = labels[n] || ('panel ' + (n + 1));
+            out += '<button class="mode-btn' + (n === 0 ? ' active' : '') + '" data-panel="' + n + '">' + mdEsc(label) + '</button>';
+          }
+          out += '</div><div class="switcher-panels">';
+          for (let n = 0; n < tabs.length; n++) {
+            const urls = tabs[n].split('|').map(u => u.trim()).map(mdSafeUrl);
+            const lt = urls[0];
+            const dk = urls[1] || urls[0];
+            const altText = (labels[n] || '') + (caption ? ' — ' + caption : '');
+            const cls = 'switcher-panel' + (n === 0 ? ' active' : '');
+            if (lt === dk) {
+              out += '<div class="' + cls + '"><img src="' + lt + '" alt="' + mdEsc(altText) + '" loading="lazy"></div>';
+            } else {
+              out += '<div class="' + cls + '">'
+                + '<img src="' + lt + '" alt="' + mdEsc(altText) + '" loading="lazy" class="theme-light">'
+                + '<img src="' + dk + '" alt="' + mdEsc(altText) + '" loading="lazy" class="theme-dark">'
+                + '</div>';
+            }
+          }
+          out += '</div>';
+          if (caption) out += '<figcaption>' + mdInline(mdEsc(caption)) + '</figcaption>';
+          out += '</figure>';
+          html.push(out);
+        }
+        continue;
+      }
       const langAttr = lang ? ' class="language-' + mdEsc(lang) + '"' : '';
       html.push('<pre><code' + langAttr + '>' + code.join('\n') + '</code></pre>');
       continue;
@@ -117,6 +189,19 @@ function renderMarkdown(src) {
       const items = [];
       while (i < len && /^[\-*+]\s+/.test(lines[i])) { items.push(lines[i].replace(/^[\-*+]\s+/, '')); i++; }
       html.push('<ul>' + items.map(it => '<li>' + mdInline(mdEsc(it)) + '</li>').join('') + '</ul>');
+      continue;
+    }
+    if (/^\|.+\|\s*$/.test(line) && i + 1 < len && /^\|[\s:|-]+\|\s*$/.test(lines[i + 1])) {
+      const splitRow = (s) => s.replace(/^\||\|\s*$/g, '').split('|').map(c => c.trim());
+      const headers = splitRow(line);
+      i += 2;
+      const bodyRows = [];
+      while (i < len && /^\|.+\|\s*$/.test(lines[i])) { bodyRows.push(splitRow(lines[i])); i++; }
+      html.push('<table><thead><tr>'
+        + headers.map(h => '<th>' + mdInline(mdEsc(h)) + '</th>').join('')
+        + '</tr></thead><tbody>'
+        + bodyRows.map(row => '<tr>' + row.map(c => '<td>' + mdInline(mdEsc(c)) + '</td>').join('') + '</tr>').join('')
+        + '</tbody></table>');
       continue;
     }
     if (/^\d+[.)]\s+/.test(line)) {

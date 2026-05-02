@@ -2,6 +2,7 @@
   "version": 1,
   "exclude": [
     "/img/*",
+    "/blog-assets/*",
     "/shared-*",
     "/*.css",
     "/*.js",

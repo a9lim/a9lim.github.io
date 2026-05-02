@@ -163,5 +163,84 @@ export async function showBlogPost(slug, $) {
         loadKaTeX().then(function () { renderMath($.blogContent); });
     }
 
+    // Wire up any switcher figures emitted by the markdown parser. Each
+    // figure has a `.mode-toggles` + `.mode-btn[data-panel]` group; the
+    // shared `_forms.bindModeGroup` handles the sliding indicator and
+    // active-state swap. Panel visibility is driven by `.active`.
+    $.blogContent.querySelectorAll('.switcher-figure').forEach(function (fig) {
+        var toggles = fig.querySelector('.mode-toggles');
+        var panels = fig.querySelectorAll('.switcher-panel');
+        if (!toggles || !panels.length || typeof _forms === 'undefined') return;
+        _forms.bindModeGroup(toggles, 'panel', function (idx) {
+            var i = parseInt(idx, 10);
+            panels.forEach(function (p, n) { p.classList.toggle('active', n === i); });
+        });
+    });
+
+    bindImageLightbox($.blogContent);
+
     triggerFadeIns(document.getElementById('page-blog'));
+}
+
+let _lightboxLastFocus = null;
+let _lightboxEscHandler = null;
+
+function openLightbox(src, alt) {
+    closeLightbox();
+    _lightboxLastFocus = document.activeElement;
+    const overlay = document.createElement('div');
+    overlay.className = 'blog-lightbox';
+    overlay.setAttribute('role', 'dialog');
+    overlay.setAttribute('aria-modal', 'true');
+    overlay.setAttribute('aria-label', alt || 'image');
+    overlay.tabIndex = -1;
+    const inner = document.createElement('div');
+    inner.className = 'blog-lightbox-inner';
+    const img = document.createElement('img');
+    img.src = src;
+    if (alt) img.alt = alt;
+    inner.appendChild(img);
+    overlay.appendChild(inner);
+    overlay.addEventListener('click', closeLightbox);
+    document.body.appendChild(overlay);
+    document.body.classList.add('blog-lightbox-open');
+    overlay.focus();
+    _lightboxEscHandler = function (e) {
+        if (e.key === 'Escape') { e.preventDefault(); closeLightbox(); }
+    };
+    document.addEventListener('keydown', _lightboxEscHandler);
+}
+
+function closeLightbox() {
+    const overlay = document.querySelector('.blog-lightbox');
+    if (!overlay) return;
+    overlay.remove();
+    document.body.classList.remove('blog-lightbox-open');
+    if (_lightboxEscHandler) {
+        document.removeEventListener('keydown', _lightboxEscHandler);
+        _lightboxEscHandler = null;
+    }
+    if (_lightboxLastFocus && typeof _lightboxLastFocus.focus === 'function') {
+        _lightboxLastFocus.focus();
+    }
+    _lightboxLastFocus = null;
+}
+
+function bindImageLightbox(root) {
+    root.querySelectorAll('img').forEach(function (img) {
+        img.classList.add('zoomable');
+        img.addEventListener('click', function (e) {
+            e.preventDefault();
+            openLightbox(img.currentSrc || img.src, img.alt || '');
+        });
+        img.addEventListener('keydown', function (e) {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                openLightbox(img.currentSrc || img.src, img.alt || '');
+            }
+        });
+        img.tabIndex = 0;
+        img.setAttribute('role', 'button');
+        img.setAttribute('aria-label', 'open ' + (img.alt || 'image') + ' full size');
+    });
 }

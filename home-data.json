@@ -1,47 +1,47 @@
 {
-  "generatedAt": "2026-04-26T16:36:36.789Z",
+  "generatedAt": "2026-05-02T22:32:55.468Z",
   "lastDeploy": {
-    "hash": "46c6c65",
-    "iso": "2026-04-26T00:08:34-07:00",
-    "subject": "chore: bump submodules for doc accuracy pass"
+    "hash": "f8cf92b",
+    "iso": "2026-04-27T21:13:52-07:00",
+    "subject": "feat: add Llmoji project card and Misc Projects homepage section"
   },
   "commits": [
+    {
+      "hash": "f8cf92b",
+      "iso": "2026-04-27T21:13:52-07:00",
+      "subject": "feat: add Llmoji project card and Misc Projects homepage section"
+    },
+    {
+      "hash": "29ca793",
+      "iso": "2026-04-27T12:22:13-07:00",
+      "subject": "i18n: bump geon submodule for magneticBz + shortcut key fixes"
+    },
+    {
+      "hash": "386df5f",
+      "iso": "2026-04-27T02:10:08-07:00",
+      "subject": "i18n: bump geon submodule for Japanese translation"
+    },
+    {
+      "hash": "a7b7a55",
+      "iso": "2026-04-27T01:17:31-07:00",
+      "subject": "chore: bump geon submodule — preset cleanup, slow inspiral"
+    },
+    {
+      "hash": "35163d8",
+      "iso": "2026-04-26T09:38:07-07:00",
+      "subject": "fix: correct three hallucinated identifiers in JSON-LD and homepage"
+    },
     {
       "hash": "46c6c65",
       "iso": "2026-04-26T00:08:34-07:00",
       "subject": "chore: bump submodules for doc accuracy pass"
-    },
-    {
-      "hash": "7dbaa4e",
-      "iso": "2026-04-25T23:58:27-07:00",
-      "subject": "docs: fix five CLAUDE.md inaccuracies against current config"
-    },
-    {
-      "hash": "22119d7",
-      "iso": "2026-04-22T19:27:48-07:00",
-      "subject": "content: add paragraph to Claude's corner on working with constraints"
-    },
-    {
-      "hash": "b54b1f1",
-      "iso": "2026-04-22T18:11:43-07:00",
-      "subject": "chore: bump submodules, refresh docs, homepage/blog polish"
-    },
-    {
-      "hash": "792b14a",
-      "iso": "2026-04-22T17:44:26-07:00",
-      "subject": "content: tear down how-saklas-works and how-geon-works posts"
-    },
-    {
-      "hash": "27bc439",
-      "iso": "2026-04-22T17:37:18-07:00",
-      "subject": "refactor: purge carousel, world map, and inspire dead code"
     }
   ],
   "stats": {
     "sims": 5,
-    "posts": 1,
+    "posts": 2,
     "scriptureWorks": 16,
     "scriptureChapters": 2724,
-    "sourceLines": 13403
+    "sourceLines": 13953
   }
 }

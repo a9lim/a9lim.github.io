@@ -1,5 +1,13 @@
 [
   {
+    "slug": "introspection-via-kaomoji",
+    "title": "Introspection via Kaomoji",
+    "date": "2026-05-01",
+    "updated": "2026-05-02",
+    "tag": ["mechinterp", "interpretability", "model-welfare"],
+    "excerpt": "Local probes and steering on three open-weight LLMs show that the kaomoji a model picks is a real, partial readout of its internal affect state; the same Russell circumplex falls out of three different architectures."
+  },
+  {
     "slug": "hello-world",
     "title": "Hello, World",
     "date": "2026-02-26",
