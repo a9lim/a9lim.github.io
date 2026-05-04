@@ -233,7 +233,7 @@ const BLOG_META = {
   },
   'introspection-via-kaomoji': {
     title: 'Introspection via Kaomoji \u2014 a9l.im',
-    desc: 'Local probes and steering on three open-weight LLMs show that the kaomoji a model picks is a real, partial readout of its internal affect state; the same Russell circumplex falls out of three different architectures.',
+    desc: 'The same Russell circumplex falls out of five open-weight LLMs from five different labs; a Bayesian face-likelihood predictor built on three of them hits ~76% accuracy at mapping a kaomoji to its affect quadrant, and 72% on a Claude validation set. Almost ready to ship as a Claude Code extension.',
     ogTitle: 'Introspection via Kaomoji \u2014 a9l.im',
   },
 };

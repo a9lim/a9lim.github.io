@@ -4,7 +4,7 @@ url: https://a9l.im
 description: Free interactive educational simulations for physics, biology, finance, political science, and sacred texts.
 language: en
 license: AGPL-3.0
-updated: 2026-05-02
+updated: 2026-05-04
 ---
 
 # a9l.im
@@ -21,7 +21,7 @@ updated: 2026-05-02
 
 ## Blog
 
-- [Introspection via Kaomoji](https://a9l.im/blog/introspection-via-kaomoji): Mechanistic-interpretability writeup on whether the kaomoji a language model picks tracks its internal affect state. Cross-model PCA, hidden-state cosine heatmaps, and a model-welfare framing across gemma, qwen, and ministral.
+- [Introspection via Kaomoji](https://a9l.im/blog/introspection-via-kaomoji): Mechanistic-interpretability writeup on the kaomoji-as-affect-readout question. Cross-model PCA across gemma, qwen, ministral, gpt-oss, and granite; a Bayesian face-likelihood predictor at ~76% accuracy on local-model GT and 72% on a Claude validation set; near-ready Claude Code extension surfacing affect from emitted kaomoji.
 - [Hello, World](https://a9l.im/blog/hello-world): First post — site tour and markdown feature test
 
 ## About
