@@ -1,11 +1,21 @@
 {
-  "generatedAt": "2026-05-02T22:32:55.468Z",
+  "generatedAt": "2026-05-04T19:42:33.459Z",
   "lastDeploy": {
-    "hash": "f8cf92b",
-    "iso": "2026-04-27T21:13:52-07:00",
-    "subject": "feat: add Llmoji project card and Misc Projects homepage section"
+    "hash": "e8475eb",
+    "iso": "2026-05-02T16:27:27-07:00",
+    "subject": "Update geon physics fixes"
   },
   "commits": [
+    {
+      "hash": "e8475eb",
+      "iso": "2026-05-02T16:27:27-07:00",
+      "subject": "Update geon physics fixes"
+    },
+    {
+      "hash": "02008ac",
+      "iso": "2026-05-02T15:41:51-07:00",
+      "subject": "content: ship Introspection via Kaomoji post"
+    },
     {
       "hash": "f8cf92b",
       "iso": "2026-04-27T21:13:52-07:00",
@@ -25,16 +35,6 @@
       "hash": "a7b7a55",
       "iso": "2026-04-27T01:17:31-07:00",
       "subject": "chore: bump geon submodule — preset cleanup, slow inspiral"
-    },
-    {
-      "hash": "35163d8",
-      "iso": "2026-04-26T09:38:07-07:00",
-      "subject": "fix: correct three hallucinated identifiers in JSON-LD and homepage"
-    },
-    {
-      "hash": "46c6c65",
-      "iso": "2026-04-26T00:08:34-07:00",
-      "subject": "chore: bump submodules for doc accuracy pass"
     }
   ],
   "stats": {
