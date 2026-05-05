@@ -35,11 +35,23 @@ User-facing prose (blog posts in `posts/`, the `/about` section, the `/resume` P
 
 ## Running Locally
 
+For static-only iteration (no SPA routing, no SSR, no CSP):
+
 ```bash
 cd path/to/a9lim.github.io && python -m http.server
 ```
 
+For full Worker behavior (SPA routing, HTMLRewriter SSR, security headers):
+
+```bash
+./dev.sh
+```
+
+`dev.sh` builds a symlink farm at `_dev-assets/` (gitignored) excluding the 129MB root `.git/` and the 45MB `scripture/raw/` PDF, then points a generated `wrangler.dev.jsonc` at it. Workaround for a wrangler 4.87 bug where `.assetsignore` is honored at deploy but not by `wrangler dev`'s asset walker — oversized files crash miniflare's workerd-spawn step with a swallowed `EBADF`. Edits to source files are live (symlinks); only re-run `dev.sh` if you add/remove a top-level path or a scripture subdir. Real `wrangler.jsonc` still drives prod deploys. Use python http.server when you don't care about routing/CSP — it's faster to start and useful for quickly previewing static HTML changes.
+
 Root site and sub-projects both use absolute paths (`/shared-*.js`, `/fonts/fonts.css`, etc.). Relative paths break on deep SPA routes like `/blog/hello-world` because the Worker serves `index.html` and the browser resolves relative URLs under `/blog/`.
+
+CSP-blocked external scripts are silently empty in browser, so test new third-party CDN dependencies under `./dev.sh` before pushing — python http.server sends no CSP and will mask the failure.
 
 ## Overview
 
@@ -111,7 +123,7 @@ All project sidebars now use `.sidebar-tabs` inside `.stats-header` instead of a
 - `.tog-wrap input` uses `clip: rect(0,0,0,0)` for a11y — do not change to `display: none`
 - The sole `<h1>` is the hero tagline — navbar brand is a `<span>` for heading hierarchy
 - Blog fetches `/posts.json` and `/posts/{slug}.md` via absolute URLs. The Worker also fetches these for SSR — slug validation rejects `/` and `..` to prevent path traversal.
-- `fonts/` contains a single self-hosted woff2: Recursive variable font (5 axes: wght, MONO, CASL, slnt, CRSV). `fonts/fonts.css` has the `@font-face` declaration. CSP `font-src` is `'self' https://cdn.jsdelivr.net` (jsdelivr is needed for KaTeX font files on geon/cyano/shoals). Lato, Merriweather, and Crimson Text have been removed.
+- `fonts/` contains a single self-hosted woff2: Recursive variable font (5 axes: wght, MONO, CASL, slnt, CRSV). `fonts/fonts.css` has the `@font-face` declaration. CSP `font-src` is `'self' https://cdn.jsdelivr.net` (jsdelivr is needed for KaTeX font files on geon/cyano/shoals). CSP `script-src` allows `'self'`, `'unsafe-inline'`, `https://cdn.jsdelivr.net` (KaTeX), `https://cdn.plot.ly` (plotly auto-emits this URL in figure HTML for blog posts; required for any plotly figure to render), and `https://static.cloudflareinsights.com` (analytics). Lato, Merriweather, and Crimson Text have been removed.
 - `_build.js` generates seven files — run before deploy. Requires git history for `<lastmod>` and for the homepage commit feed:
   - `sitemap.xml` — `<sitemapindex>` pointing to `sitemap-main.xml` and `sitemap-scripture.xml`
   - `sitemap-main.xml` — root routes, project routes, blog, sim routes with `<image:image>` tags (OG images only; card images removed)
