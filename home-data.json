@@ -1,40 +1,40 @@
 {
-  "generatedAt": "2026-05-04T19:42:33.459Z",
+  "generatedAt": "2026-05-07T22:31:11.597Z",
   "lastDeploy": {
-    "hash": "e8475eb",
-    "iso": "2026-05-02T16:27:27-07:00",
-    "subject": "Update geon physics fixes"
+    "hash": "014a28f",
+    "iso": "2026-05-06T01:15:22-07:00",
+    "subject": "docs: rewrite introspection-via-kaomoji post for current study state"
   },
   "commits": [
     {
-      "hash": "e8475eb",
-      "iso": "2026-05-02T16:27:27-07:00",
-      "subject": "Update geon physics fixes"
+      "hash": "014a28f",
+      "iso": "2026-05-06T01:15:22-07:00",
+      "subject": "docs: rewrite introspection-via-kaomoji post for current study state"
     },
     {
-      "hash": "02008ac",
-      "iso": "2026-05-02T15:41:51-07:00",
-      "subject": "content: ship Introspection via Kaomoji post"
+      "hash": "1974853",
+      "iso": "2026-05-05T09:57:49-07:00",
+      "subject": "chore: migrate CLAUDE.md to AGENTS.md + shim"
     },
     {
-      "hash": "f8cf92b",
-      "iso": "2026-04-27T21:13:52-07:00",
-      "subject": "feat: add Llmoji project card and Misc Projects homepage section"
+      "hash": "52f7f5a",
+      "iso": "2026-05-04T17:27:46-07:00",
+      "subject": "docs: document dev.sh and CSP script-src in CLAUDE.md"
     },
     {
-      "hash": "29ca793",
-      "iso": "2026-04-27T12:22:13-07:00",
-      "subject": "i18n: bump geon submodule for magneticBz + shortcut key fixes"
+      "hash": "a986bfb",
+      "iso": "2026-05-04T17:25:21-07:00",
+      "subject": "fix: allow cdn.plot.ly in CSP script-src for blog plotly figures"
     },
     {
-      "hash": "386df5f",
-      "iso": "2026-04-27T02:10:08-07:00",
-      "subject": "i18n: bump geon submodule for Japanese translation"
+      "hash": "4785f1f",
+      "iso": "2026-05-04T17:17:29-07:00",
+      "subject": "chore: add dev.sh for local wrangler dev (symlink-farm workaround)"
     },
     {
-      "hash": "a7b7a55",
-      "iso": "2026-04-27T01:17:31-07:00",
-      "subject": "chore: bump geon submodule — preset cleanup, slow inspiral"
+      "hash": "9ceb6af",
+      "iso": "2026-05-04T16:55:10-07:00",
+      "subject": "chore: exclude dev-only paths from Cloudflare Assets bundle"
     }
   ],
   "stats": {
@@ -42,6 +42,6 @@
     "posts": 2,
     "scriptureWorks": 16,
     "scriptureChapters": 2724,
-    "sourceLines": 13953
+    "sourceLines": 14652
   }
 }

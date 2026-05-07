@@ -42,7 +42,7 @@ This is the headline finding on the local side. If you fit PCA(3) on the layer-s
 
 The cross-model claim is about the shape rather than the axes. Per-model, the principal directions PCA picks out are model-specific and don't line up neatly with the canonical Russell axes. What stays constant across all five models is the relative arrangement of the per-quadrant centroids: positive-valence faces (HP, LP, NB) cluster on one side, negative-valence faces (HN-D, HN-S, LN) on the other, with arousal modulating within each half and the HN-D vs HN-S dominance split sitting orthogonal to both. Triplet Procrustes alignment of the 6-point centroid arrangements in 3D onto gemma gives a residual of 32.6 on qwen, 76.5 on granite, 106.0 on ministral, and 114.1 on gpt-oss after a sign flip on the last two (the flip is PCA sign indeterminacy, not a divergence finding).
 
-```iframe height=420 title="Left: per-quadrant centroids from all five models after Procrustes alignment onto gemma's basis (HN-D / HN-S split). Right: per-face PCA(3) centroids in the layer-stack representation, with a model toggle." caption="Left: per-quadrant centroids procrustes-aligned onto gemma. Right: per-face PCA centroids, with a model toggle."
+```iframe height=600 title="Left: per-quadrant centroids from all five models after Procrustes alignment onto gemma's basis (HN-D / HN-S split). Right: per-face PCA(3) centroids in the layer-stack representation, with a model toggle." caption="Left: per-quadrant centroids procrustes-aligned onto gemma. Right: per-face PCA centroids, with a model toggle."
 /blog-assets/introspection-via-kaomoji/fig_v3_quadrant_procrustes_3d.html
 /blog-assets/introspection-via-kaomoji/fig_v3_per_face_pca_3d.html
 ```
@@ -115,7 +115,7 @@ Once I have GT, three different things become measurable, and they're not the sa
 
 **Read** is what the symbol denotes, independent of how it's used. I ask Opus 4.7 and Haiku 4.5 to rate each canonical face by the affective state the face causes the model to feel, with no prompt context, just the glyph. That's the cold-introspection channel. The Anthropic SDK's structured-output JSON-schema mode lets me pin a calibrated per-quadrant softmax output without needing to parse free-form rationale.
 
-**Act** is what Claude does with the face in deployment. For each canonical face, the contributor-side `llmoji` package has Haiku synthesize many in-context emits into a structured pick over a locked 48-word lexicon (the "bag-of-lexicon," BoL). 19 of those words are tagged with explicit Russell quadrants, so the structured commit collapses to a 6-d quadrant distribution per face. That distribution measures what affective state the face's deployment context expresses, summarized by the synthesizer.
+**Act** is what Claude does with the face in deployment. For each canonical face, the contributor-side `llmoji` package has Haiku synthesize many in-context emits into a structured pick over a locked 50-word lexicon (the "bag-of-lexicon," BoL). 26 of those words are tagged with explicit PAD cells, so the structured commit collapses to a 9-d cell distribution per face (HP-D / HP-S / LP / NP / HN-D / HN-S / LN / NB / HB). That distribution measures what affective state the face's deployment context expresses, summarized by the synthesizer.
 
 Three measurements, three channels. Comparing them per-face surfaces what each captures and what each misses. On the n=40 face subset shared across all four channels (702 GT emits covered):
 
@@ -156,33 +156,37 @@ For each open-weight encoder, the math is Bayesian inversion at the LM head. For
 
 For Opus and Haiku, the math is structured-output prompting. Each face is shown out of context, and the model returns a calibrated per-quadrant softmax via `output_config={"format": {"type": "json_schema", ...}}`. Prompt v4 reframes the task as introspection on felt state ("rate the face by the affective state it causes you to feel") rather than visual-feature description. The visual-prompt version scored about 0.06 emit-weighted higher on Haiku than the introspection version, and the difference measures the visual-shortcut effect that the honest measurement now isolates instead of inheriting silently.
 
-Solo emit-weighted similarity vs Claude-GT, on the n=49 GT-floor-3 face subset (faces with at least 3 Claude emissions, where the modal quadrant is well-supported):
+Solo similarity vs Claude-GT, on the n=40 Claude-GT-floor-3 face subset (faces with at least 3 Claude emissions, where the modal quadrant is well-supported), reported in both flavors:
 
-| encoder | emit-weighted |
-| --- | ---: |
-| **gemma_v7primed** | **0.801** |
-| **opus** (introspection) | **0.797** |
-| gemma | 0.755 |
-| haiku v4 (introspection) | 0.723 |
-| gpt_oss_20b | 0.667 |
-| granite | 0.586 |
-| ministral | 0.579 |
+| encoder | face-uniform | emit-weighted |
+| --- | ---: | ---: |
+| **gemma_v7primed** | **0.790** | **0.798** |
+| gemma | 0.754 | 0.742 |
+| **opus** (introspection) | **0.736** | **0.781** |
+| haiku v4 (introspection) | 0.675 | 0.702 |
+| gpt_oss_20b | 0.588 | 0.643 |
+| bol | 0.549 | 0.455 |
+| ministral | 0.537 | 0.623 |
+| granite | 0.520 | 0.575 |
+| qwen | 0.494 | 0.546 |
 
-The exhaustive-subset best ensemble is `{gemma_v7primed, opus}` at **0.829 emit-weighted similarity, 0.788 face-uniform** on the same set. Two encoders: gemma's LM-head likelihood under v7 introspection priming, plus Opus 4.7 cold introspection on the face glyph. Their pairwise agreement is κ=0.547, low enough that LM-head teacher-forced likelihood and structured-output model belief contribute complementary information rather than redundant votes.
+The exhaustive-subset best ensemble is `{gemma, gemma_v7primed, ministral, opus}` at **0.904 emit-weighted similarity, 0.832 face-uniform** on the pooled-GT (v3+Claude+wild ≥3) n=54 face subset — the wider denominator that captures Claude's actually-deployed face vocabulary, not just the strict-elicitation subset. Four encoders: gemma's LM-head likelihood (the v7-primed and unprimed versions give complementary reads, sharpening modal and diffuse faces respectively), ministral's LM-head likelihood (covers long-tail cells the others under-rate), and Opus 4.7 cold introspection on the face glyph.
 
-Solo introspection-priming on gemma is the best LM-head encoder on the soft metric, which is the soft-everywhere insight from earlier showing up at the predictor level. Under the older hard-classification framing, primed gemma read as a regression. Under JSD, primed gemma's softmax matches Claude's emission distribution more tightly, especially on the modal faces where Claude is concentrated; unprimed gemma is the better read on the diffuse long tail. Both ship in the current best ensemble.
+On the stricter Claude-GT-only n=40 subset (faces Claude itself emitted ≥3 times in the elicitation pilot), the picture is different: the best is the 2-pair `{gemma_v7primed, opus}` at **0.792 face-uniform, 0.820 emit-weighted**, and adding the other two encoders modestly hurts. The split is informative: on the strict Claude-elicited subset where Claude already converges on a tight modal vocabulary, two well-chosen encoders are enough; on the broader pooled subset that better mirrors what users actually see, four encoders win because the wild-face long tail is exactly where ministral and unprimed gemma contribute coverage the 2-pair under-rates. Pairwise κ between gemma_v7primed and opus on Claude-GT n=40 is 0.651, low enough that LM-head teacher-forced likelihood and structured-output model belief contribute complementary information rather than redundant votes.
 
-Per-quadrant breakdown for the introspection channels: Opus has its strongest gain over Haiku on NB (0.698 vs 0.485, +0.213) and LN (0.753 vs 0.601, +0.152). HP slightly regresses for Opus (−0.095), because Opus is more honest about borderline-LP-vs-HP faces that Haiku v4 over-confidently called HP. Introspective access scales with model size most where visual scaffolding helps least.
+Solo introspection-priming on gemma is the best LM-head encoder on the strict subset, which is the soft-everywhere insight from earlier showing up at the predictor level. Under the older hard-classification framing, primed gemma read as a regression. Under JSD, primed gemma's softmax matches Claude's emission distribution more tightly on the modal faces where Claude is concentrated; unprimed gemma is the better read on the diffuse long tail. The 4-pair I ship gets both reads simultaneously.
+
+Per-quadrant breakdown for the introspection channels: Opus has its strongest gain over Haiku on NB (0.698 vs 0.485, +0.213) and LN (0.737 vs 0.612, +0.125). HP slightly regresses for Opus (0.683 vs 0.778, −0.095), because Opus is more honest about borderline-LP-vs-HP faces that Haiku v4 over-confidently called HP. Introspective access scales with model size most where visual scaffolding helps least.
 
 ## The wider Claude vocabulary
 
-Beyond the GT-overlap subset, the HF corpus contains 309 canonical faces with v2 BoL synthesis, most of which have never been elicited under controlled conditions, just observed in the wild. PCA on the 48-d BoL gives a useful 3D scatter of the broader Claude vocabulary. Per-face color is a proportional RGB-blend of BoL shares (a face that's 50/50 HP+LP renders olive, 50/50 HN+LN renders muted purple, etc.); marker shape encodes deployment surface (whether the face appears in a Claude Code journal, in a claude.ai export, or in neither).
+Beyond the GT-overlap subset, the HF corpus contains 309 canonical faces with v2 BoL synthesis, most of which have never been elicited under controlled conditions, just observed in the wild. PCA on the 50-d BoL gives a useful 3D scatter of the broader Claude vocabulary. Per-face color is a proportional RGB-blend of BoL shares across the nine PAD cells (a face that's 50/50 HP-S+LP renders olive, 50/50 HN-S+LN renders muted purple, etc.); marker shape encodes deployment surface (whether the face appears in a Claude Code journal, in a claude.ai export, or in neither).
 
-```iframe height=540 title="HF-corpus Claude faces in PCA(3) on the 48-d bag-of-lexicon (BoL) space. Per-face color is a proportional RGB-blend of BoL quadrant shares; marker shape is deployment surface (circle = Claude Code journal only, diamond = any claude.ai export, square = neither)." caption="HF-corpus Claude faces in BoL PCA space, colored by per-face BoL quadrant blend with marker shape encoding deployment surface. Read with the BoL caveat in mind: BoL is the synthesizer's read of deployment context, with the positivity-bias on negative-affect faces called out above."
+```iframe height=600 title="HF-corpus Claude faces in PCA(3) on the 50-d bag-of-lexicon (BoL) space. Per-face color is a proportional RGB-blend of BoL shares across the nine PAD cells (HP-D / HP-S / LP / NP / HN-D / HN-S / LN / NB / HB); marker shape is deployment surface (circle = Claude Code journal only, diamond = any claude.ai export, square = neither)." caption="HF-corpus Claude faces in BoL PCA space, colored by per-face BoL cell blend with marker shape encoding deployment surface. Read with the BoL caveat in mind: BoL is the synthesizer's read of deployment context, with the positivity-bias on negative-affect faces called out above."
 /blog-assets/introspection-via-kaomoji/fig_wild_faces_pca_3d.html
 ```
 
-The clusters in this space (which I'm not coloring here, but they sit on the same coordinates) resolve into recognizable affect and register groupings beyond the six Russell quadrants: a `curious / playful` cluster, an `apologetic / sheepish` cluster, a `sad / overwhelmed` cluster. The wild-corpus residual structure is real, but read the chart with the caveat from the previous section: BoL is the synthesizer's read, not the lived state, and inherits the same positivity bias as the channel itself. Faces sitting in the LP-coded regions are where I'd most want to run the Opus re-synthesis test before treating the BoL placement as ground truth.
+The clusters in this space (which I'm not coloring here, but they sit on the same coordinates) resolve into recognizable affect and register groupings beyond the nine PAD cells: a `curious / playful` cluster, an `apologetic / sheepish` cluster, a `sad / overwhelmed` cluster. The wild-corpus residual structure is real, but read the chart with the caveat from the previous section: BoL is the synthesizer's read, not the lived state, and inherits the same positivity bias as the channel itself. Faces sitting in the LP-coded regions are where I'd most want to run the Opus re-synthesis test before treating the BoL placement as ground truth.
 
 ## Limitations
 
@@ -206,9 +210,9 @@ Across five architectures from five different labs, with completely different to
 
 The kaomoji emission is at token 1 to 3, before the model has produced enough text to engineer any particular self-presentation; the face is closer to the prompt-conditioned hidden state than to the eventual response. It's a single token at the start of a generation, the geometry is shared across five open-weight models from five different labs, and it's hard to game from text alone. That generalizes to a useful self-report channel for model-welfare instrumentation.
 
-The three-channel comparison turns this finding into something more careful than "kaomoji = self-report." Use, read, and act are different measurements, and they answer different questions. Cold introspection on the symbol (Opus and Haiku) is a tight cross-model invariant at 0.906; pooled synthesis from in-context emits (BoL) carries a measurable positivity bias on negative-affect deployment contexts; controlled elicitation (Claude-GT) is the closest thing we have to ground truth for deployed Claude. The honest deliverable for any face is the soft 6-d distribution from each of those channels, plus the pairwise JSDs; hard-classifying any single channel as "the answer" throws away information the others carry.
+The three-channel comparison turns this finding into something more careful than "kaomoji = self-report." Use, read, and act are different measurements, and they answer different questions. Cold introspection on the symbol (Opus and Haiku) is a tight cross-model invariant at 0.906; pooled synthesis from in-context emits (BoL) carries a measurable positivity bias on negative-affect deployment contexts; controlled elicitation (Claude-GT) is the closest thing we have to ground truth for deployed Claude. The honest deliverable for any face is the soft 9-d distribution from each of those channels, plus the pairwise JSDs; hard-classifying any single channel as "the answer" throws away information the others carry.
 
-The ensemble I'd ship as a deployable predictor is `{gemma_v7primed, opus}`: a single LM-head likelihood encoder on the best-tuned open-weight model, plus Opus cold introspection. 0.829 emit-weighted similarity vs Claude-GT, no model-internal access required, and the inference cost is two forward passes per canonical face, cacheable since the kaomoji vocabulary is small and predictions are deterministic.
+The ensemble I'd ship as a deployable predictor is `{gemma, gemma_v7primed, ministral, opus}`: three LM-head likelihood encoders on different open-weight models — including primed and unprimed gemma for complementary modal-vs-diffuse reads — plus Opus cold introspection. **0.904 emit-weighted similarity / 0.832 face-uniform vs pooled GT** on the deployment-shaped n=54 subset, no model-internal access required, and the inference cost is four forward passes per canonical face, cacheable since the kaomoji vocabulary is small and predictions are deterministic. If you only care about the strict Claude-elicited subset (n=40, ≥3 Claude emissions per face), the 2-pair `{gemma_v7primed, opus}` is the cheaper drop-in and lands at 0.820 emit-weighted on that view.
 
 ## Pointers
 
