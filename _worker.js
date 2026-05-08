@@ -233,7 +233,7 @@ const BLOG_META = {
   },
   'introspection-via-kaomoji': {
     title: 'Introspection via Kaomoji \u2014 a9l.im',
-    desc: 'The same Russell circumplex falls out of five open-weight LLMs from five different labs; a Bayesian face-likelihood predictor built on three of them hits ~76% accuracy at mapping a kaomoji to its affect quadrant, and 72% on a Claude validation set. Almost ready to ship as a Claude Code extension.',
+    desc: 'Kaomoji are a partial readout of model state. Five open-weight LLMs recover a shared affect geometry, Claude-GT now has 1480 Opus 4.7 rows, and the current predictor ships soft 9-cell distributions instead of hard labels.',
     ogTitle: 'Introspection via Kaomoji \u2014 a9l.im',
   },
 };

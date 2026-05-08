@@ -1,11 +1,16 @@
 {
-  "generatedAt": "2026-05-07T22:31:11.597Z",
+  "generatedAt": "2026-05-08T10:09:06.849Z",
   "lastDeploy": {
-    "hash": "014a28f",
-    "iso": "2026-05-06T01:15:22-07:00",
-    "subject": "docs: rewrite introspection-via-kaomoji post for current study state"
+    "hash": "04c5616",
+    "iso": "2026-05-07T15:31:26-07:00",
+    "subject": "docs: bump 3d plot iframes to 600px, unify camera at (1.85,1.85,1.65)"
   },
   "commits": [
+    {
+      "hash": "04c5616",
+      "iso": "2026-05-07T15:31:26-07:00",
+      "subject": "docs: bump 3d plot iframes to 600px, unify camera at (1.85,1.85,1.65)"
+    },
     {
       "hash": "014a28f",
       "iso": "2026-05-06T01:15:22-07:00",
@@ -30,11 +35,6 @@
       "hash": "4785f1f",
       "iso": "2026-05-04T17:17:29-07:00",
       "subject": "chore: add dev.sh for local wrangler dev (symlink-farm workaround)"
-    },
-    {
-      "hash": "9ceb6af",
-      "iso": "2026-05-04T16:55:10-07:00",
-      "subject": "chore: exclude dev-only paths from Cloudflare Assets bundle"
     }
   ],
   "stats": {
@@ -42,6 +42,6 @@
     "posts": 2,
     "scriptureWorks": 16,
     "scriptureChapters": 2724,
-    "sourceLines": 14652
+    "sourceLines": 14680
   }
 }
