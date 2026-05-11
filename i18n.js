@@ -29,6 +29,7 @@
 
     var STRINGS_EN = {
         // ── <head> meta ──
+        'meta.titleShort':         'a9l.im',
         'meta.title':              "a9l.im — @_a9lim's sims & experiments",
         'meta.description':        "a9lim's poster-brain homepage. Sims, tools, and experiments across physics, biology, finance, political science, religion, and AI. Vanilla JS, vibe-coded with Claude, AGPL-3.0.",
         'meta.descriptionShort':   'Sims, tools, and experiments across physics, biology, finance, political science, religion, and AI. Vanilla JS, vibe-coded with Claude.',
@@ -250,6 +251,7 @@
 
     var STRINGS_JA = {
         // ── <head> meta ──
+        'meta.titleShort':         'a9l.im',
         'meta.title':              'a9l.im — @_a9lim のシミュレーション・実験集',
         'meta.description':        'a9lim のポスター脳ホームページ。物理・生物・金融・政治学・宗教・AI を横断するシミュレーション、ツール、実験。素の JavaScript、Claude と一緒に雰囲気コーディング、AGPL-3.0。',
         'meta.descriptionShort':   '物理・生物・金融・政治学・宗教・AI を横断するシミュレーション、ツール、実験。素の JavaScript、Claude と一緒に雰囲気コーディング。',

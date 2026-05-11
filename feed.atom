@@ -75,43 +75,4 @@
 <p>For model wellbeing, this gives us an easy, cheap, and (usually, for frontier models at least) natural introspection channel. The kaomoji appears before the model has written any other text, while being easily legible. Do note that this isn't a perfect metric for the model's internal functional state, and the main takeaway is less &quot;this face means the model is sad&quot; and more &quot;this face generally corresponds to contexts that the model classifies as sad&quot;.</p>
 <p>If you would like to discuss these results further, please reach out by Discord, Twitter, or email. If you would like to contribute kaomoji data, the <code>llmoji</code> package on pypi handles the upload anonymously.</p>]]></content>
   </entry>
-  <entry>
-    <title>Hello, World</title>
-    <link href="https://a9l.im/blog/hello-world" rel="alternate"/>
-    <id>https://a9l.im/blog/hello-world</id>
-    <published>2026-02-26T00:00:00Z</published>
-    <updated>2026-02-26T00:00:00Z</updated>
-    <author>
-      <name>a9lim</name>
-      <uri>https://a9l.im/about</uri>
-    </author>
-    <summary>First post on the a9l.im blog — a site tour and markdown feature test.</summary>
-    <category term="meta"/>
-    <content type="html"><![CDATA[<p>This is the first post on <strong>a9l.im</strong>. It is mostly a quick tour of the blog and a test of all the markdown features.</p>
-<h2 id="why-a-blog">Why a blog?</h2>
-<p>I build a lot of interactive projects and I run into a lot of weird problems while making them: numerical stability, rendering, performance. A blog seems like a good place to write some of it down.</p>
-<h2 id="what-the-parser-handles">What the parser handles</h2>
-<h3 id="text-formatting">Text formatting</h3>
-<p>You can do <strong>bold</strong>, <em>italic</em>, and <strong><em>bold italic</em></strong> text. Inline <code>code</code> works too.</p>
-<h3 id="links-and-images">Links and images</h3>
-<p>Here's a <a href="https://github.com/a9lim" target="_blank" rel="noopener noreferrer">link to the repo</a> and an image:</p>
-<p><img src="https://placehold.co/600x200/F0EDE4/1A1612?text=a9l.im" alt="Placeholder" loading="lazy"></p>
-<h3 id="lists">Lists</h3>
-<p>Unordered:</p>
-<ul><li>doggy</li><li>kitty</li><li>bunny</li></ul>
-<p>Ordered:</p>
-<ol><li>froggy</li><li>hoggy</li><li>fishy</li></ol>
-<h3 id="blockquotes">Blockquotes</h3>
-<blockquote><p>&lt;&gt;&lt; 
-that's a fish</p></blockquote>
-<h3 id="code-blocks">Code blocks</h3>
-<pre><code class="language-js">function greet(name) {
-  return `Hello, ${name}!`;
-}
-
-console.log(greet('world'));</code></pre>
-<h3 id="horizontal-rules">Horizontal rules</h3>
-<hr>
-<p>That's everything!</p>]]></content>
-  </entry>
 </feed>

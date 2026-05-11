@@ -10,13 +10,5 @@
     "excerpt": "Kaomoji are a partial readout of model state. Five open-weight LLMs recover a shared affect geometry, Claude-GT now has 1480 Opus 4.7 rows, and the current predictor ships soft 9-cell distributions instead of hard labels.",
     "excerpt_ja": "顔文字はモデル状態の部分的な読み出しになる。オープンウェイトの 5 つの LLM が共有された情動の幾何構造を回復しており、Claude-GT には現在 1480 件の Opus 4.7 のデータがある。現行の予測器は、ハードラベルではなく 9 セルのソフト分布を出力する。",
     "translations": ["ja"]
-  },
-  {
-    "slug": "hello-world",
-    "title": "Hello, World",
-    "date": "2026-02-26",
-    "updated": "2026-02-26",
-    "tag": ["meta"],
-    "excerpt": "First post on the a9l.im blog — a site tour and markdown feature test."
   }
 ]

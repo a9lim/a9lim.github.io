@@ -1,47 +1,47 @@
 {
-  "generatedAt": "2026-05-11T08:08:13.784Z",
+  "generatedAt": "2026-05-11T10:03:24.460Z",
   "lastDeploy": {
-    "hash": "f416773",
-    "iso": "2026-05-10T21:32:42-07:00",
-    "subject": "docs: revise kaomoji introspection post + regen metadata"
+    "hash": "2266728",
+    "iso": "2026-05-11T02:41:47-07:00",
+    "subject": "og: right-align flair visuals + widen canvas + softer fade"
   },
   "commits": [
     {
-      "hash": "f416773",
+      "hash": "2266728",
+      "iso": "2026-05-11T02:41:47-07:00",
+      "subject": "og: right-align flair visuals + widen canvas + softer fade"
+    },
+    {
+      "hash": "6df092a",
+      "iso": "2026-05-11T01:32:37-07:00",
+      "subject": "i18n: add EN/JA toggle for root site + JA blog post sibling"
+    },
+    {
+      "hash": "ba729af",
       "iso": "2026-05-10T21:32:42-07:00",
       "subject": "docs: revise kaomoji introspection post + regen metadata"
     },
     {
-      "hash": "2c864bf",
+      "hash": "845d50a",
       "iso": "2026-05-10T18:13:50-07:00",
       "subject": "docs: expand kaomoji introspection post with per-plot analysis"
     },
     {
-      "hash": "1875a7b",
+      "hash": "cf82cc0",
       "iso": "2026-05-08T14:19:42-07:00",
       "subject": "docs: rewrite kaomoji introspection post"
     },
     {
-      "hash": "04c5616",
+      "hash": "16e7612",
       "iso": "2026-05-07T15:31:26-07:00",
       "subject": "docs: bump 3d plot iframes to 600px, unify camera at (1.85,1.85,1.65)"
-    },
-    {
-      "hash": "014a28f",
-      "iso": "2026-05-06T01:15:22-07:00",
-      "subject": "docs: rewrite introspection-via-kaomoji post for current study state"
-    },
-    {
-      "hash": "1974853",
-      "iso": "2026-05-05T09:57:49-07:00",
-      "subject": "chore: migrate CLAUDE.md to AGENTS.md + shim"
     }
   ],
   "stats": {
     "sims": 5,
-    "posts": 2,
+    "posts": 1,
     "scriptureWorks": 16,
     "scriptureChapters": 2724,
-    "sourceLines": 15022
+    "sourceLines": 15697
   }
 }

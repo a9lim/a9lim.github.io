@@ -204,37 +204,32 @@ const WORK_MENTIONS = {
 
 const ROUTE_META = {
   '/projects': {
-    title: 'Projects \u2014 a9l.im',
+    title: 'Projects | a9l.im',
     desc: 'Browse interactive simulations for physics, biology, finance, and political science. Open-source, zero-dependency tools that run entirely in the browser.',
-    ogTitle: 'Projects \u2014 a9l.im',
+    ogTitle: 'Projects | a9l.im',
   },
   '/blog': {
-    title: 'Blog \u2014 a9l.im',
+    title: 'Blog | a9l.im',
     desc: 'Articles on building educational simulations, computational physics, browser-based rendering, and interactive learning tools.',
-    ogTitle: 'Blog \u2014 a9l.im',
+    ogTitle: 'Blog | a9l.im',
   },
   '/about': {
-    title: 'About \u2014 a9l.im',
+    title: 'About | a9l.im',
     desc: 'About a9lim \u2014 Singaporean developer building simulations, AI agents, and browser tools across physics, biology, finance, religion, and more. Mostly vibe-coded with Claude.',
-    ogTitle: 'About \u2014 a9l.im',
+    ogTitle: 'About | a9l.im',
   },
   '/resume': {
-    title: 'Resume \u2014 a9l.im',
+    title: 'Resume | a9l.im',
     desc: 'Resume of a9lim \u2014 independent developer building interactive educational simulations and tools at a9l.im, available for freelance and collaborations.',
-    ogTitle: 'Resume \u2014 a9l.im',
+    ogTitle: 'Resume | a9l.im',
   },
 };
 
 const BLOG_META = {
-  'hello-world': {
-    title: 'Hello, World \u2014 a9l.im',
-    desc: 'First post on the a9l.im blog.',
-    ogTitle: 'Hello, World \u2014 a9l.im',
-  },
   'introspection-via-kaomoji': {
-    title: 'Introspection via Kaomoji \u2014 a9l.im',
+    title: 'Introspection via Kaomoji | a9l.im',
     desc: 'Kaomoji are a partial readout of model state. Five open-weight LLMs recover a shared affect geometry, Claude-GT now has 1480 Opus 4.7 rows, and the current predictor ships soft 9-cell distributions instead of hard labels.',
-    ogTitle: 'Introspection via Kaomoji \u2014 a9l.im',
+    ogTitle: 'Introspection via Kaomoji | a9l.im',
   },
 };
 
@@ -683,10 +678,11 @@ export default {
         if (workTitle) {
           const ws = WORK_SCHEMA[workId] || {};
           const translatorPerson = ws.translator ? { '@type': 'Person', name: ws.translator, ...(ws.translatorWikidata && { '@id': `https://www.wikidata.org/wiki/${ws.translatorWikidata}` }) } : undefined;
+          const creatorPerson = translatorPerson || ws.author;
           const meta = {
-            title: `${workTitle} | Scripture`,
+            title: `${workTitle} | a9l.im`,
             desc: `Read the ${workTitle}${ws.translator ? ' (' + ws.translator + ' translation, ' + ws.year + ')' : ''} \u2014 full-text search, concordance, verse notes, and cross-tradition comparisons.`,
-            ogTitle: `${workTitle} | Scripture`,
+            ogTitle: `${workTitle} | a9l.im`,
             canonical: `https://a9l.im/scripture/${workId}`,
             jsonLd: JSON.stringify({
               '@context': 'https://schema.org',
@@ -726,7 +722,7 @@ export default {
                   url: `https://a9l.im/scripture/${workId}`,
                   license: 'https://creativecommons.org/publicdomain/mark/1.0/',
                   inLanguage: ws.lang || 'en',
-                  ...(translatorPerson && { creator: translatorPerson }),
+                  ...(creatorPerson && { creator: creatorPerson }),
                   distribution: {
                     '@type': 'DataDownload',
                     encodingFormat: 'application/json',
@@ -830,11 +826,11 @@ export default {
 
                 const isSingleBook = manifest.books.length === 1;
                 const meta = {
-                  title: `${chapterLabel} \u2014 ${workTitle} | Scripture`,
+                  title: `${chapterLabel} | ${workTitle} | a9l.im`,
                   desc: isSingleBook
                     ? `Read ${chapterLabel} \u2014 full-text search, concordance, verse notes, and cross-tradition comparisons.`
                     : `Read ${chapterLabel} (${workTitle}) \u2014 full-text search, concordance, verse notes, and cross-tradition comparisons.`,
-                  ogTitle: `${chapterLabel} \u2014 ${workTitle} | Scripture`,
+                  ogTitle: `${chapterLabel} | ${workTitle} | a9l.im`,
                   canonical: `https://a9l.im${pathname}`,
                   ogType: 'article',
                   prevUrl,
@@ -855,8 +851,8 @@ export default {
                       const verseText = vi >= 0 && vi < allVerses.length ? allVerses[vi] : null;
                       if (verseText) {
                         const verseLabel = `${chapterLabel}:${verseNum}`;
-                        meta.title = `${verseLabel} (${workTitle}) | Scripture`;
-                        meta.ogTitle = `${verseLabel} (${workTitle}) | Scripture`;
+                        meta.title = `${verseLabel} | ${workTitle} | a9l.im`;
+                        meta.ogTitle = `${verseLabel} | ${workTitle} | a9l.im`;
                         meta.desc = verseText.length > 160 ? verseText.slice(0, verseText.lastIndexOf(' ', 160)) + '\u2026' : verseText;
                         meta.ssrVerses = `<p><b>${verseNum}.</b> ${mdEsc(verseText)}</p>`;
                         breadcrumbItems.push({ '@type': 'ListItem', position: 5, name: `Verse ${verseNum}`, item: `https://a9l.im${pathname}` });
@@ -916,9 +912,9 @@ export default {
       // Scripture index: /scripture or /scripture/
       if (pathname === '/scripture' || pathname === '/scripture/') {
         const indexMeta = {
-          title: 'Scripture — a9l.im',
+          title: 'Scripture | a9l.im',
           desc: 'Read sixteen sacred texts spanning Abrahamic, East Asian, Zoroastrian, Buddhist, and Nordic traditions. Full-text search, concordance, verse notes, and cross-tradition comparisons.',
-          ogTitle: 'Scripture — Sacred Text Reader',
+          ogTitle: 'Scripture | a9l.im',
           canonical: 'https://a9l.im/scripture/',
           jsonLd: JSON.stringify({
             '@context': 'https://schema.org',
@@ -948,6 +944,7 @@ export default {
                 name: 'Sacred Text Corpus — 16 Works',
                 description: 'A corpus of sixteen sacred texts spanning Abrahamic, East Asian, Zoroastrian, Buddhist, and Nordic traditions, in English translation.',
                 url: 'https://a9l.im/scripture/',
+                creator: { '@type': 'Person', name: 'a9lim', url: 'https://a9l.im/about', '@id': 'https://a9l.im/#person' },
                 license: 'https://creativecommons.org/publicdomain/mark/1.0/',
                 inLanguage: 'en',
                 temporalCoverage: '1611/1930',
@@ -982,9 +979,9 @@ export default {
         if (!meta) {
           const pretty = slug.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
           meta = {
-            title: `${pretty} \u2014 a9l.im`,
+            title: `${pretty} | a9l.im`,
             desc: 'Articles on simulation design, web development, and educational technology.',
-            ogTitle: `${pretty} \u2014 a9l.im`,
+            ogTitle: `${pretty} | a9l.im`,
           };
         }
         meta = { ...meta, canonical: `https://a9l.im${pathname}`, ogType: 'article' };
@@ -1105,9 +1102,10 @@ export default {
             '@type': 'ProfilePage',
             '@id': 'https://a9l.im/resume',
             url: 'https://a9l.im/resume',
-            name: 'Resume \u2014 a9lim',
+            name: 'Resume | a9lim',
             mainEntity: { '@id': 'https://a9l.im/#person' },
-            dateModified: '2026-04-15',
+            datePublished: '2026-04-15T00:00:00+00:00',
+            dateModified: '2026-05-11T00:00:00+00:00',
           };
           meta.jsonLd = JSON.stringify({ '@context': 'https://schema.org', '@graph': [profilePage, person, breadcrumb, navElement] });
         } else if (pathname === '/projects') {
