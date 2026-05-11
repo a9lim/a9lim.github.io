@@ -1,11 +1,21 @@
 {
-  "generatedAt": "2026-05-08T10:09:06.849Z",
+  "generatedAt": "2026-05-11T04:32:07.495Z",
   "lastDeploy": {
-    "hash": "04c5616",
-    "iso": "2026-05-07T15:31:26-07:00",
-    "subject": "docs: bump 3d plot iframes to 600px, unify camera at (1.85,1.85,1.65)"
+    "hash": "2c864bf",
+    "iso": "2026-05-10T18:13:50-07:00",
+    "subject": "docs: expand kaomoji introspection post with per-plot analysis"
   },
   "commits": [
+    {
+      "hash": "2c864bf",
+      "iso": "2026-05-10T18:13:50-07:00",
+      "subject": "docs: expand kaomoji introspection post with per-plot analysis"
+    },
+    {
+      "hash": "1875a7b",
+      "iso": "2026-05-08T14:19:42-07:00",
+      "subject": "docs: rewrite kaomoji introspection post"
+    },
     {
       "hash": "04c5616",
       "iso": "2026-05-07T15:31:26-07:00",
@@ -25,16 +35,6 @@
       "hash": "52f7f5a",
       "iso": "2026-05-04T17:27:46-07:00",
       "subject": "docs: document dev.sh and CSP script-src in CLAUDE.md"
-    },
-    {
-      "hash": "a986bfb",
-      "iso": "2026-05-04T17:25:21-07:00",
-      "subject": "fix: allow cdn.plot.ly in CSP script-src for blog plotly figures"
-    },
-    {
-      "hash": "4785f1f",
-      "iso": "2026-05-04T17:17:29-07:00",
-      "subject": "chore: add dev.sh for local wrangler dev (symlink-farm workaround)"
     }
   ],
   "stats": {
