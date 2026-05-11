@@ -117,21 +117,21 @@ const _PALETTE = {
   secondaryLight: '#73A9E1',  // oklch(0.72  0.10  250)
 
   light: {
-    canvas:        '#E6E8ED',  // oklch(0.93 0.008 270)
-    panelSolid:    '#F0F2F6',  // oklch(0.96 0.006 270)
-    elevated:      '#F7F8FB',  // oklch(0.98 0.004 270)
-    text:          '#090B0F',  // oklch(0.15 0.010 270)
-    textSecondary: '#4B4D53',  // oklch(0.42 0.010 270)
-    textMuted:     '#75777C',  // oklch(0.57 0.008 270)
+    canvas:        '#F4F5F8',  // oklch(0.970 0.004 270)
+    panelSolid:    '#F9FAFC',  // oklch(0.985 0.003 270)
+    elevated:      '#FDFDFF',  // oklch(0.995 0.002 270)
+    text:          '#010203',  // oklch(0.08 0.010 270)
+    textSecondary: '#0C0D12',  // oklch(0.16 0.010 270)
+    textMuted:     '#1E1F23',  // oklch(0.24 0.008 270)
   },
 
   dark: {
     canvas:        '#06070B',  // oklch(0.13 0.010 270)
     panelSolid:    '#0E0F14',  // oklch(0.17 0.010 270)
     elevated:      '#191A1F',  // oklch(0.22 0.010 270)
-    text:          '#E0E1E5',  // oklch(0.91 0.005 270)
-    textSecondary: '#84868B',  // oklch(0.62 0.008 270)
-    textMuted:     '#4B4D52',  // oklch(0.42 0.008 270)
+    text:          '#F4F5F9',  // oklch(0.97 0.005 270)
+    textSecondary: '#D8DBE0',  // oklch(0.89 0.008 270)
+    textMuted:     '#BFC1C6',  // oklch(0.81 0.008 270)
   },
 
   // Cross-project semantic colors — OKLCH L=0.62, C=0.17 uniform

@@ -136,7 +136,7 @@
     var theme = readTheme();
     document.documentElement.dataset.theme = theme;
     var styles = getComputedStyle(document.documentElement);
-    var canvas = styles.getPropertyValue('--bg-canvas').trim() || (theme === 'dark' ? '#06070B' : '#E6E8ED');
+    var canvas = styles.getPropertyValue('--bg-canvas').trim() || (theme === 'dark' ? '#06070B' : '#F4F5F8');
     var bgHover = styles.getPropertyValue('--bg-hover').trim();
     var muted = styles.getPropertyValue('--text-muted').trim();
     return {

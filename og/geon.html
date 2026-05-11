@@ -9,7 +9,7 @@
     width: 1200px;
     height: 630px;
     overflow: hidden;
-    background: #E6E8ED;
+    background: #F4F5F8;
     display: flex;
     align-items: center;
     font-family: 'Recursive', sans-serif;
@@ -37,7 +37,7 @@
     left: 360px;
     width: 200px;
     height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(230, 232, 237, 0.7));
+    background: linear-gradient(90deg, transparent, rgba(244, 245, 248, 0.7));
     pointer-events: none;
   }
   .text-side {
@@ -55,31 +55,17 @@
     font-variation-settings: 'MONO' 0, 'CASL' 0;
     font-weight: 700;
     font-size: 156px;
-    color: #090B0F;
+    color: #010203;
     letter-spacing: -3px;
     line-height: 1;
-  }
-  .accent-line {
-    width: 88px;
-    height: 3px;
-    background: #E11107;
-    border-radius: 2px;
-    margin-top: 28px;
   }
   .site-brand {
     font-family: 'Recursive', monospace;
     font-variation-settings: 'MONO' 1, 'CASL' 0;
     font-size: 22px;
-    color: #75777C;
-    margin-top: 16px;
+    color: #1E1F23;
+    margin-top: 32px;
     letter-spacing: 0.5px;
-  }
-  .site-brand .copyleft {
-    display: inline-block;
-    transform: scaleX(-1);
-    font-size: 17px;
-    margin-right: 1px;
-    vertical-align: 1px;
   }
 </style>
 </head>
@@ -89,8 +75,7 @@
   </div>
   <div class="text-side">
     <div class="project-name">Geon</div>
-    <div class="accent-line"></div>
-    <div class="site-brand"><span class="copyleft">&copy;</span>a9l.im</div>
+    <div class="site-brand">AGPL-3.0</div>
   </div>
 
   <script>
@@ -110,7 +95,7 @@
     const COLOR_NEG     = '#0091C9'; // negative charge → blue
     const COLOR_PHOTON  = '#998700'; // EM photon yellow
     const ALPHA_MAX     = 0.7;       // light mode trail alpha max
-    const BG            = 'rgba(230, 232, 237, ';
+    const BG            = 'rgba(244, 245, 248, ';
 
     // Lerp two hex colors by t in [0,1] toward target, returning rgba string
     function lerpColor(base, target, t, a) {
@@ -246,14 +231,14 @@
 
     // --- Top and bottom fades (full canvas width, drawn after restore) ---
     const fadeTop = ctx.createLinearGradient(0, 0, 0, 120);
-    fadeTop.addColorStop(0, 'rgba(230, 232, 237, 1)');
-    fadeTop.addColorStop(1, 'rgba(230, 232, 237, 0)');
+    fadeTop.addColorStop(0, 'rgba(244, 245, 248, 1)');
+    fadeTop.addColorStop(1, 'rgba(244, 245, 248, 0)');
     ctx.fillStyle = fadeTop;
     ctx.fillRect(0, 0, W, 120);
 
     const fadeBot = ctx.createLinearGradient(0, H - 160, 0, H);
-    fadeBot.addColorStop(0, 'rgba(230, 232, 237, 0)');
-    fadeBot.addColorStop(1, 'rgba(230, 232, 237, 1)');
+    fadeBot.addColorStop(0, 'rgba(244, 245, 248, 0)');
+    fadeBot.addColorStop(1, 'rgba(244, 245, 248, 1)');
     ctx.fillStyle = fadeBot;
     ctx.fillRect(0, H - 160, W, 160);
   </script>
