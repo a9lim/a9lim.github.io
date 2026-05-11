@@ -21,23 +21,23 @@
     height: 630px;
     flex-shrink: 0;
     position: relative;
-    overflow: hidden;
   }
   .flair canvas {
     position: absolute;
     top: 0;
     left: 0;
-    width: 400px;
+    width: 560px;
     height: 630px;
   }
-  /* Fade-out on right edge */
+  /* Soft fade-out that lets the spillover content show through */
   .flair::after {
     content: '';
     position: absolute;
-    top: 0; right: 0;
-    width: 100px;
+    top: 0;
+    left: 360px;
+    width: 200px;
     height: 100%;
-    background: linear-gradient(90deg, transparent, #E6E8ED);
+    background: linear-gradient(90deg, transparent, rgba(230, 232, 237, 0.7));
     pointer-events: none;
   }
   .text-side {
@@ -47,6 +47,8 @@
     align-items: center;
     justify-content: center;
     padding: 0 60px;
+    position: relative;
+    z-index: 1;
   }
   .project-name {
     font-family: 'Recursive', sans-serif;
@@ -83,7 +85,7 @@
 </head>
 <body>
   <div class="flair">
-    <canvas id="flair" width="800" height="1260"></canvas>
+    <canvas id="flair" width="1120" height="1260"></canvas>
   </div>
   <div class="text-side">
     <div class="project-name">Gerry</div>
@@ -95,6 +97,12 @@
     const canvas = document.getElementById('flair');
     const ctx = canvas.getContext('2d');
     const W = canvas.width, H = canvas.height;
+
+    // Right-align flair content within the canvas for visual symmetry
+    // with the right-side text (native px units).
+    const SHIFT_X = 160;
+    ctx.save();
+    ctx.translate(SHIFT_X, 0);
 
     // District color map: 0=orange, 1=lime, 2=purple
     const DISTRICT_COLORS = [
@@ -125,7 +133,7 @@
     const gridH = rowStep * (ROWS - 1) + hexH;
 
     // Center grid in canvas
-    const originX = (W - gridW) / 2 + hexW / 2;
+    const originX = (800 - gridW) / 2 + hexW / 2;
     const originY = (H - gridH) / 2 + r;
 
     // Pointy-top: odd ROWS offset right by colStep/2
@@ -225,7 +233,9 @@
       }
     }
 
-    // --- Top fade ---
+    ctx.restore();
+
+    // --- Top fade (full canvas width, drawn after restore) ---
     const fadeTop = ctx.createLinearGradient(0, 0, 0, 120);
     fadeTop.addColorStop(0, 'rgba(230, 232, 237, 1)');
     fadeTop.addColorStop(1, 'rgba(230, 232, 237, 0)');

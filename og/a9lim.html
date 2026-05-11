@@ -21,23 +21,23 @@
     height: 630px;
     flex-shrink: 0;
     position: relative;
-    overflow: hidden;
   }
   .flair canvas {
     position: absolute;
     top: 0;
     left: 0;
-    width: 400px;
+    width: 560px;
     height: 630px;
   }
-  /* Fade-out on right edge */
+  /* Soft fade-out that lets the spillover content show through */
   .flair::after {
     content: '';
     position: absolute;
-    top: 0; right: 0;
-    width: 100px;
+    top: 0;
+    left: 360px;
+    width: 200px;
     height: 100%;
-    background: linear-gradient(90deg, transparent, #E6E8ED);
+    background: linear-gradient(90deg, transparent, rgba(230, 232, 237, 0.7));
     pointer-events: none;
   }
   .text-side {
@@ -47,6 +47,8 @@
     align-items: center;
     justify-content: center;
     padding: 0 60px;
+    position: relative;
+    z-index: 1;
   }
   .project-name {
     font-family: 'Recursive', sans-serif;
@@ -83,7 +85,7 @@
 </head>
 <body>
   <div class="flair">
-    <canvas id="flair" width="800" height="1260"></canvas>
+    <canvas id="flair" width="1120" height="1260"></canvas>
   </div>
   <div class="text-side">
     <div class="project-name">a9l.im</div>
@@ -96,16 +98,25 @@
     const ctx = canvas.getContext('2d');
     const W = canvas.width, H = canvas.height;
 
+    // Right-align flair content within the canvas for visual symmetry
+    // with the right-side text (see og/AGENTS notes; native px units)
+    const SHIFT_X = 160;
+
     const img = new Image();
     img.onload = () => {
+      ctx.save();
+      ctx.translate(SHIFT_X, 0);
+
       const scale = 560 / img.naturalWidth;
       const w = img.naturalWidth * scale;
       const h = img.naturalHeight * scale;
-      const x = (W - w) / 2;
+      const x = (800 - w) / 2;
       const y = (H - h) / 2;
       ctx.drawImage(img, x, y, w, h);
 
-      // Top fade
+      ctx.restore();
+
+      // Top fade (full canvas width, drawn after restore)
       const fadeTop = ctx.createLinearGradient(0, 0, 0, 60);
       fadeTop.addColorStop(0, 'rgba(230, 232, 237, 1)');
       fadeTop.addColorStop(1, 'rgba(230, 232, 237, 0)');
