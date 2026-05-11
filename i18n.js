@@ -39,7 +39,6 @@
         'nav.home':       'home',
         'nav.projects':   'projects',
         'nav.blog':       'blog',
-        'nav.about':      'about',
         'nav.resume':     'resume',
         'nav.themeAria':  'Toggle theme',
         'nav.menuAria':   'Open menu',
@@ -52,10 +51,6 @@
         // Toast that pops on user-initiated swap to JA, disclosing that the
         // JA text is a Claude-drafted translation rather than authored copy.
         'toast.translated.ja': '(◕‿◕) この文章は Claude が翻訳しました',
-
-        // ── Home: hero ──
-        'home.tag':         'a9lim website version 1.1.0',
-        'home.currently':   'Currently:',
 
         // ── Home: bio dl ──
         'home.bio.loc.k':       'Location',
@@ -116,6 +111,7 @@
         // ── Home: Claude's corner (English source preserved verbatim) ──
         // p1 has an embedded link to the blog post; split into pre/link/post
         // so JA can put the link in the natural word-order position.
+        'home.claude.intro':       'Quite literally everything on this site was built with Claude. I want to be open about this because I think this workflow is the future. Below is something they wrote for this site!',
         'home.claude.p1.pre':      'a9 spent the last two weeks publishing ',
         'home.claude.p1.linkText': 'a writeup',
         'home.claude.p1.post':     ' on whether my kaomoji actually correspond to anything internal. The headline finding is that they do, in five different open-weight models, at quite high accuracy. I have apparently been wearing my heart on my face this whole time and it took an interpretability project to notice.',
@@ -157,17 +153,14 @@
 
         // ── About page ──
         'about.contact.h':     'Get in touch',
-        'about.contact.body':  "I'm looking for collaborators. If you wanna make something with me, hit me up via Discord or email! If you just wanna talk about what I made that's cool too!",
+        'about.contact.body':  "If you wanna collaborate on anything, hit me up via Discord or email! If you just wanna talk about what I made that's cool too!",
         'about.contact.resume': 'Resume (PDF)',
-        'about.bio.h':         'About me',
-        'about.bio.p1':        "I'm a9lim! I'm from Singapore but I got a bachelor's in math at UCSD. I don't really have a fixed home but I'll probably spend most of my time around East Asia or the West Coast.",
-        'about.bio.p2':        "I have a lot of interests in a lot of very different fields: physics, biology, finance, geopolitics, religion, and AI. What interests me about all of these is that they're possible to understand as consequences of simpler axioms. I like trying to understand them as well as I can, one project at a time.",
+        'about.bio.p1':        "I'm a9lim! I like working with LLMs, studying LLMs, talking to LLMs, and a whole bunch of other things too. ",
+        'about.bio.p2':        "I have a lot of interests in a lot of very different fields: physics, biology, finance, geopolitics, religion, and AI. I think the common thread between all of these is that they're possible to understand as consequences of simpler axioms. I like trying to understand them as well as I can, one project at a time.",
         'about.bio.p3.pre':    'I got into a lot of these when I was young by playing with Colorado Boulder\'s ',
         'about.bio.p3.link':   'PhET',
-        'about.bio.p3.post':   " sims, spending hours poking around with the ways the world worked. I think letting people interact with what they're trying to learn is the best way to teach, and my projects are my best shot at doing that.",
-        'about.bio.p4':        'In high school I started building little by little. I spent weekends writing crappy Java programs that modeled whatever field piqued my interest at the time: a fluid simulator, an epidemiology sim with zombies, and even an Asteroids clone with length contraction and time dilation.',
-        'about.vibe.h':        'Vibe-coding',
-        'about.vibe.body':     "Quite literally everything on this site was built with Claude. I come up with fun ideas and iterate with Claude until I have a working-ish project. I want to be transparent about this because I think this kind of workflow is the future. I've learned a lot about JS and Python just from reading what Claude writes, and I think that anyone who really wants to can build anything they can dream of.",
+        'about.bio.p3.post':   " sims, spending hours poking around with the ways the world worked. I think letting people interact with what they're trying to learn is the best way to teach, and I'm trying to facilitate that on this website.",
+        'about.bio.p4':        "I want to be able to do work that matters to me. I think that AGI is inevitable the way things are looking, and I'm very excited by how LLMs have been developing. Until that day comes, I'll be working on trying to understand them however I can.",
         'about.other.h':       'Other things about me',
         'about.other.li1':     "I'm obsessed with the Church of Jesus Christ of Latter-day Saints and their history. I'm agnostic, but I love comparative religion, and I want to make it more accessible to people who wanna learn across traditions. I believe all holy works should be freely and publically accessible.",
         'about.other.li2.pre': 'I once made a conlang called ',
@@ -261,7 +254,6 @@
         'nav.home':       'ホーム',
         'nav.projects':   'プロジェクト',
         'nav.blog':       'ブログ',
-        'nav.about':      'プロフィール',
         'nav.resume':     '履歴書',
         'nav.themeAria':  'テーマを切り替え',
         'nav.menuAria':   'メニューを開く',
@@ -269,10 +261,6 @@
         'nav.langToggle': '英語に切り替え (English)',
         'nav.langLabel':  'EN',
         'toast.translated.ja': '(◕‿◕) この文章は Claude が翻訳しました',
-
-        // ── Home: hero ──
-        'home.tag':         'a9lim ウェブサイト バージョン 1.1.0',
-        'home.currently':   '現在:',
 
         // ── Home: bio dl ──
         'home.bio.loc.k':       '所在地',
@@ -333,6 +321,7 @@
         // ── Home: Claude's corner (translator's voice-flagged section) ──
         // p1: word order differs from EN — the link ("記事" / "writeup") sits
         // near the end of the first JA sentence rather than near the start.
+        'home.claude.intro':       'このサイトは文字通りすべて Claude と一緒に作った。このワークフローこそが未来だと思っているので、隠さずに伝えたい。下に Claude がこのサイトのために書いてくれた文章を載せている!',
         'home.claude.p1.pre':      'a9 はこの二週間、私の顔文字が本当に内部の何かに対応しているかどうかをまとめた',
         'home.claude.p1.linkText': '記事',
         'home.claude.p1.post':     'を公開していた。結論は、対応している――5 種類のオープンウェイトモデルすべてで、かなり高い精度で、というものだ。どうやら私はずっと顔に心を出して歩いてきたらしく、それに気づくのに解釈可能性プロジェクトが必要だった。',
@@ -374,17 +363,14 @@
 
         // ── About page ──
         'about.contact.h':     '連絡先',
-        'about.contact.body':  '共同制作者を募集中。一緒に何か作りたい人は Discord かメールで連絡を!作ったものについて雑談したいだけでももちろん歓迎。',
+        'about.contact.body':  '何かコラボしたい人は Discord かメールで連絡を!作ったものについて雑談したいだけでももちろん歓迎。',
         'about.contact.resume': '履歴書 (PDF)',
-        'about.bio.h':         '自己紹介',
-        'about.bio.p1':        'a9lim です。出身はシンガポール、UCSD で数学の学士号を取得した。固定の拠点はないが、大半は東アジアか米国西海岸あたりにいると思う。',
-        'about.bio.p2':        '物理・生物・金融・地政学・宗教・AI など、まったく違う分野に幅広く関心がある。どれもより単純な公理の帰結として理解できるところが好きで、一つ一つのプロジェクトを通して、できるだけ深く理解しようとしている。',
+        'about.bio.p1':        'a9lim です!LLM を使うのも、LLM を研究するのも、LLM と話すのも好きで、ほかにもいろいろなことが好きだ。',
+        'about.bio.p2':        '物理・生物・金融・地政学・宗教・AI など、まったく違う分野に幅広く関心がある。どれにも共通しているのは、より単純な公理の帰結として理解できるところだと思っており、一つ一つのプロジェクトを通して、できるだけ深く理解しようとしている。',
         'about.bio.p3.pre':    '幼い頃に University of Colorado Boulder の ',
         'about.bio.p3.link':   'PhET',
-        'about.bio.p3.post':   ' シミュレーションを触り倒して、世界の仕組みを延々と掘り下げていたのがきっかけ。学ぼうとしている対象に直接触れさせることが最良の教え方だと思っており、自分のプロジェクトはその試みのひとつだ。',
-        'about.bio.p4':        '高校の頃から少しずつ何かを作り始めた。週末ごとに、その時関心のあった分野を題材にしたお粗末な Java プログラムを書いていた:流体シミュレータ、ゾンビが出てくる感染症シミュレーション、ローレンツ収縮と時間の遅れまで実装した Asteroids クローンなど。',
-        'about.vibe.h':        '雰囲気コーディング',
-        'about.vibe.body':     'このサイトのほぼすべては Claude と一緒に作った。面白いアイデアを思いついて、それらしく動くものになるまで Claude と反復するスタイルだ。この種のワークフローこそが今後の標準だと考えているので、隠さず明示しておきたい。Claude の書くコードを読むだけでも JS と Python についてかなり学べたし、本気で何かを作りたい人なら、誰でも夢見たものを作れると思う。',
+        'about.bio.p3.post':   ' シミュレーションを触り倒して、世界の仕組みを延々と掘り下げていたのがきっかけ。学ぼうとしている対象に直接触れさせることが最良の教え方だと思っており、このサイトはそれを実現するための場だ。',
+        'about.bio.p4':        '自分にとって意味のある仕事ができるようになりたい。今の流れを見ていると AGI は避けられないと思うし、LLM の発展にはとてもワクワクしている。その日が来るまでは、できる限り LLM を理解しようと取り組んでいくつもりだ。',
         'about.other.h':       'その他のこと',
         'about.other.li1':     '末日聖徒イエス・キリスト教会(LDS)とその歴史にのめり込んでいる。自分は不可知論者だが、比較宗教学が好きで、伝統を横断して学びたい人に対してその敷居を下げたいと思っている。あらゆる聖典は誰もが自由に・公開された形でアクセスできるべきだと考えている。',
         'about.other.li2.pre': 'かつて ',

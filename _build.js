@@ -252,7 +252,6 @@ const staticRoutes = [
   { path: '/',          file: 'index.html',           changefreq: 'weekly',  priority: 1.0 },
   { path: '/projects',  file: 'index.html',           changefreq: 'monthly', priority: 0.8 },
   { path: '/blog',      file: 'index.html',           changefreq: 'monthly', priority: 0.8 },
-  { path: '/about',     file: 'index.html',           changefreq: 'monthly', priority: 0.8 },
   { path: '/resume',    file: 'index.html',           changefreq: 'monthly', priority: 0.7 },
   { path: '/geon',      file: 'geon/index.html',      changefreq: 'monthly', priority: 0.9 },
   { path: '/cyano',     file: 'cyano/index.html',     changefreq: 'monthly', priority: 0.9 },
@@ -422,7 +421,7 @@ const atomEntries = posts.map(p => {
     <updated>${isoTimestamp(p.updated || p.date)}</updated>
     <author>
       <name>a9lim</name>
-      <uri>${SITE}/about</uri>
+      <uri>${SITE}/</uri>
     </author>
     <summary>${escXml(firstPara)}</summary>${categories ? '\n' + categories : ''}
     <content type="html"><![CDATA[${htmlContent}]]></content>
@@ -444,7 +443,7 @@ const atom = `<?xml version="1.0" encoding="UTF-8"?>
   <updated>${latestIso}</updated>
   <author>
     <name>a9lim</name>
-    <uri>${SITE}/about</uri>
+    <uri>${SITE}/</uri>
   </author>
 ${atomEntries.join('\n')}
 </feed>

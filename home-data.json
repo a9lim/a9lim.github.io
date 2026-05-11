@@ -1,11 +1,21 @@
 {
-  "generatedAt": "2026-05-11T22:14:37.787Z",
+  "generatedAt": "2026-05-11T23:10:42.047Z",
   "lastDeploy": {
-    "hash": "5310d2c",
-    "iso": "2026-05-11T14:42:08-07:00",
-    "subject": "blog: add intent sentence to kaomoji post opening + JA mirror + regen"
+    "hash": "ccd6957",
+    "iso": "2026-05-11T15:32:51-07:00",
+    "subject": "design: brighter light palette + tighter text scale + OG refresh"
   },
   "commits": [
+    {
+      "hash": "ccd6957",
+      "iso": "2026-05-11T15:32:51-07:00",
+      "subject": "design: brighter light palette + tighter text scale + OG refresh"
+    },
+    {
+      "hash": "ab4f96f",
+      "iso": "2026-05-11T15:15:07-07:00",
+      "subject": "home: refresh now/hyperfix/bio + JA mirror, fix blog publish date"
+    },
     {
       "hash": "5310d2c",
       "iso": "2026-05-11T14:42:08-07:00",
@@ -25,16 +35,6 @@
       "hash": "c9f0023",
       "iso": "2026-05-11T13:30:30-07:00",
       "subject": "i18n: port EN kaomoji-post voice/accuracy edits to JA + regen metadata"
-    },
-    {
-      "hash": "18b7a82",
-      "iso": "2026-05-11T09:41:55-07:00",
-      "subject": "i18n: complete JA sweep — blog tables, home post snippet, version bump"
-    },
-    {
-      "hash": "c1cae93",
-      "iso": "2026-05-11T03:10:30-07:00",
-      "subject": "chore: housekeeping pass"
     }
   ],
   "stats": {
@@ -42,6 +42,6 @@
     "posts": 1,
     "scriptureWorks": 16,
     "scriptureChapters": 2724,
-    "sourceLines": 15747
+    "sourceLines": 15720
   }
 }

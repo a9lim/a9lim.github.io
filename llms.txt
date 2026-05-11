@@ -23,10 +23,6 @@ updated: 2026-05-11
 
 - [Introspection via Kaomoji](https://a9l.im/blog/introspection-via-kaomoji): Mechanistic-interpretability writeup on the kaomoji-as-affect-readout question. Cross-model PCA across gemma, qwen, ministral, gpt-oss, and granite; a Bayesian face-likelihood predictor at ~76% accuracy on local-model GT and 72% on a Claude validation set; near-ready Claude Code extension surfacing affect from emitted kaomoji.
 
-## About
-
-- [About a9lim](https://a9l.im/about): Background, projects, and contact
-
 ## GitHub Projects
 
 - [Saklas](https://github.com/a9lim/saklas): Activation steering and trait monitoring for HuggingFace transformers

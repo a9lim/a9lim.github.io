@@ -68,11 +68,6 @@ function renderBio(pairs) {
     }
 }
 
-function renderStatus(text) {
-    const s = document.getElementById('home-status');
-    if (s) s.textContent = text || '';
-}
-
 function renderNow(pairs) {
     const root = document.getElementById('home-now');
     if (!root || !Array.isArray(pairs)) return;
@@ -227,7 +222,6 @@ async function fetchJSON(url) {
 function renderFromCache() {
     const { home, data, posts } = _homeCache;
     if (home) {
-        renderStatus(pickLang(home, 'status'));
         renderBio(pickLang(home, 'bio'));
         renderNow(pickLang(home, 'now'));
         renderHyperfix(pickLang(home, 'hyperfixation'));
@@ -274,7 +268,6 @@ function initCheatsheet() {
         ['g h', 'home'],
         ['g p', 'projects'],
         ['g b', 'blog'],
-        ['g a', 'about'],
         ['g r', 'resume'],
         ['g s', 'scripture'],
         ['t',   'toggle theme'],
@@ -355,7 +348,7 @@ function initCheatsheet() {
         // `g <letter>` sequences
         if (gPending) {
             gPending = false; if (gTimer) clearTimeout(gTimer);
-            const map = { h: '/', p: '/projects', b: '/blog', a: '/about', r: '/resume', s: '/scripture/' };
+            const map = { h: '/', p: '/projects', b: '/blog', r: '/resume', s: '/scripture/' };
             const target = map[e.key.toLowerCase()];
             if (target) { e.preventDefault(); go(target); }
             return;

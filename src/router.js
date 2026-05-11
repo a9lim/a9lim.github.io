@@ -1,9 +1,9 @@
 // ─── SPA Path Router ───
-// Routes: /, /projects, /blog, /about, /resume, /blog/{slug}.
+// Routes: /, /projects, /blog, /resume, /blog/{slug}.
 // Cloudflare Pages _redirects serves index.html for these paths.
 // A delegated click handler on document intercepts [data-page] links.
 
-const PAGES = ['home', 'projects', 'blog', 'about', 'resume'];
+const PAGES = ['home', 'projects', 'blog', 'resume'];
 
 export function parsePath() {
     const raw = location.pathname.replace(/^\//, '').replace(/\/$/, '');

@@ -213,11 +213,6 @@ const ROUTE_META = {
     desc: 'Articles on building educational simulations, computational physics, browser-based rendering, and interactive learning tools.',
     ogTitle: 'Blog | a9l.im',
   },
-  '/about': {
-    title: 'About | a9l.im',
-    desc: 'About a9lim \u2014 Singaporean developer building simulations, AI agents, and browser tools across physics, biology, finance, religion, and more. Mostly vibe-coded with Claude.',
-    ogTitle: 'About | a9l.im',
-  },
   '/resume': {
     title: 'Resume | a9l.im',
     desc: 'Resume of a9lim \u2014 independent developer building interactive educational simulations and tools at a9l.im, available for freelance and collaborations.',
@@ -238,7 +233,7 @@ const ABOUT_JSONLD = JSON.stringify({
   '@type': 'Person',
   '@id': 'https://a9l.im/#person',
   name: 'a9lim',
-  url: 'https://a9l.im/about',
+  url: 'https://a9l.im/',
   nationality: { '@type': 'Country', name: 'Singapore' },
   alumniOf: [
     { '@type': 'CollegeOrUniversity', name: 'University of California, San Diego', '@id': 'https://www.wikidata.org/wiki/Q622664' },
@@ -279,7 +274,7 @@ const ABOUT_JSONLD = JSON.stringify({
       url: 'https://a9l.im/projects',
     },
   },
-  mainEntityOfPage: { '@type': 'WebPage', '@id': 'https://a9l.im/about' },
+  mainEntityOfPage: { '@type': 'WebPage', '@id': 'https://a9l.im/' },
 });
 
 const PROJECTS_SSR = `
@@ -427,13 +422,6 @@ function rewriteHTML(response, meta) {
       element(el) {
         if (meta.canonical !== 'https://a9l.im' && meta.canonical !== 'https://a9l.im/') {
           el.setAttribute('class', 'page-section');
-        }
-      },
-    })
-    .on('#page-about', {
-      element(el) {
-        if (meta.canonical === 'https://a9l.im/about') {
-          el.setAttribute('class', 'page-section active');
         }
       },
     })
@@ -664,6 +652,11 @@ export default {
     ]);
     const url = new URL(request.url);
     const { pathname, origin } = url;
+
+    // Folded /about into / — preserve inbound links with a permanent redirect
+    if (pathname === '/about' || pathname === '/about/') {
+      return Response.redirect(`${origin}/`, 308);
+    }
 
     // Scripture sub-SPA
     if (pathname.startsWith('/scripture')) {
@@ -944,7 +937,7 @@ export default {
                 name: 'Sacred Text Corpus — 16 Works',
                 description: 'A corpus of sixteen sacred texts spanning Abrahamic, East Asian, Zoroastrian, Buddhist, and Nordic traditions, in English translation.',
                 url: 'https://a9l.im/scripture/',
-                creator: { '@type': 'Person', name: 'a9lim', url: 'https://a9l.im/about', '@id': 'https://a9l.im/#person' },
+                creator: { '@type': 'Person', name: 'a9lim', url: 'https://a9l.im/', '@id': 'https://a9l.im/#person' },
                 license: 'https://creativecommons.org/publicdomain/mark/1.0/',
                 inLanguage: 'en',
                 temporalCoverage: '1611/1930',
@@ -969,7 +962,7 @@ export default {
     }
 
     // Root SPA routes — serve index.html with per-route meta injection
-    if (pathname === '/projects' || pathname === '/blog' || pathname.startsWith('/blog/') || pathname === '/about' || pathname === '/resume') {
+    if (pathname === '/projects' || pathname === '/blog' || pathname.startsWith('/blog/') || pathname === '/resume') {
       const response = await env.ASSETS.fetch(new URL('/index.html', origin));
 
       let meta;
@@ -1006,7 +999,7 @@ export default {
                     if (postMeta.excerpt) meta.desc = postMeta.excerpt;
                     meta.articlePublished = postMeta.date;
                     meta.articleModified = postMeta.updated || postMeta.date;
-                    meta.articleAuthor = 'https://a9l.im/about';
+                    meta.articleAuthor = 'https://a9l.im/';
                     if (postMeta.tag) meta.articleTag = Array.isArray(postMeta.tag) ? postMeta.tag : [postMeta.tag];
                     const tagDisplay = Array.isArray(postMeta.tag) ? postMeta.tag.join(', ') : postMeta.tag;
                     postHeader = `<span class="blog-post-date">${fmtDate(postMeta.date)}${postMeta.tag ? ' &middot; ' + mdEsc(tagDisplay) : ''}</span><h1 class="blog-post-title">${mdEsc(postMeta.title)}</h1>`;
@@ -1029,7 +1022,7 @@ export default {
                           ...(postMeta.tag && { articleSection: Array.isArray(postMeta.tag) ? postMeta.tag[0] : postMeta.tag }),
                           speakable: { '@type': 'SpeakableSpecification', cssSelector: ['.blog-post-title', '.blog-content p:first-of-type'] },
                           image: 'https://a9l.im/og-image.webp',
-                          author: { '@type': 'Person', name: 'a9lim', url: 'https://a9l.im/about', sameAs: ['https://github.com/a9lim', 'https://twitter.com/_a9lim'] },
+                          author: { '@type': 'Person', '@id': 'https://a9l.im/#person', name: 'a9lim', url: 'https://a9l.im/', sameAs: ['https://github.com/a9lim', 'https://twitter.com/_a9lim'] },
                           publisher: { '@type': 'Organization', name: 'a9l.im', url: 'https://a9l.im', logo: { '@type': 'ImageObject', url: 'https://a9l.im/icon-192.png', width: 192, height: 192 } },
                           isPartOf: { '@type': 'Blog', name: 'a9l.im Blog', url: 'https://a9l.im/blog' },
                           mainEntityOfPage: { '@type': 'WebPage', '@id': meta.canonical },
@@ -1054,7 +1047,7 @@ export default {
         }
       } else {
         meta = { ...ROUTE_META[pathname], canonical: `https://a9l.im${pathname}` };
-        const pageName = pathname === '/projects' ? 'Projects' : pathname === '/blog' ? 'Blog' : pathname === '/resume' ? 'Resume' : 'About';
+        const pageName = pathname === '/projects' ? 'Projects' : pathname === '/blog' ? 'Blog' : 'Resume';
         meta.ssrBreadcrumb = `<a href="/">Home</a> <span aria-hidden="true">\u203a</span> <span>${pageName}</span>`;
         const navElement = {
           '@type': 'SiteNavigationElement',
@@ -1063,7 +1056,6 @@ export default {
             { '@type': 'WebPage', name: 'Home', url: 'https://a9l.im' },
             { '@type': 'WebPage', name: 'Projects', url: 'https://a9l.im/projects' },
             { '@type': 'WebPage', name: 'Blog', url: 'https://a9l.im/blog' },
-            { '@type': 'WebPage', name: 'About', url: 'https://a9l.im/about' },
             { '@type': 'WebPage', name: 'Resume', url: 'https://a9l.im/resume' },
           ],
         };
@@ -1074,11 +1066,7 @@ export default {
             { '@type': 'ListItem', position: 2, name: pageName, item: `https://a9l.im${pathname}` },
           ],
         };
-        if (pathname === '/about') {
-          const person = JSON.parse(ABOUT_JSONLD);
-          delete person['@context'];
-          meta.jsonLd = JSON.stringify({ '@context': 'https://schema.org', '@graph': [person, breadcrumb, navElement] });
-        } else if (pathname === '/resume') {
+        if (pathname === '/resume') {
           const person = JSON.parse(ABOUT_JSONLD);
           delete person['@context'];
           person.url = 'https://a9l.im/resume';

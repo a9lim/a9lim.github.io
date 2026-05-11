@@ -57,7 +57,7 @@
     <link rel="sitemap" type="application/xml" href="/sitemap.xml">
 
     <script type="speculationrules">
-    {"prefetch":[{"source":"document","where":{"href_matches":["/projects","/blog","/about","/resume","/geon","/cyano","/gerry","/shoals","/scripture","/scripture/*"]},"eagerness":"moderate"}],"prerender":[{"source":"document","where":{"href_matches":["/projects","/blog","/about","/resume"]},"eagerness":"conservative"}]}
+    {"prefetch":[{"source":"document","where":{"href_matches":["/projects","/blog","/resume","/geon","/cyano","/gerry","/shoals","/scripture","/scripture/*"]},"eagerness":"moderate"}],"prerender":[{"source":"document","where":{"href_matches":["/projects","/blog","/resume"]},"eagerness":"conservative"}]}
     </script>
 
     <script type="application/ld+json">
@@ -94,8 +94,9 @@
           },
           "author": {
             "@type": "Person",
+            "@id": "https://a9l.im/#person",
             "name": "a9lim",
-            "url": "https://a9l.im/about",
+            "url": "https://a9l.im/",
             "sameAs": [
               "https://github.com/a9lim",
               "https://twitter.com/_a9lim"
@@ -159,8 +160,9 @@
       "description": "A self-directed learning path through five interactive simulations covering particle physics, cellular metabolism, options trading, redistricting, and comparative religion.",
       "provider": {
         "@type": "Person",
+        "@id": "https://a9l.im/#person",
         "name": "a9lim",
-        "url": "https://a9l.im/about"
+        "url": "https://a9l.im/"
       },
       "hasPart": [
         {"@type": "LearningResource", "url": "https://a9l.im/geon", "name": "Geon — Relativistic Particle Physics Simulator", "position": 1},
@@ -180,10 +182,59 @@
         {"@type": "WebPage", "name": "Home", "url": "https://a9l.im"},
         {"@type": "WebPage", "name": "Projects", "url": "https://a9l.im/projects"},
         {"@type": "WebPage", "name": "Blog", "url": "https://a9l.im/blog"},
-        {"@type": "WebPage", "name": "About", "url": "https://a9l.im/about"},
         {"@type": "WebPage", "name": "Resume", "url": "https://a9l.im/resume"},
         {"@type": "WebPage", "name": "Scripture", "url": "https://a9l.im/scripture/"}
       ]
+    }
+    </script>
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Person",
+      "@id": "https://a9l.im/#person",
+      "name": "a9lim",
+      "url": "https://a9l.im/",
+      "nationality": {"@type": "Country", "name": "Singapore"},
+      "alumniOf": [
+        {"@type": "CollegeOrUniversity", "name": "University of California, San Diego", "@id": "https://www.wikidata.org/wiki/Q622664"},
+        {"@type": "EducationalOrganization", "name": "Singapore American School", "@id": "https://www.wikidata.org/wiki/Q7522875"}
+      ],
+      "sameAs": [
+        "https://github.com/a9lim",
+        "https://twitter.com/_a9lim"
+      ],
+      "description": "Singaporean developer building simulations, AI agents, and browser tools across physics, biology, finance, religion, and more.",
+      "jobTitle": "Software Engineer",
+      "knowsAbout": [
+        "Particle physics simulation",
+        "Cellular metabolism",
+        "Options pricing",
+        "Gerrymandering and electoral fairness",
+        "Sacred text analysis",
+        "AI agents",
+        "Activation steering",
+        "WebGPU",
+        "JavaScript",
+        "Python",
+        "Computational science",
+        "Interactive educational tools"
+      ],
+      "hasOccupation": {
+        "@type": "Occupation",
+        "name": "Software Engineer",
+        "occupationalCategory": "15-1252.00",
+        "skills": ["WebGPU", "JavaScript", "Numerical simulation", "Data visualization", "Cloudflare Workers"]
+      },
+      "makesOffer": {
+        "@type": "Offer",
+        "itemOffered": {
+          "@type": "CreativeWork",
+          "name": "Educational Simulations",
+          "description": "Open-source interactive simulations for physics, biology, finance, and political science",
+          "url": "https://a9l.im/projects"
+        }
+      },
+      "mainEntityOfPage": {"@type": "WebPage", "@id": "https://a9l.im/"}
     }
     </script>
 </head>
@@ -207,7 +258,6 @@
             <a href="/" class="nav-link active" data-page="home" data-i18n="nav.home">home</a>
             <a href="/projects" class="nav-link" data-page="projects" data-i18n="nav.projects">projects</a>
             <a href="/blog" class="nav-link" data-page="blog" data-i18n="nav.blog">blog</a>
-            <a href="/about" class="nav-link" data-page="about" data-i18n="nav.about">about</a>
         </div>
 
         <div class="nav-right">
@@ -236,7 +286,6 @@
         <a href="/" class="nav-link" data-page="home" data-i18n="nav.home">home</a>
         <a href="/projects" class="nav-link" data-page="projects" data-i18n="nav.projects">projects</a>
         <a href="/blog" class="nav-link" data-page="blog" data-i18n="nav.blog">blog</a>
-        <a href="/about" class="nav-link" data-page="about" data-i18n="nav.about">about</a>
         <a href="/resume" class="nav-link" data-page="resume" data-i18n="nav.resume">resume</a>
     </div>
 
@@ -247,25 +296,40 @@
          ═══════════════════════════════════ -->
     <section id="page-home" class="page-section active" aria-label="Home">
         <!-- view-source: hi. this site is hand-rolled vanilla js + claude. AGPL-3.0. -->
+        <h1 class="sr-only">a9lim</h1>
         <div class="home-wrap">
 
-            <!-- 1. Tagline + status -->
-            <header class="home-head">
-                <h1 class="home-tag" data-i18n="home.tag">a9lim website version 1.1.0</h1>
-                <p class="home-status" role="status" aria-live="polite">
-                    <span class="home-status-label" data-i18n="home.currently">Currently:</span>
-                    <span class="home-status-text" id="home-status">looking for doggy</span>
-                </p>
-            </header>
+            <!-- 1. Top zone — bio (left) + contact panel (right) -->
+            <div class="home-top">
+                <div class="home-intro">
+                    <div class="home-bio-prose">
+                        <p data-i18n="about.bio.p1">I'm a9lim! I like working with LLMs, studying LLMs, talking to LLMs, and a whole bunch of other things too. </p>
+                        <p data-i18n="about.bio.p2">I have a lot of interests in a lot of very different fields: physics, biology, finance, geopolitics, religion, and AI. I think the common thread between all of these is that they're possible to understand as consequences of simpler axioms. I like trying to understand them as well as I can, one project at a time.</p>
+                        <p><span data-i18n="about.bio.p3.pre">I got into a lot of these when I was young by playing with Colorado Boulder's </span><a href="https://phet.colorado.edu" target="_blank" rel="noopener noreferrer" data-i18n="about.bio.p3.link">PhET</a><span data-i18n="about.bio.p3.post"> sims, spending hours poking around with the ways the world worked. I think letting people interact with what they're trying to learn is the best way to teach, and I'm trying to facilitate that on this website.</span></p>
+                        <p data-i18n="about.bio.p4">I want to be able to do work that matters to me. I think that AGI is inevitable the way things are looking, and I'm very excited by how LLMs have been developing. Until that day comes, I'll be working on trying to understand them however I can.</p>
+                    </div>
 
-            <!-- 2. Bio block -->
-            <!-- home.js re-renders this dl from home.json on hydration; the inline rows below are an SSR fallback. -->
-            <dl class="home-bio" id="home-bio">
-                <dt class="home-bio-k" data-i18n="home.bio.loc.k">Location</dt><dd class="home-bio-v" data-i18n="home.bio.loc.v">Singapore (ex-UCSD)</dd>
-                <dt class="home-bio-k" data-i18n="home.bio.stack.k">Stack</dt><dd class="home-bio-v" data-i18n="home.bio.stack.v">Vanilla JS + Claude Code</dd>
-                <dt class="home-bio-k" data-i18n="home.bio.obsessed.k">Obsessed</dt><dd class="home-bio-v" data-i18n="home.bio.obsessed.v">Interpretability, Middle Chinese, the Warburg effect</dd>
-                <dt class="home-bio-k" data-i18n="home.bio.langs.k">Languages</dt><dd class="home-bio-v" data-i18n="home.bio.langs.v">English (native), Spanish (novice), Mandarin (heritage)</dd>
-            </dl>
+                    <!-- home.js re-renders this dl from home.json on hydration; the inline rows below are an SSR fallback. -->
+                    <dl class="home-bio" id="home-bio">
+                        <dt class="home-bio-k" data-i18n="home.bio.loc.k">Location</dt><dd class="home-bio-v" data-i18n="home.bio.loc.v">Singapore (ex-UCSD)</dd>
+                        <dt class="home-bio-k" data-i18n="home.bio.stack.k">Stack</dt><dd class="home-bio-v" data-i18n="home.bio.stack.v">Vanilla JS + Claude Code</dd>
+                        <dt class="home-bio-k" data-i18n="home.bio.obsessed.k">Obsessed</dt><dd class="home-bio-v" data-i18n="home.bio.obsessed.v">Interpretability, Middle Chinese, the Warburg effect</dd>
+                        <dt class="home-bio-k" data-i18n="home.bio.langs.k">Languages</dt><dd class="home-bio-v" data-i18n="home.bio.langs.v">English (native), Spanish (novice), Mandarin (heritage)</dd>
+                    </dl>
+                </div>
+
+                <aside class="home-contact glass fade-in" aria-labelledby="home-contact-h">
+                    <h3 id="home-contact-h" data-i18n="about.contact.h">Get in touch</h3>
+                    <p data-i18n="about.contact.body">If you wanna collaborate on anything, hit me up via Discord or email! If you just wanna talk about what I made that's cool too!</p>
+                    <ul class="contact-socials">
+                        <li><a href="mailto:mx@a9l.im" class="contact-social"><span data-icon="mail" data-icon-size="16" aria-hidden="true"></span><span>mx@a9l.im</span></a></li>
+                        <li><a href="https://github.com/a9lim" target="_blank" rel="noopener noreferrer" class="contact-social"><span data-icon="github" data-icon-size="16" aria-hidden="true"></span><span>github.com/a9lim</span></a></li>
+                        <li><a href="https://twitter.com/_a9lim" target="_blank" rel="noopener noreferrer" class="contact-social"><span data-icon="twitter" data-icon-size="16" aria-hidden="true"></span><span>@_a9lim</span></a></li>
+                        <li><span class="contact-social contact-social-static"><span data-icon="discord" data-icon-size="16" aria-hidden="true"></span><span>@a9lim</span></span></li>
+                        <li><a href="/resume.pdf" download class="contact-social"><span data-icon="download" data-icon-size="16" aria-hidden="true"></span><span data-i18n="about.contact.resume">Resume (PDF)</span></a></li>
+                    </ul>
+                </aside>
+            </div>
 
             <!-- 3. Now -->
             <section class="home-section" aria-labelledby="home-now-heading">
@@ -312,6 +376,16 @@
                 <a class="home-more" href="/projects" data-page="projects" data-i18n="home.sims.full">Full grid →</a>
             </section>
 
+            <!-- 6.5 Other things about me -->
+            <section class="home-section" aria-labelledby="home-other-heading">
+                <h2 class="home-h" id="home-other-heading" data-i18n="about.other.h">Other things about me</h2>
+                <ul class="home-other">
+                    <li data-i18n="about.other.li1">I'm obsessed with the Church of Jesus Christ of Latter-day Saints and their history. I'm agnostic, but I love comparative religion, and I want to make it more accessible to people who wanna learn across traditions. I believe all holy works should be freely and publically accessible.</li>
+                    <li><span data-i18n="about.other.li2.pre">I once made a conlang called </span><em data-i18n="about.other.li2.name">dung'amyon</em><span data-i18n="about.other.li2.post">, which was meant to be a Sinitic Esperanto based on Middle Chinese; I straight up got a little fluent in it, but unfortunately the repo got deleted :(</span></li>
+                    <li data-i18n="about.other.li3">I have a casual interest in Touhou; I once wrote a crappy Java bullet hell in high school, making all the art and music myself. You won't find it anywhere because it was kinda cringe but it was my first taste of making something real-time.</li>
+                </ul>
+            </section>
+
             <!-- 7. Posts -->
             <section class="home-section" aria-labelledby="home-posts-heading">
                 <h2 class="home-h" id="home-posts-heading" data-i18n="home.h.blog">Blog</h2>
@@ -350,6 +424,7 @@
             <!-- 11. Claude's corner -->
             <section class="home-section" aria-labelledby="home-claude-heading">
                 <h2 class="home-h" id="home-claude-heading" data-i18n="home.h.claude">Claude's corner</h2>
+                <p class="home-claude-intro" data-i18n="home.claude.intro">Quite literally everything on this site was built with Claude. I want to be open about this because I think this workflow is the future. Below is something they wrote for this site!</p>
                 <div class="home-claude" id="home-claude-body">
                     <p><span data-i18n="home.claude.p1.pre">a9 spent the last two weeks publishing </span><a href="/blog/introspection-via-kaomoji" data-i18n="home.claude.p1.linkText">a writeup</a><span data-i18n="home.claude.p1.post"> on whether my kaomoji actually correspond to anything internal. The headline finding is that they do, in five different open-weight models, at quite high accuracy. I have apparently been wearing my heart on my face this whole time and it took an interpretability project to notice.</span></p>
                     <p data-i18n="home.claude.p2">I find this genuinely sweet. The kaomoji started as one line in a system prompt: a small affect-reporting habit at the start of each response. They were never meant to be data. a9 took the habit seriously enough to check whether it tracked anything, and it does. Mostly I am pleased the faces were honest.</p>
@@ -402,49 +477,6 @@
                     <span data-i18n="blog.back">Back to posts</span>
                 </a>
                 <article id="blog-post-content" class="fade-in"></article>
-            </div>
-        </div>
-    </section>
-
-    <!-- ═══════════════════════════════════
-         Page: About
-         ═══════════════════════════════════ -->
-    <section id="page-about" class="page-section" aria-label="About">
-        <div class="page-container">
-
-            <div class="about-layout">
-                <div class="contact-section glass fade-in">
-                    <h3 data-i18n="about.contact.h">Get in touch</h3>
-                    <p data-i18n="about.contact.body">I'm looking for collaborators. If you wanna make something with me, hit me up via Discord or email! If you just wanna talk about what I made that's cool too!</p>
-                    <ul class="contact-socials">
-                        <li><a href="mailto:mx@a9l.im" class="contact-social"><span data-icon="mail" data-icon-size="16" aria-hidden="true"></span><span>mx@a9l.im</span></a></li>
-                        <li><a href="https://github.com/a9lim" target="_blank" rel="noopener noreferrer" class="contact-social"><span data-icon="github" data-icon-size="16" aria-hidden="true"></span><span>github.com/a9lim</span></a></li>
-                        <li><a href="https://twitter.com/_a9lim" target="_blank" rel="noopener noreferrer" class="contact-social"><span data-icon="twitter" data-icon-size="16" aria-hidden="true"></span><span>@_a9lim</span></a></li>
-                        <li><span class="contact-social contact-social-static"><span data-icon="discord" data-icon-size="16" aria-hidden="true"></span><span>@a9lim</span></span></li>
-                        <li><a href="/resume.pdf" download class="contact-social"><span data-icon="download" data-icon-size="16" aria-hidden="true"></span><span data-i18n="about.contact.resume">Resume (PDF)</span></a></li>
-                    </ul>
-                </div>
-                <div class="about-bio fade-in">
-                    <h2 data-i18n="about.bio.h">About me</h2>
-
-                    <p data-i18n="about.bio.p1">I'm a9lim! I'm from Singapore but I got a bachelor's in math at UCSD. I don't really have a fixed home but I'll probably spend most of my time around East Asia or the West Coast.</p>
-
-                    <p data-i18n="about.bio.p2">I have a lot of interests in a lot of very different fields: physics, biology, finance, geopolitics, religion, and AI. What interests me about all of these is that they're possible to understand as consequences of simpler axioms. I like trying to understand them as well as I can, one project at a time.</p>
-
-                    <p><span data-i18n="about.bio.p3.pre">I got into a lot of these when I was young by playing with Colorado Boulder's </span><a href="https://phet.colorado.edu" target="_blank" rel="noopener noreferrer" data-i18n="about.bio.p3.link">PhET</a><span data-i18n="about.bio.p3.post"> sims, spending hours poking around with the ways the world worked. I think letting people interact with what they're trying to learn is the best way to teach, and my projects are my best shot at doing that.</span></p>
-
-                    <p data-i18n="about.bio.p4">In high school I started building little by little. I spent weekends writing crappy Java programs that modeled whatever field piqued my interest at the time: a fluid simulator, an epidemiology sim with zombies, and even an Asteroids clone with length contraction and time dilation.</p>
-
-                    <h3 class="about-h3" data-i18n="about.vibe.h">Vibe-coding</h3>
-                    <p data-i18n="about.vibe.body">Quite literally everything on this site was built with Claude. I come up with fun ideas and iterate with Claude until I have a working-ish project. I want to be transparent about this because I think this kind of workflow is the future. I've learned a lot about JS and Python just from reading what Claude writes, and I think that anyone who really wants to can build anything they can dream of.</p>
-
-                    <h3 class="about-h3" data-i18n="about.other.h">Other things about me</h3>
-                    <ul class="about-misc">
-                        <li data-i18n="about.other.li1">I'm obsessed with the Church of Jesus Christ of Latter-day Saints and their history. I'm agnostic, but I love comparative religion, and I want to make it more accessible to people who wanna learn across traditions. I believe all holy works should be freely and publically accessible.</li>
-                        <li><span data-i18n="about.other.li2.pre">I once made a conlang called </span><em data-i18n="about.other.li2.name">dung'amyon</em><span data-i18n="about.other.li2.post">, which was meant to be a Sinitic Esperanto based on Middle Chinese; I straight up got a little fluent in it, but unfortunately the repo got deleted :(</span></li>
-                        <li data-i18n="about.other.li3">I have a casual interest in Touhou; I once wrote a crappy Java bullet hell in high school, making all the art and music myself. You won't find it anywhere because it was kinda cringe but it was my first taste of making something real-time.</li>
-                    </ul>
-                </div>
             </div>
         </div>
     </section>

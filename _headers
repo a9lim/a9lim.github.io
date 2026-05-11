@@ -47,13 +47,6 @@
   Link: </styles.css>; rel=preload; as=style
   Link: </main.js>; rel=modulepreload
   Link: </fonts/recursive-variable.woff2>; rel=preload; as=font; crossorigin
-/about
-  Link: </shared-tokens.js>; rel=preload; as=script
-  Link: </shared-base.css>; rel=preload; as=style
-  Link: </styles.css>; rel=preload; as=style
-  Link: </main.js>; rel=modulepreload
-  Link: </fonts/recursive-variable.woff2>; rel=preload; as=font; crossorigin
-
 # Subapp Early Hints — shared resources + project-specific CSS and module entry
 # /geon/* omitted: COEP: credentialless invalidates 103 preloads (fetched pre-policy)
 # /scripture/* omitted: Worker SSR delay causes preloads to expire before HTML arrives
