@@ -330,8 +330,56 @@ export async function showBlogPost(slug, $) {
     });
 
     bindImageLightbox($.blogContent);
+    manageIframeLifecycle($.blogContent);
 
     triggerFadeIns(document.getElementById('page-blog'));
+}
+
+// Plotly figures inside `iframe` directives each open their own WebGL
+// context plus Canvas2D for label rendering. Holding several open at once
+// trips Chrome's per-tab WebGL context cap ("Too many active WebGL
+// contexts") and its Canvas2D readback hint. To stay under the cap, we
+// strip src on every iframe at render time and only restore it when the
+// frame is near the viewport. When it scrolls far away we swap src back
+// to about:blank, which fully tears the inner document (and its WebGL
+// context) down. The single shared observer is recreated per post so we
+// don't leak across navigations.
+let _iframeObserver = null;
+const IFRAME_ROOT_MARGIN = '800px 0px';
+
+function manageIframeLifecycle(root) {
+    if (_iframeObserver) {
+        _iframeObserver.disconnect();
+        _iframeObserver = null;
+    }
+    if (!root || !('IntersectionObserver' in window)) return;
+    const iframes = root.querySelectorAll('iframe[loading="lazy"]');
+    if (!iframes.length) return;
+
+    iframes.forEach(function (f) {
+        const original = f.getAttribute('src');
+        if (original && original !== 'about:blank') {
+            f.dataset.src = original;
+            // Defer the actual load to the observer so we don't fetch
+            // every plotly bundle on first paint.
+            f.setAttribute('src', 'about:blank');
+        }
+    });
+
+    _iframeObserver = new IntersectionObserver(function (entries) {
+        entries.forEach(function (entry) {
+            const f = entry.target;
+            const cur = f.getAttribute('src');
+            const hasSrc = cur && cur !== 'about:blank';
+            if (entry.isIntersecting) {
+                if (!hasSrc && f.dataset.src) f.setAttribute('src', f.dataset.src);
+            } else if (hasSrc) {
+                f.setAttribute('src', 'about:blank');
+            }
+        });
+    }, { rootMargin: IFRAME_ROOT_MARGIN });
+
+    iframes.forEach(function (f) { _iframeObserver.observe(f); });
 }
 
 let _lightboxLastFocus = null;
