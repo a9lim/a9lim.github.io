@@ -5,13 +5,13 @@
   "bio": [
     ["Loc",       "Singapore (ex-UCSD)"],
     ["Stack",     "Vanilla JS + Claude Code"],
-    ["Obsessed",  "Mechinterp, Middle Chinese, the Warburg effect"],
+    ["Obsessed",  "Interpretability, Middle Chinese, the Warburg effect"],
     ["Languages", "English (native), Spanish (novice), Mandarin (heritage)"]
   ],
   "bio_ja": [
     ["所在地",       "シンガポール(元 UCSD)"],
     ["スタック",     "素の JavaScript + Claude Code"],
-    ["のめり込み中", "機械論的解釈可能性、中古中国語、ワールブルク効果"],
+    ["のめり込み中", "解釈可能性、中古中国語、ワールブルク効果"],
     ["言語",         "英語(母語)、スペイン語(初級)、中国語(継承語)"]
   ],
   "now": [

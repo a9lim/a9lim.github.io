@@ -63,7 +63,7 @@
         'home.bio.stack.k':     'Stack',
         'home.bio.stack.v':     'Vanilla JS + Claude Code',
         'home.bio.obsessed.k':  'Obsessed',
-        'home.bio.obsessed.v':  'Mechinterp, Middle Chinese, the Warburg effect',
+        'home.bio.obsessed.v':  'Interpretability, Middle Chinese, the Warburg effect',
         'home.bio.langs.k':     'Languages',
         'home.bio.langs.v':     'English (native), Spanish (novice), Mandarin (heritage)',
 
@@ -280,7 +280,7 @@
         'home.bio.stack.k':     'スタック',
         'home.bio.stack.v':     '素の JavaScript + Claude Code',
         'home.bio.obsessed.k':  'のめり込み中',
-        'home.bio.obsessed.v':  '機械論的解釈可能性、中古中国語、ワールブルク効果',
+        'home.bio.obsessed.v':  '解釈可能性、中古中国語、ワールブルク効果',
         'home.bio.langs.k':     '言語',
         'home.bio.langs.v':     '英語(母語)、スペイン語(初級)、中国語(継承語)',
 
