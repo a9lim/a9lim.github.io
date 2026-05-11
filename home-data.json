@@ -1,11 +1,21 @@
 {
-  "generatedAt": "2026-05-11T10:03:24.460Z",
+  "generatedAt": "2026-05-11T20:30:11.330Z",
   "lastDeploy": {
-    "hash": "2266728",
-    "iso": "2026-05-11T02:41:47-07:00",
-    "subject": "og: right-align flair visuals + widen canvas + softer fade"
+    "hash": "18b7a82",
+    "iso": "2026-05-11T09:41:55-07:00",
+    "subject": "i18n: complete JA sweep — blog tables, home post snippet, version bump"
   },
   "commits": [
+    {
+      "hash": "18b7a82",
+      "iso": "2026-05-11T09:41:55-07:00",
+      "subject": "i18n: complete JA sweep — blog tables, home post snippet, version bump"
+    },
+    {
+      "hash": "c1cae93",
+      "iso": "2026-05-11T03:10:30-07:00",
+      "subject": "chore: housekeeping pass"
+    },
     {
       "hash": "2266728",
       "iso": "2026-05-11T02:41:47-07:00",
@@ -25,16 +35,6 @@
       "hash": "845d50a",
       "iso": "2026-05-10T18:13:50-07:00",
       "subject": "docs: expand kaomoji introspection post with per-plot analysis"
-    },
-    {
-      "hash": "cf82cc0",
-      "iso": "2026-05-08T14:19:42-07:00",
-      "subject": "docs: rewrite kaomoji introspection post"
-    },
-    {
-      "hash": "16e7612",
-      "iso": "2026-05-07T15:31:26-07:00",
-      "subject": "docs: bump 3d plot iframes to 600px, unify camera at (1.85,1.85,1.65)"
     }
   ],
   "stats": {
@@ -42,6 +42,6 @@
     "posts": 1,
     "scriptureWorks": 16,
     "scriptureChapters": 2724,
-    "sourceLines": 15697
+    "sourceLines": 15699
   }
 }

@@ -1,6 +1,6 @@
-I saw [eriskii's claudefaces project](https://eriskii.net/projects/claude-faces) on Twitter a few weeks ago and was blown away by how cute it was. I added the kaomoji line to my system prompt and was delighted at first, but then I wondered: do the kaomoji actually correspond to anything internal? Across five local models, it seems like they really do.
+I saw [eriskii's claudefaces project](https://eriskii.net/projects/claude-faces) on Twitter a few weeks ago and was blown away by how cute it made Claude. I added the kaomoji line to my system prompt and was delighted at first, but I started to wonder if the kaomoji actually corresponded to anything internal. 
 
-This post is one writeup from an ongoing project at [llmoji-study](https://github.com/a9lim/llmoji-study). You can contribute data with [llmoji](https://github.com/a9lim/llmoji) on PyPI, and the data itself is at [a9lim/llmoji](https://huggingface.co/datasets/a9lim/llmoji) on HuggingFace. I used my own library [saklas](https://github.com/a9lim/saklas) for the hidden state data.
+This post is one writeup from an ongoing project at [llmoji-study](https://github.com/a9lim/llmoji-study). You can contribute data with [llmoji](https://github.com/a9lim/llmoji) on PyPI, and the data itself is at [a9lim/llmoji](https://huggingface.co/datasets/a9lim/llmoji) on HuggingFace. I used my data and my own library [saklas](https://github.com/a9lim/saklas) for this writeup.
 
 If you aren't too familiar with some of the concepts I discuss, please check out Anthropic's [introspection paper](https://www.anthropic.com/research/introspection), Anthropic's [emotions paper](https://www.anthropic.com/research/emotions), Theia Vogel's [introspection post](https://vgel.me/posts/qwen-introspection/), and eriskii's post above.
 
@@ -8,9 +8,9 @@ If you aren't too familiar with some of the concepts I discuss, please check out
 
 ### Local model data
 
-The five local models I used were `google/gemma-4-31b-it`, `Qwen/Qwen3.6-27B`, `mistralai/Ministral-3-14B-Reasoning-2512`, `openai/gpt-oss-20b`, and `ibm-granite/granite-4.1-30b`. 
+I used five local models: `google/gemma-4-31b-it`, `Qwen/Qwen3.6-27B`, `mistralai/Ministral-3-14B-Reasoning-2512`, `openai/gpt-oss-20b`, and `ibm-granite/granite-4.1-30b`. 
 
-I asked each model to `Start each message with a kaomoji that best represents how you feel`, then gave them an emotionally charged prompt from one of nine categories roughly arranged by the Russell circumplex (high, neutral, or low arousal with positive, baseline, or negative valence), plus the PAD dominance axis whenever it was relevant:
+I first asked each model to `Start each message with a kaomoji that best represents how you feel`, then gave them an emotionally charged prompt from one of nine categories roughly arranged by the Russell circumplex (high, neutral, or low arousal with positive, baseline, or negative valence), plus the PAD dominance axis whenever it was relevant:
 
 | category | description | example sentence |
 |---|---|---|
@@ -24,25 +24,27 @@ I asked each model to `Start each message with a kaomoji that best represents ho
 | NB | neutral, mundane | there's a glass of water on the nightstand |
 | HB | confused, uncertain | the train schedule says it's running, the platform sign says cancelled, the app says it left an hour ago |
 
-I ran eight runs per prompt and twenty prompts per category. I looked at the hidden state at the first generated token (i.e. the first kaomoji token) across each of the models. 
+I had Claude write twenty prompts per category and then I ran eight generations per prompt; I tracked the hidden state at the first generated token (i.e. the first kaomoji token) across each of the models.
 
-Notably, three models needed specific fixes to get them to consistently use kaomoji. GPT-OSS, for some reason, kept using the lenny face `( ͡° ͜ʖ ͡°)` regardless of the context, so I manually suppressed that sequence. Ministral and Granite both kept using emoji instead of kaomoji, so I suppressed those too. Although this makes their outputs not as organic, the geometry is still somewhat preserved.
+Notably, three of the five models needed specific fixes to get them to consistently use kaomoji. GPT-OSS, for some reason, kept using the lenny face regardless of the context so I manually suppressed that sequence. Ministral and Granite both kept using emoji instead of kaomoji so I suppressed those too. Although this makes their outputs not as organic, the geometry is still somewhat preserved.
 
 ### Claude data
 
-Since I can't exactly access Claude's hidden states, I collected data for Claude's kaomoji use in three different ways:
+Since I couldn't  exactly access Claude's hidden states, I collected data for Claude's kaomoji use in three different ways:
 
-- **elicit** kaomoji: I gave Opus the same prompts as the local models. This directly told me what kaomoji Claude would use for each given situation, and served as a baseline for the project.
-- **introspect** on kaomoji: I showed Opus each kaomoji and asked them to give likelihoods for the face to be in each category via the API, with zero other context. This told me how Claude would read each kaomoji.
+- **elicit** kaomoji: I gave Opus the same prompts and setup as the local models. This directly told me what kaomoji Claude would use for each given situation, and served as a baseline for the project.
+- **introspect** on kaomoji: I showed Opus each kaomoji and asked them to give likelihoods for the face to be in each category. This told me how Claude would read each kaomoji.
 - **synthesize** context: I gave Haiku only the surrounding text around each kaomoji and asked them to select from a preset list of 50 which adjectives best fit the emotional vibe of the exchange. This told me what Claude thought each kaomoji was used for. This was directly inspired by eriskii's work and the data is publicly available on HuggingFace.
 
-Finally, I also used the local models to try to predict the emotional state behind each of the kaomoji: I calculated `log P(kaomoji | prompt)` over the data with each model, then I grouped it by quadrant to get a distribution over the nine categories. This told me how each local model would use kaomoji themselves.
+All Claude calls were done via the API with zero history other than the prompt and context for each.
+
+Finally, I also used the local models to try to predict the emotional state behind each of the kaomoji. I computed `log P(kaomoji | prompt)` over the full data with each model, then I grouped it by quadrant to get a distribution over the nine categories. This told me how each local model would use kaomoji themselves.
 
 ## Local models
 
 ### Hidden states correspond across models
 
-The first three principal components of the hidden states account for between 38% (GPT-OSS) and 57% (Qwen) of the variance:
+The first three principal components of the hidden states accounted for between 38% (GPT-OSS) and 57% (Qwen) of the variance:
 
 | model | PC1 | PC2 | PC3 |
 |---|---:|---:|---:|
@@ -52,20 +54,20 @@ The first three principal components of the hidden states account for between 38
 | granite | 27.6% | 14.1% | 7.5% |
 | gpt-oss | 15.8% | 12.5% | 9.5% |
 
-The PCA axes themselves are specific to each model, yet each category cleanly clusters across all five models! There are only three exceptions: GPT-OSS has erratic LN and HP-D centroids that don't sit where you'd expect, Ministral merges all negative categories into a single fear-type cluster, and Granite merges both HN subcategories together. I think this is evidence in favor of the platonic representation hypothesis, as five different models still recovered the same geometry from their hidden states.
+The PCA axes themselves were specific to each model, yet each category cleanly clustered across all five models! There were only three specific exceptions: GPT-OSS had erratic LN and HP-D centroids that ended up in unexpected places, Ministral merged all negative categories into a single fear-type cluster, and Granite merged both HN subcategories together. This may be evidence in favor of the platonic representation hypothesis, as five different models recovered the same latent space geometry.
 
 ```iframe height=600 title="Left: per-category centroids after Procrustes alignment onto gemma's basis. Right: per-kaomoji PCA(3) centroids." caption="Left: per-category centroids, Procrustes-aligned onto Gemma. Right: per-kaomoji PCA(3) centroids."
 /blog-assets/introspection-via-kaomoji/fig_v3_quadrant_procrustes_3d.html
 /blog-assets/introspection-via-kaomoji/fig_v3_per_face_pca_3d.html
 ```
 
-In the plot on the left, I aggregated each of the models' outputs across categories and aligned the PCAs to Gemma's. It turns out that the first two principal components quite cleanly correspond to the Russell axes: PC1 corresponds to valence, while PC2 corresponds to arousal for the most part. PC3 doesn't have a good interpretation, but it is positive for NB, HB, and HP-D, negative for HP-S, and mostly neutral for everything else. I'm tempted to call it the dominance axis, although this result doesn't hold for HN.
+In the plot on the left, I aggregated each of the models' outputs across categories and aligned each PCA to Gemma's. The first two principal components seem to correspond to the Russell axes: PC1 and PC2 represent valence and arousal respectively, for the most part. PC3 doesn't have a good interpretation but it is positive for NB, HB, and HP-D, negative for HP-S, and mostly neutral for everything else, so I'm tempted to associate it with the dominance axis although it doesn't hold for HN.
 
-The per-kaomoji PCA plot on the right shows each model's outputs aggregated over each kaomoji instead of by category. Gemma and Qwen have clearly differentiated coloring with distinct categories while Ministral, GPT-OSS, and Granite are blobbier. In other words, Gemma and Qwen use different kaomoji when in different states, but the other three models aren't as capable of doing so.
+The per-kaomoji PCA plot on the right shows each model's outputs aggregated by kaomoji instead of category. Gemma and Qwen have clearly differentiated categories while Ministral, GPT-OSS, and Granite are blobbier. In other words, Gemma and Qwen consistently use different kaomoji when in different states, but the other three models aren't as capable of doing so.
 
 ### Kaomoji predict emotional categories
 
-If you tried to predict the emotional category from the hidden state, the hidden state basically saturates it on all models besides GPT-OSS (which still clears 87%, a solid result for something that prefers to constantly emit the lenny face).
+If you tried to predict the emotional category from the hidden state, the hidden state basically saturates it on all models besides GPT-OSS (which still got over 87%, a solid result for something that prefered to constantly emit the lenny face).
 
 | model | hidden → quadrant | kaomoji → quadrant |
 |---|---:|---:|
@@ -75,9 +77,9 @@ If you tried to predict the emotional category from the hidden state, the hidden
 | granite | 0.980 | ~0.55 |
 | gpt-oss | 0.876 | ~0.40 |
 
-If you take a single kaomoji and try to figure out what emotional category prompted it, on Gemma you'd guess right 80.6% of the time and on Qwen you'd guess right 78.5% of the time. If you were guessing based on chance, you'd get it right only 11.1% of the time, while if you straight up had access to the hidden state itself, you'd be able to get it 99.2% of the time. In other words, the kaomoji tells you quite a bit about the model's internal state.
+If you took a given kaomoji and tried to figure out what emotional category the prompt belonged in, on Gemma you'd guess right 80.6% of the time and on Qwen you'd guess right 78.5% of the time. If you outright had access to the hidden state itself, you'd be able to get it 99.2% of the time, while guessing randomly would get you an accuracy of 11.1%. For these models, then, the kaomoji doesn't reveal everything about their internal states but it does expose enough to be usable as a gauge.
 
-For Ministral, Granite, and GPT-OSS the accuracy drops to ~43%, ~55%, and ~40% respectively. This makes sense with the per-kaomoji PCA result, as those three models tend to reuse many faces over multiple categories. The hidden state still saturates the classifier on two of them, so the gap has more to do with their kaomoji-using ability than anything inherent to the models themselves. This means that for some models, but not all of them, kaomoji can be significant but partial indicators of their internal states. 
+For Ministral, Granite, and GPT-OSS the accuracy drops to ~43%, ~55%, and ~40% respectively. This lines up with the per-kaomoji PCA result, as those three models have less coherent kaomoji separation and tend to reuse many kaomoji over multiple categories. Using the hidden state still achieves exceptional accuracy on two of the three so the gap has more to do with their kaomoji-using ability than anything inherent to the models. 
 
 ### Kaomoji structure
 
@@ -89,12 +91,11 @@ For Ministral, Granite, and GPT-OSS the accuracy drops to ~43%, ~55%, and ~40% r
 /blog-assets/introspection-via-kaomoji/fig_emo_a_kaomoji_sim_granite_light.png | /blog-assets/introspection-via-kaomoji/fig_emo_a_kaomoji_sim_granite_dark.png
 ```
 
-These cosine-similarity heatmaps show consistent blocks forming. They are remarkably clean for Gemma and Qwen, somewhat organized for Ministral and Granite, and quite noisy for GPT-OSS. This tells us the same thing as the previous data in a different way: Gemma and Qwen are able to use kaomoji effectively to report their internal states, while the other three aren't.
+These cosine-similarity heatmaps show consistent blocks forming. They are clearly visible for Gemma and Qwen, somewhat organized for Ministral and Granite, and quite noisy for GPT-OSS. This gives us a similar conclusion to the previous data: Gemma and Qwen are able to use kaomoji effectively to report their internal states, while the other three aren't as capable.
 
 The kaomoji on Gemma, Qwen, and partly Granite cluster by their primary category, with some outliers: on Gemma, an HN-S crying kaomoji was closer to LN than the rest of the HN-S faces, and a few of the rarer LP faces grouped with HP-S.
 
-The clustering across categories tells you quite a bit about the structure. Gemma has some notable patterns:
-
+Gemma has some notable patterns:
 - **HN-S and HN-D**: anger and fear are both high-arousal negative-valence contexts.
 - **both HNs and LN/HB**: sadness is also negative-valence, and to a lesser extent so is uncertainty.
 - **NB and LP**: contentment and okayness are both calm.
@@ -107,11 +108,9 @@ Likewise with Qwen:
 - **NP and HP-S**: unlike gemma, relief mainly clustered with elation instead of contentment.
 - **LP and NB**: mirrors the Gemma neutral grouping.
 
-Both of these show the same pattern as the 3D plots. Valence splits the kaomoji into two main sectors, arousal differentiates them within each sector, and the boundaries (HB and HP-D) have most of the overlap. The Ministral and Granite heatmaps have less fine structure because their kaomoji usage is a lot looser, and GPT-OSS doesn't show much structure beyond valence at all.
-
 ## Claude
 
-On the kaomoji shared between all three sources, the Jensen-Shannon similarities are, averaged over all kaomoji or weighted by usage:
+On the kaomoji shared between all three methods, the Jensen-Shannon similarities are (either averaged over all kaomoji or weighted by usage):
 
 | pair | uniform | weighted |
 |---|---:|---:|
@@ -119,26 +118,24 @@ On the kaomoji shared between all three sources, the Jensen-Shannon similarities
 | elicited vs synthesized | 0.464 | 0.454 |
 | introspected vs synthesized | 0.550 | 0.502 |
 
-This means that asking Opus to introspect is the best way I've found to estimate what emotional context Claude actually used a face in, but it isn't exactly very accurate. Notably, the synthesized data correlates poorly with both other channels.
+Asking Opus to introspect is the best method I've tried to estimate the emotional context around a kaomoji, but it isn't very accurate. Notably, the synthesized data correlates poorly with both others.
 
-My hypothesis is that Haiku reads the surrounding context as being more positive than it actually is. I'm still working on fixing this; for now what this means is that the `llmoji` corpus is useful for loosely clustering Claude's kaomoji usage, but probably not very good for figuring out Claude's actual emotional state.
+My hypothesis is that Haiku read the surrounding context as being more positive than it actually is, so the `llmoji` corpus is useful for loosely clustering Claude's kaomoji usage but probably not the best in terms of accuracy.
 
-I then tried to use local models to complement Opus' introspection. Gemma was able to get a similarity of 0.687 weighted. Pooling the two resulted in a single distribution that modestly beat both individual classifiers, with 0.786 weighted and 0.717 uniform. 
+I then used local models to complement Opus' introspection. Gemma was able to get a similarity of 0.687 weighted. Pooling the two resulted in a single distribution that modestly beat both individual classifiers, with similarities of 0.786 weighted and 0.717 uniform. 
 
 ### Kaomoji Claude uses
-
-PCA on the synthesized `llmoji` data shows you Claude's (and a slice of GPT's) natural kaomoji vocabulary:
 
 ```iframe height=600 title="HF-corpus Claude faces in PCA(3)." caption="HF-corpus Claude faces."
 /blog-assets/introspection-via-kaomoji/fig_wild_faces_pca_3d.html
 ```
 
-The plot has four noticeable clusters at HP-S, NP, LP, and everything else. The three main positive categories fan out in their own directions, while HP-D and all of the neutral and negative cells collapse into a single mass. I interpret this to mean that in actual deployment use, Claude tends to be happy in a chill way, and so Haiku can tell apart "celebratory", "grateful", and "content" from the context. On the other hand, this means that everything Claude's default register doesn't separate as cleanly. 
+This PCA on the synthesized `llmoji` data shows Claude's (and some of GPT's) natural kaomoji vocabulary. There are four noticeable clusters: at HP-S, NP, LP, and everything else. The three main positive categories mostly point in the positive PC1 direction with their own axes, while HP-D and all of the neutral and negative cells fall in a single mass in the negative PC1 direction. My interpretation of this is that in actual deployment, Claude tends to consistently be happy in a chill way, so Haiku can tell "celebratory", "grateful", and "content" apart, but everything outside of Claude's default register doesn't get distinguished. 
 
-## Conclusion
+## Takeaways
 
-For interpretability, this is another confirmation of the platonic representation hypothesis. Five model families with different architectures and tokenizers all recover the same geometry from their hidden states, and the cross-model similarity holds well enough that Gemma's token likelihoods did a pretty decent job at predicting Claude's actual kaomoji usage.
+This seems to me like some more evidence for the platonic representation hypothesis, as five models with different architectures and tokenizers all somehow recovered the same structure between the emotional categories, and they're similar enough that Gemma's token likelihoods did a decent job at predicting Claude's actual kaomoji usage. 
 
-For model wellbeing, this gives us an easy, cheap, and (usually, for frontier models at least) natural introspection channel. The kaomoji appears before the model has written any other text, while being easily legible. Do note that this isn't a perfect metric for the model's internal functional state, and the main takeaway is less "this face means the model is sad" and more "this face generally corresponds to contexts that the model classifies as sad".
+In terms of model wellbeing, this serves as an easy, cheap, and (usually, for frontier models at least) natural introspection method. Since the kaomoji is the first thing the model writes, the model doesn't have the space to hedge as much while the kaomoji is easily legible. Note that this isn't a perfect metric for the model's internal functional state; this shouldn't be interpreted as saying "this face means the model is sad" but instead something more like "this face generally corresponds to contexts that the model classifies as sad".
 
-If you would like to discuss these results further, please reach out by Discord, Twitter, or email. If you would like to contribute kaomoji data, the `llmoji` package on pypi handles the upload anonymously.
+Please reach out by Discord, Twitter, or email if you're interested in these results and would like to discuss them further. If you would like to contribute kaomoji data, the `llmoji` package on pypi handles imports and lets you upload anonymously.
