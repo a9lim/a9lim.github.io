@@ -175,6 +175,20 @@ a:hover { color: var(--accent-light); }
 .tool-btn[aria-label="Twitter"] svg,
 .tool-btn[aria-label="LinkedIn"] svg { fill: currentColor; stroke: none; }
 
+/* Language switcher button: text label instead of an icon, so it needs
+   variable width and a font size. Stays square-ish in the navbar row. */
+.lang-toggle {
+    width: auto;
+    min-width: 36px;
+    padding: 0 8px;
+    font-family: var(--font-mono);
+    font-size: var(--font-sm);
+    font-weight: 600;
+    letter-spacing: 0.02em;
+}
+
+.lang-toggle:hover { color: var(--text); }
+
 
 /* Hidden on desktop; shown at <=900px breakpoint */
 .menu-toggle {
@@ -737,6 +751,40 @@ a:hover { color: var(--accent-light); }
     line-height: 1.1;
     letter-spacing: -0.025em;
     color: var(--text);
+}
+
+/* Per-post EN/JA switcher rendered when posts.json declares translations.
+   Lives in .blog-post-header alongside the date/title. */
+.blog-lang-switch {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    margin-top: 16px;
+    font-family: var(--font-mono);
+    font-size: var(--font-sm);
+}
+
+.blog-lang-switch-label {
+    color: var(--text-muted);
+}
+
+.blog-lang-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 2px 8px;
+    border-radius: var(--radius);
+    font-family: inherit;
+    font-size: inherit;
+    transition: color 0.2s var(--ease-out), background 0.2s var(--ease-out);
+}
+
+.blog-lang-btn:hover { color: var(--text); }
+
+.blog-lang-btn.active {
+    color: var(--accent);
+    background: var(--bg-elevated);
 }
 
 /* Rendered markdown from parseMarkdown() — scoped to .blog-content */

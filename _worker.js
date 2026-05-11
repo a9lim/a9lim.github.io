@@ -378,6 +378,10 @@ function rewriteHTML(response, meta) {
         }
         if (meta.canonical) {
           el.append(`<link rel="alternate" hreflang="en" href="${meta.canonical}">`, { html: true });
+          // ?lang=ja is the same URL with a query param — same content, JS-side
+          // translation. Tells crawlers a JA variant exists at this URL.
+          const jaUrl = meta.canonical + (meta.canonical.includes('?') ? '&' : '?') + 'lang=ja';
+          el.append(`<link rel="alternate" hreflang="ja" href="${jaUrl}">`, { html: true });
           el.append(`<link rel="alternate" hreflang="x-default" href="${meta.canonical}">`, { html: true });
         }
       },

@@ -1,9 +1,26 @@
 // Populates the homepage "command-center" slab from home.json (hand-edited)
 // and home-data.json (build-generated: commits + stats). Everything rendered
 // here goes through createElement/textContent — no innerHTML.
+//
+// i18n: when window._i18n is present, hand-edited fields with a parallel `_ja`
+// sibling (status_ja, bio_ja, now_ja, hyperfixation_ja, predictions_ja,
+// askMeAbout_ja, colophon_ja) are swapped in for ja. Build-generated fields
+// (commits, stats) stay language-neutral. On language change we re-render
+// everything that's hydrated from home.json.
 
 let _homeInited = false;
 let _homeRendered = false;
+let _homeCache = { home: null, data: null, posts: null };
+
+function pickLang(obj, base) {
+    if (!obj) return null;
+    const lang = (window._i18n && window._i18n.getLang) ? window._i18n.getLang() : 'en';
+    if (lang !== 'en') {
+        const k = base + '_' + lang;
+        if (Object.prototype.hasOwnProperty.call(obj, k) && obj[k] != null) return obj[k];
+    }
+    return obj[base];
+}
 
 function el(tag, attrs, children) {
     const n = document.createElement(tag);
@@ -205,6 +222,28 @@ async function fetchJSON(url) {
     } catch { return null; }
 }
 
+function renderFromCache() {
+    const { home, data, posts } = _homeCache;
+    if (home) {
+        renderStatus(pickLang(home, 'status'));
+        renderBio(pickLang(home, 'bio'));
+        renderNow(pickLang(home, 'now'));
+        renderHyperfix(pickLang(home, 'hyperfixation'));
+        renderPredictions(pickLang(home, 'predictions'));
+        renderChips(pickLang(home, 'askMeAbout'));
+        renderScripture(home.scriptureRotation);
+    }
+    if (posts) renderPosts(posts);
+    if (data) {
+        renderCommits(data.commits);
+        renderStats(data.stats);
+        renderColophon(home && pickLang(home, 'colophon'), data.lastDeploy);
+    } else if (home) {
+        const col = pickLang(home, 'colophon');
+        if (col) renderColophon(col, null);
+    }
+}
+
 async function loadAndRender() {
     if (_homeRendered) return;
     _homeRendered = true;
@@ -215,24 +254,15 @@ async function loadAndRender() {
         fetchJSON('/posts.json'),
     ]);
 
-    if (home) {
-        renderStatus(home.status);
-        renderBio(home.bio);
-        renderNow(home.now);
-        renderHyperfix(home.hyperfixation);
-        renderPredictions(home.predictions);
-        renderChips(home.askMeAbout);
-        renderScripture(home.scriptureRotation);
-    }
+    _homeCache = { home, data, posts };
+    renderFromCache();
 
-    if (posts) renderPosts(posts);
-
-    if (data) {
-        renderCommits(data.commits);
-        renderStats(data.stats);
-        renderColophon(home && home.colophon, data.lastDeploy);
-    } else if (home && home.colophon) {
-        renderColophon(home.colophon, null);
+    // Re-render hydrated content when the language flips. Static markup in
+    // index.html is handled by _i18n.applyDOM() automatically; this rerender
+    // covers the JSON-sourced fields (Now, Hyperfix, Predictions, AMA chips,
+    // colophon) and the post titles whose i18n keys live in posts.json.
+    if (window._i18n && window._i18n.onChange) {
+        window._i18n.onChange(function () { renderFromCache(); });
     }
 }
 

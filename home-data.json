@@ -1,11 +1,16 @@
 {
-  "generatedAt": "2026-05-11T04:32:07.495Z",
+  "generatedAt": "2026-05-11T08:08:13.784Z",
   "lastDeploy": {
-    "hash": "2c864bf",
-    "iso": "2026-05-10T18:13:50-07:00",
-    "subject": "docs: expand kaomoji introspection post with per-plot analysis"
+    "hash": "f416773",
+    "iso": "2026-05-10T21:32:42-07:00",
+    "subject": "docs: revise kaomoji introspection post + regen metadata"
   },
   "commits": [
+    {
+      "hash": "f416773",
+      "iso": "2026-05-10T21:32:42-07:00",
+      "subject": "docs: revise kaomoji introspection post + regen metadata"
+    },
     {
       "hash": "2c864bf",
       "iso": "2026-05-10T18:13:50-07:00",
@@ -30,11 +35,6 @@
       "hash": "1974853",
       "iso": "2026-05-05T09:57:49-07:00",
       "subject": "chore: migrate CLAUDE.md to AGENTS.md + shim"
-    },
-    {
-      "hash": "52f7f5a",
-      "iso": "2026-05-04T17:27:46-07:00",
-      "subject": "docs: document dev.sh and CSP script-src in CLAUDE.md"
     }
   ],
   "stats": {
@@ -42,6 +42,6 @@
     "posts": 2,
     "scriptureWorks": 16,
     "scriptureChapters": 2724,
-    "sourceLines": 14680
+    "sourceLines": 15022
   }
 }

@@ -1,13 +1,19 @@
 // ─── Blog Listing & Post Rendering ───
 // Fetches posts.json for the listing and individual .md files from posts/.
 // Caches both in memory. Shows shimmer skeletons during loads.
+//
+// i18n: posts whose entry in posts.json has `translations: ["ja"]` get a
+// sibling JA markdown file at /posts/{slug}.ja.md. When window._i18n.getLang()
+// returns 'ja' we fetch the JA file (and fall back to EN if it 404s). Listing
+// titles/excerpts/tags also pick up `_ja` variants when present.
 
 import { parseMarkdown } from './markdown.js';
 import { triggerFadeIns } from './animations.js';
 
 let postsCache = null;   // posts.json result (fetched once)
-const mdCache = {};      // slug -> raw markdown text
+const mdCache = {};      // `${slug}:${lang}` -> raw markdown text
 let katexLoaded = false;
+let _currentPostSlug = null;  // tracks rendered post so onChange can rerender
 
 const FETCH_TIMEOUT = 10000;
 const KATEX_VERSION = '0.16.11';
@@ -75,9 +81,124 @@ function fetchWithTimeout(url, ms) {
         .finally(() => clearTimeout(timer));
 }
 
+function currentLang() {
+    return (window._i18n && window._i18n.getLang) ? window._i18n.getLang() : 'en';
+}
+
+function pickPostField(post, base) {
+    if (!post) return undefined;
+    const lang = currentLang();
+    if (lang !== 'en') {
+        const k = base + '_' + lang;
+        if (Object.prototype.hasOwnProperty.call(post, k) && post[k] != null) return post[k];
+    }
+    return post[base];
+}
+
+function postHasTranslation(post, lang) {
+    if (!post) return false;
+    if (lang === 'en') return true;
+    return Array.isArray(post.translations) && post.translations.indexOf(lang) >= 0;
+}
+
+function localizedI18n(key, fallback) {
+    if (window._i18n && window._i18n.t) return window._i18n.t(key, fallback);
+    return fallback;
+}
+
+function clearNode(node) {
+    while (node && node.firstChild) node.removeChild(node.firstChild);
+}
+
+function renderListingError($, msg) {
+    clearNode($.blogListCt);
+    const wrap = document.createElement('div');
+    wrap.className = 'blog-error';
+    const p = document.createElement('p');
+    p.textContent = msg;
+    wrap.appendChild(p);
+    $.blogListCt.appendChild(wrap);
+    triggerFadeIns(document.getElementById('page-blog'));
+}
+
+function renderListingEmpty($, msg) {
+    clearNode($.blogListCt);
+    const wrap = document.createElement('div');
+    wrap.className = 'blog-empty';
+    const p = document.createElement('p');
+    p.textContent = msg;
+    wrap.appendChild(p);
+    $.blogListCt.appendChild(wrap);
+    triggerFadeIns(document.getElementById('page-blog'));
+}
+
+function injectPostLangSwitch(contentRoot, meta) {
+    const header = contentRoot.querySelector('.blog-post-header');
+    if (!header) return;
+    // Avoid duplicates if re-rendered.
+    const existing = header.querySelector('.blog-lang-switch');
+    if (existing) existing.remove();
+    const wrap = document.createElement('div');
+    wrap.className = 'blog-lang-switch';
+    const label = document.createElement('span');
+    label.className = 'blog-lang-switch-label';
+    label.textContent = localizedI18n('blog.langLabel', 'Read in:');
+    wrap.appendChild(label);
+    // Two buttons: en (always) + each declared translation.
+    const langs = ['en'].concat(Array.isArray(meta.translations) ? meta.translations : []);
+    const current = currentLang();
+    for (const code of langs) {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'blog-lang-btn';
+        if (code === current) btn.classList.add('active');
+        btn.dataset.lang = code;
+        btn.textContent = code === 'ja'
+            ? localizedI18n('blog.toJA', '日本語')
+            : localizedI18n('blog.toEN', 'EN');
+        btn.addEventListener('click', function () {
+            if (window._i18n && window._i18n.setLang) window._i18n.setLang(code);
+        });
+        wrap.appendChild(btn);
+    }
+    header.appendChild(wrap);
+}
+
+function renderListingPosts($, posts) {
+    clearNode($.blogListCt);
+    for (const p of posts) {
+        const title = pickPostField(p, 'title');
+        const tags = pickPostField(p, 'tag');
+        const a = document.createElement('a');
+        a.href = '/blog/' + p.slug;
+        a.className = 'blog-entry';
+        a.setAttribute('data-page', 'blog');
+        const dateEl = document.createElement('span');
+        dateEl.className = 'blog-date';
+        dateEl.textContent = formatDate(p.date);
+        a.appendChild(dateEl);
+        const titleEl = document.createElement('span');
+        titleEl.className = 'blog-title';
+        titleEl.textContent = title;
+        a.appendChild(titleEl);
+        if (tags) {
+            const tagArr = Array.isArray(tags) ? tags : [tags];
+            for (const t of tagArr) {
+                const tEl = document.createElement('span');
+                tEl.className = 'blog-tag';
+                tEl.textContent = t;
+                a.appendChild(tEl);
+            }
+        }
+        $.blogListCt.appendChild(a);
+    }
+    triggerFadeIns(document.getElementById('page-blog'));
+}
+
 export async function showBlogListing($) {
     $.blogListing.style.display = '';
     $.blogPost.style.display = 'none';
+    _currentPostSlug = null;
 
     if (!postsCache) {
         $.blogListCt.innerHTML = skeletonEntries(5);
@@ -86,27 +207,19 @@ export async function showBlogListing($) {
             postsCache = await res.json();
         } catch (e) {
             const msg = e.name === 'AbortError'
-                ? 'Request timed out. Please try again.'
-                : 'Could not load posts.';
-            $.blogListCt.innerHTML = '<div class="blog-error"><p>' + escapeHtml(msg) + '</p></div>';
-            triggerFadeIns(document.getElementById('page-blog'));
+                ? localizedI18n('blog.timeout', 'Request timed out. Please try again.')
+                : localizedI18n('blog.loadErr', 'Could not load posts.');
+            renderListingError($, msg);
             return;
         }
     }
 
     if (!postsCache.length) {
-        $.blogListCt.innerHTML = '<div class="blog-empty"><p>No posts yet.</p></div>';
-        triggerFadeIns(document.getElementById('page-blog'));
+        renderListingEmpty($, localizedI18n('blog.empty', 'No posts yet.'));
         return;
     }
 
-    $.blogListCt.innerHTML = postsCache.map(function (p) {
-        return '<a href="/blog/' + escapeHtml(p.slug) + '" class="blog-entry" data-page="blog">'
-            + '<span class="blog-date">' + formatDate(p.date) + '</span>'
-            + '<span class="blog-title">' + escapeHtml(p.title) + '</span>'
-            + (p.tag ? (Array.isArray(p.tag) ? p.tag : [p.tag]).map(t => '<span class="blog-tag">' + escapeHtml(t) + '</span>').join('') : '')
-            + '</a>';
-    }).join('');
+    renderListingPosts($, postsCache);
 
     triggerFadeIns(document.getElementById('page-blog'));
 }
@@ -114,6 +227,7 @@ export async function showBlogListing($) {
 export async function showBlogPost(slug, $) {
     $.blogListing.style.display = 'none';
     $.blogPost.style.display = '';
+    _currentPostSlug = slug;
     $.blogContent.innerHTML = '<div class="skeleton" style="height:24px;width:120px;margin-bottom:12px"></div>'
         + '<div class="skeleton" style="height:36px;width:80%;margin-bottom:40px"></div>'
         + '<div class="skeleton" style="height:14px;width:100%;margin-bottom:10px"></div>'
@@ -122,22 +236,9 @@ export async function showBlogPost(slug, $) {
         + '<div class="skeleton" style="height:14px;width:70%"></div>';
     triggerFadeIns(document.getElementById('page-blog'));
 
-    if (!mdCache[slug]) {
-        try {
-            const res = await fetchWithTimeout('/posts/' + encodeURIComponent(slug) + '.md', FETCH_TIMEOUT);
-            if (!res.ok) throw new Error(res.status);
-            mdCache[slug] = await res.text();
-        } catch (e) {
-            const msg = e.name === 'AbortError'
-                ? 'Request timed out. Please try again.'
-                : 'Post not found.';
-            $.blogContent.innerHTML = '<p class="blog-error">' + escapeHtml(msg) + '</p>';
-            triggerFadeIns(document.getElementById('page-blog'));
-            return;
-        }
-    }
-
-    // Metadata is optional for rendering — post body works without it
+    // Metadata is optional for rendering — post body works without it.
+    // We fetch it first so the lang-aware fetch below knows whether a JA
+    // sibling exists.
     if (!postsCache) {
         try {
             const res = await fetchWithTimeout('/posts.json', FETCH_TIMEOUT);
@@ -146,21 +247,72 @@ export async function showBlogPost(slug, $) {
     }
 
     const meta = postsCache ? postsCache.find(p => p.slug === slug) : null;
+    const lang = currentLang();
+    // Use the JA sibling only when both the user has chosen JA AND the post
+    // declares a JA translation. Otherwise fall through to the EN .md.
+    const useJa = lang === 'ja' && postHasTranslation(meta, 'ja');
+    const fetchLang = useJa ? 'ja' : 'en';
+    const cacheKey = slug + ':' + fetchLang;
+    const fetchUrl = useJa
+        ? '/posts/' + encodeURIComponent(slug) + '.ja.md'
+        : '/posts/' + encodeURIComponent(slug) + '.md';
+
+    if (!mdCache[cacheKey]) {
+        try {
+            const res = await fetchWithTimeout(fetchUrl, FETCH_TIMEOUT);
+            if (!res.ok) throw new Error(res.status);
+            mdCache[cacheKey] = await res.text();
+        } catch (e) {
+            // Fall back to EN if the JA sibling is missing.
+            if (useJa) {
+                try {
+                    const res2 = await fetchWithTimeout('/posts/' + encodeURIComponent(slug) + '.md', FETCH_TIMEOUT);
+                    if (res2.ok) {
+                        mdCache[slug + ':en'] = await res2.text();
+                        mdCache[cacheKey] = mdCache[slug + ':en'];
+                    } else { throw e; }
+                } catch (e2) {
+                    const msg = e.name === 'AbortError'
+                        ? localizedI18n('blog.timeout', 'Request timed out. Please try again.')
+                        : localizedI18n('blog.notfound', 'Post not found.');
+                    $.blogContent.innerHTML = '<p class="blog-error">' + escapeHtml(msg) + '</p>';
+                    triggerFadeIns(document.getElementById('page-blog'));
+                    return;
+                }
+            } else {
+                const msg = e.name === 'AbortError'
+                    ? localizedI18n('blog.timeout', 'Request timed out. Please try again.')
+                    : localizedI18n('blog.notfound', 'Post not found.');
+                $.blogContent.innerHTML = '<p class="blog-error">' + escapeHtml(msg) + '</p>';
+                triggerFadeIns(document.getElementById('page-blog'));
+                return;
+            }
+        }
+    }
+
+    const displayTitle = meta ? pickPostField(meta, 'title') : null;
+    const displayTags = meta ? pickPostField(meta, 'tag') : null;
 
     let header = '<div class="blog-post-header">';
     if (meta) {
         header += '<span class="blog-post-date">' + formatDate(meta.date)
-            + (meta.tag ? ' &middot; ' + (Array.isArray(meta.tag) ? meta.tag : [meta.tag]).map(escapeHtml).join(', ') : '') + '</span>';
-        header += '<h1 class="blog-post-title">' + escapeHtml(meta.title) + '</h1>';
+            + (displayTags ? ' &middot; ' + (Array.isArray(displayTags) ? displayTags : [displayTags]).map(escapeHtml).join(', ') : '') + '</span>';
+        header += '<h1 class="blog-post-title">' + escapeHtml(displayTitle) + '</h1>';
     }
     header += '</div>';
 
-    const rendered = parseMarkdown(mdCache[slug]);
+    const rendered = parseMarkdown(mdCache[cacheKey]);
     // Content is from trusted local markdown files (posts/*.md), not user input
     $.blogContent.innerHTML = header + '<div class="blog-content">' + rendered + '</div>';
 
-    if (/\$/.test(mdCache[slug])) {
+    if (/\$/.test(mdCache[cacheKey])) {
         loadKaTeX().then(function () { renderMath($.blogContent); });
+    }
+
+    // If this post has translations, inject a language pill into the header
+    // so the reader can swap registers without leaving the post.
+    if (meta && Array.isArray(meta.translations) && meta.translations.length) {
+        injectPostLangSwitch($.blogContent, meta);
     }
 
     // Wire up any switcher figures emitted by the markdown parser. Each
@@ -242,5 +394,28 @@ function bindImageLightbox(root) {
         img.tabIndex = 0;
         img.setAttribute('role', 'button');
         img.setAttribute('aria-label', 'open ' + (img.alt || 'image') + ' full size');
+    });
+}
+
+// ─── i18n: re-render on language change ───
+// When the navbar lang toggle fires, the listing needs new titles/excerpts
+// and an in-progress post needs to refetch its JA sibling (or fall back to
+// EN). We hold $ at module scope by re-using the DOM cache via showBlogPost
+// / showBlogListing arguments; export a hook that main.js can wire.
+let _i18nWired = false;
+export function wireBlogI18n($) {
+    if (_i18nWired) return;
+    if (!window._i18n || !window._i18n.onChange) return;
+    _i18nWired = true;
+    window._i18n.onChange(function () {
+        // Re-render listing if it's visible.
+        if ($.blogListing && $.blogListing.style.display !== 'none') {
+            // posts.json is already cached; re-render synchronously.
+            if (postsCache && postsCache.length) renderListingPosts($, postsCache);
+        }
+        // Re-render the current post if one is showing.
+        if (_currentPostSlug && $.blogPost && $.blogPost.style.display !== 'none') {
+            showBlogPost(_currentPostSlug, $);
+        }
     });
 }
