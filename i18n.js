@@ -54,7 +54,7 @@
         'toast.translated.ja': '(◕‿◕) この文章は Claude が翻訳しました',
 
         // ── Home: hero ──
-        'home.tag':         'a9lim website version 1.0.2',
+        'home.tag':         'a9lim website version 1.1.0',
         'home.currently':   'Currently:',
 
         // ── Home: bio dl ──
@@ -271,7 +271,7 @@
         'toast.translated.ja': '(◕‿◕) この文章は Claude が翻訳しました',
 
         // ── Home: hero ──
-        'home.tag':         'a9lim ウェブサイト version 1.0.2',
+        'home.tag':         'a9lim ウェブサイト バージョン 1.1.0',
         'home.currently':   '現在:',
 
         // ── Home: bio dl ──

@@ -135,9 +135,11 @@ function renderPosts(posts) {
         const link = el('a', { href: '/blog/' + p.slug, 'data-page': 'blog', class: 'home-post-link' });
         link.appendChild(el('time', { class: 'home-post-d', datetime: p.date, text: p.date }));
         link.appendChild(document.createTextNode(' '));
-        link.appendChild(el('span', { class: 'home-post-t', text: p.title }));
+        const title = pickLang(p, 'title') || p.title;
+        link.appendChild(el('span', { class: 'home-post-t', text: title }));
         li.appendChild(link);
-        if (p.excerpt) li.appendChild(el('p', { class: 'home-post-x', text: p.excerpt }));
+        const excerpt = pickLang(p, 'excerpt') || p.excerpt;
+        if (excerpt) li.appendChild(el('p', { class: 'home-post-x', text: excerpt }));
         root.appendChild(li);
     }
 }
