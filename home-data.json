@@ -1,11 +1,21 @@
 {
-  "generatedAt": "2026-05-11T21:41:27.045Z",
+  "generatedAt": "2026-05-11T22:14:37.787Z",
   "lastDeploy": {
-    "hash": "54031d1",
-    "iso": "2026-05-11T14:31:35-07:00",
-    "subject": "blog: tear down offscreen iframe figures to stay under WebGL context cap"
+    "hash": "5310d2c",
+    "iso": "2026-05-11T14:42:08-07:00",
+    "subject": "blog: add intent sentence to kaomoji post opening + JA mirror + regen"
   },
   "commits": [
+    {
+      "hash": "5310d2c",
+      "iso": "2026-05-11T14:42:08-07:00",
+      "subject": "blog: add intent sentence to kaomoji post opening + JA mirror + regen"
+    },
+    {
+      "hash": "950e95e",
+      "iso": "2026-05-11T14:42:01-07:00",
+      "subject": "blog: drop redundant mechinterp tag, rename bio label to interpretability"
+    },
     {
       "hash": "54031d1",
       "iso": "2026-05-11T14:31:35-07:00",
@@ -25,16 +35,6 @@
       "hash": "c1cae93",
       "iso": "2026-05-11T03:10:30-07:00",
       "subject": "chore: housekeeping pass"
-    },
-    {
-      "hash": "2266728",
-      "iso": "2026-05-11T02:41:47-07:00",
-      "subject": "og: right-align flair visuals + widen canvas + softer fade"
-    },
-    {
-      "hash": "6df092a",
-      "iso": "2026-05-11T01:32:37-07:00",
-      "subject": "i18n: add EN/JA toggle for root site + JA blog post sibling"
     }
   ],
   "stats": {

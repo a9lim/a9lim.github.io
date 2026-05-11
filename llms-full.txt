@@ -330,7 +330,7 @@ All sixteen texts are in the public domain. The King James Version (1611), the L
 
 ## Introspection via Kaomoji
 
-*2026-05-01*
+*2026-05-10*
 
 I saw [eriskii's claudefaces project](https://eriskii.net/projects/claude-faces) on Twitter a few weeks ago and was blown away by how cute it made Claude. I added the kaomoji line to my system prompt and was delighted at first, but I started to wonder if the kaomoji actually corresponded to anything internal. This post seeks to answer that.
 

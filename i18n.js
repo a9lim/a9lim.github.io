@@ -58,7 +58,7 @@
         'home.currently':   'Currently:',
 
         // ── Home: bio dl ──
-        'home.bio.loc.k':       'Loc',
+        'home.bio.loc.k':       'Location',
         'home.bio.loc.v':       'Singapore (ex-UCSD)',
         'home.bio.stack.k':     'Stack',
         'home.bio.stack.v':     'Vanilla JS + Claude Code',

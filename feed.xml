@@ -5,7 +5,7 @@
     <link>https://a9l.im</link>
     <description>Interactive educational simulations for physics, biology, finance, and political science.</description>
     <language>en-us</language>
-    <lastBuildDate>Fri, 08 May 2026 00:00:00 GMT</lastBuildDate>
+    <lastBuildDate>Sun, 10 May 2026 00:00:00 GMT</lastBuildDate>
     <atom:link href="https://a9l.im/feed.xml" rel="self" type="application/rss+xml"/>
     <image>
       <url>https://a9l.im/icon-192.png</url>
@@ -18,7 +18,7 @@
       <title>Introspection via Kaomoji</title>
       <link>https://a9l.im/blog/introspection-via-kaomoji</link>
       <guid isPermaLink="true">https://a9l.im/blog/introspection-via-kaomoji</guid>
-      <pubDate>Fri, 01 May 2026 00:00:00 GMT</pubDate>
+      <pubDate>Sun, 10 May 2026 00:00:00 GMT</pubDate>
       <category>interpretability</category>
       <category>model-welfare</category>
       <description>Kaomoji are a partial readout of model state. Five open-weight LLMs recover a shared affect geometry, Claude-GT now has 1480 Opus 4.7 rows, and the current predictor ships soft 9-cell distributions instead of hard labels.</description>
