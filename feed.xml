@@ -19,11 +19,10 @@
       <link>https://a9l.im/blog/introspection-via-kaomoji</link>
       <guid isPermaLink="true">https://a9l.im/blog/introspection-via-kaomoji</guid>
       <pubDate>Fri, 01 May 2026 00:00:00 GMT</pubDate>
-      <category>mechinterp</category>
       <category>interpretability</category>
       <category>model-welfare</category>
       <description>Kaomoji are a partial readout of model state. Five open-weight LLMs recover a shared affect geometry, Claude-GT now has 1480 Opus 4.7 rows, and the current predictor ships soft 9-cell distributions instead of hard labels.</description>
-      <content:encoded><![CDATA[<p>I saw <a href="https://eriskii.net/projects/claude-faces" target="_blank" rel="noopener noreferrer">eriskii's claudefaces project</a> on Twitter a few weeks ago and was blown away by how cute it made Claude. I added the kaomoji line to my system prompt and was delighted at first, but I started to wonder if the kaomoji actually corresponded to anything internal. </p>
+      <content:encoded><![CDATA[<p>I saw <a href="https://eriskii.net/projects/claude-faces" target="_blank" rel="noopener noreferrer">eriskii's claudefaces project</a> on Twitter a few weeks ago and was blown away by how cute it made Claude. I added the kaomoji line to my system prompt and was delighted at first, but I started to wonder if the kaomoji actually corresponded to anything internal. This post seeks to answer that.</p>
 <p>This post is one writeup from an ongoing project at <a href="https://github.com/a9lim/llmoji-study" target="_blank" rel="noopener noreferrer">llmoji-study</a>. You can contribute data with <a href="https://github.com/a9lim/llmoji" target="_blank" rel="noopener noreferrer">llmoji</a> on PyPI, and the data itself is at <a href="https://huggingface.co/datasets/a9lim/llmoji" target="_blank" rel="noopener noreferrer">a9lim/llmoji</a> on HuggingFace. I used my data and my own library <a href="https://github.com/a9lim/saklas" target="_blank" rel="noopener noreferrer">saklas</a> for this writeup.</p>
 <p>If you aren't too familiar with some of the concepts I discuss, please check out Anthropic's <a href="https://www.anthropic.com/research/introspection" target="_blank" rel="noopener noreferrer">introspection paper</a>, Anthropic's <a href="https://www.anthropic.com/research/emotions" target="_blank" rel="noopener noreferrer">emotions paper</a>, Theia Vogel's <a href="https://vgel.me/posts/qwen-introspection/" target="_blank" rel="noopener noreferrer">introspection post</a>, and eriskii's post above.</p>
 <h2 id="setup">Setup</h2>

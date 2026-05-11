@@ -1,4 +1,4 @@
-数週間前に Twitter で eriskii さんの [claudefaces プロジェクト](https://eriskii.net/projects/claude-faces) を見て、Claude をどれほど可愛く見せてくれるかに圧倒された。自分のシステムプロンプトにも顔文字を入れる一文を追加して、最初は単純に喜んでいたのだが、その顔文字が実際に内部の何かに対応しているのかが気になり始めた。
+数週間前に Twitter で eriskii さんの [claudefaces プロジェクト](https://eriskii.net/projects/claude-faces) を見て、Claude をどれほど可愛く見せてくれるかに圧倒された。自分のシステムプロンプトにも顔文字を入れる一文を追加して、最初は単純に喜んでいたのだが、その顔文字が実際に内部の何かに対応しているのかが気になり始めた。本記事ではその問いに答えることを試みる。
 
 この投稿は、進行中のプロジェクト [llmoji-study](https://github.com/a9lim/llmoji-study) の成果の一部のまとめである。データへの貢献は PyPI 上の [llmoji](https://github.com/a9lim/llmoji) から、データそのものは HuggingFace 上の [a9lim/llmoji](https://huggingface.co/datasets/a9lim/llmoji) から確認できる。本記事では、自分で集めたデータと、自作ライブラリの [saklas](https://github.com/a9lim/saklas) を使った。
 

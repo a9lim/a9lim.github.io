@@ -1,11 +1,21 @@
 {
-  "generatedAt": "2026-05-11T20:30:11.330Z",
+  "generatedAt": "2026-05-11T21:41:27.045Z",
   "lastDeploy": {
-    "hash": "18b7a82",
-    "iso": "2026-05-11T09:41:55-07:00",
-    "subject": "i18n: complete JA sweep — blog tables, home post snippet, version bump"
+    "hash": "54031d1",
+    "iso": "2026-05-11T14:31:35-07:00",
+    "subject": "blog: tear down offscreen iframe figures to stay under WebGL context cap"
   },
   "commits": [
+    {
+      "hash": "54031d1",
+      "iso": "2026-05-11T14:31:35-07:00",
+      "subject": "blog: tear down offscreen iframe figures to stay under WebGL context cap"
+    },
+    {
+      "hash": "c9f0023",
+      "iso": "2026-05-11T13:30:30-07:00",
+      "subject": "i18n: port EN kaomoji-post voice/accuracy edits to JA + regen metadata"
+    },
     {
       "hash": "18b7a82",
       "iso": "2026-05-11T09:41:55-07:00",
@@ -25,16 +35,6 @@
       "hash": "6df092a",
       "iso": "2026-05-11T01:32:37-07:00",
       "subject": "i18n: add EN/JA toggle for root site + JA blog post sibling"
-    },
-    {
-      "hash": "ba729af",
-      "iso": "2026-05-10T21:32:42-07:00",
-      "subject": "docs: revise kaomoji introspection post + regen metadata"
-    },
-    {
-      "hash": "845d50a",
-      "iso": "2026-05-10T18:13:50-07:00",
-      "subject": "docs: expand kaomoji introspection post with per-plot analysis"
     }
   ],
   "stats": {
@@ -42,6 +42,6 @@
     "posts": 1,
     "scriptureWorks": 16,
     "scriptureChapters": 2724,
-    "sourceLines": 15699
+    "sourceLines": 15747
   }
 }
