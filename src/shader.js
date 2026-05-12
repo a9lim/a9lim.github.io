@@ -1,7 +1,8 @@
 // ─── WebGL Shader Background ───
 // Full-viewport geometric dual-layer system rendered to #shader-bg at half
-// resolution (0.5x DPR): dot grid substrate + topographic contour lines with
-// accent-colored hotspots at contour density peaks (via screen-space derivatives).
+// resolution (0.5x DPR): dot grid substrate + soft accent-colored blobs at
+// noise-field gradient peaks (via screen-space derivatives). The original
+// design layered topographic isolines underneath the blobs; lines disabled.
 // On-demand rendering: a rAF loop runs on scroll/resize/theme-change and
 // auto-stops after 1s of inactivity. Initial load runs 2s for entrance anim.
 // Canvas uses alpha blending so the layers are semi-transparent over the page bg.
@@ -80,35 +81,33 @@ const FRAG_SRC = `
     float dotNoise = snoise(uv * 3.0 + vec2(t * 0.3, sc)) * 0.5 + 0.5;
     float dotLayer = dot * dotNoise * mix(0.06, 0.04, u_dark);
 
-    // ── Layer 2: Topographic contours ──
+    // ── Layer 2: Accent hotspot blobs (isolines disabled — blobs only) ──
     float field = snoise(uv * 2.5 + vec2(t * 0.5 + sc, t * 0.2));
     float field2 = snoise(uv * 1.2 + vec2(-t * 0.3, t * 0.4 + sc * 0.6));
     float combined = field * 0.6 + field2 * 0.4;
 
-    // Extract isolines: sharp bands at regular intervals
-    float contourFreq = 12.0;
-    float contourRaw = fract(combined * contourFreq);
-    float contour = 1.0 - smoothstep(0.0, 0.06, abs(contourRaw - 0.5) - 0.44);
-
-    // Accent hotspots at contour density peaks
+    // Blobs from noise-field gradient magnitude (formerly contour density peaks).
+    // No fract()/smoothstep banding — continuous soft regions where the field
+    // changes fastest, which naturally form blob shapes between high/low cells.
     float density = abs(dFdx(combined) * u_res.x) + abs(dFdy(combined) * u_res.y);
-    float hotspot = smoothstep(1.5, 4.0, density * contourFreq);
+    float hotspot = smoothstep(1.5, 4.0, density * 12.0);
 
     // ── Compose ──
     vec3 canvasBg = mix(u_canvasLight, u_canvasDark, u_dark);
 
-    float contourAlpha = contour * mix(0.08, 0.06, u_dark);
-    vec3 contourColor = mix(vec3(1.0), u_accent, hotspot * 0.6);
+    // Spread continuously rather than gated by line stripes, so dial alpha down
+    // a touch from the original stripe-gated 0.08/0.06 to keep overall presence.
+    float hotspotAlpha = hotspot * mix(0.07, 0.055, u_dark);
 
     // Angular vignette: corners darken more than edges
     vec2 vUV = abs(uv - 0.5) * 2.0;
     float vig = 1.0 - pow(max(vUV.x, vUV.y), 2.5) * 0.6;
 
-    // Final composite
-    float alpha = (dotLayer + contourAlpha) * vig;
-    vec3 color = mix(vec3(1.0), contourColor, contour / max(contour + dotLayer * 10.0, 0.001));
+    // Final composite: dot grid + accent blobs over canvas bg
+    float alpha = (dotLayer + hotspotAlpha) * vig;
+    vec3 color = canvasBg + u_accent * hotspotAlpha * 2.0;
 
-    gl_FragColor = vec4(color * canvasBg + contourColor * contourAlpha * 2.0, alpha);
+    gl_FragColor = vec4(color, alpha);
   }
 `;
 
