@@ -32,7 +32,8 @@
   "shortcuts": [
     {"name": "Projects", "url": "/projects", "description": "Browse simulations"},
     {"name": "Blog", "url": "/blog", "description": "Read articles"},
-    {"name": "Scripture", "url": "/scripture", "description": "Sacred text reader"}
+    {"name": "Scripture", "url": "/scripture", "description": "Sacred text reader"},
+    {"name": "Miasma", "url": "/miasma", "description": "Stochastic spatial epidemic simulator on a hex grid"}
   ],
   "screenshots": [
     {"src": "/og-image.webp", "sizes": "1200x630", "type": "image/webp", "form_factor": "wide"},

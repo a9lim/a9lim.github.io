@@ -4,7 +4,7 @@ url: https://a9l.im
 description: Free interactive educational simulations for physics, biology, finance, political science, and sacred texts.
 language: en
 license: AGPL-3.0
-updated: 2026-05-11
+updated: 2026-05-16
 ---
 
 # a9l.im
@@ -18,6 +18,8 @@ updated: 2026-05-11
 - [Gerry](https://a9l.im/gerry): Gerrymandering and electoral fairness simulator with Monte Carlo elections and six fairness metrics
 - [Shoals](https://a9l.im/shoals): Options trading simulator with stochastic volatility, binomial tree pricing, and 400+ market scenarios
 - [Scripture](https://a9l.im/scripture/): Sacred text reader with sixteen works from multiple traditions, full-text search, and concordance
+- [Miasma](https://a9l.im/miasma): Stochastic spatial epidemic simulator with multi-strain evolution, configurable compartmental model, six-topology hex grid, and intervention painting
+- [Pile](https://a9l.im/pile): Semi-realistic nuclear reactor simulator with PWR, RBMK-1000, and molten-salt reactor types — 1D axial point-kinetics neutronics, xenon, decay heat, burnup, and coupled plant safety systems
 
 ## Blog
 

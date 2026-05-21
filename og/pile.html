@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Recursive:CASL,MONO,wght@0,0,300..700;0,1,300..700&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    width: 1200px;
+    height: 630px;
+    overflow: hidden;
+    background: #F4F5F8;
+    display: flex;
+    align-items: center;
+    font-family: 'Recursive', sans-serif;
+    font-variation-settings: 'MONO' 0, 'CASL' 0;
+    position: relative;
+  }
+  .flair {
+    width: 400px;
+    height: 630px;
+    flex-shrink: 0;
+    position: relative;
+  }
+  .flair canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 560px;
+    height: 630px;
+  }
+  /* Soft fade-out that lets the spillover content show through */
+  .flair::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 360px;
+    width: 200px;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(244, 245, 248, 0.7));
+    pointer-events: none;
+  }
+  .text-side {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 0 60px;
+    position: relative;
+    z-index: 1;
+  }
+  .project-name {
+    font-family: 'Recursive', sans-serif;
+    font-variation-settings: 'MONO' 0, 'CASL' 0;
+    font-weight: 700;
+    font-size: 132px;
+    color: #010203;
+    letter-spacing: -3px;
+    line-height: 1;
+  }
+  .site-brand {
+    font-family: 'Recursive', monospace;
+    font-variation-settings: 'MONO' 1, 'CASL' 0;
+    font-size: 22px;
+    color: #1E1F23;
+    margin-top: 32px;
+    letter-spacing: 0.5px;
+  }
+</style>
+</head>
+<body>
+  <div class="flair">
+    <canvas id="flair" width="1120" height="1260"></canvas>
+  </div>
+  <div class="text-side">
+    <div class="project-name">Pile</div>
+    <div class="site-brand">AGPL-3.0</div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('flair');
+    const ctx = canvas.getContext('2d');
+    const W = canvas.width, H = canvas.height;
+
+    // Reactor fuel-pin lattice: a square grid of pins with a cosine-shaped
+    // radial flux profile (hot core centre, cold periphery), a handful of
+    // inserted control rods, all deterministic for a stable OG render.
+    const COLS = 9, ROWS = 13;
+    const SP = 84;                         // pin pitch
+    const startX = 96;
+    const startY = (H - (ROWS - 1) * SP) / 2;
+    const cx0 = (COLS - 1) / 2, cy0 = (ROWS - 1) / 2;
+    const dmax = Math.hypot(cx0, cy0);
+    const PIN_R = 31;
+
+    // Inserted control rods (cruciform bank) — pin coords "col,row".
+    const RODS = new Set(['2,3', '6,3', '4,6', '2,9', '6,9']);
+
+    for (let row = 0; row < ROWS; row++) {
+      for (let col = 0; col < COLS; col++) {
+        const x = startX + col * SP;
+        const y = startY + row * SP;
+        const dn = Math.hypot(col - cx0, row - cy0) / dmax;
+        const flux = Math.max(0.05, Math.cos(dn * Math.PI / 2));
+
+        if (RODS.has(col + ',' + row)) {
+          // control rod cell — dark absorber
+          ctx.fillStyle = 'rgba(12, 13, 18, 0.55)';
+          ctx.beginPath();
+          ctx.arc(x, y, PIN_R, 0, Math.PI * 2);
+          ctx.fill();
+          continue;
+        }
+
+        // fuel pin — red glow scaled by local flux
+        ctx.fillStyle = 'rgba(225, 17, 7, ' + (0.1 + flux * 0.64).toFixed(3) + ')';
+        ctx.beginPath();
+        ctx.arc(x, y, PIN_R, 0, Math.PI * 2);
+        ctx.fill();
+
+        // thin pin-clad ring
+        ctx.lineWidth = 2.2;
+        ctx.strokeStyle = 'rgba(12, 13, 18, 0.18)';
+        ctx.beginPath();
+        ctx.arc(x, y, PIN_R, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+    }
+
+    // --- Top fade ---
+    const fadeTop = ctx.createLinearGradient(0, 0, 0, 160);
+    fadeTop.addColorStop(0, 'rgba(244, 245, 248, 1)');
+    fadeTop.addColorStop(1, 'rgba(244, 245, 248, 0)');
+    ctx.fillStyle = fadeTop;
+    ctx.fillRect(0, 0, W, 160);
+
+    // --- Bottom fade ---
+    const fadeBot = ctx.createLinearGradient(0, H - 160, 0, H);
+    fadeBot.addColorStop(0, 'rgba(244, 245, 248, 0)');
+    fadeBot.addColorStop(1, 'rgba(244, 245, 248, 1)');
+    ctx.fillStyle = fadeBot;
+    ctx.fillRect(0, H - 160, W, 160);
+  </script>
+</body>
+</html>

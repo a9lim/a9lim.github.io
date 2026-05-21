@@ -12,6 +12,8 @@ const CARDS = [
   { html: 'metabolism.html',  output: path.join(ROOT, 'cyano', 'og-image.webp'),    waitReady: false },
   { html: 'redistricting.html', output: path.join(ROOT, 'gerry', 'og-image.webp'), waitReady: false },
   { html: 'scripture.html',    output: path.join(ROOT, 'scripture', 'og-image.webp'), waitReady: false },
+  { html: 'miasma.html',       output: path.join(ROOT, 'miasma', 'og-image.webp'),    waitReady: false },
+  { html: 'pile.html',         output: path.join(ROOT, 'pile', 'og-image.webp'),      waitReady: false },
 ];
 
 const browser = await puppeteer.launch({ headless: true });

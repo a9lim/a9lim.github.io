@@ -57,7 +57,7 @@
     <link rel="sitemap" type="application/xml" href="/sitemap.xml">
 
     <script type="speculationrules">
-    {"prefetch":[{"source":"document","where":{"href_matches":["/projects","/blog","/resume","/geon","/cyano","/gerry","/shoals","/scripture","/scripture/*"]},"eagerness":"moderate"}],"prerender":[{"source":"document","where":{"href_matches":["/projects","/blog","/resume"]},"eagerness":"conservative"}]}
+    {"prefetch":[{"source":"document","where":{"href_matches":["/sims","/projects","/blog","/resume","/geon","/cyano","/gerry","/shoals","/scripture","/scripture/*","/miasma","/pile"]},"eagerness":"moderate"}],"prerender":[{"source":"document","where":{"href_matches":["/sims","/projects","/blog","/resume"]},"eagerness":"conservative"}]}
     </script>
 
     <script type="application/ld+json">
@@ -157,7 +157,7 @@
       "@context": "https://schema.org",
       "@type": "Course",
       "name": "Interactive Science and Society Simulations",
-      "description": "A self-directed learning path through five interactive simulations covering particle physics, cellular metabolism, options trading, redistricting, and comparative religion.",
+      "description": "A self-directed learning path through seven interactive simulations covering particle physics, cellular metabolism, options trading, redistricting, comparative religion, epidemiology, and nuclear reactor operation.",
       "provider": {
         "@type": "Person",
         "@id": "https://a9l.im/#person",
@@ -169,7 +169,9 @@
         {"@type": "LearningResource", "url": "https://a9l.im/cyano", "name": "Cyano — Cellular Metabolism Simulator", "position": 2},
         {"@type": "LearningResource", "url": "https://a9l.im/shoals", "name": "Shoals — Options Trading Simulator", "position": 3},
         {"@type": "LearningResource", "url": "https://a9l.im/gerry", "name": "Gerry — Gerrymandering & Electoral Fairness Simulator", "position": 4},
-        {"@type": "LearningResource", "url": "https://a9l.im/scripture/", "name": "Scripture — Sacred Text Reader", "position": 5}
+        {"@type": "LearningResource", "url": "https://a9l.im/scripture/", "name": "Scripture — Sacred Text Reader", "position": 5},
+        {"@type": "LearningResource", "url": "https://a9l.im/miasma", "name": "Miasma — Stochastic Spatial Epidemic Simulator", "position": 6},
+        {"@type": "LearningResource", "url": "https://a9l.im/pile", "name": "Pile — Interactive Nuclear Reactor Simulator", "position": 7}
       ]
     }
     </script>
@@ -180,6 +182,7 @@
       "name": "Main Navigation",
       "hasPart": [
         {"@type": "WebPage", "name": "Home", "url": "https://a9l.im"},
+        {"@type": "WebPage", "name": "Simulations", "url": "https://a9l.im/sims"},
         {"@type": "WebPage", "name": "Projects", "url": "https://a9l.im/projects"},
         {"@type": "WebPage", "name": "Blog", "url": "https://a9l.im/blog"},
         {"@type": "WebPage", "name": "Resume", "url": "https://a9l.im/resume"},
@@ -231,7 +234,7 @@
           "@type": "CreativeWork",
           "name": "Educational Simulations",
           "description": "Open-source interactive simulations for physics, biology, finance, and political science",
-          "url": "https://a9l.im/projects"
+          "url": "https://a9l.im/sims"
         }
       },
       "mainEntityOfPage": {"@type": "WebPage", "@id": "https://a9l.im/"}
@@ -256,6 +259,7 @@
 
         <div class="nav-center">
             <a href="/" class="nav-link active" data-page="home" data-i18n="nav.home">home</a>
+            <a href="/sims" class="nav-link" data-page="sims" data-i18n="nav.sims">sims</a>
             <a href="/projects" class="nav-link" data-page="projects" data-i18n="nav.projects">projects</a>
             <a href="/blog" class="nav-link" data-page="blog" data-i18n="nav.blog">blog</a>
         </div>
@@ -284,6 +288,7 @@
     <!-- ═══ Mobile Nav Overlay ═══ -->
     <div class="mobile-nav" id="mobile-nav" role="dialog" aria-modal="true" aria-label="Mobile navigation">
         <a href="/" class="nav-link" data-page="home" data-i18n="nav.home">home</a>
+        <a href="/sims" class="nav-link" data-page="sims" data-i18n="nav.sims">sims</a>
         <a href="/projects" class="nav-link" data-page="projects" data-i18n="nav.projects">projects</a>
         <a href="/blog" class="nav-link" data-page="blog" data-i18n="nav.blog">blog</a>
         <a href="/resume" class="nav-link" data-page="resume" data-i18n="nav.resume">resume</a>
@@ -356,10 +361,12 @@
                     <li><span class="home-sims-tag" data-tag="shipped" data-i18n="home.sims.shipped">shipped</span> <a href="/shoals">Shoals</a> <span class="home-sims-desc" data-i18n="home.sims.shoals">options pricing, Heston and Merton, 400+ scenarios.</span></li>
                     <li><span class="home-sims-tag" data-tag="shipped" data-i18n="home.sims.shipped">shipped</span> <a href="/gerry">Gerry</a> <span class="home-sims-desc" data-i18n="home.sims.gerry">gerrymandering on hex tiles, 6 fairness metrics, Monte Carlo.</span></li>
                     <li><span class="home-sims-tag" data-tag="shipped" data-i18n="home.sims.shipped">shipped</span> <a href="/scripture/">Scripture</a> <span class="home-sims-desc" data-i18n="home.sims.scripture">16 sacred texts, full-text search, TF-IDF concordance.</span></li>
+                    <li><span class="home-sims-tag" data-tag="shipped" data-i18n="home.sims.shipped">shipped</span> <a href="/miasma">Miasma</a> <span class="home-sims-desc" data-i18n="home.sims.miasma">stochastic spatial epidemic, multi-strain evolution, hex-grid topology, intervention paint.</span></li>
+                    <li><span class="home-sims-tag" data-tag="shipped" data-i18n="home.sims.shipped">shipped</span> <a href="/pile">Pile</a> <span class="home-sims-desc" data-i18n="home.sims.pile">nuclear reactor sim, 3 reactor types, axial neutronics, coupled plant systems.</span></li>
                     <li><span class="home-sims-tag" data-tag="planned" data-i18n="home.sims.planned">planned</span> <span class="home-sims-muted" data-i18n="home.sims.mechinterp">Mechinterp visualizer for Saklas probes.</span></li>
                     <li><span class="home-sims-tag" data-tag="planned" data-i18n="home.sims.planned">planned</span> <span class="home-sims-muted" data-i18n="home.sims.epi">Epidemiology sim (zombies): resurrect the 2018 one.</span></li>
                 </ul>
-                <a class="home-more" href="/projects" data-page="projects" data-i18n="home.sims.full">Full grid →</a>
+                <a class="home-more" href="/sims" data-page="sims" data-i18n="home.sims.full">Full grid →</a>
             </section>
 
             <!-- 6. Misc Projects -->
@@ -448,6 +455,16 @@
                 <figcaption data-i18n="home.doggy.caption">it's a doggy dog world</figcaption>
             </figure>
 
+        </div>
+    </section>
+
+    <!-- ═══════════════════════════════════
+         Page: Simulations
+         ═══════════════════════════════════ -->
+    <section id="page-sims" class="page-section" aria-label="Simulations">
+        <div class="page-container">
+
+            <div class="sims-grid"></div>
         </div>
     </section>
 

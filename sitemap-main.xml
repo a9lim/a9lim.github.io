@@ -12,6 +12,12 @@
     </image:image>
   </url>
   <url>
+    <loc>https://a9l.im/sims</loc>
+    <lastmod>2026-05-11</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
     <loc>https://a9l.im/projects</loc>
     <lastmod>2026-05-11</lastmod>
     <changefreq>monthly</changefreq>
@@ -31,7 +37,7 @@
   </url>
   <url>
     <loc>https://a9l.im/geon</loc>
-    <lastmod>2026-05-11</lastmod>
+    <lastmod>2026-05-21</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.9</priority>
     <image:image>
@@ -42,7 +48,7 @@
   </url>
   <url>
     <loc>https://a9l.im/cyano</loc>
-    <lastmod>2026-05-11</lastmod>
+    <lastmod>2026-05-21</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.9</priority>
     <image:image>
@@ -53,7 +59,7 @@
   </url>
   <url>
     <loc>https://a9l.im/gerry</loc>
-    <lastmod>2026-05-11</lastmod>
+    <lastmod>2026-05-21</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.9</priority>
     <image:image>
@@ -64,7 +70,7 @@
   </url>
   <url>
     <loc>https://a9l.im/shoals</loc>
-    <lastmod>2026-05-11</lastmod>
+    <lastmod>2026-05-21</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.9</priority>
     <image:image>
@@ -75,13 +81,35 @@
   </url>
   <url>
     <loc>https://a9l.im/scripture/</loc>
-    <lastmod>2026-05-11</lastmod>
+    <lastmod>2026-05-21</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.9</priority>
     <image:image>
       <image:loc>https://a9l.im/scripture/og-image.webp</image:loc>
       <image:title>scripture</image:title>
       <image:caption>Scripture — sacred text reader with sixteen works from multiple traditions</image:caption>
+    </image:image>
+  </url>
+  <url>
+    <loc>https://a9l.im/miasma</loc>
+    <lastmod>2026-05-21</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+    <image:image>
+      <image:loc>https://a9l.im/miasma/og-image.webp</image:loc>
+      <image:title>miasma</image:title>
+      <image:caption>Miasma — stochastic spatial epidemic simulator with multi-strain evolution and intervention painting</image:caption>
+    </image:image>
+  </url>
+  <url>
+    <loc>https://a9l.im/pile</loc>
+    <lastmod>2026-05-21</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+    <image:image>
+      <image:loc>https://a9l.im/pile/og-image.webp</image:loc>
+      <image:title>pile</image:title>
+      <image:caption>Pile — semi-realistic nuclear reactor simulator with PWR, RBMK, and molten-salt reactor types</image:caption>
     </image:image>
   </url>
   <url>

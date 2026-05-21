@@ -13,3 +13,9 @@
 [submodule "scripture"]
 	path = scripture
 	url = https://github.com/a9lim/scripture.git
+[submodule "miasma"]
+	path = miasma
+	url = https://github.com/a9lim/miasma.git
+[submodule "pile"]
+	path = pile
+	url = https://github.com/a9lim/pile.git

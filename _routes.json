@@ -18,6 +18,8 @@
     "/gerry/*",
     "/shoals/*",
     "/asteroids/*",
+    "/miasma/*",
+    "/pile/*",
     "/.well-known/*",
     "/*.txt",
     "/*.md",

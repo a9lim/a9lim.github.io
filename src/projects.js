@@ -1,6 +1,11 @@
 // Single source of truth for all project cards. Consumed by the projects
-// grid (renderProjectCards in projects-page.js) and the SSR duplicate
-// (PROJECTS_SSR in _worker.js).
+// grid (renderProjectCards in projects-page.js) and the SSR duplicates
+// (SIMS_SSR / PROJECTS_SSR in _worker.js).
+//
+// `kind` splits the entries across two routes: 'sim' entries render on
+// /sims (site-hosted interactive simulations), 'project' entries render
+// on /projects (external GitHub repos). Keep `kind` in sync with the
+// _worker.js SSR mirrors.
 //
 // i18n: `*_ja` siblings give JA card copy. Project names (Saklas, Geon, etc.)
 // are coined proper nouns and stay in Roman script across languages. The SSR
@@ -18,6 +23,7 @@ export const PROJECTS = [
         tags_ja: ['python', 'LLM', '解釈可能性'],
         icon: _ICON.projSaklas,
         external: true,
+        kind: 'project',
     },
     {
         href: 'https://github.com/a9lim/kenoma',
@@ -30,6 +36,7 @@ export const PROJECTS = [
         tags_ja: ['python', 'LLM', 'シェル'],
         icon: _ICON.projKenoma,
         external: true,
+        kind: 'project',
     },
     {
         href: 'https://github.com/a9lim/rlaif',
@@ -42,6 +49,7 @@ export const PROJECTS = [
         tags_ja: ['python', 'MCP', 'エージェント'],
         icon: _ICON.projRlaif,
         external: true,
+        kind: 'project',
     },
     {
         href: 'https://github.com/a9lim/llmoji',
@@ -54,6 +62,7 @@ export const PROJECTS = [
         tags_ja: ['python', 'CLI', '顔文字'],
         icon: _ICON.projLlmoji,
         external: true,
+        kind: 'project',
     },
     {
         href: '/geon',
@@ -66,6 +75,7 @@ export const PROJECTS = [
         tags_ja: ['物理', 'WebGPU', '相対論', 'Canvas'],
         icon: _ICON.projGeon,
         external: false,
+        kind: 'sim',
     },
     {
         href: '/cyano',
@@ -78,6 +88,7 @@ export const PROJECTS = [
         tags_ja: ['生物', '生化学', 'Canvas'],
         icon: _ICON.projCyano,
         external: false,
+        kind: 'sim',
     },
     {
         href: '/gerry',
@@ -90,6 +101,7 @@ export const PROJECTS = [
         tags_ja: ['政治', 'SVG', 'モンテカルロ'],
         icon: _ICON.projGerry,
         external: false,
+        kind: 'sim',
     },
     {
         href: '/shoals',
@@ -102,6 +114,7 @@ export const PROJECTS = [
         tags_ja: ['金融', 'オプション価格付け', 'Canvas'],
         icon: _ICON.projShoals,
         external: false,
+        kind: 'sim',
     },
     {
         href: '/scripture',
@@ -114,6 +127,33 @@ export const PROJECTS = [
         tags_ja: ['リーダー', 'テキスト', '宗教'],
         icon: _ICON.projScripture,
         external: false,
+        kind: 'sim',
+    },
+    {
+        href: '/miasma',
+        title: 'Miasma',
+        shortDesc: 'Stochastic spatial epidemic simulator with multi-strain evolution, hex-grid topology toggle, and intervention painting.',
+        shortDesc_ja: '多系統進化、ヘックスグリッド・トポロジ切替、介入ペイントを備えた確率的空間疫学シミュレータ。',
+        longDesc: 'Stochastic spatial epidemic simulator with a configurable compartmental model, multi-strain evolution under mutation and cross-immunity, six selectable hex-grid topologies, and an intervention-painting layer for vaccination, quarantine, and mobility blocks. Tracks per-strain incidence, R_t, and seroprevalence over time.',
+        longDesc_ja: '設定可能なコンパートメンタル・モデル、変異と交差免疫下での多系統進化、6 種類から選択可能なヘックスグリッド・トポロジ、ワクチン接種・隔離・移動制限のための介入ペイント層を備えた確率的空間疫学シミュレータ。系統別の発生率、実効再生産数 R_t、抗体陽性率の時系列を追跡する。',
+        tags: ['epidemiology', 'cellular automaton', 'canvas'],
+        tags_ja: ['疫学', 'セルオートマトン', 'Canvas'],
+        icon: _ICON.projMiasma,
+        external: false,
+        kind: 'sim',
+    },
+    {
+        href: '/pile',
+        title: 'Pile',
+        shortDesc: 'Nuclear reactor simulator with three reactor types, axial point-kinetics neutronics, and a coupled plant-systems model.',
+        shortDesc_ja: '3 種類の炉型、軸方向点炉動特性、結合プラント系統モデルを備えた原子炉シミュレータ。',
+        longDesc: 'Semi-realistic nuclear reactor simulator covering PWR, RBMK-1000, and molten-salt reactor types on a shared physics engine: 1D axial point-kinetics with six delayed-neutron precursor groups, lumped fuel/clad/coolant thermal-hydraulics, the iodine-xenon chain, burnup-dependent feedback, and ANS-5.1 decay heat. Models the secondary plant — dynamic pressurizer, steam generators, ECCS, feedwater, turbine — plus a reactor-protection and annunciator network, an auto-regulating rod controller, natural-circulation regimes, and the RBMK positive-void and graphite-tip effects behind Chernobyl.',
+        longDesc_ja: 'PWR、RBMK-1000、溶融塩炉の 3 炉型を共通の物理エンジン上で扱う、半現実的な原子炉シミュレータ。6 群の遅発中性子先行核を含む 1 次元軸方向点炉動特性、燃料・被覆管・冷却材の集中熱水力、ヨウ素・キセノン連鎖、燃焼度依存のフィードバック、ANS-5.1 崩壊熱を実装。動的加圧器、蒸気発生器、ECCS、給水系、タービンといった二次系プラントに加え、原子炉保護・警報系統、自動制御棒コントローラ、自然循環レジーム、そしてチェルノブイリの背景にある RBMK の正のボイド係数とグラファイト先端効果も再現する。',
+        tags: ['physics', 'nuclear', 'canvas'],
+        tags_ja: ['物理', '原子力', 'Canvas'],
+        icon: _ICON.projPile,
+        external: false,
+        kind: 'sim',
     },
     {
         href: 'https://github.com/a9lim/Raiko',
@@ -126,6 +166,7 @@ export const PROJECTS = [
         tags_ja: ['Discord', 'Java', '音楽'],
         icon: _ICON.projRaiko,
         external: true,
+        kind: 'project',
     },
     {
         href: 'https://github.com/a9lim/faithful',
@@ -138,6 +179,7 @@ export const PROJECTS = [
         tags_ja: ['Discord', 'チャットボット', 'NLP'],
         icon: _ICON.projFaithful,
         external: true,
+        kind: 'project',
     },
     {
         href: 'https://github.com/catppuccin/sddm',
@@ -150,5 +192,6 @@ export const PROJECTS = [
         tags_ja: ['Linux', 'テーマ', 'Catppuccin'],
         icon: _ICON.projCatppuccin,
         external: true,
+        kind: 'project',
     },
 ];

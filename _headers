@@ -29,6 +29,12 @@
   Link: </styles.css>; rel=preload; as=style
   Link: </main.js>; rel=modulepreload
   Link: </fonts/recursive-variable.woff2>; rel=preload; as=font; crossorigin
+/sims
+  Link: </shared-tokens.js>; rel=preload; as=script
+  Link: </shared-base.css>; rel=preload; as=style
+  Link: </styles.css>; rel=preload; as=style
+  Link: </main.js>; rel=modulepreload
+  Link: </fonts/recursive-variable.woff2>; rel=preload; as=font; crossorigin
 /projects
   Link: </shared-tokens.js>; rel=preload; as=script
   Link: </shared-base.css>; rel=preload; as=style
@@ -78,6 +84,16 @@
   Link: </asteroids/styles.css>; rel=preload; as=style
   Link: </asteroids/main.js>; rel=preload; as=script
   Link: </fonts/recursive-variable.woff2>; rel=preload; as=font; crossorigin
+/miasma/*
+  Link: </shared-tokens.js>; rel=preload; as=script
+  Link: </shared-base.css>; rel=preload; as=style
+  Link: </miasma/styles.css>; rel=preload; as=style
+  Link: </miasma/main.js>; rel=modulepreload
+/pile/*
+  Link: </shared-tokens.js>; rel=preload; as=script
+  Link: </shared-base.css>; rel=preload; as=style
+  Link: </pile/styles.css>; rel=preload; as=style
+  Link: </pile/main.js>; rel=modulepreload
 
 # Shared design system — short browser TTL, CDN caches until next deploy
 /shared-*.js
@@ -116,6 +132,18 @@
   Cache-Control: public, max-age=86400, stale-while-revalidate=604800
   Cloudflare-CDN-Cache-Control: public, max-age=31536000, immutable
 /asteroids/*.css
+  Cache-Control: public, max-age=86400, stale-while-revalidate=604800
+  Cloudflare-CDN-Cache-Control: public, max-age=31536000, immutable
+/miasma/*.js
+  Cache-Control: public, max-age=86400, stale-while-revalidate=604800
+  Cloudflare-CDN-Cache-Control: public, max-age=31536000, immutable
+/miasma/*.css
+  Cache-Control: public, max-age=86400, stale-while-revalidate=604800
+  Cloudflare-CDN-Cache-Control: public, max-age=31536000, immutable
+/pile/*.js
+  Cache-Control: public, max-age=86400, stale-while-revalidate=604800
+  Cloudflare-CDN-Cache-Control: public, max-age=31536000, immutable
+/pile/*.css
   Cache-Control: public, max-age=86400, stale-while-revalidate=604800
   Cloudflare-CDN-Cache-Control: public, max-age=31536000, immutable
 /scripture/*.js

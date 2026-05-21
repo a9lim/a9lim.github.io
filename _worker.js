@@ -203,9 +203,14 @@ const WORK_MENTIONS = {
 // Root SPA routes all serve index.html, so meta tags need edge rewriting.
 
 const ROUTE_META = {
+  '/sims': {
+    title: 'Simulations | a9l.im',
+    desc: 'Interactive in-browser simulations: relativistic particle physics, cellular metabolism, options trading, redistricting, epidemiology, nuclear reactor operation, and a sacred-text reader. Open-source, zero-dependency.',
+    ogTitle: 'Simulations | a9l.im',
+  },
   '/projects': {
     title: 'Projects | a9l.im',
-    desc: 'Browse interactive simulations for physics, biology, finance, and political science. Open-source, zero-dependency tools that run entirely in the browser.',
+    desc: 'Open-source projects: activation steering for transformers, LLM tooling, MCP servers, Discord bots, and desktop themes.',
     ogTitle: 'Projects | a9l.im',
   },
   '/blog': {
@@ -271,22 +276,30 @@ const ABOUT_JSONLD = JSON.stringify({
       '@type': 'CreativeWork',
       name: 'Educational Simulations',
       description: 'Open-source interactive simulations for physics, biology, finance, and political science',
-      url: 'https://a9l.im/projects',
+      url: 'https://a9l.im/sims',
     },
   },
   mainEntityOfPage: { '@type': 'WebPage', '@id': 'https://a9l.im/' },
 });
+
+// SSR mirrors of src/projects.js, split by `kind`. SIMS_SSR feeds the
+// /sims grid, PROJECTS_SSR feeds the /projects grid — keep both in sync
+// with the PROJECTS array.
+const SIMS_SSR = `
+<div class="project-card fade-in visible"><a href="/geon"><h3>Geon</h3><p>Relativistic N-body simulator with 11 forces, scalar fields, and WebGPU compute shaders.</p><span class="tag">physics</span><span class="tag">webgpu</span><span class="tag">relativity</span><span class="tag">canvas</span></a></div>
+<div class="project-card fade-in visible"><a href="/cyano"><h3>Cyano</h3><p>Cellular metabolism simulator with twelve biochemical pathways, allosteric regulation, and cofactor tracking.</p><span class="tag">biology</span><span class="tag">biochemistry</span><span class="tag">canvas</span></a></div>
+<div class="project-card fade-in visible"><a href="/gerry"><h3>Gerry</h3><p>Draw districts on a procedural hex map and stress-test them with Monte Carlo elections and fairness metrics.</p><span class="tag">politics</span><span class="tag">svg</span><span class="tag">monte carlo</span></a></div>
+<div class="project-card fade-in visible"><a href="/shoals"><h3>Shoals</h3><p>Options trading simulator with stochastic volatility, a multi-leg strategy builder, and narrative market events.</p><span class="tag">finance</span><span class="tag">options pricing</span><span class="tag">canvas</span></a></div>
+<div class="project-card fade-in visible"><a href="/scripture"><h3>Scripture</h3><p>Sacred text reader with sixteen works from multiple traditions, full-text search, concordance, and text-to-speech.</p><span class="tag">reader</span><span class="tag">text</span><span class="tag">religion</span></a></div>
+<div class="project-card fade-in visible"><a href="/miasma"><h3>Miasma</h3><p>Stochastic spatial epidemic simulator with multi-strain evolution, hex-grid topology toggle, and intervention painting.</p><span class="tag">epidemiology</span><span class="tag">cellular automaton</span><span class="tag">canvas</span></a></div>
+<div class="project-card fade-in visible"><a href="/pile"><h3>Pile</h3><p>Nuclear reactor simulator with three reactor types, axial point-kinetics neutronics, and a coupled plant-systems model.</p><span class="tag">physics</span><span class="tag">nuclear</span><span class="tag">canvas</span></a></div>
+`;
 
 const PROJECTS_SSR = `
 <div class="project-card fade-in visible"><a href="https://github.com/a9lim/saklas" target="_blank" rel="noopener noreferrer"><h3>Saklas</h3><p>Activation steering and trait monitoring for HuggingFace transformer models.</p><span class="tag">python</span><span class="tag">llm</span><span class="tag">interpretability</span></a></div>
 <div class="project-card fade-in visible"><a href="https://github.com/a9lim/kenoma" target="_blank" rel="noopener noreferrer"><h3>Kenoma</h3><p>Fake shell that hallucinates command output from raw LLM completion, using the real shell prompt as the stop token.</p><span class="tag">python</span><span class="tag">llm</span><span class="tag">shell</span></a></div>
 <div class="project-card fade-in visible"><a href="https://github.com/a9lim/rlaif" target="_blank" rel="noopener noreferrer"><h3>Rlaif</h3><p>Single-user MCP server that exposes a PiShock collar as a tool an agent can call to shock you.</p><span class="tag">python</span><span class="tag">mcp</span><span class="tag">agent</span></a></div>
 <div class="project-card fade-in visible"><a href="https://github.com/a9lim/llmoji" target="_blank" rel="noopener noreferrer"><h3>Llmoji</h3><p>CLI that gets coding agents to start each message with a kaomoji and ships the synthesized meanings to a shared HuggingFace dataset, with a companion repo for the mechinterp study.</p><span class="tag">python</span><span class="tag">cli</span><span class="tag">kaomoji</span></a></div>
-<div class="project-card fade-in visible"><a href="/geon"><h3>Geon</h3><p>Relativistic N-body simulator with 11 forces, scalar fields, and WebGPU compute shaders.</p><span class="tag">physics</span><span class="tag">webgpu</span><span class="tag">relativity</span><span class="tag">canvas</span></a></div>
-<div class="project-card fade-in visible"><a href="/cyano"><h3>Cyano</h3><p>Cellular metabolism simulator with twelve biochemical pathways, allosteric regulation, and cofactor tracking.</p><span class="tag">biology</span><span class="tag">biochemistry</span><span class="tag">canvas</span></a></div>
-<div class="project-card fade-in visible"><a href="/gerry"><h3>Gerry</h3><p>Draw districts on a procedural hex map and stress-test them with Monte Carlo elections and fairness metrics.</p><span class="tag">politics</span><span class="tag">svg</span><span class="tag">monte carlo</span></a></div>
-<div class="project-card fade-in visible"><a href="/shoals"><h3>Shoals</h3><p>Options trading simulator with stochastic volatility, a multi-leg strategy builder, and narrative market events.</p><span class="tag">finance</span><span class="tag">options pricing</span><span class="tag">canvas</span></a></div>
-<div class="project-card fade-in visible"><a href="/scripture"><h3>Scripture</h3><p>Sacred text reader with sixteen works from multiple traditions, full-text search, concordance, and text-to-speech.</p><span class="tag">reader</span><span class="tag">text</span><span class="tag">religion</span></a></div>
 <div class="project-card fade-in visible"><a href="https://github.com/a9lim/Raiko" target="_blank" rel="noopener noreferrer"><h3>Raiko</h3><p>Discord music and chat bot with queue management and conversational AI.</p><span class="tag">discord</span><span class="tag">java</span><span class="tag">music</span></a></div>
 <div class="project-card fade-in visible"><a href="https://github.com/a9lim/faithful" target="_blank" rel="noopener noreferrer"><h3>Faithful</h3><p>Discord chatbot that emulates given messages in the style of source material.</p><span class="tag">discord</span><span class="tag">chatbot</span><span class="tag">nlp</span></a></div>
 <div class="project-card fade-in visible"><a href="https://github.com/catppuccin/sddm" target="_blank" rel="noopener noreferrer"><h3>Catppuccin for SDDM</h3><p>Soothing pastel theme for the SDDM display manager with all four flavor variants.</p><span class="tag">linux</span><span class="tag">theme</span><span class="tag">catppuccin</span></a></div>
@@ -411,6 +424,13 @@ function rewriteHTML(response, meta) {
         if (meta.ssrBlogList) el.setInnerContent(meta.ssrBlogList, { html: true });
       },
     })
+    .on('.sims-grid', {
+      element(el) {
+        if (meta.canonical === 'https://a9l.im/sims') {
+          el.setInnerContent(SIMS_SSR, { html: true });
+        }
+      },
+    })
     .on('.projects-grid', {
       element(el) {
         if (meta.canonical === 'https://a9l.im/projects') {
@@ -422,6 +442,13 @@ function rewriteHTML(response, meta) {
       element(el) {
         if (meta.canonical !== 'https://a9l.im' && meta.canonical !== 'https://a9l.im/') {
           el.setAttribute('class', 'page-section');
+        }
+      },
+    })
+    .on('#page-sims', {
+      element(el) {
+        if (meta.canonical === 'https://a9l.im/sims') {
+          el.setAttribute('class', 'page-section active');
         }
       },
     })
@@ -962,7 +989,7 @@ export default {
     }
 
     // Root SPA routes — serve index.html with per-route meta injection
-    if (pathname === '/projects' || pathname === '/blog' || pathname.startsWith('/blog/') || pathname === '/resume') {
+    if (pathname === '/sims' || pathname === '/projects' || pathname === '/blog' || pathname.startsWith('/blog/') || pathname === '/resume') {
       const response = await env.ASSETS.fetch(new URL('/index.html', origin));
 
       let meta;
@@ -1047,13 +1074,14 @@ export default {
         }
       } else {
         meta = { ...ROUTE_META[pathname], canonical: `https://a9l.im${pathname}` };
-        const pageName = pathname === '/projects' ? 'Projects' : pathname === '/blog' ? 'Blog' : 'Resume';
+        const pageName = pathname === '/sims' ? 'Simulations' : pathname === '/projects' ? 'Projects' : pathname === '/blog' ? 'Blog' : 'Resume';
         meta.ssrBreadcrumb = `<a href="/">Home</a> <span aria-hidden="true">\u203a</span> <span>${pageName}</span>`;
         const navElement = {
           '@type': 'SiteNavigationElement',
           name: 'Main Navigation',
           hasPart: [
             { '@type': 'WebPage', name: 'Home', url: 'https://a9l.im' },
+            { '@type': 'WebPage', name: 'Simulations', url: 'https://a9l.im/sims' },
             { '@type': 'WebPage', name: 'Projects', url: 'https://a9l.im/projects' },
             { '@type': 'WebPage', name: 'Blog', url: 'https://a9l.im/blog' },
             { '@type': 'WebPage', name: 'Resume', url: 'https://a9l.im/resume' },
@@ -1096,13 +1124,33 @@ export default {
             dateModified: '2026-05-11T00:00:00+00:00',
           };
           meta.jsonLd = JSON.stringify({ '@context': 'https://schema.org', '@graph': [profilePage, person, breadcrumb, navElement] });
-        } else if (pathname === '/projects') {
-          const projectItems = [
+        } else if (pathname === '/sims') {
+          const simItems = [
             { position: 1, name: 'Geon — Relativistic Particle Physics Simulator', url: 'https://a9l.im/geon' },
             { position: 2, name: 'Cyano — Cellular Biochemistry Simulator', url: 'https://a9l.im/cyano' },
             { position: 3, name: 'Gerry — Gerrymandering & Electoral Fairness Simulator', url: 'https://a9l.im/gerry' },
             { position: 4, name: 'Shoals — Options Trading Simulator', url: 'https://a9l.im/shoals' },
             { position: 5, name: 'Scripture — Sacred Text Reader', url: 'https://a9l.im/scripture/' },
+            { position: 6, name: 'Miasma — Stochastic Spatial Epidemic Simulator', url: 'https://a9l.im/miasma' },
+            { position: 7, name: 'Pile — Nuclear Reactor Simulator', url: 'https://a9l.im/pile' },
+          ].map(p => ({ '@type': 'ListItem', ...p }));
+          meta.jsonLd = JSON.stringify({
+            '@context': 'https://schema.org',
+            '@graph': [
+              { '@type': 'CollectionPage', '@id': 'https://a9l.im/sims', name: 'Simulations', url: 'https://a9l.im/sims', mainEntity: { '@type': 'ItemList', itemListElement: simItems } },
+              breadcrumb,
+              navElement,
+            ],
+          });
+        } else if (pathname === '/projects') {
+          const projectItems = [
+            { position: 1, name: 'Saklas — Activation Steering for HuggingFace Transformers', url: 'https://github.com/a9lim/saklas' },
+            { position: 2, name: 'Kenoma — LLM-Hallucinated Fake Shell', url: 'https://github.com/a9lim/kenoma' },
+            { position: 3, name: 'Rlaif — Single-User MCP Server', url: 'https://github.com/a9lim/rlaif' },
+            { position: 4, name: 'Llmoji — Kaomoji-Injection CLI for Coding Agents', url: 'https://github.com/a9lim/llmoji' },
+            { position: 5, name: 'Raiko — Discord Music & Chat Bot', url: 'https://github.com/a9lim/Raiko' },
+            { position: 6, name: 'Faithful — Style-Emulating Discord Chatbot', url: 'https://github.com/a9lim/faithful' },
+            { position: 7, name: 'Catppuccin for SDDM — Display Manager Theme', url: 'https://github.com/catppuccin/sddm' },
           ].map(p => ({ '@type': 'ListItem', ...p }));
           meta.jsonLd = JSON.stringify({
             '@context': 'https://schema.org',

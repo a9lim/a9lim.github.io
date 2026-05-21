@@ -232,6 +232,8 @@ const IMAGE_MAP = {
   '/gerry':     ['gerry/og-image.webp'],
   '/shoals':    ['shoals/og-image.webp'],
   '/scripture/': ['scripture/og-image.webp'],
+  '/miasma':    ['miasma/og-image.webp'],
+  '/pile':      ['pile/og-image.webp'],
 };
 
 function add(path, lastmod, images, changefreq, priority, imageCaption) {
@@ -245,11 +247,14 @@ const IMAGE_CAPTIONS = {
   '/gerry': 'Gerry — gerrymandering and electoral fairness simulator with Monte Carlo elections',
   '/shoals': 'Shoals — options trading simulator with stochastic volatility and 400+ market scenarios',
   '/scripture/': 'Scripture — sacred text reader with sixteen works from multiple traditions',
+  '/miasma': 'Miasma — stochastic spatial epidemic simulator with multi-strain evolution and intervention painting',
+  '/pile': 'Pile — semi-realistic nuclear reactor simulator with PWR, RBMK, and molten-salt reactor types',
 };
 
 // 1. Static routes
 const staticRoutes = [
   { path: '/',          file: 'index.html',           changefreq: 'weekly',  priority: 1.0 },
+  { path: '/sims',      file: 'index.html',           changefreq: 'monthly', priority: 0.8 },
   { path: '/projects',  file: 'index.html',           changefreq: 'monthly', priority: 0.8 },
   { path: '/blog',      file: 'index.html',           changefreq: 'monthly', priority: 0.8 },
   { path: '/resume',    file: 'index.html',           changefreq: 'monthly', priority: 0.7 },
@@ -258,6 +263,8 @@ const staticRoutes = [
   { path: '/gerry',     file: 'gerry/index.html',     changefreq: 'monthly', priority: 0.9 },
   { path: '/shoals',    file: 'shoals/index.html',    changefreq: 'monthly', priority: 0.9 },
   { path: '/scripture/', file: 'scripture/index.html', changefreq: 'monthly', priority: 0.9 },
+  { path: '/miasma',    file: 'miasma/index.html',    changefreq: 'monthly', priority: 0.9 },
+  { path: '/pile',      file: 'pile/index.html',      changefreq: 'monthly', priority: 0.9 },
 ];
 
 for (const r of staticRoutes) {
@@ -460,6 +467,8 @@ const aboutFiles = [
   { heading: 'Gerry', path: 'gerry/about.md' },
   { heading: 'Shoals', path: 'shoals/about.md' },
   { heading: 'Scripture', path: 'scripture/about.md' },
+  { heading: 'Miasma', path: 'miasma/about.md' },
+  { heading: 'Pile', path: 'pile/about.md' },
 ];
 
 const llmsParts = [
@@ -546,7 +555,7 @@ const homeData = {
   lastDeploy,
   commits,
   stats: {
-    sims: 5,
+    sims: 7,
     posts: posts.length,
     scriptureWorks: workIds.length,
     scriptureChapters: countScriptureChapters(),

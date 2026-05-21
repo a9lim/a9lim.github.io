@@ -37,6 +37,7 @@
 
         // ── Navbar ──
         'nav.home':       'home',
+        'nav.sims':       'sims',
         'nav.projects':   'projects',
         'nav.blog':       'blog',
         'nav.resume':     'resume',
@@ -81,6 +82,8 @@
         'home.sims.shoals':  'options pricing, Heston and Merton, 400+ scenarios.',
         'home.sims.gerry':   'gerrymandering on hex tiles, 6 fairness metrics, Monte Carlo.',
         'home.sims.scripture': '16 sacred texts, full-text search, TF-IDF concordance.',
+        'home.sims.miasma':  'stochastic spatial epidemic, multi-strain evolution, hex-grid topology, intervention paint.',
+        'home.sims.pile':    'nuclear reactor sim, 3 reactor types, axial neutronics, coupled plant systems.',
         'home.sims.mechinterp': 'Mechinterp visualizer for Saklas probes.',
         'home.sims.epi':     'Epidemiology sim (zombies): resurrect the 2018 one.',
         'home.sims.full':    'Full grid →',
@@ -252,6 +255,7 @@
 
         // ── Navbar ──
         'nav.home':       'ホーム',
+        'nav.sims':       'シミュレーション',
         'nav.projects':   'プロジェクト',
         'nav.blog':       'ブログ',
         'nav.resume':     '履歴書',
@@ -291,6 +295,8 @@
         'home.sims.shoals':  'オプション価格付け、ヘストン・マートンモデル、400 以上のシナリオ。',
         'home.sims.gerry':   '六角タイル上のゲリマンダー、6 つの公平性指標、モンテカルロ。',
         'home.sims.scripture': '16 の聖典、全文検索、TF-IDF コンコーダンス。',
+        'home.sims.miasma':  '確率的空間疫学、多系統進化、ヘックスグリッド・トポロジ、介入ペイント。',
+        'home.sims.pile':    '原子炉シミュレーション、3 炉型、軸方向中性子動特性、結合プラント系統。',
         'home.sims.mechinterp': 'Saklas プローブのための機械論的解釈可能性ビジュアライザ。',
         'home.sims.epi':     '感染症シミュレーション(ゾンビ)、2018 年版を復活させる。',
         'home.sims.full':    '一覧へ →',

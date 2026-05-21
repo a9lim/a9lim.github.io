@@ -29,7 +29,8 @@ const $ = {
 const navLinks = document.querySelectorAll('.nav-link');
 const pages    = document.querySelectorAll('.page-section');
 
-renderProjectCards(document.querySelector('.projects-grid'), PROJECTS);
+renderProjectCards(document.querySelector('.sims-grid'), PROJECTS.filter(p => p.kind === 'sim'));
+renderProjectCards(document.querySelector('.projects-grid'), PROJECTS.filter(p => p.kind === 'project'));
 
 // ─── Init ───
 initTheme($);

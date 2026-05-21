@@ -7,7 +7,9 @@
 
 const ARROW_SVG = _ICON.projectArrow;
 
-let _lastRender = null;
+// Every grid rendered (sims + projects) is tracked so an i18n language
+// change re-renders all of them, not just the most recent.
+let _renders = [];
 let _i18nProjectsWired = false;
 
 function _pickField(p, base) {
@@ -21,11 +23,13 @@ function _pickField(p, base) {
 
 /** Generate .project-card markup for each project and inject into container. */
 export function renderProjectCards(container, projects) {
-    _lastRender = { container, projects };
+    if (!_renders.some(r => r.container === container)) {
+        _renders.push({ container, projects });
+    }
     if (!_i18nProjectsWired && window._i18n && window._i18n.onChange) {
         _i18nProjectsWired = true;
         window._i18n.onChange(function () {
-            if (_lastRender) renderProjectCards(_lastRender.container, _lastRender.projects);
+            _renders.forEach(r => renderProjectCards(r.container, r.projects));
         });
     }
     container.innerHTML = projects.map(p => {

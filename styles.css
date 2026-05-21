@@ -386,7 +386,8 @@ a:hover { color: var(--accent-light); }
 /* ═══════════════════════════════════
    Projects Page
    ═══════════════════════════════════ */
-.projects-grid {
+.projects-grid,
+.sims-grid {
     display: grid;
     grid-template-columns: 1fr;
     gap: 24px;
@@ -1683,7 +1684,8 @@ a.contact-social:hover {
    ═══════════════════════════════════ */
 /* 768px+: two-column grids for projects and about */
 @media (min-width: 768px) {
-    .projects-grid {
+    .projects-grid,
+    .sims-grid {
         grid-template-columns: 1fr 1fr;
     }
     /* about-layout: float-wrap behavior is handled at all sizes; no grid */
