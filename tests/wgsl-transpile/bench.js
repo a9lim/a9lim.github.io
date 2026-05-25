@@ -98,9 +98,22 @@ function makeFmaInputs(n) {
     return { a, b, c };
 }
 
+function makeFmaInputsFlat(n) {
+    const nxt = lcg(0x12345678);
+    const a = new Float32Array(n * 3);
+    const b = new Float32Array(n * 3);
+    const c = new Float32Array(n * 3);
+    for (let i = 0; i < n; i++) {
+        a[i*3+0] = nxt(); a[i*3+1] = nxt(); a[i*3+2] = nxt();
+        b[i*3+0] = nxt(); b[i*3+1] = nxt(); b[i*3+2] = nxt();
+    }
+    return { a, b, c };
+}
+
 function runFma(label, compileOpts = {}) {
+    const flat = !!compileOpts.flatStorage;
     const mod = compileWGSL(KERNEL_FMA, compileOpts);
-    const inputs = makeFmaInputs(N);
+    const inputs = flat ? makeFmaInputsFlat(N) : makeFmaInputs(N);
     const bindings = {
         U: { n: N, k: 0.5, _pad0: 0, _pad1: 0 },
         a: inputs.a, b: inputs.b, c: inputs.c,
@@ -111,7 +124,9 @@ function runFma(label, compileOpts = {}) {
     // before we time anything.
     for (let i = 0; i < WARMUP; i++) mod.entry.fma({ workgroups, bindings });
 
-    const cs = inputs.c[0].x + inputs.c[0].y + inputs.c[0].z;
+    const cs = flat
+        ? inputs.c[0] + inputs.c[1] + inputs.c[2]
+        : inputs.c[0].x + inputs.c[0].y + inputs.c[0].z;
     if (!Number.isFinite(cs) || cs === 0) {
         console.error(`  ✗ ${label}  — checksum looks wrong (${cs})`);
         return null;
@@ -192,9 +207,23 @@ function makeVerletInputs(n) {
     return { pos_in, vel_in, pos_out, vel_out };
 }
 
+function makeVerletInputsFlat(n) {
+    const nxt = lcg(0xCAFEBABE);
+    const pos_in  = new Float32Array(n * 3);
+    const vel_in  = new Float32Array(n * 3);
+    const pos_out = new Float32Array(n * 3);
+    const vel_out = new Float32Array(n * 3);
+    for (let i = 0; i < n; i++) {
+        pos_in[i*3+0] = i * 0.1 + nxt() * 0.01; pos_in[i*3+1] = nxt(); pos_in[i*3+2] = nxt();
+        vel_in[i*3+0] = nxt() * 0.1; vel_in[i*3+1] = nxt() * 0.1; vel_in[i*3+2] = nxt() * 0.1;
+    }
+    return { pos_in, vel_in, pos_out, vel_out };
+}
+
 function runVerlet(label, compileOpts = {}) {
+    const flat = !!compileOpts.flatStorage;
     const mod = compileWGSL(KERNEL_VERLET, compileOpts);
-    const inputs = makeVerletInputs(N);
+    const inputs = flat ? makeVerletInputsFlat(N) : makeVerletInputs(N);
     const bindings = {
         U: { n: N, dt: 0.01, damping: 0.05, k_spring: 10.0 },
         pos_in: inputs.pos_in, vel_in: inputs.vel_in,
@@ -204,7 +233,9 @@ function runVerlet(label, compileOpts = {}) {
 
     for (let i = 0; i < WARMUP; i++) mod.entry.step({ workgroups, bindings });
 
-    const cs = inputs.pos_out[0].x + inputs.pos_out[0].y + inputs.pos_out[0].z;
+    const cs = flat
+        ? inputs.pos_out[0] + inputs.pos_out[1] + inputs.pos_out[2]
+        : inputs.pos_out[0].x + inputs.pos_out[0].y + inputs.pos_out[0].z;
     if (!Number.isFinite(cs) || cs === 0) {
         console.error(`  ✗ ${label}  — checksum looks wrong (${cs})`);
         return null;
@@ -291,9 +322,22 @@ function makeNbodyInputs(n) {
     return { pos, vel, out };
 }
 
+function makeNbodyInputsFlat(n) {
+    const nxt = lcg(0xDEADBEEF);
+    const pos = new Float32Array(n * 3);
+    const vel = new Float32Array(n * 3);
+    const out = new Float32Array(n * 3);
+    for (let i = 0; i < n; i++) {
+        pos[i*3+0] = nxt() * 5.0; pos[i*3+1] = nxt() * 5.0; pos[i*3+2] = nxt() * 5.0;
+        vel[i*3+0] = nxt() * 0.1; vel[i*3+1] = nxt() * 0.1; vel[i*3+2] = nxt() * 0.1;
+    }
+    return { pos, vel, out };
+}
+
 function runNbody(label, compileOpts = {}) {
+    const flat = !!compileOpts.flatStorage;
     const mod = compileWGSL(KERNEL_NBODY, compileOpts);
-    const inputs = makeNbodyInputs(N);
+    const inputs = flat ? makeNbodyInputsFlat(N) : makeNbodyInputs(N);
     const bindings = {
         U: { n: N, k_attract: 0.05, k_repel: 0.01, dt: 0.01,
              drag: 0.1, _pad0: 0, _pad1: 0, _pad2: 0 },
@@ -303,7 +347,9 @@ function runNbody(label, compileOpts = {}) {
 
     for (let i = 0; i < WARMUP; i++) mod.entry.nbody({ workgroups, bindings });
 
-    const cs = inputs.out[0].x + inputs.out[0].y + inputs.out[0].z;
+    const cs = flat
+        ? inputs.out[0] + inputs.out[1] + inputs.out[2]
+        : inputs.out[0].x + inputs.out[0].y + inputs.out[0].z;
     if (!Number.isFinite(cs) || cs === 0) {
         console.error(`  ✗ ${label}  — checksum looks wrong (${cs})`);
         return null;
@@ -396,9 +442,23 @@ function makeHelpersInputs(n) {
     return { pos_in, vel_in, pos_out, vel_out };
 }
 
+function makeHelpersInputsFlat(n) {
+    const nxt = lcg(0xABCDEF01);
+    const pos_in  = new Float32Array(n * 3);
+    const vel_in  = new Float32Array(n * 3);
+    const pos_out = new Float32Array(n * 3);
+    const vel_out = new Float32Array(n * 3);
+    for (let i = 0; i < n; i++) {
+        pos_in[i*3+0] = i * 0.1 + nxt() * 0.01; pos_in[i*3+1] = nxt(); pos_in[i*3+2] = nxt();
+        vel_in[i*3+0] = nxt() * 0.1; vel_in[i*3+1] = nxt() * 0.1; vel_in[i*3+2] = nxt() * 0.1;
+    }
+    return { pos_in, vel_in, pos_out, vel_out };
+}
+
 function runHelpers(label, compileOpts = {}) {
+    const flat = !!compileOpts.flatStorage;
     const mod = compileWGSL(KERNEL_HELPERS, compileOpts);
-    const inputs = makeHelpersInputs(N);
+    const inputs = flat ? makeHelpersInputsFlat(N) : makeHelpersInputs(N);
     const bindings = {
         U: { n: N, dt: 0.01, damping: 0.05, k_spring: 10.0,
              rest_len: 0.1, v_max: 5.0, _pad0: 0, _pad1: 0 },
@@ -409,7 +469,9 @@ function runHelpers(label, compileOpts = {}) {
 
     for (let i = 0; i < WARMUP; i++) mod.entry.step({ workgroups, bindings });
 
-    const cs = inputs.pos_out[0].x + inputs.pos_out[0].y + inputs.pos_out[0].z;
+    const cs = flat
+        ? inputs.pos_out[0] + inputs.pos_out[1] + inputs.pos_out[2]
+        : inputs.pos_out[0].x + inputs.pos_out[0].y + inputs.pos_out[0].z;
     if (!Number.isFinite(cs) || cs === 0) {
         console.error(`  ✗ ${label}  — checksum looks wrong (${cs})`);
         return null;
@@ -442,38 +504,45 @@ console.log(`wgsl-transpile bench`);
 console.log(`  N=${N} elements × ${ITERS} iters  (+${WARMUP} warmup)`);
 console.log();
 
+function reportSpeedups({ base, inl, flat }) {
+    if (base && inl) {
+        const r = base / inl;
+        console.log(`  speedup (inlined vs baseline):   ${r.toFixed(2)}x  ${speedupTag(r)}`);
+    }
+    if (inl && flat) {
+        const r = inl / flat;
+        console.log(`  speedup (flat vs inlined):       ${r.toFixed(2)}x  ${speedupTag(r)}`);
+    }
+    if (base && flat) {
+        const r = base / flat;
+        console.log(`  cumulative (flat vs baseline):   ${r.toFixed(2)}x  ${speedupTag(r)}`);
+    }
+}
+
 console.log(`kernel A: vec3 FMA loop (pure arithmetic, allocation-bound)`);
 const fmaBase = runFma('baseline (polymorphic rt.*):', { polymorphic: true });
 const fmaInl  = runFma('inlined  (scalar/vec emit):');
-if (fmaBase && fmaInl) {
-    const r = fmaBase / fmaInl;
-    console.log(`  speedup: ${r.toFixed(2)}x  ${speedupTag(r)}`);
-}
+const fmaFlat = runFma('flat     (TypedArray storage):', { flatStorage: true });
+reportSpeedups({ base: fmaBase, inl: fmaInl, flat: fmaFlat });
 console.log();
 
 console.log(`kernel B: verlet spring step (storage I/O dominant, real-shader shape)`);
 const vrlBase = runVerlet('baseline (polymorphic rt.*):', { polymorphic: true });
 const vrlInl  = runVerlet('inlined  (scalar/vec emit):');
-if (vrlBase && vrlInl) {
-    const r = vrlBase / vrlInl;
-    console.log(`  speedup: ${r.toFixed(2)}x  ${speedupTag(r)}`);
-}
+const vrlFlat = runVerlet('flat     (TypedArray storage):', { flatStorage: true });
+reportSpeedups({ base: vrlBase, inl: vrlInl, flat: vrlFlat });
 console.log();
 
 console.log(`kernel C: n-body var accumulator (compound assigns, target for var-SROA)`);
 const nbBase = runNbody('baseline (polymorphic rt.*):', { polymorphic: true });
 const nbInl  = runNbody('inlined  (scalar/vec emit):');
-if (nbBase && nbInl) {
-    const r = nbBase / nbInl;
-    console.log(`  speedup: ${r.toFixed(2)}x  ${speedupTag(r)}`);
-}
+const nbFlat = runNbody('flat     (TypedArray storage):', { flatStorage: true });
+reportSpeedups({ base: nbBase, inl: nbInl, flat: nbFlat });
 console.log();
 
 console.log(`kernel D: helper-heavy spring step (target for small-fn inlining)`);
 const hpBase = runHelpers('baseline (polymorphic rt.*):', { polymorphic: true });
 const hpInl  = runHelpers('inlined  (scalar/vec emit):');
-if (hpBase && hpInl) {
-    const r = hpBase / hpInl;
-    console.log(`  speedup: ${r.toFixed(2)}x  ${speedupTag(r)}`);
-}
+const hpFlat = runHelpers('flat     (TypedArray storage):', { flatStorage: true });
+reportSpeedups({ base: hpBase, inl: hpInl, flat: hpFlat });
 console.log();

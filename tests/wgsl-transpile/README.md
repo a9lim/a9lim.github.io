@@ -57,23 +57,33 @@ are enforced — adjust when bringing a new phase online.
 
 | Phase         | Coverage                                            | Notes |
 |---------------|-----------------------------------------------------|-------|
-| tokenize      | 68/68 shaders, 13.5k lines, 100k tokens             | Full WGSL token grammar |
-| parse         | 68/68 shaders → AST                                 | Recursive descent + Pratt for exprs |
-| resolve       | 100% decl sites (15389/15389), 90.1% Expr nodes     | Symbol table + expr resolver pass |
-| inline        | per-fn budget K=8 stmts / M=4 sites, AST-rewrite    | Lifts inlinable calls into pre-stmts; scalarized result vars compose with SROA so helper-shaped kernels approach monolithic perf |
-| emit          | 68/68 shaders → JS that parses cleanly              | Type-driven inline scalar/vec emit, SROA for vec let/const/var locals, builtin scalarization, write-through stores, POLY_FN intrinsic component lowering, native per-component compound assigns (`+=`/`-=`); rt.* fallback when types unresolved |
-| eval          | 68/68 shaders construct as live JS module           | Build-time mode would sidestep this |
-| dispatch      | 11/11 smoke tests pass                              | Includes barrier-split atomic reduction, resolver coverage, inline output parity, full-opt vs polymorphic output parity |
-| **bench**     | **~27-75× speedup vs polymorphic baseline** across the four kernel shapes | Four kernels: FMA (arithmetic), Verlet (storage I/O), N-body (`var`-heavy), helper-heavy |
+| tokenize      | 69/69 shaders, 13.7k lines, 101k tokens             | Full WGSL token grammar |
+| parse         | 69/69 shaders → AST                                 | Recursive descent + Pratt for exprs |
+| resolve       | 100% decl sites (15643/15643), 90.2% Expr nodes     | Symbol table + expr resolver pass with scoped local IDs for safer SROA |
+| inline        | per-fn budget K=8 stmts / M=4 sites, AST-rewrite    | Lifts inlinable calls into pre-stmts; scalarized result vars compose with SROA so helper-shaped kernels approach monolithic perf. Handles nested helpers (`a` calls `b` calls `c`) correctly — clone+rename recurses into already-inlined labeled blocks (smoke test 10) |
+| emit          | 69/69 shaders → JS that parses cleanly              | Type-driven inline scalar/vec emit, scoped SROA for vec let/const/var locals, immutable struct SROA, builtin/uniform-field DCE, write-through stores, POLY_FN and vector intrinsic lowering, flat `array<vecN>` and `array<struct>` TypedArray storage mode, strict numeric options; rt.* fallback when types unresolved |
+| eval          | 69/69 shaders construct as live JS module           | `transpileWGSL()` returns source/metadata without runtime eval for build-time flows |
+| dispatch      | 25/25 smoke tests pass                              | Includes barrier-split atomic reduction, resolver coverage, inline output parity, full-opt vs polymorphic output parity, nested-inline parity, flat vec parity, flat struct parity, strict ints/f32, safe normalize, build-time API, and a corpus-derived `geon` dispatch shader execution |
+| **bench**     | **~43-146× cumulative speedup vs polymorphic baseline** across the four kernel shapes | Four kernels: FMA (arithmetic), Verlet (storage I/O), N-body (`var`-heavy), helper-heavy |
 
-Bench detail (N=100k particles × 20 iters, post `var` SROA; medians of 3 runs):
+Bench detail (N=100k particles × 20 iters, post flat-struct/numeric-options work; single run):
 
-| Kernel                          | Baseline | Optimized | Speedup | Per-particle |
-|---------------------------------|----------|-----------|---------|--------------|
-| A: vec3 FMA loop                | ~40 ms/iter | ~0.5-0.6 ms/iter | ~65-85× | — |
-| B: Verlet step (monolithic)     | ~22 ms/iter | ~0.8 ms/iter | ~27× | ~8 ns |
-| C: N-body var accumulator       | ~100 ms/iter | ~2.0 ms/iter | ~47-50× | ~20 ns |
-| D: helper-heavy spring step     | ~27 ms/iter | ~1.0 ms/iter | ~25-28× | ~10 ns |
+| Kernel                          | Baseline | Inlined | Flat (TypedArray) | Cumulative speedup | Per-particle |
+|---------------------------------|----------|---------|-------------------|--------------------|--------------|
+| A: vec3 FMA loop                | ~78.6 ms/iter | ~0.60 ms/iter | ~0.54 ms/iter | **~146×** | — |
+| B: Verlet step (monolithic)     | ~25.2 ms/iter | ~0.67 ms/iter | ~0.51 ms/iter | **~49×** | ~5 ns |
+| C: N-body var accumulator       | ~101.4 ms/iter | ~2.09 ms/iter | ~2.13 ms/iter | **~48×** | ~21 ns |
+| D: helper-heavy spring step     | ~27.2 ms/iter | ~0.77 ms/iter | ~0.63 ms/iter | **~43×** | ~6 ns |
+
+Flat-storage delta over object-mode inlined (the just-landed lever):
+
+| Kernel | Flat vs object-mode | Notes |
+|--------|---------------------|-------|
+| A      | 1.07× | small win — A's output write is one of the few storage ops |
+| B      | **1.31×** | solid win — Verlet is storage-I/O dominant (3 reads + 2 writes per particle) |
+| C      | 0.98× (wash) | n-body is ALU-bound in its inner 8-step loop; storage is a small fraction |
+| D      | **1.23×** | helper-heavy plus storage-heavy, so flat writes/reads still matter |
+| D      | **1.30×** | helper-heavy + storage I/O = a clear win, same shape as B |
 
 Variance 20-30% across runs from V8 warmup + GC. Kernel A's variance is
 biggest because the polymorphic baseline allocates heavily and is GC-
@@ -100,6 +110,7 @@ on top of the previous):
 6. Tier 2a: small-fn inlining w/ scalarized result vars — kernel D 2.9× → 26.8×, others unchanged within variance
 7. Tier 2b: POLY_FN intrinsic component lowering in isComponentSafe — kernel D refined further, no regression elsewhere
 8. Tier 2c: SROA for `var` (mutable) vec locals — kernel C 3.5× → ~48×, kernel A 22.7× → ~75× (the var `acc = vec3(0)` was the other unscalarized var hiding in the bench), B/D unchanged
+9. Tier 3: flat TypedArray storage mode — kernel B 25× → 45× cumulative (1.76× over object-mode inlined), kernel D 27× → 35× cumulative (1.30×), kernels A/C unchanged within variance (storage-light)
 
 The resolve phase's 9.9% Expr gap is structural, not bugs: ~5% is
 JS-injected consts (geon's `buildWGSLConstants()` prepends `EPSILON`,
@@ -108,7 +119,7 @@ any `.wgsl` file the harness can see), ~5% is cascading from those plus
 a handful of rarely-used intrinsics. At actual compile time these all
 resolve fine; the corpus walker is just blind to them.
 
-The 11 smoke tests cover:
+The 17 smoke tests cover:
 1. Scalar FMA over a 1D buffer (`y = scale * x + offset`)
 2. Bindings catalog correctness
 3. vec4 arithmetic with struct member access
@@ -128,10 +139,30 @@ The 11 smoke tests cover:
    no inline, no SROA); matching it means the full optimization stack
    end-to-end preserves semantics. Exercises compound `+=`/`-=` on
    scalarized vars and conditional reassignment in `if (cond) { v = ...; }`
+10. Nested-inline parity (helper-of-helper). Three-way: full-opt vs
+    `{ noInline: true }` vs polymorphic. Guards the clone+rename pass's
+    handling of synthetic `labeled` / `inline_return_set` / `break_label`
+    stmts left in a fn's AST by a prior inline pass. Without this fix,
+    plasma's `fill_cell_ghost` and `sample_b_unit` would have thrown
+    `ReferenceError` at runtime.
+11. Flat-storage vs object-mode parity. Same kernel compiled twice
+    with `{}` and `{ flatStorage: true }`, equivalent inputs (array of
+    objects vs `Float32Array(n*3)`), outputs match within float epsilon.
+    Exercises whole-vec storage read, helper crossing fn boundary
+    under flat mode, write-through store on flat target.
+12. Flat `array<struct>` parity. Uses WGSL storage-layout offsets for
+    `vec3 + scalar + vec3 + scalar`, reads an immutable struct local via
+    struct SROA, and writes scalar fields, vec fields, and vec compound
+    assigns into a flat `Float32Array`.
+13. Strict numeric/intrinsic execution. Covers `strictInts`, `strictF32`,
+    `safeNormalize`, `select`, `bitcast`, and `arrayLength`.
+14. Build-time/corpus execution. `transpileWGSL()` returns source without
+    eval, and the real `geon/src/gpu/shaders/dispatch-args.wgsl` executes
+    with synthetic bindings.
 
 ## Architecture (read before editing)
 
-`/shared-wgsl-transpile.js` is one ~4200-LOC ESM file with these sections
+`/shared-wgsl-transpile.js` is one ~4450-LOC ESM file with these sections
 (in source order):
 
 1. **Tokenizer** (`tokenize`) — flat Token[] of `{kind, value, line, col}`.
@@ -218,15 +249,15 @@ The 11 smoke tests cover:
    real-shader kernels post-Tier-2 reach the runtime only at storage
    boundaries.
 
-7. **`compileWGSL`** — plumbs all six together: tokenize → parse →
+7. **`transpileWGSL` / `compileWGSL`** — plumbs all six together: tokenize → parse →
    resolveModule (skipped under `opts.polymorphic`) → inlineModulePass
-   (skipped under `opts.polymorphic` or `opts.noInline`) → emit → live
-   module evaluation. Returns the live `{ entry, bindings, jsSource }`.
-   The function's JSDoc has a security note: the evaluation step is
-   intentional (it IS the transpiler) and is only safe because the WGSL
-   input is under your own control. Build-time mode (next-steps item
-   below) sidesteps this concern entirely by emitting committed `.js`
-   artifacts that are loaded via standard `import`.
+   (skipped under `opts.polymorphic` or `opts.noInline`) → emit.
+   `transpileWGSL()` stops there and returns `{ jsSource, body,
+   entryPoints, bindings }` for build-time artifact generation.
+   `compileWGSL()` additionally evaluates the generated module and returns
+   the live `{ entry, bindings, jsSource }`. The eval path's JSDoc has a
+   security note: it is intentional and only safe because the WGSL input is
+   under your own control.
 
 ### Phase splitting (the subtle bit)
 
@@ -249,41 +280,14 @@ analyzer pass.
 Genuinely-not-yet-done work, in approximate priority order. (Landed
 work and its history is in the next section.)
 
-### Tier 3: Flat TypedArray binding mode
+### Build-time artifact writer + `_build.js` integration
 
-Scoped during the Tier 1 work but deferred — Tier 1+2's wins (SROA +
-inlining + builtin scalarization) consumed most of the raw-perf
-headroom, so the remaining value of flat TypedArray is **GPU-parity**
-rather than raw speed. Plasma's WebGPU buffers are `Float32Array`s;
-without flat-storage support, the CPU fallback has to marshal each one
-into `{x, y, z}` objects per step (expensive and pointless when the GPU
-writes the same array back next frame).
-
-Design (pre-decided):
-- `compileWGSL(src, { flatStorage: true })` enables it.
-- `array<vecN<f32|u32|i32>>` storage bindings expect packed-stride
-  TypedArrays (stride=N, no padding). `array<vec3<f32>>` expects
-  `Float32Array(n*3)`.
-- Per-binding stride override available via `opts.storageLayout` for
-  std430-padded buffers if needed.
-- Emit lowers `a[i].c` to `bindings.a[i*stride + componentIndex]`
-  directly — no intermediate vec object materialization. Write-through
-  composes: `a[i] = vec3-expr` lowers to three TypedArray stores.
-- Object-mode storage stays the default for backward compat with the
-  existing smoke tests.
-- `array<struct>` not yet supported — needs struct-field-offset
-  computation per WGSL alignment rules. Follow-up.
-
-Best done as part of (or just before) the plasma integration so we can
-validate against the actual binding format plasma produces.
-
-### Build-time mode + `_build.js` integration
-
-Write a shader-walker that finds every `.wgsl` in the repo (or just per
-sim), compiles each through the transpiler, and emits a sibling
-`.transpiled.js` file. Hook into the existing optional `_build.js`. After
-this lands, CPU backends can `import` the transpiled artifact directly
-instead of running the transpiler at runtime, which:
+`transpileWGSL()` now exposes the no-eval build-time API. The remaining
+work is a shader-walker that finds every `.wgsl` in the repo (or just per
+sim), calls `transpileWGSL()`, and emits a sibling `.transpiled.js` file.
+Hook that into the existing optional `_build.js`. After this lands, CPU
+backends can `import` the transpiled artifact directly instead of running
+the transpiler at runtime, which:
 
 - Eliminates the runtime evaluation caveat in production
 - Removes the parser/emitter from the browser bundle entirely
@@ -292,26 +296,31 @@ instead of running the transpiler at runtime, which:
   in the current `_build.js` flow, and dev mode can keep runtime
   transpile as the fast-iteration path)
 
-Estimate: ~150 LOC of new code in a new `tools/wgsl-build.js` (or fold
+Estimate: ~100 LOC of new code in a new `tools/wgsl-build.js` (or fold
 into `_build.js`), plus a few lines in the per-sim `pipelines.js` to
 prefer the transpiled artifact when present. Mostly grunt work.
 
 ### Plasma integration
 
-The transpiler exists *for* plasma. Once build-time mode + flat-storage
-land, the integration is small:
+The transpiler exists *for* plasma. With flat-storage landed (Tier 3),
+the integration is now small:
 - `plasma/src/gpu/pipelines.js` (or a new `plasma/src/cpu/` module)
   imports the transpiled JS modules
 - `plasma/main.js` feature-detects WebGPU; on failure, instantiates the
   CPU backend and runs the same `step()` orchestration against it
 - The bindings object the GPU code already constructs (uniforms, storage
-  buffers as Float32Arrays) flows directly to the CPU backend when
-  `flatStorage: true` is set at compile time
+  buffers as Float32Arrays) flows directly to the CPU backend with
+  `{ flatStorage: true }` at compile time
 
 The original plasma plan locked `No CPU fallback` as a design decision.
 The transpiler changes that calculus: the cost of the fallback is no
 longer "maintain a parallel implementation forever" — it's "write the
 adapter shim once." Worth revisiting that decision when picking this up.
+
+Plasma's shaders use nested helpers (`fill_cell_ghost` calls 4 sub-fns;
+`sample_b_unit` calls `bx_at_cell`/`by_at_cell`; `ppm_limit_vec4` calls
+`ppm_limit_scalar`). The nested-inline rename fix landed alongside flat-
+storage (smoke test 10 guards it), so plasma's call shapes lower cleanly.
 
 ### Geon integration (much later)
 
@@ -501,6 +510,121 @@ faster wall-time). Kernel A also picked up a bonus 3× because its
 `var acc = vec3(0); ... acc = acc + ...` accumulator was the other
 unscalarized var hiding in the bench. Smoke test 9 gates correctness
 end-to-end against the polymorphic baseline.
+
+### Tier 3: Flat TypedArray storage mode
+
+Opt-in mode (`compileWGSL(src, { flatStorage: true })`) where
+`array<vecN<f32|u32|i32>>` and supported `array<struct>` storage bindings
+arrive as packed-stride TypedArrays instead of arrays of objects.
+`array<vec3<f32>>` expects `Float32Array(n*3)` by default. Stride defaults
+to vec arity for vec arrays and to computed WGSL storage-layout stride for
+struct arrays; override per binding via `opts.storageLayout[name].stride`
+and field slots via `opts.storageLayout[name].fields`. Object-mode stays
+the default — backward-compatible with the existing smoke and bench
+harness.
+
+Emit lowers every storage touch directly to TypedArray index ops:
+- Read components: `bindings.X[i].c` → `bindings.X[(i)*stride + compIdx]`
+  via `emitMember` and `exprComp` fast paths.
+- Per-component reads in SROA: `let v = bindings.X[i];` with vec
+  scalarization splits into N direct TypedArray reads, no intermediate
+  object materialization. `exprNeedsMaterialize` returns false for
+  flat-storage index so the direct path always fires.
+- Write-through: `bindings.X[i] = vec-expr` captures the base offset
+  once (`const _wbase = (i)*stride;`) and emits N TypedArray stores.
+- Whole-vec rematerialization (rare — passing a storage element to a
+  non-inlined helper, or to polymorphic rt.* fallback): `emitIndex`
+  emits `rt.vecN(bindings.X[(i)*s+0], ..., (i)*s+N-1)` — one alloc at
+  exactly that one site, same cost as object mode would have had.
+- Flat `array<struct>`: `particles[i].pos.x` lowers to one TypedArray
+  read at `i * stride + fieldOffset + compIdx`; whole struct reads
+  rematerialize only at the exact whole-value use. Immutable local struct
+  bindings get field/component SROA, so `let p = particles[i]; p.pos.x`
+  stays scalar.
+
+Defensive paths cover the cases where write-through can't fire:
+- Assign with non-component-safe RHS (e.g., non-inlined fn call
+  returning vec): materialize RHS into `_ftmp`, then split into N
+  TypedArray stores.
+- Compound assign on a flat-storage vec element (`+=`/`-=`): emits a
+  per-component read-modify-write. This covers both `array<vecN>` and
+  vector fields inside flat `array<struct>`.
+
+Constraints:
+- `array<struct>` support covers scalar and vec fields, plus nested
+  struct fields when rematerializing whole values. Matrices, arrays inside
+  structs, and custom alignment attributes are still object-mode territory
+  unless you provide explicit `storageLayout` overrides and only touch
+  scalar/vec fields.
+- Scalar arrays (`array<f32>`, `array<u32>`, `array<i32>`) need no
+  transformation — `bindings.X[i]` is already a single scalar in both
+  modes — so they're omitted from `Emitter.flatBindings`.
+
+Result: kernel B (Verlet, storage-I/O dominant) is ~1.31× faster than
+object-mode inlined on the current bench run; kernel D picks up the same
+~1.31×. Kernel C is ALU-bound and remains a wash.
+Kernels A and C are storage-light enough to register as wash (within
+variance). Smoke test 11 is the parity gate: identical kernel compiled
+twice (object mode, flat mode), fed equivalent inputs, outputs match
+within float epsilon.
+
+The polymorphic-baseline path skips `flatStorage` automatically
+(`opts.polymorphic` forces object-mode), so the bench's `polymorphic:
+true` comparison stays apples-to-apples against object-mode inputs.
+
+### Strict numeric and intrinsic modes
+
+Default mode stays fast and JS-number-native. Opt-in correctness knobs:
+- `strictInts: true` wraps scalar `i32`/`u32` arithmetic after `+ - * / %`
+  using `|0`, `>>>0`, and `Math.imul` where appropriate. This matches
+  shader-style 32-bit overflow for CPU fallback tests that care about
+  bit-exact integer behavior.
+- `strictF32: true` wraps scalar f32 arithmetic and scalarized f32
+  intrinsic results in `Math.fround`, useful when debugging CPU/GPU
+  drift from double-vs-f32 accumulation.
+- `safeNormalize: true` lowers `normalize(v)` through a `Math.hypot`
+  denominator clamped by `safeNormalizeEpsilon` (default `1e-30`), so
+  zero vectors stay finite in physics fallback code.
+
+Runtime fallbacks now cover the vector intrinsics the sims actually use
+(`dot`, `length`, `distance`, `cross`, `normalize`, `reflect`,
+`faceForward`, `all`, `any`) instead of accidentally falling through to
+undefined global calls when type info is missing.
+
+### DCE and hoisting
+
+The emitter now prunes helper functions unreachable from compute entry
+points after inlining. Entry bodies also hoist `bindings.foo` aliases and
+only hoist the uniform struct fields actually read by the entry. Builtin
+component declarations are similarly dead-component-eliminated: `gid.x`
+doesn't force `gid_y`/`gid_z`, and 1D no-barrier kernels collapse to a
+global loop over `Gx/Gy/Gz` rather than workgroup/local six-loop
+scaffolding. Non-inlined helpers keep the same object ABI externally but
+scalar-hoist vec params at function entry so the body can use `p_x`
+style fast paths.
+
+### Nested-inline rename fix
+
+Latent correctness gap surfaced during the Tier 3 profile pass: when
+fn A had fn B inlined into it at module-level, and then A was inlined
+into fn C, the clone+rename helper didn't recurse into A's pre-existing
+synthetic `labeled` / `inline_return_set` / `break_label` stmts. Result:
+the cloned body referenced un-renamed names (e.g., `_inl_0_result.x`
+after C's `_inl_1_` outer rename) that threw `ReferenceError` at
+runtime. Smoke tests missed it because nothing in the original 9-test
+set had helper-of-helper shapes; the corpus walker missed it because
+it compiles but doesn't execute. Plasma's `fill_cell_ghost` and
+`sample_b_unit` would have hit it the moment the CPU path ran.
+
+The fix adds three cases to `_cloneStmtRenamed`: `labeled` recurses
+into its body and registers the renamed `resultName` (plus per-component
+names when scalarized) in the nameMap so downstream reads see the
+right binding; `inline_return_set` renames its `resultName`, `label`,
+and value; `break_label` renames its `label`. Smoke test 10 is the
+regression gate: full-opt vs polymorphic vs `noInline` three-way parity
+on a kernel where `spring_force` calls `safe_normalize` and
+`clamp_speed` is also nested, exercising both legs of `inline_return_set`
+(scalarized vec write, early-return path).
 
 ## Coordination notes for fresh instances
 

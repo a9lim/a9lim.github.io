@@ -11,7 +11,8 @@
    tokenize → parse → emit → eval → dispatch → produces correct math.
    ─────────────────────────────────────────────────────────────────── */
 
-import { compileWGSL, tokenize, parse, resolveModule }
+import fs from 'node:fs';
+import { compileWGSL, transpileWGSL, tokenize, parse, resolveModule }
     from '../../shared-wgsl-transpile.js';
 
 let pass = 0, fail = 0;
@@ -537,6 +538,418 @@ function testVarSroaPreservesOutput() {
     check('outputs vary across particles (branch coverage sanity)', differ);
 }
 
+// ── Test 8: nested-inline preserves correctness.
+// Helper-of-helper (`spring_force` calls `safe_normalize`). The inline
+// pass mutates AST in place, so by the time `step` inlines
+// `spring_force`, `spring_force` already contains a `labeled` block
+// (the safe_normalize expansion) plus its `break_label` and
+// `inline_return_set` synthetic stmts. The clone+rename helper has to
+// recurse into those — pre-fix, it didn't, and the emitted JS
+// referenced un-renamed names (`_inl_0_result.x` after step's outer
+// rename) that threw ReferenceError at runtime.
+//
+// Three-way parity: full-opt vs noInline vs polymorphic. All three
+// must produce bit-identical (within float epsilon) output. Polymorphic
+// is the strictest reference (no resolveModule, no inline, no SROA);
+// noInline isolates that the bug is specifically in the inline pass.
+function testNestedInlinePreservesOutput() {
+    console.log('test: nested-inline preserves output');
+
+    const wgsl = `
+        struct Params { n: u32, dt: f32, k: f32, damping: f32, };
+        @group(0) @binding(0) var<uniform>             P:   Params;
+        @group(0) @binding(1) var<storage, read>       pos: array<vec3<f32>>;
+        @group(0) @binding(2) var<storage, read>       vel: array<vec3<f32>>;
+        @group(0) @binding(3) var<storage, read_write> out: array<vec3<f32>>;
+
+        fn safe_normalize(d: vec3<f32>) -> vec3<f32> {
+            let l2 = d.x*d.x + d.y*d.y + d.z*d.z;
+            let inv = 1.0 / sqrt(max(l2, 1e-12));
+            return d * inv;
+        }
+        // Calls safe_normalize -- this is the nesting that triggered
+        // the bug. Inline pass expands safe_normalize into spring_force
+        // first; later, step's call to spring_force has to clone-rename
+        // the already-expanded body correctly.
+        fn spring_force(d: vec3<f32>, k: f32, rest: f32) -> vec3<f32> {
+            let l = sqrt(d.x*d.x + d.y*d.y + d.z*d.z);
+            let n = safe_normalize(d);
+            return n * (k * (l - rest));
+        }
+        // A second nested helper -- early-return path (the if branch
+        // returns a fresh vec, the fall-through returns the input).
+        // Guards both legs of inline_return_set's clone+rename.
+        fn clamp_speed(v: vec3<f32>, vmax: f32) -> vec3<f32> {
+            let s2 = v.x*v.x + v.y*v.y + v.z*v.z;
+            if (s2 > vmax * vmax) {
+                let inv = vmax / sqrt(s2);
+                return v * inv;
+            }
+            return v;
+        }
+
+        @compute @workgroup_size(8, 1, 1)
+        fn step(@builtin(global_invocation_id) gid: vec3<u32>) {
+            let i = gid.x;
+            if (i >= P.n) { return; }
+            let pi = pos[i];
+            let vi = vel[i];
+            let pn = pos[(i + 1u) % P.n];
+            let d = pn - pi;
+            let f = spring_force(d, P.k, 1.0);
+            let vnew = clamp_speed(vi * P.damping + f * P.dt, 10.0);
+            out[i] = pi + vnew * P.dt;
+        }
+    `;
+
+    const N = 13;
+    function makeInputs() {
+        const pos = new Array(N), vel = new Array(N), out = new Array(N);
+        for (let i = 0; i < N; i++) {
+            pos[i] = { x: i * 0.5, y: (i % 3) * 0.1, z: (i % 5) * 0.2 };
+            vel[i] = { x: i % 2 ? 8.0 : 0.5, y: 0.3, z: -0.1 };
+            out[i] = { x: 0, y: 0, z: 0 };
+        }
+        return { pos, vel, out };
+    }
+    function run(opts) {
+        const mod = compileWGSL(wgsl, opts);
+        const inputs = makeInputs();
+        mod.entry.step({
+            workgroups: [Math.ceil(N / 8), 1, 1],
+            bindings: {
+                P: { n: N, dt: 0.016, k: 4.0, damping: 0.98 },
+                pos: inputs.pos, vel: inputs.vel, out: inputs.out,
+            },
+        });
+        return inputs.out;
+    }
+    const fullOpt    = run({});
+    const noInline   = run({ noInline: true });
+    const polyBase   = run({ polymorphic: true });
+
+    const EPS = 1e-5;
+    function compare(a, b) {
+        for (let i = 0; i < N; i++) {
+            for (const c of ['x', 'y', 'z']) {
+                if (Math.abs(a[i][c] - b[i][c]) > EPS) {
+                    return { ok: false, i, c, a: a[i], b: b[i] };
+                }
+            }
+        }
+        return { ok: true };
+    }
+    const ab = compare(fullOpt, polyBase);
+    check('full-opt matches polymorphic on nested helpers', ab.ok,
+          ab.ok ? '' : `i=${ab.i}.${ab.c}: opt=${JSON.stringify(ab.a)} base=${JSON.stringify(ab.b)}`);
+    const ac = compare(fullOpt, noInline);
+    check('full-opt matches noInline on nested helpers', ac.ok,
+          ac.ok ? '' : `i=${ac.i}.${ac.c}: opt=${JSON.stringify(ac.a)} noInl=${JSON.stringify(ac.b)}`);
+
+    // Branch-coverage sanity: the fast-vel particles should differ from
+    // the slow ones (clamp_speed's early-return branch fires for one
+    // group, the fall-through for the other).
+    let differ = false;
+    for (let i = 1; i < N; i++) {
+        if (fullOpt[i].x !== fullOpt[0].x) { differ = true; break; }
+    }
+    check('outputs vary across particles (branch coverage sanity)', differ);
+}
+
+// ── Test 9: flat TypedArray storage mode preserves correctness.
+// Same kernel, two runs:
+//   (a) default mode -- bindings.X is an array of {x,y,z} objects
+//   (b) flatStorage: true -- bindings.X is a packed Float32Array of
+//       length N*3
+// The two must produce bit-identical outputs (within float epsilon).
+// This is the parity gate for Tier 3. Exercises: storage reads
+// (both whole-vec and per-component), write-through stores, an
+// accumulator pattern, and a helper call -- all the emit paths that
+// gain new branches under flat-mode.
+function testFlatStorageMode() {
+    console.log('test: flat TypedArray storage mode preserves output');
+
+    const wgsl = `
+        struct Params { n: u32, k: f32, damping: f32, dt: f32, };
+        @group(0) @binding(0) var<uniform>             P:   Params;
+        @group(0) @binding(1) var<storage, read>       pos: array<vec3<f32>>;
+        @group(0) @binding(2) var<storage, read>       vel: array<vec3<f32>>;
+        @group(0) @binding(3) var<storage, read_write> out: array<vec3<f32>>;
+
+        fn safe_normalize(d: vec3<f32>) -> vec3<f32> {
+            let l2 = d.x*d.x + d.y*d.y + d.z*d.z;
+            let inv = 1.0 / sqrt(max(l2, 1e-12));
+            return d * inv;
+        }
+
+        @compute @workgroup_size(8, 1, 1)
+        fn step(@builtin(global_invocation_id) gid: vec3<u32>) {
+            let i = gid.x;
+            if (i >= P.n) { return; }
+            let pi = pos[i];                 // whole-vec storage read
+            let vi = vel[i];
+            let pn = pos[(i + 1u) % P.n];
+            let d  = pn - pi;
+            let dir = safe_normalize(d);     // helper crossing fn boundary
+            let l   = sqrt(d.x*d.x + d.y*d.y + d.z*d.z);
+            let f   = dir * (P.k * (l - 1.0));
+            let vnew = vi * P.damping + f * P.dt;
+            out[i] = pi + vnew * P.dt;       // write-through store
+        }
+    `;
+
+    const N = 13;
+    function makeObjInputs() {
+        const pos = new Array(N), vel = new Array(N), out = new Array(N);
+        for (let i = 0; i < N; i++) {
+            pos[i] = { x: i * 0.5, y: (i % 3) * 0.1, z: (i % 5) * 0.2 };
+            vel[i] = { x: i % 2 ? 0.8 : 0.05, y: 0.3, z: -0.1 };
+            out[i] = { x: 0, y: 0, z: 0 };
+        }
+        return { pos, vel, out };
+    }
+    function makeFlatInputs() {
+        const pos = new Float32Array(N * 3);
+        const vel = new Float32Array(N * 3);
+        const out = new Float32Array(N * 3);
+        for (let i = 0; i < N; i++) {
+            pos[i*3+0] = i * 0.5; pos[i*3+1] = (i % 3) * 0.1; pos[i*3+2] = (i % 5) * 0.2;
+            vel[i*3+0] = i % 2 ? 0.8 : 0.05; vel[i*3+1] = 0.3; vel[i*3+2] = -0.1;
+        }
+        return { pos, vel, out };
+    }
+    function runObj() {
+        const mod = compileWGSL(wgsl);
+        const inputs = makeObjInputs();
+        mod.entry.step({
+            workgroups: [Math.ceil(N / 8), 1, 1],
+            bindings: { P: { n: N, k: 4.0, damping: 0.98, dt: 0.016 },
+                        pos: inputs.pos, vel: inputs.vel, out: inputs.out },
+        });
+        return inputs.out.map(v => [v.x, v.y, v.z]);
+    }
+    function runFlat() {
+        const mod = compileWGSL(wgsl, { flatStorage: true });
+        const inputs = makeFlatInputs();
+        mod.entry.step({
+            workgroups: [Math.ceil(N / 8), 1, 1],
+            bindings: { P: { n: N, k: 4.0, damping: 0.98, dt: 0.016 },
+                        pos: inputs.pos, vel: inputs.vel, out: inputs.out },
+        });
+        const out = [];
+        for (let i = 0; i < N; i++) {
+            out.push([inputs.out[i*3+0], inputs.out[i*3+1], inputs.out[i*3+2]]);
+        }
+        return out;
+    }
+    const objOut  = runObj();
+    const flatOut = runFlat();
+
+    const EPS = 1e-5;
+    let ok = true, firstFail = -1;
+    for (let i = 0; i < N; i++) {
+        for (let c = 0; c < 3; c++) {
+            if (Math.abs(objOut[i][c] - flatOut[i][c]) > EPS) {
+                ok = false;
+                if (firstFail < 0) firstFail = i;
+            }
+        }
+    }
+    check('flat-storage output matches object-mode output', ok,
+          ok ? '' : `i=${firstFail}: obj=${JSON.stringify(objOut[firstFail])} flat=${JSON.stringify(flatOut[firstFail])}`);
+
+    // Branch-coverage sanity: outputs should differ across particles.
+    let differ = false;
+    for (let i = 1; i < N; i++) {
+        if (flatOut[i][0] !== flatOut[0][0]) { differ = true; break; }
+    }
+    check('flat outputs vary across particles', differ);
+
+    // Confirm flat-mode actually writes into the TypedArray (not a no-op).
+    let nonzero = false;
+    for (let i = 0; i < N; i++) {
+        if (flatOut[i][0] !== 0 || flatOut[i][1] !== 0 || flatOut[i][2] !== 0) { nonzero = true; break; }
+    }
+    check('flat outputs nonzero (TypedArray actually written)', nonzero);
+}
+
+function testFlatStructStorageMode() {
+    console.log('test: flat array<struct> storage mode preserves output');
+
+    const wgsl = `
+        struct Params { n: u32, dt: f32, _a: f32, _b: f32, };
+        struct Particle { pos: vec3<f32>, mass: f32, vel: vec3<f32>, charge: f32, };
+        @group(0) @binding(0) var<uniform> P: Params;
+        @group(0) @binding(1) var<storage, read>       input: array<Particle>;
+        @group(0) @binding(2) var<storage, read_write> output: array<Particle>;
+
+        @compute @workgroup_size(4, 1, 1)
+        fn step(@builtin(global_invocation_id) gid: vec3<u32>) {
+            let i = gid.x;
+            if (i >= P.n) { return; }
+            let p = input[i];
+            output[i].pos = p.pos + p.vel * P.dt;
+            output[i].mass = p.mass + 1.0;
+            output[i].vel += vec3<f32>(1.0, 2.0, 3.0);
+            output[i].charge = p.charge;
+        }
+    `;
+
+    const N = 7;
+    function makeObj() {
+        const input = new Array(N), output = new Array(N);
+        for (let i = 0; i < N; i++) {
+            input[i] = {
+                pos: { x: i + 0.1, y: i + 0.2, z: i + 0.3 },
+                mass: i + 10,
+                vel: { x: i + 1, y: i + 2, z: i + 3 },
+                charge: -i,
+            };
+            output[i] = {
+                pos: { x: 0, y: 0, z: 0 },
+                mass: 0,
+                vel: { x: 0, y: 0, z: 0 },
+                charge: 0,
+            };
+        }
+        return { input, output };
+    }
+    function makeFlat() {
+        const input = new Float32Array(N * 8);
+        const output = new Float32Array(N * 8);
+        for (let i = 0; i < N; i++) {
+            const b = i * 8;
+            input[b + 0] = i + 0.1; input[b + 1] = i + 0.2; input[b + 2] = i + 0.3;
+            input[b + 3] = i + 10;
+            input[b + 4] = i + 1; input[b + 5] = i + 2; input[b + 6] = i + 3;
+            input[b + 7] = -i;
+        }
+        return { input, output };
+    }
+    const objMod = compileWGSL(wgsl);
+    const obj = makeObj();
+    objMod.entry.step({
+        workgroups: [Math.ceil(N / 4), 1, 1],
+        bindings: { P: { n: N, dt: 0.5, _a: 0, _b: 0 }, input: obj.input, output: obj.output },
+    });
+
+    const flatMod = compileWGSL(wgsl, { flatStorage: true });
+    const flat = makeFlat();
+    flatMod.entry.step({
+        workgroups: [Math.ceil(N / 4), 1, 1],
+        bindings: { P: { n: N, dt: 0.5, _a: 0, _b: 0 }, input: flat.input, output: flat.output },
+    });
+
+    let ok = true, first = -1;
+    for (let i = 0; i < N; i++) {
+        const b = i * 8;
+        const want = [
+            obj.output[i].pos.x, obj.output[i].pos.y, obj.output[i].pos.z,
+            obj.output[i].mass,
+            obj.output[i].vel.x, obj.output[i].vel.y, obj.output[i].vel.z,
+            obj.output[i].charge,
+        ];
+        for (let k = 0; k < 8; k++) {
+            if (Math.abs(want[k] - flat.output[b + k]) > 1e-5) {
+                ok = false; if (first < 0) first = i;
+            }
+        }
+    }
+    check('flat struct output matches object-mode output', ok,
+          ok ? '' : `first differing particle ${first}`);
+    check('flat struct stride follows WGSL layout', flatMod.jsSource.includes('* 8'));
+}
+
+function testStrictNumericAndIntrinsics() {
+    console.log('test: strict numeric modes and intrinsic fallbacks');
+
+    const wgsl = `
+        struct Params { n: u32, _a: u32, _b: u32, _c: u32, };
+        @group(0) @binding(0) var<uniform> P: Params;
+        @group(0) @binding(1) var<storage, read>       f_in: array<f32>;
+        @group(0) @binding(2) var<storage, read_write> f_out: array<f32>;
+        @group(0) @binding(3) var<storage, read_write> u_out: array<u32>;
+        @group(0) @binding(4) var<storage, read_write> v_out: array<vec3<f32>>;
+
+        @compute @workgroup_size(4, 1, 1)
+        fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
+            let i = gid.x;
+            if (i >= P.n) { return; }
+            let y = (f_in[i] * 0.1 + 0.2) * 0.3;
+            f_out[i] = y;
+            let wrapped = 0xffffffffu + 2u;
+            let picked = select(1u, 2u, true);
+            let bits = bitcast<u32>(1.0);
+            u_out[i] = wrapped + picked + arrayLength(&f_in) + bits;
+            v_out[i] = normalize(vec3<f32>(0.0, 0.0, 0.0));
+        }
+    `;
+
+    const mod = compileWGSL(wgsl, { strictInts: true, strictF32: true, safeNormalize: true });
+    const f_in = [7.25, -3.5, 0.125];
+    const f_out = [0, 0, 0];
+    const u_out = [0, 0, 0];
+    const v_out = [{x: 1, y: 1, z: 1}, {x: 1, y: 1, z: 1}, {x: 1, y: 1, z: 1}];
+    mod.entry.main({
+        workgroups: [1, 1, 1],
+        bindings: {
+            P: { n: f_in.length, _a: 0, _b: 0, _c: 0 },
+            f_in, f_out, u_out, v_out,
+        },
+    });
+    const wantF = f_in.map(x => Math.fround(Math.fround(Math.fround(x * 0.1) + 0.2) * 0.3));
+    check('strictF32 rounds scalar arithmetic per op',
+          f_out.every((v, i) => Object.is(v, wantF[i]) || Math.abs(v - wantF[i]) < 1e-12));
+    const wantU = (1 + 2 + f_in.length + 1065353216) >>> 0;
+    check('strictInts + select + bitcast + arrayLength execute', u_out.every(v => v === wantU));
+    check('safeNormalize keeps zero vector finite',
+          v_out.every(v => v.x === 0 && v.y === 0 && v.z === 0));
+}
+
+function testBuildTimeTranspileAPI() {
+    console.log('test: build-time transpile API emits source without eval');
+    const wgsl = `
+        @group(0) @binding(0) var<storage, read_write> out: array<f32>;
+        @compute @workgroup_size(1)
+        fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
+            out[gid.x] = 42.0;
+        }
+    `;
+    const built = transpileWGSL(wgsl);
+    check('transpileWGSL returns entry metadata', JSON.stringify(built.entryPoints) === '["main"]');
+    check('transpileWGSL returns generated module source', built.jsSource.includes('export default function _wgsl_module'));
+}
+
+function testCorpusDerivedDispatchShader() {
+    console.log('test: corpus-derived geon dispatch shader executes');
+    const path = new URL('../../geon/src/gpu/shaders/dispatch-args.wgsl', import.meta.url);
+    const src = `
+        const MAX_PHOTONS: u32 = 1024u;
+        const PION_POOL_CAP: u32 = 512u;
+    ` + fs.readFileSync(path, 'utf8');
+    const mod = compileWGSL(src, { strictInts: true });
+    const dispatchArgs = new Array(12).fill(0);
+    mod.entry.buildBosonDispatchArgs({
+        workgroups: [1, 1, 1],
+        bindings: {
+            phCount: [130],
+            piCount: [65],
+            dispatchArgs,
+        },
+    });
+    const wg64 = n => Math.max(1, Math.trunc((n + 63) / 64));
+    const total = 130 + 65;
+    const want = [
+        wg64(130), 1, 1,
+        wg64(65), 1, 1,
+        wg64(total), 1, 1,
+        wg64(total * 6), 1, 1,
+    ];
+    check('real dispatch-args shader writes expected records',
+          JSON.stringify(dispatchArgs) === JSON.stringify(want),
+          `got=${JSON.stringify(dispatchArgs)} want=${JSON.stringify(want)}`);
+}
+
 testScalarFma();
 testVec4Arith();
 testHelpersAndControl();
@@ -544,6 +957,12 @@ testBarrierReduction();
 testResolverCoverage();
 testInlinePreservesOutput();
 testVarSroaPreservesOutput();
+testNestedInlinePreservesOutput();
+testFlatStorageMode();
+testFlatStructStorageMode();
+testStrictNumericAndIntrinsics();
+testBuildTimeTranspileAPI();
+testCorpusDerivedDispatchShader();
 
 console.log();
 console.log(`${pass} passed, ${fail} failed`);
