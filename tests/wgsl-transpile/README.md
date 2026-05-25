@@ -27,29 +27,47 @@ WGSL as the canonical implementation, generate the CPU version from it.
 ## How to run
 
 ```sh
-# Walks every .wgsl in the repo, runs each through tokenize+parse+compile
+# Walks every .wgsl in the repo, runs each through tokenize+parse+resolve+compile.
+# Resolve concatenates sibling helpers per dir (matching how plasma/geon
+# assemble shaders before createShaderModule), so cross-shader struct refs
+# type correctly.
 node tests/wgsl-transpile/run.js          # full corpus
 node tests/wgsl-transpile/run.js plasma   # filter by path substring
 node tests/wgsl-transpile/run.js --quiet  # only print failures
 
 # End-to-end smoke tests with self-contained WGSL strings, verifies
-# the emitted JS actually executes correctly against canned input
+# the emitted JS actually executes correctly against canned input.
 node tests/wgsl-transpile/smoke.js
+
+# Microbench for the emit pipeline. Compiles a vec3-heavy synthetic
+# kernel and reports wall-time / Mvops-per-sec. Baseline for measuring
+# the inline-emit perf win in phase 4 of the resolver arc.
+node tests/wgsl-transpile/bench.js                    # defaults
+BENCH_N=50000 BENCH_ITERS=20 node tests/wgsl-transpile/bench.js
 ```
 
-Both exit non-zero on any expected-phase failure. `run.js`'s `EXPECTED`
-set at the top of the file controls which phases are enforced — adjust
-when bringing a new phase online.
+run.js and smoke.js exit non-zero on any expected-phase failure. bench.js
+always exits 0 — it's a measurement tool, not a pass/fail check.
+`run.js`'s `EXPECTED` set at the top of the file controls which phases
+are enforced — adjust when bringing a new phase online.
 
-## Current status (last touched 2026-05-24)
+## Current status (last touched 2026-05-25)
 
-| Phase         | Coverage                                  | Notes |
-|---------------|-------------------------------------------|-------|
-| tokenize      | 67/67 shaders, 13.2k lines, 99k tokens    | Full WGSL token grammar |
-| parse         | 67/67 shaders → AST                       | Recursive descent + Pratt for exprs |
-| emit          | 67/67 shaders → JS that parses cleanly    | Polymorphic vec runtime helpers |
-| eval          | 67/67 shaders construct as live JS module | Build-time mode would sidestep this |
-| dispatch      | 6/6 smoke tests pass                      | Includes barrier-split atomic reduction |
+| Phase         | Coverage                                            | Notes |
+|---------------|-----------------------------------------------------|-------|
+| tokenize      | 68/68 shaders, 13.5k lines, 100k tokens             | Full WGSL token grammar |
+| parse         | 68/68 shaders → AST                                 | Recursive descent + Pratt for exprs |
+| resolve       | 100% decl sites (15384/15384), 90.1% Expr nodes     | Symbol table + expr resolver pass |
+| emit          | 68/68 shaders → JS that parses cleanly              | Polymorphic vec runtime helpers (phase 4 inlines based on resolved types) |
+| eval          | 68/68 shaders construct as live JS module           | Build-time mode would sidestep this |
+| dispatch      | 6/6 smoke tests pass                                | Includes barrier-split atomic reduction |
+
+The resolve phase's 9.9% Expr gap is structural, not bugs: ~5% is
+JS-injected consts (geon's `buildWGSLConstants()` prepends `EPSILON`,
+`HISTORY_LEN`, etc. as template strings at runtime — they don't exist in
+any `.wgsl` file the harness can see), ~5% is cascading from those plus
+a handful of rarely-used intrinsics. At actual compile time these all
+resolve fine; the corpus walker is just blind to them.
 
 The 6 smoke tests cover:
 1. Scalar FMA over a 1D buffer (`y = scale * x + offset`)
@@ -147,19 +165,49 @@ Estimate: ~150 LOC of new code in a new `tools/wgsl-build.js` (or fold
 into `_build.js`), plus a few lines in the per-sim `pipelines.js` to
 prefer the transpiled artifact when present. Mostly grunt work.
 
-### 2. Type resolver + inline-scalar emit
+### 2. Type resolver + inline-scalar emit  *(partially landed)*
 
-The performance milestone. Add a `resolve(ast)` pass between parse and
-emit that annotates each Expr node with its result type (using a symbol
-table that walks struct defs, fn signatures, and local scopes). Emit
-then inlines scalar ops directly (`a.x + b.x`, `a.x - b.x`, etc.)
-instead of dispatching through `rt.add(a, b)`. Expect 5-50× speedup on
-hot paths.
+The performance milestone. Status:
 
-Estimate: ~300 LOC for the resolver + ~150 LOC of emit changes. Bigger
-design space (type lattice, error reporting on type mismatch, handling
-of vec swizzle types). Worth doing once a real consumer exercises the
-runtime — until then, no signal that we need the speed.
+- ✅ **Phase 1: Type ADT + module-level symbol table** — `T` scalar
+  singletons, `tVec`/`tMat`/`tArray`/`tAtomic`/`tPtr`/`tStruct` factories,
+  `typeEqual`/`typeToString`, `catalogModule(ast)` (shared with emitter,
+  one walk over `ast.items`), `SymbolTable` class typing every decl site,
+  `PREDECLARED_TYPES` for mat-shortform aliases (`mat4x4f` etc. that the
+  parser doesn't pre-bake).
+- ✅ **Phase 2: Expression resolver** — `ExprResolver` walks every Expr
+  node in every Fn body and annotates `.resolvedType`. Handles literals
+  (abstract→concrete), idents (scope walk → bindings/wg/priv/consts),
+  member access (struct fields + vec swizzles, single + multi-char),
+  index, binary (scalar↔scalar, scalar↔vec broadcast, vec↔vec,
+  bool-result ops), unary, calls (scalar casts, vec/mat constructors
+  typed + inferred, `array(...)`, POLY_FN intrinsics, plus a curated
+  table of specific intrinsics: `dot`/`length`/`cross`/`transpose`/
+  `determinant`/`atomic*`/`bitcast`/`pack*`/`unpack*`/etc.). Statement
+  walker handles all WGSL block kinds with proper scope push/pop.
+  Failure is silent (`.resolvedType = null`), so the emitter's
+  polymorphic fallback keeps the corpus green. Coverage: **100% decl
+  sites, 90.1% Expr nodes** across the 68-shader corpus.
+- ✅ **Phase 3: Benchmark harness** — `tests/wgsl-transpile/bench.js`
+  runs a vec3-heavy synthetic kernel and reports Mvops/sec. Baseline
+  (polymorphic rt.*) is ~70 Mvops/sec on M5 Max. Phase 4 will add a
+  second configuration toggled by a `compileWGSL` opt flag and report
+  the speedup ratio.
+- ⬜ **Phase 4: Emit changes (the perf payoff)** — modify `emitBin` and
+  the POLY_FN call paths to consult `.resolvedType`: emit inline
+  `(a op b)` for scalar↔scalar, destructured object literals
+  `{x:a.x op b.x, y:..., z:...}` or size-specialized `rt.addN`/`subN`
+  helpers for vec ops, broadcast for scalar↔vec mixes. Fallback to
+  existing `rt.*` dispatch when types are unresolved. Expected
+  5-50× speedup on hot paths.
+- ⬜ **Phase 5: Resolver-coverage smoke test** — assert that for a
+  canonical kernel every Expr node has `.resolvedType` set; surface
+  drops in corpus coverage as a regression signal.
+
+The 9.9% Expr gap is structural (~5% JS-injected consts geon prepends
+at runtime, ~5% cascade + rarely-used intrinsics); see "Current status"
+above. None of it blocks phase 4 — graceful degradation to rt.* dispatch
+preserves correctness on every shader.
 
 ### 3. Plasma integration
 

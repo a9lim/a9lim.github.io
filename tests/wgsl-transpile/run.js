@@ -81,6 +81,85 @@ function hasEntryPoint(ast) {
     return false;
 }
 
+/** Walk every Expr node in a Module AST and report
+ *  `{ exprs, typedExprs }`. Used by the resolve phase to measure how
+ *  much of the actual hot path the expression resolver covers — this is
+ *  the predictor for how much speedup phase 4's inline emit will see,
+ *  since every typed Expr is a candidate for inline scalar/vec ops
+ *  instead of polymorphic rt.* dispatch. */
+function countExprCoverage(ast) {
+    let exprs = 0, typedExprs = 0;
+    const visitExpr = (e) => {
+        if (!e || !e.kind) return;
+        if (EXPR_KINDS.has(e.kind)) {
+            exprs++;
+            if (e.resolvedType != null) typedExprs++;
+        }
+        // Walk children for any node kind that has them.
+        switch (e.kind) {
+            case 'paren':  visitExpr(e.value); break;
+            case 'bin':    visitExpr(e.lhs); visitExpr(e.rhs); break;
+            case 'una':    visitExpr(e.value); break;
+            case 'call':   for (const a of e.args) visitExpr(a); break;
+            case 'index':  visitExpr(e.value); visitExpr(e.index); break;
+            case 'member': visitExpr(e.value); break;
+        }
+    };
+    const visitStmt = (s) => {
+        if (!s) return;
+        switch (s.kind) {
+            case 'let': case 'var': case 'const':
+                if (s.value) visitExpr(s.value); break;
+            case 'expr_stmt': visitExpr(s.expr); break;
+            case 'assign':    visitExpr(s.target); visitExpr(s.value); break;
+            case 'compound':  visitExpr(s.target); visitExpr(s.value); break;
+            case 'postfix':   visitExpr(s.target); break;
+            case 'return':    if (s.value) visitExpr(s.value); break;
+            case 'if':
+                visitExpr(s.cond);
+                for (const sub of s.then.stmts) visitStmt(sub);
+                if (s.else) {
+                    if (s.else.kind === 'block') for (const sub of s.else.stmts) visitStmt(sub);
+                    else visitStmt(s.else);
+                }
+                break;
+            case 'for':
+                if (s.init)   visitStmt(s.init);
+                if (s.cond)   visitExpr(s.cond);
+                if (s.update) visitStmt(s.update);
+                for (const sub of s.body.stmts) visitStmt(sub);
+                break;
+            case 'while':
+                if (s.cond) visitExpr(s.cond);
+                for (const sub of (s.body?.stmts ?? [])) visitStmt(sub);
+                break;
+            case 'loop':
+                for (const sub of (s.body?.stmts ?? [])) visitStmt(sub);
+                if (s.continuing) for (const sub of (s.continuing.stmts ?? [])) visitStmt(sub);
+                break;
+            case 'block':
+                for (const sub of s.stmts) visitStmt(sub);
+                break;
+            case 'switch':
+                visitExpr(s.selector);
+                for (const c of s.cases) for (const sub of c.body.stmts) visitStmt(sub);
+                break;
+        }
+    };
+    for (const item of ast.items) {
+        if (item.kind === 'fn') {
+            for (const s of item.body.stmts) visitStmt(s);
+        } else if (item.kind === 'const' && item.value) {
+            visitExpr(item.value);
+        }
+    }
+    return { exprs, typedExprs };
+}
+
+const EXPR_KINDS = new Set([
+    'lit', 'paren', 'ident', 'bin', 'una', 'call', 'index', 'member',
+]);
+
 /** Pre-pass over a dir: read all sibling .wgsl, classify into helpers
  *  vs entries based on entry-point presence. Returns the helper sources
  *  in path-sorted order (deterministic) so the resolve unit for any file
@@ -164,7 +243,20 @@ async function testShader(absPath, dirIndex) {
             for (const st of sym.structTypes.values()) {
                 for (const ft of st.fields.values()) tally(ft);
             }
-            phases.resolve = { status: 'ok', metrics: { total, nulls } };
+            // Expr coverage is only meaningful for entry-context units:
+            // helper-as-self units lack the entry's bindings, so any
+            // helper-fn ref to an entry-specific binding (`uniforms`,
+            // `histData`, etc.) shows up as unresolved through no fault
+            // of the resolver. Those same exprs DO resolve when the
+            // helper is bundled with an entry, which is how they actually
+            // get compiled in production.
+            const exprCov = rec.hasEntry
+                ? countExprCoverage(ast)
+                : { exprs: 0, typedExprs: 0 };
+            phases.resolve = {
+                status:  'ok',
+                metrics: { total, nulls, exprs: exprCov.exprs, typedExprs: exprCov.typedExprs },
+            };
         }
     } catch (e) {
         phases.resolve = { status: EXPECTED.has('resolve') ? 'fail' : 'pending', error: e.message };
@@ -221,6 +313,8 @@ async function main() {
     let totalLines = 0;
     let resolveTotal = 0;
     let resolveNulls = 0;
+    let exprTotal = 0;
+    let exprTyped = 0;
     const byDir = {};
 
     // Group shaders by parent dir so each dir is indexed once (helpers
@@ -254,6 +348,8 @@ async function main() {
         if (phases.resolve?.status === 'ok') {
             resolveTotal += phases.resolve.metrics.total;
             resolveNulls += phases.resolve.metrics.nulls;
+            exprTotal    += phases.resolve.metrics.exprs;
+            exprTyped    += phases.resolve.metrics.typedExprs;
         }
 
         if (QUIET && !anyFail) continue;
@@ -288,6 +384,13 @@ async function main() {
         const pct = (100 * typed / resolveTotal).toFixed(1);
         const tag = resolveNulls === 0 ? `${C.green}100%${C.reset}` : `${C.yellow}${pct}%${C.reset}`;
         console.log(`  ${C.dim}resolved:${C.reset}  ${typed}/${resolveTotal} decl sites typed  (${tag})`);
+    }
+    if (exprTotal > 0) {
+        const pct = (100 * exprTyped / exprTotal).toFixed(1);
+        const tag = exprTyped === exprTotal
+            ? `${C.green}100%${C.reset}`
+            : (pct >= 85 ? `${C.green}${pct}%${C.reset}` : `${C.yellow}${pct}%${C.reset}`);
+        console.log(`  ${C.dim}exprs:${C.reset}     ${exprTyped}/${exprTotal} Expr nodes typed  (${tag})`);
     }
 
     if (failures > 0) {

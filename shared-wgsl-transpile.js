@@ -1350,9 +1350,365 @@ const PREDECLARED_TYPES = (() => {
     return Object.freeze(out);
 })();
 
-/** Build a SymbolTable for a parsed AST. */
+/** Element-wise math intrinsics: result type follows the first arg
+ *  (matches the WGSL spec — `min(vec3<f32>, vec3<f32>)` is `vec3<f32>`,
+ *  `clamp(f32, f32, f32)` is `f32`, etc.). The same set drives the
+ *  emitter's `rt.*` dispatch today; sharing it keeps the two in lockstep. */
+const RESOLVER_POLY_FN = new Set([
+    'max', 'min', 'abs', 'sqrt', 'sign', 'floor', 'ceil', 'round',
+    'fract', 'trunc', 'exp', 'log', 'exp2', 'log2', 'pow', 'sin', 'cos',
+    'tan', 'atan', 'atan2', 'clamp', 'mix', 'step', 'smoothstep',
+    'inverseSqrt', 'asin', 'acos', 'sinh', 'cosh', 'tanh',
+    'degrees', 'radians', 'saturate',
+]);
+
+/** Comparison/logical operators that always produce bool (scalar inputs)
+ *  or vec<bool> (vec inputs of matching shape). */
+const BOOL_RESULT_BIN = new Set(['<', '>', '<=', '>=', '==', '!=', '&&', '||']);
+
+/** Concretize an abstract scalar to its plain sibling. Identity for
+ *  already-concrete types. Used at use sites where context demands a
+ *  definite type (assignment, function arg, return). */
+function concretize(t) {
+    if (t?.kind === 'scalar' && t.abstract) return T[t.name];
+    return t;
+}
+
+/** Expression / statement resolver. Walks every Expr node in every Fn
+ *  body and annotates `expr.resolvedType` with the result Type. Also
+ *  fills in inferred-type module-level consts.
+ *
+ *  Design notes:
+ *    - Failure is silent. If the resolver can't type a subexpression
+ *      (uncommon construct, missing intrinsic, unresolvable named type),
+ *      `.resolvedType` is set to `null` and the emitter falls back to its
+ *      polymorphic `rt.*` codepath. This keeps the 100% corpus-pass
+ *      property of the compile phase as a hard invariant.
+ *    - Scopes are a stack of `Map<name, Type>`. Locals live in the
+ *      topmost frame; lookup walks down through enclosing scopes, then
+ *      module-level bindings/wg/priv/consts. Function refs are NOT
+ *      lookupable as values — they're handled inline in `exprCall`.
+ *    - Builder functions for vec/mat constructors handle both the
+ *      typed form `vec3<f32>(...)` (via `e.typeArgs`) and the inferred
+ *      form `vec3(...)` (element type from first arg). */
+class ExprResolver {
+    constructor(sym) {
+        this.sym    = sym;
+        this.scopes = [];
+    }
+
+    enter() { this.scopes.push(new Map()); }
+    exit()  { this.scopes.pop(); }
+    declare(name, type) {
+        if (this.scopes.length) this.scopes[this.scopes.length - 1].set(name, type);
+    }
+    lookup(name) {
+        for (let i = this.scopes.length - 1; i >= 0; i--) {
+            const f = this.scopes[i];
+            if (f.has(name)) return f.get(name);
+        }
+        if (this.sym.bindingTypes.has(name))      return this.sym.bindingTypes.get(name);
+        if (this.sym.workgroupVarTypes.has(name)) return this.sym.workgroupVarTypes.get(name);
+        if (this.sym.privateVarTypes.has(name))   return this.sym.privateVarTypes.get(name);
+        if (this.sym.constTypes.has(name))        return this.sym.constTypes.get(name);
+        return null;
+    }
+
+    /** Resolve an expression, annotate `e.resolvedType`, return the Type. */
+    expr(e) {
+        if (!e) return null;
+        let t = null;
+        switch (e.kind) {
+            case 'lit':    t = e.isFloat ? T.absFloat : T.absInt; break;
+            case 'paren':  t = this.expr(e.value); break;
+            case 'ident':  t = this.lookup(e.name); break;
+            case 'bin':    t = this.exprBin(e);    break;
+            case 'una':    t = this.exprUna(e);    break;
+            case 'call':   t = this.exprCall(e);   break;
+            case 'index':  t = this.exprIndex(e);  break;
+            case 'member': t = this.exprMember(e); break;
+        }
+        e.resolvedType = t;
+        return t;
+    }
+
+    exprBin(e) {
+        const lt = this.expr(e.lhs);
+        const rt = this.expr(e.rhs);
+        if (BOOL_RESULT_BIN.has(e.op)) {
+            // Vec relational ops return vec<bool> of the matching shape.
+            const vec = lt?.kind === 'vec' ? lt : (rt?.kind === 'vec' ? rt : null);
+            return vec ? tVec(vec.n, T.bool) : T.bool;
+        }
+        // Bitwise/shift: same shape as operand (typically u32/i32 or vec thereof).
+        // Arithmetic: scalar↔scalar (concrete wins over abstract), scalar↔vec
+        // broadcasts to vec, vec↔vec of matching shape stays vec.
+        if (lt?.kind === 'vec' && rt?.kind === 'vec' && lt.n === rt.n) return lt;
+        if (lt?.kind === 'vec' && rt?.kind === 'scalar') return lt;
+        if (lt?.kind === 'scalar' && rt?.kind === 'vec') return rt;
+        if (lt?.kind === 'scalar' && rt?.kind === 'scalar') {
+            // Prefer the concrete side; if both are concrete and differ,
+            // pick the LHS (WGSL would have errored at parse, so this is
+            // the "best effort" path for a malformed tree).
+            const lc = concretize(lt), rc = concretize(rt);
+            if (lt.abstract && !rt.abstract) return rc;
+            if (rt.abstract && !lt.abstract) return lc;
+            return lc;
+        }
+        // Mat ops or mixed mat/vec — common cases handled by emitter's
+        // current polymorphic path; leave unresolved for now.
+        return lt ?? rt;
+    }
+
+    exprUna(e) {
+        if (e.op === '&' || e.op === '*') {
+            // Pointer take/deref — model both as pass-through; the value
+            // we return represents the underlying storage's type.
+            return this.expr(e.value);
+        }
+        const t = this.expr(e.value);
+        if (e.op === '!') return t?.kind === 'vec' ? tVec(t.n, T.bool) : T.bool;
+        return t;   // unary +/- preserve type
+    }
+
+    exprMember(e) {
+        const ct = this.expr(e.value);
+        if (!ct) return null;
+        if (ct.kind === 'vec') {
+            // Swizzle: one or more chars from {xyzw, rgba}.
+            const s = e.name;
+            if (s.length >= 1 && s.length <= 4 && /^[xyzwrgba]+$/.test(s)) {
+                return s.length === 1 ? ct.of : tVec(s.length, ct.of);
+            }
+            return null;
+        }
+        if (ct.kind === 'struct') return ct.fields.get(e.name) ?? null;
+        return null;
+    }
+
+    exprIndex(e) {
+        const ct = this.expr(e.value);
+        this.expr(e.index);
+        if (!ct) return null;
+        if (ct.kind === 'array') return ct.of;
+        if (ct.kind === 'vec')   return ct.of;
+        if (ct.kind === 'mat')   return tVec(ct.rows, ct.of);
+        return null;
+    }
+
+    exprCall(e) {
+        // Always resolve args first so they get annotated even if we
+        // can't type the call itself.
+        for (const a of e.args) this.expr(a);
+        const name = e.callee;
+
+        // Scalar constructor/cast: `f32(x)`, `i32(x)`, etc.
+        if (T[name]) return T[name];
+
+        // Predeclared vec/mat shortform constructor: `vec3f(...)`, `mat4x4h(...)`.
+        if (PREDECLARED_TYPES[name]) return PREDECLARED_TYPES[name];
+
+        // Bare vec constructor: `vec3<f32>(...)` or inferred `vec3(...)`.
+        if (name === 'vec2' || name === 'vec3' || name === 'vec4') {
+            const n = +name.slice(3);
+            const elem = this._constructorElemType(e);
+            return elem?.kind === 'scalar' ? tVec(n, elem) : null;
+        }
+        // Bare mat constructor: `mat3x3<f32>(...)`.
+        if (/^mat[234]x[234]$/.test(name)) {
+            const cols = +name[3], rows = +name[5];
+            const elem = e.typeArgs?.[0] ? this.sym.typeFromAst(e.typeArgs[0]) : null;
+            return elem?.kind === 'scalar' ? tMat(cols, rows, elem) : null;
+        }
+        // Array constructor: `array<f32, 4>(...)` or `array(...)`.
+        if (name === 'array') {
+            const of = e.typeArgs?.[0]
+                ? this.sym.typeFromAst(e.typeArgs[0])
+                : (e.args[0]?.resolvedType ?? null);
+            return tArray(of, e.args.length || null);
+        }
+
+        // Element-wise math: result follows first arg.
+        if (RESOLVER_POLY_FN.has(name)) return concretize(e.args[0]?.resolvedType) ?? null;
+
+        // Specific intrinsics with non-trivial result types.
+        switch (name) {
+            case 'dot':
+            case 'length':
+            case 'distance':   return (e.args[0]?.resolvedType?.of) ?? null;
+            case 'cross':
+            case 'normalize':
+            case 'reflect':
+            case 'refract':
+            case 'faceForward': return e.args[0]?.resolvedType ?? null;
+            case 'all':
+            case 'any':         return T.bool;
+            case 'select':      return e.args[1]?.resolvedType ?? e.args[0]?.resolvedType ?? null;
+            case 'dpdx': case 'dpdy': case 'fwidth':
+            case 'dpdxFine': case 'dpdyFine': case 'fwidthFine':
+            case 'dpdxCoarse': case 'dpdyCoarse': case 'fwidthCoarse':
+                return e.args[0]?.resolvedType ?? null;
+            case 'transpose': {
+                const m = e.args[0]?.resolvedType;
+                return m?.kind === 'mat' ? tMat(m.rows, m.cols, m.of) : null;
+            }
+            case 'determinant': {
+                const m = e.args[0]?.resolvedType;
+                return m?.kind === 'mat' ? m.of : null;
+            }
+            case 'countOneBits': case 'reverseBits':
+            case 'countLeadingZeros': case 'countTrailingZeros':
+            case 'firstLeadingBit': case 'firstTrailingBit':
+                return e.args[0]?.resolvedType ?? null;
+            case 'extractBits': case 'insertBits':
+                return e.args[0]?.resolvedType ?? null;
+            case 'bitcast':
+                return e.typeArgs?.[0] ? this.sym.typeFromAst(e.typeArgs[0]) : null;
+            case 'atomicLoad': case 'atomicAdd': case 'atomicSub':
+            case 'atomicMax': case 'atomicMin': case 'atomicAnd':
+            case 'atomicOr':  case 'atomicXor': case 'atomicExchange':
+            case 'atomicCompareExchangeWeak': {
+                // arg0 is a `&` to an atomic<T>; in our model `&x` returns x's
+                // type, so we unwrap one atomic<> layer to get T.
+                const at = e.args[0]?.resolvedType;
+                if (at?.kind === 'atomic') return at.of;
+                return null;
+            }
+            case 'workgroupBarrier': case 'storageBarrier': case 'textureBarrier':
+                return T.void;
+            case 'arrayLength':
+                return T.u32;
+            case 'unpack2x16float': return tVec(2, T.f32);
+            case 'unpack4x8snorm':
+            case 'unpack4x8unorm':  return tVec(4, T.f32);
+            case 'pack2x16float':
+            case 'pack4x8snorm':
+            case 'pack4x8unorm':    return T.u32;
+        }
+
+        // User fn.
+        const sig = this.sym.fnSignatures.get(name);
+        if (sig) return sig.returnType;
+        return null;
+    }
+
+    /** Pick the element scalar type for a `vecN(...)` constructor call.
+     *  Explicit `<T>` wins; otherwise infer from the first arg (which may
+     *  itself be a vec — in that case use its element type, matching the
+     *  WGSL "splat or copy" rules). */
+    _constructorElemType(e) {
+        if (e.typeArgs?.[0]) return this.sym.typeFromAst(e.typeArgs[0]);
+        const a = e.args[0]?.resolvedType;
+        if (a?.kind === 'vec') return a.of;
+        if (a?.kind === 'scalar') return concretize(a);
+        return null;
+    }
+
+    /** Statement walker — extends scope on `let`/`var`/`const`, recurses
+     *  into nested blocks. Drives `expr()` over every expression in the
+     *  tree so all Expr nodes get `.resolvedType` set (or left null). */
+    stmt(s) {
+        if (!s) return;
+        switch (s.kind) {
+            case 'let':
+            case 'var':
+            case 'const': {
+                let t = s.type ? this.sym.typeFromAst(s.type) : null;
+                if (s.value != null) {
+                    const vt = this.expr(s.value);
+                    if (!t) t = concretize(vt);
+                }
+                this.declare(s.name, t);
+                break;
+            }
+            case 'expr_stmt': this.expr(s.expr); break;
+            case 'assign':    this.expr(s.target); this.expr(s.value); break;
+            case 'compound':  this.expr(s.target); this.expr(s.value); break;
+            case 'postfix':   this.expr(s.target); break;
+            case 'return':    if (s.value) this.expr(s.value); break;
+            case 'if':
+                this.expr(s.cond);
+                this.enter();
+                for (const sub of s.then.stmts) this.stmt(sub);
+                this.exit();
+                if (s.else) {
+                    this.enter();
+                    if (s.else.kind === 'block') {
+                        for (const sub of s.else.stmts) this.stmt(sub);
+                    } else {
+                        this.stmt(s.else);   // chained else-if
+                    }
+                    this.exit();
+                }
+                break;
+            case 'for':
+                this.enter();
+                if (s.init)   this.stmt(s.init);
+                if (s.cond)   this.expr(s.cond);
+                if (s.update) this.stmt(s.update);
+                for (const sub of s.body.stmts) this.stmt(sub);
+                this.exit();
+                break;
+            case 'while':
+                this.enter();
+                if (s.cond) this.expr(s.cond);
+                for (const sub of (s.body?.stmts ?? [])) this.stmt(sub);
+                this.exit();
+                break;
+            case 'loop':
+                this.enter();
+                for (const sub of (s.body?.stmts ?? [])) this.stmt(sub);
+                if (s.continuing) {
+                    for (const sub of (s.continuing.stmts ?? [])) this.stmt(sub);
+                }
+                this.exit();
+                break;
+            case 'block':
+                this.enter();
+                for (const sub of s.stmts) this.stmt(sub);
+                this.exit();
+                break;
+            case 'switch':
+                this.expr(s.selector);
+                for (const c of s.cases) {
+                    this.enter();
+                    for (const sub of c.body.stmts) this.stmt(sub);
+                    this.exit();
+                }
+                break;
+            // break/continue/discard have no exprs to resolve.
+        }
+    }
+
+    fn(fnAst) {
+        this.enter();
+        for (const p of fnAst.params) {
+            this.declare(p.name, this.sym.typeFromAst(p.type));
+        }
+        for (const s of fnAst.body.stmts) this.stmt(s);
+        this.exit();
+    }
+
+    module() {
+        // Walk every function (helpers + entry points).
+        for (const fnAst of this.sym.catalog.fns.values()) this.fn(fnAst);
+        // Type inferred (no-annotation) consts from their init exprs.
+        for (const c of this.sym.catalog.constants.values()) {
+            if (c.value != null && !this.sym.constTypes.has(c.name)) {
+                const t = concretize(this.expr(c.value));
+                if (t) this.sym.constTypes.set(c.name, t);
+            }
+        }
+    }
+}
+
+/** Build a SymbolTable and annotate every Expr in the AST with its
+ *  resolved type. Inferred-type consts get backfilled into the table
+ *  by the expression resolver. */
 export function resolveModule(ast) {
-    return new SymbolTable(catalogModule(ast));
+    const sym = new SymbolTable(catalogModule(ast));
+    new ExprResolver(sym).module();
+    return sym;
 }
 
 //#endregion
