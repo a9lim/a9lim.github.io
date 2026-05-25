@@ -354,21 +354,13 @@ edges of the runtime API and bindings format.
 
 ### Smaller items worth a session each
 
-- `bitcast` source-type inference (currently routes only by typeArgs)
+- `bitcast` source-type inference (currently routes only by typeArgs).
+  Low priority — both plasma and geon use bitcast only with explicit
+  typeArgs (`bitcast<u32>(L)`), which the current code already handles.
 - Matrix types (`mat3x3<f32>` etc.) — geon doesn't use, plasma doesn't
-  use, but adding for completeness is straightforward
+  use, but adding for completeness is straightforward.
 - Type aliases (`alias Vec3F = vec3<f32>;`) — parser accepts, resolver
-  needs to substitute
-- Dead-component elimination for scalarized builtins — if a kernel only
-  uses `gid.x`, skip emitting `gid_y`/`gid_z`. Tiny win, easy.
-- Argument-binding elimination in the inline pass — when an arg expr is
-  a plain ident, skip the `const _inl_N_p = p;` rename and just register
-  `p → p` (or the original local name) in the nameMap. Cuts ~3-6 lines
-  per call site at no semantic cost. The let-aliasing is a small extra
-  load for V8 to elide today.
-- Better error reporting from the emit phase (currently throws at the
-  first unhandled construct; would be nice to collect and report
-  several)
+  needs to substitute. No corpus shader uses `alias` today.
 
 ## Landed work (history)
 
@@ -636,6 +628,37 @@ force `gid_y`/`gid_z`. No-barrier kernels emit a global-loop path with a
 3D loop. Non-inlined helpers keep the same object ABI externally but
 scalar-hoist vec params at function entry so the body can use `p_x`
 style fast paths.
+
+### Multi-error reporting (A1)
+
+`emit(ast, { collectErrors: true })` — and the same flag on
+`transpileWGSL`/`compileWGSL` — switches the five emit-phase throw
+sites (unknown stmt kind, unknown expr kind, bad for-init kind, two
+addressOf variants) to collect-then-report. Each failure pushes a
+`{phase, kind, message, line, col}` record into the returned
+`errors` array and emits a `rt.__unsupported(...)` placeholder, so
+the rest of the body still parses and evals; reaching the placeholder
+at runtime throws with the original emit-time message. Default mode
+unchanged — first failure still throws. Used by the build-time corpus
+walker (B2) so a single run surfaces every shader-level issue at once.
+
+### Argument-binding elision in the inline pass (A3)
+
+When a helper arg is a plain ident and the helper body never writes
+through the param (no `name = ...`, no `name.x = ...`, no `&name`,
+no `var name` shadow), the inline pass aliases the param to the
+caller's ident directly instead of emitting `const _inl_N_p = p;`.
+Cuts 3-6 lines of emitted JS per call site and removes one binding
+from the inner scope. The cloned ident carries over the caller arg's
+`resolvedLocalId`, so SROA's id-keyed `scalarizedArityForIdent`
+lookup matches the caller's scalarized local — without that
+carryover, `q.x` in the inlined body would emit literally and miss
+the SROA fast path. `_paramIsMutatedInBody` walks lvalue roots
+(`p.x`, `p[i]`, `(p).field`) defensively even though WGSL spec
+forbids writing through value params — the parser accepts those
+forms, so elision stays safe under any input. Smoke test 21 guards
+the four cases: plain-ident-elides, non-ident-arg-doesn't,
+member-write-disqualifies, output parity vs noInline baseline.
 
 ### Nested-inline rename fix
 

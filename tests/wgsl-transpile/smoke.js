@@ -12,7 +12,7 @@
    ─────────────────────────────────────────────────────────────────── */
 
 import fs from 'node:fs';
-import { compileWGSL, transpileWGSL, tokenize, parse, resolveModule }
+import { compileWGSL, transpileWGSL, tokenize, parse, resolveModule, emit, runtime }
     from '../../shared-wgsl-transpile.js';
 
 let pass = 0, fail = 0;
@@ -1331,6 +1331,193 @@ function testTwoDSharedTileHaloBarrier() {
     check('output varies across the grid (sanity)', varies);
 }
 
+// ── Test: collectErrors mode records unsupported constructs ───────
+// instead of throwing on first failure. Plants an unknown stmt kind
+// into a parsed AST (the parser doesn't normally produce these, so
+// we mutate post-parse) and verifies:
+//   1. default mode still throws
+//   2. collectErrors:true returns a non-empty errors array
+//   3. emitted jsSource contains the rt.__unsupported placeholder
+//   4. rt.__unsupported() throws with the original message
+//   5. clean compiles surface an empty errors[] in both APIs
+function testCollectErrorsMode() {
+    console.log('test: collectErrors mode records unsupported constructs');
+
+    // Tiny kernel — its only stmt inside the entry's `if` body is
+    // `output[i] = 1.0;`. We mutate that stmt's kind to something
+    // the emitter doesn't recognize.
+    const wgsl = `
+        @group(0) @binding(0) var<storage, read_write> output: array<f32>;
+
+        @compute @workgroup_size(1, 1, 1)
+        fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
+            let i = gid.x;
+            if (i < 1u) {
+                output[i] = 1.0;
+            }
+        }
+    `;
+
+    const ast = parse(tokenize(wgsl));
+    resolveModule(ast);
+
+    // Locate the assign stmt inside the `if` body and rebrand its kind.
+    const mainFn = ast.items.find(it => it.kind === 'fn' && it.name === 'main');
+    const ifStmt = mainFn.body.stmts.find(s => s.kind === 'if');
+    const target = ifStmt.then.stmts[0];
+    target.kind = '__planted_unknown__';
+
+    // 1. Default mode: throws.
+    let threw = false;
+    try { emit(ast); } catch (err) { threw = err instanceof Error; }
+    check('default-mode emit still throws on unknown stmt kind', threw);
+
+    // 2. collectErrors:true: returns with errors recorded.
+    const result = emit(ast, { collectErrors: true });
+    check('collectErrors mode returns a result object',
+          !!result && typeof result.jsSource === 'string');
+    check('collectErrors records at least one error',
+          Array.isArray(result.errors) && result.errors.length >= 1);
+    const e0 = result.errors[0] || {};
+    check('error record has expected fields',
+          e0.phase === 'emit' && e0.kind === 'stmt' &&
+          /__planted_unknown__/.test(e0.message || ''));
+
+    // 3. Placeholder appears in the emitted JS.
+    check('emitted body contains rt.__unsupported placeholder',
+          /rt\.__unsupported\(/.test(result.body));
+
+    // 4. The runtime sentinel actually throws.
+    let trapMsg = '';
+    try { runtime.__unsupported('planted message'); }
+    catch (err) { trapMsg = String(err && err.message || ''); }
+    check('rt.__unsupported throws with the original message',
+          /unsupported construct reached at runtime: planted message/.test(trapMsg));
+
+    // 5. Clean compiles surface an empty errors[] in both APIs.
+    const tr = transpileWGSL(wgsl, { collectErrors: true });
+    check('transpileWGSL returns errors array (empty on clean compile)',
+          Array.isArray(tr.errors) && tr.errors.length === 0);
+    const cr = compileWGSL(wgsl, { collectErrors: true });
+    check('compileWGSL returns errors array (empty on clean compile)',
+          Array.isArray(cr.errors) && cr.errors.length === 0);
+}
+
+// ── Test: A3 — argument-binding elision in the inline pass ────────
+// When a helper arg is a plain ident and the helper body never writes
+// through the param, the inline pass aliases the param to the caller's
+// ident directly instead of emitting `const _inl_N_p = p;`. This test
+// verifies:
+//   1. Elision fires on a plain-ident, never-written param — and the
+//      elided refs route through the caller's SROA scalarization
+//   2. Elision is SKIPPED when the helper assigns to a member of the
+//      param (WGSL spec disallows this but the parser accepts it;
+//      hardening keeps elision safe regardless)
+//   3. Elision is SKIPPED when the arg is a non-ident expression
+//   4. Output parity is preserved vs the noInline baseline
+function testArgBindingElision() {
+    console.log('test: arg-binding elision in inline pass');
+
+    const wgsl = `
+        @group(0) @binding(0) var<storage, read>       pos_in: array<vec3<f32>>;
+        @group(0) @binding(1) var<storage, read_write> out:    array<vec3<f32>>;
+
+        // Helper 1: plain-ident args, params never written, elision fires.
+        fn pure(p: vec3<f32>, q: vec3<f32>) -> vec3<f32> {
+            return q - p;
+        }
+        // Helper 2: non-ident first arg disqualifies elision; second
+        // arg is a literal which also disqualifies (only plain idents
+        // can elide).
+        fn scaled(p: vec3<f32>, k: f32) -> vec3<f32> {
+            return p * k;
+        }
+
+        @compute @workgroup_size(1)
+        fn step(@builtin(global_invocation_id) gid: vec3<u32>) {
+            let i = gid.x;
+            let p = pos_in[i];
+            let q = pos_in[i + 1u];
+            let a = pure(p, q);            // both args elidable
+            let c = scaled(p + q, 2.0);    // neither arg elidable
+            out[i] = a + c;
+        }
+    `;
+
+    const tr = transpileWGSL(wgsl);
+    const body = tr.body;
+
+    // 1. pure(p, q): elision fired — no `_inl_0_p` / `_inl_0_q` lets;
+    //    inlined refs use the caller's scalarized `p_x`/`q_x`.
+    check('pure(p,q): no _inl_0_p binding emitted',
+          !/(const|let)\s+_inl_0_p\b/.test(body));
+    check('pure(p,q): no _inl_0_q binding emitted',
+          !/(const|let)\s+_inl_0_q\b/.test(body));
+    check('pure(p,q): inlined body uses caller-scalarized refs (q_x - p_x)',
+          /q_x - p_x/.test(body));
+
+    // 2. scaled(p+q, 2.0): non-ident args force the let bindings to
+    //    materialize. SROA further splits the vec param into per-
+    //    component scalars, so the binding name is `_inl_1_p_x` etc.
+    //    The literal arg becomes `_inl_1_k`.
+    check('scaled(p+q,2.0): non-ident vec arg gets a SROA-split binding',
+          /(const|let)\s+_inl_1_p_x\b/.test(body));
+    check('scaled(p+q,2.0): literal arg gets a binding',
+          /(const|let)\s+_inl_1_k\b/.test(body));
+
+    // 3. Member-write to param disqualifies elision. WGSL spec actually
+    //    forbids this but the parser accepts it, so we test the
+    //    hardening by going through the AST directly. (No compileWGSL
+    //    here because the resolver might reject p.x = ... later.)
+    const wgslMemberWrite = `
+        @group(0) @binding(0) var<storage, read>       pos_in: array<vec3<f32>>;
+        @group(0) @binding(1) var<storage, read_write> out:    array<vec3<f32>>;
+        fn touches(p: vec3<f32>) -> vec3<f32> {
+            p.x = 1.0;
+            return p;
+        }
+        @compute @workgroup_size(1)
+        fn step(@builtin(global_invocation_id) gid: vec3<u32>) {
+            let i = gid.x;
+            let p = pos_in[i];
+            out[i] = touches(p);
+        }
+    `;
+    const tr2 = transpileWGSL(wgslMemberWrite);
+    check('member-write to param disqualifies elision (binding preserved)',
+          /(const|let)\s+_inl_0_p\b/.test(tr2.body) ||
+          /(const|let)\s+_inl_0_p_x\b/.test(tr2.body));
+
+    // 4. Output parity vs noInline baseline on the main kernel.
+    const N = 5;
+    function makeInputs() {
+        const pos_in = new Array(N + 1);
+        const out    = new Array(N);
+        for (let i = 0; i <= N; i++) pos_in[i] = { x: i * 0.5, y: i * 0.2, z: -i * 0.1 };
+        for (let i = 0; i < N; i++)  out[i]    = { x: 0, y: 0, z: 0 };
+        return { pos_in, out };
+    }
+    function runWith(opts) {
+        const mod = compileWGSL(wgsl, opts);
+        const inputs = makeInputs();
+        mod.entry.step({
+            workgroups: [N, 1, 1],
+            bindings: inputs,
+        });
+        return inputs.out;
+    }
+    const inlined  = runWith({});
+    const noInline = runWith({ noInline: true });
+    const EPS = 1e-6;
+    let parityOK = true;
+    for (let i = 0; i < N; i++) {
+        for (const c of ['x', 'y', 'z']) {
+            if (Math.abs(inlined[i][c] - noInline[i][c]) > EPS) parityOK = false;
+        }
+    }
+    check('elision preserves output parity vs noInline', parityOK);
+}
+
 testScalarFma();
 testVec4Arith();
 testHelpersAndControl();
@@ -1349,6 +1536,8 @@ testFlatLayoutFiniteWritesAndSpecialization();
 testStructSroaAndPointerInlining();
 testCorpusDerivedDispatchShader();
 testTwoDSharedTileHaloBarrier();
+testCollectErrorsMode();
+testArgBindingElision();
 
 console.log();
 console.log(`${pass} passed, ${fail} failed`);

@@ -2063,7 +2063,23 @@ function _cloneExprRenamed(e, nameMap) {
         case 'lit':   return e;
         case 'ident': {
             const repl = nameMap.get(e.name);
-            return repl ? { ...e, name: repl } : e;
+            if (!repl) return e;
+            // String repl: legacy path (param/local renamed to a fresh
+            // synthetic name; resolvedLocalId on the cloned ident is
+            // irrelevant because the synthetic decl will register the
+            // new name in `this.scalarized` by name).
+            if (typeof repl === 'string') return { ...e, name: repl };
+            // Object repl: arg-binding elision (A3). The cloned ident
+            // aliases the caller's ident, so we carry over the caller's
+            // `resolvedLocalId` and `resolvedType` (when present) so
+            // SROA's scalarizedArityForIdent lookup matches the caller's
+            // local id, not the helper's stale param id.
+            return {
+                ...e,
+                name: repl.name,
+                resolvedLocalId: repl.resolvedLocalId ?? e.resolvedLocalId,
+                resolvedType:    repl.resolvedType    ?? e.resolvedType,
+            };
         }
         case 'bin':   return { ...e,
             lhs: _cloneExprRenamed(e.lhs, nameMap),
@@ -2221,6 +2237,109 @@ function _cloneStmtRenamed(s, nameMap, ctx) {
  *  the helper inline. Returns `{ lifted, replacement }` where `lifted`
  *  is an array of stmts to splice BEFORE the call's enclosing stmt and
  *  `replacement` is the expr to use in place of the call expression. */
+/**
+ * Return true if `name` is the target of an assignment, compound-
+ * assignment, postfix op, or has its address taken (`&name`) anywhere
+ * in `stmts`. Used by `_expandInlineCall` to decide whether arg-binding
+ * elision is safe for a plain-ident arg — eliding would alias the
+ * caller's local to the helper's param name, and a write through the
+ * param would then unsoundly mutate the caller's local. WGSL function
+ * params are pass-by-value, so a non-mutated, non-address-taken param
+ * is observably equivalent to its arg expression and may be aliased.
+ *
+ * Conservative: any matching name at any nesting level disqualifies.
+ * The pass doesn't track scope shadowing — a helper that redeclares
+ * the param name in an inner block (`{ let p = ... }`) would also
+ * register here, but WGSL forbids re-declaring a param name in the
+ * same block, and inner-block shadowing is rare in the corpus; better
+ * to leave the let-binding in place than to risk a miscompile.
+ */
+function _paramIsMutatedInBody(name, stmts) {
+    if (!stmts || !stmts.length) return false;
+    const exprHasAddrOf = (e) => {
+        if (!e) return false;
+        if (e.kind === 'una' && e.op === '&' &&
+            e.value && e.value.kind === 'ident' && e.value.name === name) return true;
+        switch (e.kind) {
+            case 'paren':  return exprHasAddrOf(e.value);
+            case 'bin':    return exprHasAddrOf(e.lhs) || exprHasAddrOf(e.rhs);
+            case 'una':    return exprHasAddrOf(e.value);
+            case 'member': return exprHasAddrOf(e.value);
+            case 'index':  return exprHasAddrOf(e.value) || exprHasAddrOf(e.index);
+            case 'call':   return (e.args || []).some(exprHasAddrOf);
+            default:       return false;
+        }
+    };
+    // Walk an lvalue down to its root ident — `p.x = ...`, `p[i] = ...`,
+    // `(p).field = ...`, and nested combinations all root in `p`. WGSL
+    // spec says function params are immutable, but the parser accepts
+    // member/index writes (and a future WGSL revision might too), so
+    // catching root-level matches keeps elision safe regardless.
+    const lvalueRootName = (t) => {
+        while (t) {
+            if (t.kind === 'ident')  return t.name;
+            if (t.kind === 'member') { t = t.value; continue; }
+            if (t.kind === 'index')  { t = t.value; continue; }
+            if (t.kind === 'paren')  { t = t.value; continue; }
+            return null;
+        }
+        return null;
+    };
+    const targetIsName = (t) => lvalueRootName(t) === name;
+    const visit = (s) => {
+        if (!s) return false;
+        switch (s.kind) {
+            case 'assign': case 'compound': case 'postfix':
+                if (targetIsName(s.target)) return true;
+                if (s.value && exprHasAddrOf(s.value)) return true;
+                return false;
+            case 'let': case 'const': case 'var':
+                // A let/const/var with the same name shadows the param
+                // inside its block; treat the param as mutated to keep
+                // the let-binding in place (defensive — see fn doc).
+                if (s.name === name) return true;
+                return s.value ? exprHasAddrOf(s.value) : false;
+            case 'expr_stmt': return exprHasAddrOf(s.expr);
+            case 'return':    return exprHasAddrOf(s.value);
+            case 'block':     return s.stmts.some(visit);
+            case 'if':
+                return exprHasAddrOf(s.cond) ||
+                       s.then.stmts.some(visit) ||
+                       (s.else
+                         ? (s.else.kind === 'if'
+                             ? visit(s.else)
+                             : s.else.stmts.some(visit))
+                         : false);
+            case 'for':
+                return (s.init   ? visit(s.init)   : false) ||
+                       (s.cond   ? exprHasAddrOf(s.cond) : false) ||
+                       (s.update ? visit(s.update) : false) ||
+                       s.body.stmts.some(visit);
+            case 'while':
+                return exprHasAddrOf(s.cond) ||
+                       (s.body?.stmts ?? []).some(visit);
+            case 'loop':
+                return s.body.stmts.some(visit);
+            case 'switch':
+                return exprHasAddrOf(s.selector) ||
+                       s.cases.some(c => c.body.stmts.some(visit));
+            // Synthetic inline-pass stmts: a prior pass already rewrote
+            // returns into these. They reference *renamed* names from
+            // the previous expansion, never raw helper param names, so
+            // a same-name match here is genuine and disqualifies.
+            case 'inline_return_set':
+                return s.resultName === name ||
+                       exprHasAddrOf(s.value);
+            case 'labeled':
+                return s.resultName === name ||
+                       (s.body?.stmts ?? []).some(visit);
+            default:
+                return false;
+        }
+    };
+    return stmts.some(visit);
+}
+
 function _expandInlineCall(callExpr, fn, counter, inlinable, callStack) {
     const id           = counter.n++;
     const prefix       = `_inl_${id}_`;
@@ -2238,14 +2357,50 @@ function _expandInlineCall(callExpr, fn, counter, inlinable, callStack) {
     const resultArity = isVecResult ? fn.returnType.n : 0;
     const lifted       = [];
 
-    // Bind args to fresh locals. Each binding is a 'let' stmt so SROA
-    // can scalarize vec args at emit time. Args themselves may contain
-    // further inlinable calls — those were already lifted by the
-    // caller's pass before we got here.
+    // Per-call nameMap. Built up below: elided args register the caller's
+    // ident name directly; non-elided args register the renamed local
+    // (`prefix + p.name`) created by the let-binding push below.
+    const nameMap = new Map();
+
+    // Bind args to fresh locals — UNLESS the arg is a plain ident and
+    // the helper never writes to the param (A3: arg-binding elision).
+    // When elided, the param routes through nameMap directly to the
+    // caller's ident, skipping a `const _inl_N_p = p;` let and the JS
+    // alias load V8 has to elide for us. Cuts emitted LOC by 3-6 lines
+    // per inlined call site and removes one binding from the inner
+    // scope for SROA's pre-pass to skip.
+    //
+    // Safety: WGSL function params are pass-by-value. Elision is only
+    // sound when the helper body neither writes to the param nor takes
+    // its address (`&p`). If either is true, the param is effectively
+    // a mutable local copy in the helper's frame; we must materialize
+    // it. Helpers with ptr params or `&` uses are already excluded by
+    // `_pickInlinable` (via `_hasPtrLikeShape`), so the address-of
+    // check is defensive but kept for safety against future shape
+    // changes there.
     for (let i = 0; i < fn.params.length; i++) {
         const p   = fn.params[i];
         const arg = callExpr.args[i];
         const renamedName = prefix + p.name;
+        const canElide =
+            arg && arg.kind === 'ident' &&
+            !_paramIsMutatedInBody(p.name, fn.body.stmts);
+        if (canElide) {
+            // Object form: carry over the caller arg's resolvedLocalId
+            // and resolvedType so cloned idents land in SROA's id-keyed
+            // scalarized lookup (caller's vec3 lets are scalarized by id,
+            // not by name, post-resolver). Without this carryover the
+            // SROA fast path misses and `q.x` emits literally instead of
+            // `q_x`, causing ReferenceError on the entry body's renamed
+            // scalar locals.
+            nameMap.set(p.name, {
+                name: arg.name,
+                resolvedLocalId: arg.resolvedLocalId,
+                resolvedType:    arg.resolvedType ?? p.type ?? null,
+            });
+            continue;
+        }
+        nameMap.set(p.name, renamedName);
         lifted.push({
             kind:  'let',
             name:  renamedName,
@@ -2256,8 +2411,6 @@ function _expandInlineCall(callExpr, fn, counter, inlinable, callStack) {
     }
 
     // Clone-rename the body (registers each local in nameMap as we go).
-    const nameMap = new Map();
-    for (const p of fn.params) nameMap.set(p.name, prefix + p.name);
     const renamedBody = fn.body.stmts.map(s =>
         _cloneStmtRenamed(s, nameMap, {
             prefix, resultName, labelName,
@@ -2724,8 +2877,16 @@ function _countGeneratedRuntimeCalls(body) {
 
 /**
  * Emit JS source from a parsed Module AST.
+ *
+ * `opts.collectErrors`: when truthy, the emit phase records unsupported
+ * constructs into `result.errors` and emits `rt.__unsupported(...)`
+ * placeholders instead of throwing on the first failure. Used by the
+ * build-time corpus walker so a run can surface every shader-level
+ * issue in one pass. Default mode is unchanged — first failure throws.
+ *
  * @param {object} ast
- * @returns {{ jsSource: string, entryPoints: string[], bindings: string[] }}
+ * @param {object} [opts]
+ * @returns {{ jsSource: string, body: string, entryPoints: string[], bindings: string[], metrics: object, errors: Array<{phase:string,kind:string,message:string,line:number,col:number}> }}
  */
 export function emit(ast, opts = {}) {
     const e = new Emitter(ast, opts);
@@ -2738,6 +2899,12 @@ class Emitter {
         this.opts   = opts;
         this.out    = [];
         this.indent = 0;
+
+        // Non-fatal emit errors collected when `opts.collectErrors` is
+        // truthy. Each record is `{phase, kind, message, line, col}`. In
+        // the default mode this stays empty because `emitError()` throws
+        // instead of pushing — current callers are unaffected.
+        this.errors = [];
 
         // Shared module catalog — same Maps the resolver consumes, so
         // the walk over ast.items happens exactly once per compile.
@@ -3078,6 +3245,10 @@ class Emitter {
             entryPoints: this.entryPoints.map(f => f.name),
             bindings: [...this.bindings.keys()],
             metrics,
+            // A1: non-fatal emit errors when `opts.collectErrors` was
+            // set. Always an array (empty in the common case) so callers
+            // don't have to existence-check.
+            errors: this.errors,
         };
     }
 
@@ -4981,10 +5152,36 @@ class Emitter {
                 this.line(`${this.expr(s.expr)};`);
                 break;
 
-            default:
-                throw new WGSLError(`emit: unknown stmt kind '${s.kind}'`,
-                    s.loc?.line ?? 0, s.loc?.col ?? 0);
+            default: {
+                const msg = `emit: unknown stmt kind '${s.kind}'`;
+                this.emitError('stmt', msg, s.loc);
+                // collectErrors path: emit a runtime trap so the
+                // module parses + evals but explodes on that branch.
+                this.line(`rt.__unsupported(${JSON.stringify(msg)});`);
+            }
         }
+    }
+
+    /**
+     * Report an emit-phase failure.
+     *
+     * In default mode (`opts.collectErrors` falsy) this throws a
+     * WGSLError — behavior is bit-for-bit identical to the pre-A1
+     * throw sites. When `collectErrors` is on, the failure is
+     * recorded in `this.errors` and the call returns nothing; the
+     * caller is responsible for emitting a placeholder (typically a
+     * `rt.__unsupported(...)` call) so subsequent emit work can
+     * continue. The placeholder traps at runtime if reached, so
+     * silent miscompiles aren't possible — a corpus walker just
+     * gets every error per run instead of one.
+     */
+    emitError(kind, message, loc) {
+        const line = loc?.line ?? 0;
+        const col  = loc?.col  ?? 0;
+        if (!this.opts || !this.opts.collectErrors) {
+            throw new WGSLError(message, line, col);
+        }
+        this.errors.push({ phase: 'emit', kind, message, line, col });
     }
 
     /** Append raw text without indent (used for `else` join). */
@@ -5046,8 +5243,11 @@ class Emitter {
             case 'expr_stmt':
                 return this.expr(s.expr);
         }
-        throw new WGSLError(`emit: bad for-init kind '${s.kind}'`,
-            s.loc?.line ?? 0, s.loc?.col ?? 0);
+        const msg = `emit: bad for-init kind '${s.kind}'`;
+        this.emitError('for-init', msg, s.loc);
+        // collectErrors path: degenerate to a runtime trap expression
+        // that evaluates to a defined value (loop runs once then throws).
+        return `rt.__unsupported(${JSON.stringify(msg)})`;
     }
     forUpdateInline(s) { return this.forStmtInline(s); }
 
@@ -5075,8 +5275,9 @@ class Emitter {
             case 'index': return this.emitIndex(e);
             case 'paren': return `(${this.expr(e.value)})`;
         }
-        throw new WGSLError(`emit: unknown expr kind '${e.kind}'`,
-            e.loc?.line ?? 0, e.loc?.col ?? 0);
+        const msg = `emit: unknown expr kind '${e.kind}'`;
+        this.emitError('expr', msg, e.loc);
+        return `rt.__unsupported(${JSON.stringify(msg)})`;
     }
 
     emitLit(e) {
@@ -5409,11 +5610,13 @@ class Emitter {
                 // plasma+geon is struct accumulators, which work.
                 return _safe(name);
             }
-            throw new WGSLError(`addressOf: unknown ident '${name}'`,
-                e.loc?.line ?? 0, e.loc?.col ?? 0);
+            const msg = `addressOf: unknown ident '${name}'`;
+            this.emitError('addressOf', msg, e.loc);
+            return `rt.__unsupported(${JSON.stringify(msg)})`;
         }
-        throw new WGSLError(`addressOf: unsupported operand`,
-            e.loc?.line ?? 0, e.loc?.col ?? 0);
+        const msg = `addressOf: unsupported operand`;
+        this.emitError('addressOf', msg, e.loc);
+        return `rt.__unsupported(${JSON.stringify(msg)})`;
     }
 
     atomicAddressParts(arg) {
@@ -5952,6 +6155,16 @@ const _typedAtomicFns = {
  * performance after a type-resolver pass lands.
  */
 export const runtime = {
+    // ── Emit-time error sentinel ───────────────────────────────────
+    // Called from placeholders the emitter inserts when
+    // `opts.collectErrors` is on and a construct couldn't be lowered.
+    // The module still parses and evals; reaching this code path at
+    // runtime throws with the original emit-time message so silent
+    // miscompiles aren't possible.
+    __unsupported: (msg) => {
+        throw new Error(`[wgsl-transpile] unsupported construct reached at runtime: ${msg}`);
+    },
+
     // ── Type constructors ──────────────────────────────────────────
     vec2: (x = 0, y) => (y === undefined ? { x, y: x } : { x, y }),
     vec3: (x = 0, y, z) => (y === undefined ? { x, y: x, z: x }
@@ -6223,7 +6436,11 @@ export function wrapEntry(_threadFn, _workgroupSize) {
  * @param {object} [opts.specializeUniforms]
  * @param {'gpu'|'stable'} [opts.reductionMode]
  * @param {boolean} [opts.noDCE]         Emit all helper fns/hoists.
- * @returns {{ jsSource: string, body: string, entryPoints: string[], bindings: string[], metrics: object }}
+ * @param {boolean} [opts.collectErrors] Collect non-fatal emit errors
+ *                                       into `result.errors` instead of
+ *                                       throwing on the first failure.
+ *                                       Used by the build-time walker.
+ * @returns {{ jsSource: string, body: string, entryPoints: string[], bindings: string[], metrics: object, errors: Array<{phase:string,kind:string,message:string,line:number,col:number}> }}
  */
 export function transpileWGSL(source, opts = {}) {
     const tokens = tokenize(source);
@@ -6250,6 +6467,9 @@ export function transpileWGSL(source, opts = {}) {
             reductionMode: opts.reductionMode,
             noDCE: !!opts.noDCE,
         };
+    // collectErrors is orthogonal to polymorphic mode, so attach it
+    // outside the ternary — both branches honor it.
+    emitOpts.collectErrors = !!opts.collectErrors;
     const result = emit(ast, emitOpts);
     return {
         jsSource: result.jsSource,
@@ -6257,6 +6477,7 @@ export function transpileWGSL(source, opts = {}) {
         entryPoints: result.entryPoints,
         bindings: result.bindings,
         metrics: result.metrics,
+        errors: result.errors,
     };
 }
 
@@ -6277,7 +6498,7 @@ export function transpileWGSL(source, opts = {}) {
  * @param {boolean} [opts.debug]         Log token / bindings counts to console.
  * @param {object}  [opts.runtime]       Override the default `rt` namespace
  *                                       (vec ctors, intrinsics, atomics).
- * @returns {{ entry: Object<string, Function>, bindings: string[], jsSource: string, metrics: object }}
+ * @returns {{ entry: Object<string, Function>, bindings: string[], jsSource: string, metrics: object, errors: Array<{phase:string,kind:string,message:string,line:number,col:number}> }}
  */
 export function compileWGSL(source, opts = {}) {
     const rt     = opts.runtime || runtime;
@@ -6315,6 +6536,8 @@ export function compileWGSL(source, opts = {}) {
             reductionMode: opts.reductionMode,
             noDCE: !!opts.noDCE,
         };
+    // See transpileWGSL — collectErrors works in both modes.
+    emitOpts.collectErrors = !!opts.collectErrors;
     const result = emit(ast, emitOpts);
 
     // Eval target is our own deterministic emit() output — see security note above.
@@ -6332,6 +6555,7 @@ export function compileWGSL(source, opts = {}) {
         bindings: mod.bindings,
         jsSource: result.jsSource,
         metrics: result.metrics,
+        errors: result.errors,
     };
 }
 
