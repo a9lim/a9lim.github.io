@@ -1,11 +1,16 @@
 {
-  "generatedAt": "2026-05-25T23:26:29.123Z",
+  "generatedAt": "2026-05-25T23:32:28.087Z",
   "lastDeploy": {
-    "hash": "0c0b871",
-    "iso": "2026-05-25T16:24:19-07:00",
-    "subject": "wgsl-transpile: phase A polish — collectErrors + arg-binding elision"
+    "hash": "5051bd8",
+    "iso": "2026-05-25T16:27:48-07:00",
+    "subject": "build: rename _build.js → _build.mjs (ESM conversion)"
   },
   "commits": [
+    {
+      "hash": "5051bd8",
+      "iso": "2026-05-25T16:27:48-07:00",
+      "subject": "build: rename _build.js → _build.mjs (ESM conversion)"
+    },
     {
       "hash": "0c0b871",
       "iso": "2026-05-25T16:24:19-07:00",
@@ -30,11 +35,6 @@
       "hash": "28ae5c4",
       "iso": "2026-05-25T13:21:48-07:00",
       "subject": "wgsl-transpile: var SROA for mutable vec locals (~14x on var-heavy kernel)"
-    },
-    {
-      "hash": "f5c8d1a",
-      "iso": "2026-05-25T03:27:43-07:00",
-      "subject": "wgsl-transpile: small-fn inlining + scalarized result vars (~26.8x on helper-heavy)"
     }
   ],
   "stats": {

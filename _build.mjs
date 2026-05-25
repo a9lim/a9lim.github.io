@@ -1,9 +1,11 @@
 #!/usr/bin/env node
 
-import { readFileSync, writeFileSync, existsSync } from 'node:fs';
+import { readFileSync, writeFileSync, existsSync, readdirSync, mkdirSync } from 'node:fs';
 import { execFileSync, spawnSync } from 'node:child_process';
-import { dirname, join } from 'node:path';
+import { dirname, join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { createHash } from 'node:crypto';
+import { transpileWGSL } from './shared-wgsl-transpile.js';
 
 const ROOT = dirname(fileURLToPath(import.meta.url));
 const SITE = 'https://a9l.im';
@@ -571,4 +573,157 @@ console.log(`home-data.json: ${commits.length} commits, ${homeData.stats.scriptu
 const resumeBuild = spawnSync('bash', [join(ROOT, 'resume/build.sh')], { stdio: 'inherit' });
 if (resumeBuild.status !== 0) {
   console.error('resume.pdf: build failed (exit ' + resumeBuild.status + ')');
+}
+
+// --- WGSL → JS transpile (build-time artifact writer) ---
+//
+// For each configured shader dir, walk .wgsl files, classify into helpers
+// (no @compute/@vertex/@fragment entry point) vs entries, and write a
+// `.transpiled.js` artifact for each entry under `transpiled/<source-
+// relative-path>.transpiled.js`. The unit transpiled is (helpers ++
+// entry source), matching the assembly pattern plasma/geon use before
+// createShaderModule.
+//
+// Output goes under the parent-tracked `transpiled/` root rather than
+// next to the source so submodule-shaped sims (plasma, etc. — see
+// .gitmodules) can have their artifacts committed by the parent repo
+// without requiring the submodule itself to track them. Plasma's CPU
+// fallback fetches them as static assets from `/transpiled/plasma/...`.
+//
+// Skip-on-unchanged: each artifact carries a sha256 source-hash header.
+// Re-runs read the existing artifact, compare hashes, and skip the
+// transpile work when nothing changed. Pass `--force-wgsl` to override.
+//
+// Add a sim dir below when you want its shaders pre-transpiled. Geon's
+// 54 shaders are deferred until plasma integration (B3) shakes out the
+// adapter shape — see tests/wgsl-transpile/README.md.
+
+const WGSL_SHADER_DIRS = [
+  {
+    dir: 'plasma/src/gpu/shaders',
+    opts: {
+      flatStorage: true,        // array<vecN<f32>> storage bindings flow as Float32Array
+      collectErrors: true,      // aggregate all failures into one report
+    },
+  },
+];
+
+const WGSL_FORCE = process.argv.includes('--force-wgsl');
+
+function sha256Hex(s) {
+  return createHash('sha256').update(s).digest('hex');
+}
+
+function hasEntryPointWGSL(src) {
+  // Quick textual check — same intent as run.js's hasEntryPoint(ast)
+  // but avoids re-parsing here. False positives are harmless (a comment
+  // mentioning @compute would just transpile the helper as an entry,
+  // which transpileWGSL handles fine).
+  return /@(compute|vertex|fragment)\b/.test(src);
+}
+
+function transpileOneDir({ dir, opts }) {
+  const dirAbs = join(ROOT, dir);
+  if (!existsSync(dirAbs)) {
+    console.log(`wgsl-transpile: skipping ${dir} (not present)`);
+    return { entries: 0, written: 0, skipped: 0, errors: [] };
+  }
+  const files = readdirSync(dirAbs)
+    .filter(f => f.endsWith('.wgsl'))
+    .sort();
+  const records = files.map(f => {
+    const abs = join(dirAbs, f);
+    const src = readFileSync(abs, 'utf8');
+    return { f, abs, src, isEntry: hasEntryPointWGSL(src) };
+  });
+  const helpers = records.filter(r => !r.isEntry);
+  const helperSrc = helpers.map(h => h.src).join('\n');
+  const helperHash = sha256Hex(helperSrc);
+
+  let written = 0, skipped = 0;
+  const allErrors = [];
+
+  for (const rec of records) {
+    if (!rec.isEntry) continue;  // helpers don't get standalone artifacts
+    // Mirror the source path under transpiled/ so the parent repo
+    // tracks artifacts even when the source lives in a submodule.
+    const srcRel = relative(ROOT, rec.abs);
+    const outPath = join(ROOT, 'transpiled', srcRel).replace(/\.wgsl$/, '.transpiled.js');
+    mkdirSync(dirname(outPath), { recursive: true });
+    const unitSrc = helpers.length ? helperSrc + '\n' + rec.src : rec.src;
+    const unitHash = sha256Hex(unitSrc);
+
+    // Skip if existing artifact's source-hash header matches.
+    if (!WGSL_FORCE && existsSync(outPath)) {
+      try {
+        const existing = readFileSync(outPath, 'utf8');
+        const m = existing.match(/^\/\/ wgsl-transpile sha256: ([0-9a-f]+)/m);
+        if (m && m[1] === unitHash) {
+          skipped++;
+          continue;
+        }
+      } catch { /* fall through to regen */ }
+    }
+
+    let result;
+    try {
+      result = transpileWGSL(unitSrc, opts);
+    } catch (err) {
+      // Hard failure (parser/tokenizer/resolver) — still want to keep
+      // building other shaders. Collect and report at the end.
+      allErrors.push({
+        file: relative(ROOT, rec.abs),
+        phase: 'fatal',
+        message: err && err.message || String(err),
+      });
+      continue;
+    }
+    if (result.errors && result.errors.length) {
+      for (const e of result.errors) {
+        allErrors.push({ file: relative(ROOT, rec.abs), ...e });
+      }
+    }
+
+    const header = [
+      '// Auto-generated from WGSL by _build.mjs — DO NOT EDIT.',
+      `// source: ${relative(ROOT, rec.abs)}`,
+      `// helpers-sha256: ${helperHash}`,
+      `// wgsl-transpile sha256: ${unitHash}`,
+      `// generated: ${new Date().toISOString()}`,
+      '',
+    ].join('\n');
+    // Strip the transpiler's own banner since we're prepending our own.
+    const body = result.jsSource.replace(
+      /^\/\/ Auto-generated from WGSL[^\n]*\n\/\/ DO NOT EDIT[^\n]*\n\n/,
+      ''
+    );
+    writeFileSync(outPath, header + body);
+    written++;
+  }
+
+  return { entries: records.filter(r => r.isEntry).length, written, skipped, errors: allErrors };
+}
+
+console.log('');
+let totalEntries = 0, totalWritten = 0, totalSkipped = 0;
+const allWgslErrors = [];
+for (const cfg of WGSL_SHADER_DIRS) {
+  const r = transpileOneDir(cfg);
+  totalEntries += r.entries;
+  totalWritten += r.written;
+  totalSkipped += r.skipped;
+  for (const e of r.errors) allWgslErrors.push(e);
+  console.log(`wgsl-transpile: ${cfg.dir} — ${r.entries} entries (${r.written} written, ${r.skipped} skipped${r.errors.length ? `, ${r.errors.length} errors` : ''})`);
+}
+if (totalEntries) {
+  console.log(`wgsl-transpile: ${totalEntries} total entries (${totalWritten} written, ${totalSkipped} skipped)`);
+}
+if (allWgslErrors.length) {
+  console.error('');
+  console.error(`wgsl-transpile: ${allWgslErrors.length} error${allWgslErrors.length === 1 ? '' : 's'}:`);
+  for (const e of allWgslErrors) {
+    const where = e.line ? `:${e.line}:${e.col || 0}` : '';
+    console.error(`  ${e.file}${where}  [${e.phase}${e.kind ? '/' + e.kind : ''}]  ${e.message}`);
+  }
+  process.exitCode = 1;
 }

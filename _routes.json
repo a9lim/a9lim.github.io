@@ -20,6 +20,7 @@
     "/asteroids/*",
     "/miasma/*",
     "/pile/*",
+    "/transpiled/*",
     "/.well-known/*",
     "/*.txt",
     "/*.md",
