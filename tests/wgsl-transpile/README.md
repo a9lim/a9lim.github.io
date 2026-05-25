@@ -39,11 +39,13 @@ node tests/wgsl-transpile/run.js --quiet  # only print failures
 # the emitted JS actually executes correctly against canned input.
 node tests/wgsl-transpile/smoke.js
 
-# Microbench for the emit pipeline. Compiles a vec3-heavy synthetic
-# kernel and reports wall-time / Mvops-per-sec. Baseline for measuring
-# the inline-emit perf win in phase 4 of the resolver arc.
+# Microbench for the emit pipeline. Four kernels (FMA, Verlet, n-body
+# var accumulator, helper-heavy spring) each run baseline (polymorphic
+# rt.*) and optimized (full stack: resolveModule + inline + SROA) and
+# report wall-time + Mvops-per-sec or Mparticle-steps-per-sec. See the
+# bench detail table below for what each kernel measures.
 node tests/wgsl-transpile/bench.js                    # defaults
-BENCH_N=50000 BENCH_ITERS=20 node tests/wgsl-transpile/bench.js
+BENCH_N=100000 BENCH_ITERS=20 node tests/wgsl-transpile/bench.js
 ```
 
 run.js and smoke.js exit non-zero on any expected-phase failure. bench.js
@@ -129,7 +131,8 @@ The 11 smoke tests cover:
 
 ## Architecture (read before editing)
 
-`/shared-wgsl-transpile.js` is one ~1200-LOC ESM file with these sections:
+`/shared-wgsl-transpile.js` is one ~4200-LOC ESM file with these sections
+(in source order):
 
 1. **Tokenizer** (`tokenize`) — flat Token[] of `{kind, value, line, col}`.
    Handles nestable block comments, all numeric suffix forms (`u`/`i`/`f`/`h`),
@@ -146,10 +149,53 @@ The 11 smoke tests cover:
    `array<T, N>` count expressions so the count doesn't eat the closing
    bracket.
 
-3. **Emitter** (`emit`, `class Emitter`) — walks the AST in two passes:
-   catalog top-level items into Maps, then emit each. Convention details:
-   - Vec types are `{x, y, z, w}` JS objects; arithmetic dispatches
-     through `rt.add/sub/mul/div/mod` for scalar↔vec broadcasting.
+3. **Resolver** (`resolveModule`, `class SymbolTable`, `class ExprResolver`)
+   — builds the module's type catalog, then walks every fn body to
+   annotate `.resolvedType` on every Expr node. The emitter reads these
+   types to decide between scalar-inline, vec-component, and polymorphic
+   rt.* dispatch. Failure is silent (`.resolvedType = null`) so the
+   emitter's fallback keeps the corpus green even on rare/unmodeled
+   constructs.
+
+4. **Inline pass** (`inlineModulePass`, helpers `_pickInlinable`,
+   `_liftCallsInExpr`, `_expandInlineCall`, `_cloneStmtRenamed`,
+   `_cloneExprRenamed`) — AST-level rewrite that runs between resolve
+   and emit. For each call site of an inlinable helper, it lifts the
+   call into pre-stmts (arg bindings + alpha-renamed body wrapped in a
+   labeled block) and replaces the call expression with an ident
+   pointing to the synthetic result var. Vec-returning helpers get a
+   *scalarized* result var (per-component lets registered in the
+   emitter's scalarized map). The pass mutates `ast.items[*].body` in
+   place; emit sees the post-inlined shape and runs unchanged.
+
+5. **Emitter** (`emit`, `class Emitter`) — walks the AST in two passes:
+   catalog top-level items into Maps, then emit each. Key responsibilities:
+   - **`collectScalarizable`** pre-pass per fn body identifies vec
+     let/const/var locals that can be split into N per-component scalar
+     bindings. Disqualifies on `&` use, name shadowing, and for-init/
+     for-update decl slots (since `forStmtInline` emits a single JS
+     expression).
+   - **Inline scalar/vec emit** via `emitBin`/`exprComp`: scalar↔scalar
+     binops emit as `(a op b)`; vec ops lower component-wise into object
+     literals when not scalarized, or into per-component reads when
+     either operand is scalarized.
+   - **Write-through** (`tryEmitVecWriteThrough`) for vec lvalue stores
+     where the RHS would have allocated a fresh `{x,y,z}` object — emits
+     three property writes instead, with component values captured into
+     `_wt0..` temps first so accumulator + swizzle-rotate patterns stay
+     safe.
+   - **Scalarized var store** (`emitScalarizedVarStore`) for assign and
+     compound assign whose target ident is in `this.scalarized`. Routes
+     `force += rhs` to native per-component compound ops (`force_x +=
+     rhs.x; force_y += rhs.y; ...`) — bypasses rt.* dispatch entirely.
+   - **Builtin scalarization** in `emitEntry`: `@builtin(gid)`/etc. are
+     pre-scalarized into integer expressions, no vec3 allocation per
+     invocation.
+   - **Phase splitting** at top-level `workgroupBarrier()` — see the
+     subsection below.
+   - Vec types are `{x, y, z, w}` JS objects on the wire; emit aggressively
+     scalarizes intermediates so vec objects only materialize at module
+     boundaries (storage I/O, polymorphic rt.* fallback).
    - JS-reserved words (`in`, `of`, `class`, ...) at declaration sites
      get prefixed with `_` via `_safe()`; references resolve consistently.
      Member access (`bindings.in`) is fine in JS and isn't escaped.
@@ -163,19 +209,24 @@ The 11 smoke tests cover:
      for the common accumulator pattern. Scalar locals are a known
      limitation (rare in plasma/geon).
 
-4. **Runtime** (`runtime`, the `rt` namespace) — small set of helpers
+6. **Runtime** (`runtime`, the `rt` namespace) — small set of helpers
    the emitted code calls: type constructors, scalar casts, polymorphic
    arithmetic, math intrinsics, bitcasts, atomic operations
    (single-threaded, so atomicAdd is just a swap-and-add). Tests can
-   override by passing `opts.runtime`.
+   override by passing `opts.runtime`. The optimization stack is
+   designed to *avoid* hitting runtime helpers in the hot path — most
+   real-shader kernels post-Tier-2 reach the runtime only at storage
+   boundaries.
 
-5. **`compileWGSL`** — plumbs all four together. Constructs a live JS
-   module from the emitted body with `rt` as the only captured variable,
-   returns the live `{ entry, bindings }`. The function's JSDoc has a
-   security note: the runtime construction is intentional (it IS the
-   transpiler) and is only safe because the WGSL input is under your
-   own control. Build-time mode (next-steps item below) sidesteps this
-   concern entirely by emitting committed `.js` artifacts.
+7. **`compileWGSL`** — plumbs all six together: tokenize → parse →
+   resolveModule (skipped under `opts.polymorphic`) → inlineModulePass
+   (skipped under `opts.polymorphic` or `opts.noInline`) → emit → live
+   module evaluation. Returns the live `{ entry, bindings, jsSource }`.
+   The function's JSDoc has a security note: the evaluation step is
+   intentional (it IS the transpiler) and is only safe because the WGSL
+   input is under your own control. Build-time mode (next-steps item
+   below) sidesteps this concern entirely by emitting committed `.js`
+   artifacts that are loaded via standard `import`.
 
 ### Phase splitting (the subtle bit)
 
@@ -193,9 +244,40 @@ top-level barriers so this hasn't bitten yet, but if a future shader
 needs it, the work is contained to `splitPhases` + a control-flow
 analyzer pass.
 
-## Next steps (priority order)
+## Next steps
 
-### 1. Build-time mode + `_build.js` integration
+Genuinely-not-yet-done work, in approximate priority order. (Landed
+work and its history is in the next section.)
+
+### Tier 3: Flat TypedArray binding mode
+
+Scoped during the Tier 1 work but deferred — Tier 1+2's wins (SROA +
+inlining + builtin scalarization) consumed most of the raw-perf
+headroom, so the remaining value of flat TypedArray is **GPU-parity**
+rather than raw speed. Plasma's WebGPU buffers are `Float32Array`s;
+without flat-storage support, the CPU fallback has to marshal each one
+into `{x, y, z}` objects per step (expensive and pointless when the GPU
+writes the same array back next frame).
+
+Design (pre-decided):
+- `compileWGSL(src, { flatStorage: true })` enables it.
+- `array<vecN<f32|u32|i32>>` storage bindings expect packed-stride
+  TypedArrays (stride=N, no padding). `array<vec3<f32>>` expects
+  `Float32Array(n*3)`.
+- Per-binding stride override available via `opts.storageLayout` for
+  std430-padded buffers if needed.
+- Emit lowers `a[i].c` to `bindings.a[i*stride + componentIndex]`
+  directly — no intermediate vec object materialization. Write-through
+  composes: `a[i] = vec3-expr` lowers to three TypedArray stores.
+- Object-mode storage stays the default for backward compat with the
+  existing smoke tests.
+- `array<struct>` not yet supported — needs struct-field-offset
+  computation per WGSL alignment rules. Follow-up.
+
+Best done as part of (or just before) the plasma integration so we can
+validate against the actual binding format plasma produces.
+
+### Build-time mode + `_build.js` integration
 
 Write a shader-walker that finds every `.wgsl` in the repo (or just per
 sim), compiles each through the transpiler, and emits a sibling
@@ -203,7 +285,7 @@ sim), compiles each through the transpiler, and emits a sibling
 this lands, CPU backends can `import` the transpiled artifact directly
 instead of running the transpiler at runtime, which:
 
-- Eliminates the runtime code-construction caveat in production
+- Eliminates the runtime evaluation caveat in production
 - Removes the parser/emitter from the browser bundle entirely
 - Makes transpile errors surface at build time, not on first load
 - Adds a build step authors need to remember (mitigated: it's optional
@@ -214,53 +296,66 @@ Estimate: ~150 LOC of new code in a new `tools/wgsl-build.js` (or fold
 into `_build.js`), plus a few lines in the per-sim `pipelines.js` to
 prefer the transpiled artifact when present. Mostly grunt work.
 
-### 2. Small-fn inlining  *(landed — Tier 2a)*
+### Plasma integration
 
-AST-level pass between `resolveModule` and `emit` that splices small
-helper bodies into their call sites. Defaults: `inlineBudget` = 8
-top-level stmts per fn, `inlineCallLimit` = 4 static call sites across
-the module. Recursive fns (self- or mutual-) excluded; fns with ptr
-params or `&` uses excluded; entry points (`@compute`) are inlining
-targets, not inlinees.
+The transpiler exists *for* plasma. Once build-time mode + flat-storage
+land, the integration is small:
+- `plasma/src/gpu/pipelines.js` (or a new `plasma/src/cpu/` module)
+  imports the transpiled JS modules
+- `plasma/main.js` feature-detects WebGPU; on failure, instantiates the
+  CPU backend and runs the same `step()` orchestration against it
+- The bindings object the GPU code already constructs (uniforms, storage
+  buffers as Float32Arrays) flows directly to the CPU backend when
+  `flatStorage: true` is set at compile time
 
-Mechanism:
-- For each call site of an inlinable helper, the lifter walks the
-  enclosing stmt's expressions depth-first (inner calls expanded first)
-  and replaces the call node with an ident pointing to a per-call-site
-  result var (`_inl_N_result`).
-- Helper params bind to fresh `_inl_N_paramName` lets (themselves SROA
-  candidates at emit time — vec args lower to per-component lets when
-  the arg expression is scalarized).
-- Helper body is alpha-renamed with the same `_inl_N_` prefix and
-  wrapped in `_inl_N: { ... }`. `return v;` rewrites into a synthetic
-  `inline_return_set` stmt (per-component stores for vec results, plain
-  whole-object assign for scalar/mat) followed by `break _inl_N`.
-- Vec-returning helpers get a **scalarized result var**: instead of one
-  mutable JS let holding a `{x,y,z}` object, the labeled-stmt emit
-  declares per-component lets (`_inl_N_result_x`, `_inl_N_result_y`,
-  ...) and registers the name in `this.scalarized`, so every downstream
-  read of `_inl_N_result` routes through the existing SROA fast paths.
-  Net effect: **zero vec allocations** on the inlining return path,
-  even across conditional-return helpers like `clamp_speed`.
-- `isComponentSafe` was relaxed to permit POLY_FN intrinsics
-  (`max`/`sqrt`/`sin`/etc.) — these are pure and lower to `Math.*`
-  templates, so triplicating them across vec component lowerings is
-  cheaper than the vec3 alloc the fallback would otherwise emit.
+The original plasma plan locked `No CPU fallback` as a design decision.
+The transpiler changes that calculus: the cost of the fallback is no
+longer "maintain a parallel implementation forever" — it's "write the
+adapter shim once." Worth revisiting that decision when picking this up.
 
-Result: kernel D (real-shader shape factored through 3 helpers) goes
-from 2.91× to 26.78× speedup vs polymorphic, sitting within ~1.2× of
-the equivalent monolithic kernel B. Other kernels unchanged within
-variance.
+### Geon integration (much later)
 
-Smoke test 8 (`testInlinePreservesOutput`) is the correctness gate:
-inlined and `{ noInline: true }` modes must produce bit-identical
-output on a multi-helper kernel that exercises both clamp_speed's
-return paths.
+Geon is 54 shaders vs plasma's 13. The transpiler handles them all
+syntactically, but real integration is bigger:
+- Geon has more bindings, more entry points, denser control flow, more
+  feature toggles
+- Some shaders use patterns that aren't yet exercised by smoke tests
+  (CAS atomics in tree builds, multi-entry-point modules with shared
+  aggregator state, GPU↔CPU snapshot via `physics-contract.js`)
+- The existing hand-written CPU code is the reference implementation;
+  cutting over would benefit from a comparison harness (run both, diff
+  outputs, catch divergences)
 
-### 3. Type resolver + inline-scalar emit + SROA  *(landed)*
+Don't tackle this until plasma integration has shaken out the rough
+edges of the runtime API and bindings format.
 
-The performance milestone. All phases complete; see the bench table at
-the top of this file for measured numbers.
+### Smaller items worth a session each
+
+- `bitcast` source-type inference (currently routes only by typeArgs)
+- Matrix types (`mat3x3<f32>` etc.) — geon doesn't use, plasma doesn't
+  use, but adding for completeness is straightforward
+- Type aliases (`alias Vec3F = vec3<f32>;`) — parser accepts, resolver
+  needs to substitute
+- Dead-component elimination for scalarized builtins — if a kernel only
+  uses `gid.x`, skip emitting `gid_y`/`gid_z`. Tiny win, easy.
+- Argument-binding elimination in the inline pass — when an arg expr is
+  a plain ident, skip the `const _inl_N_p = p;` rename and just register
+  `p → p` (or the original local name) in the nameMap. Cuts ~3-6 lines
+  per call site at no semantic cost. The let-aliasing is a small extra
+  load for V8 to elide today.
+- Better error reporting from the emit phase (currently throws at the
+  first unhandled construct; would be nice to collect and report
+  several)
+
+## Landed work (history)
+
+Detailed notes on the optimization passes already in the tree. Useful
+if you're touching one of these and need the rationale + tradeoffs.
+
+### Tier 1: Type resolver + inline-scalar emit + SROA
+
+The first performance milestone. All phases complete; see the bench
+table at the top of this file for measured numbers.
 
 - ✅ **Phase 1: Type ADT + module-level symbol table** — `T` scalar
   singletons, `tVec`/`tMat`/`tArray`/`tAtomic`/`tPtr`/`tStruct` factories,
@@ -281,11 +376,11 @@ the top of this file for measured numbers.
   Failure is silent (`.resolvedType = null`), so the emitter's
   polymorphic fallback keeps the corpus green. Coverage: **100% decl
   sites, 90.1% Expr nodes** across the 68-shader corpus.
-- ✅ **Phase 3: Benchmark harness** — `tests/wgsl-transpile/bench.js`
-  runs *two* kernels: vec3 FMA loop (allocation-bound, the maximum
-  win available from arithmetic fusion) and Verlet spring step
-  (storage-I/O dominant, realistic shader shape). Each runs baseline
-  (polymorphic rt.*) vs inlined (current emit) back-to-back.
+- ✅ **Phase 3: Benchmark harness** — `tests/wgsl-transpile/bench.js`.
+  Originally two kernels (FMA + Verlet); kernels C (var-heavy) and D
+  (helper-heavy) were added later to give the Tier 2 work principled
+  before/after measurements. Each kernel runs baseline (polymorphic
+  rt.*) vs optimized (current emit) back-to-back.
 - ✅ **Phase 4: Inline component lowering** — `compileWGSL` runs
   `resolveModule` before `emit` (opt out via `opts.polymorphic: true`
   for A/B). `emitBin` inlines scalar↔scalar as `(a op b)` and lowers
@@ -325,7 +420,50 @@ prepends at runtime, ~5% cascade + rarely-used intrinsics); see "Current
 status" above. None of it blocks the inline emit — graceful degradation
 to rt.* dispatch preserves correctness on every shader.
 
-### 4. `var` SROA  *(landed — Tier 2c)*
+### Tier 2a-b: Small-fn inlining
+
+AST-level pass between `resolveModule` and `emit` that splices small
+helper bodies into their call sites. Defaults: `inlineBudget` = 8
+top-level stmts per fn, `inlineCallLimit` = 4 static call sites across
+the module. Recursive fns (self- or mutual-) excluded; fns with ptr
+params or `&` uses excluded; entry points (`@compute`) are inlining
+targets, not inlinees.
+
+Mechanism:
+- For each call site of an inlinable helper, the lifter walks the
+  enclosing stmt's expressions depth-first (inner calls expanded first)
+  and replaces the call node with an ident pointing to a per-call-site
+  result var (`_inl_N_result`).
+- Helper params bind to fresh `_inl_N_paramName` lets (themselves SROA
+  candidates at emit time — vec args lower to per-component lets when
+  the arg expression is scalarized).
+- Helper body is alpha-renamed with the same `_inl_N_` prefix and
+  wrapped in `_inl_N: { ... }`. `return v;` rewrites into a synthetic
+  `inline_return_set` stmt (per-component stores for vec results, plain
+  whole-object assign for scalar/mat) followed by `break _inl_N`.
+- Vec-returning helpers get a **scalarized result var**: instead of one
+  mutable JS let holding a `{x,y,z}` object, the labeled-stmt emit
+  declares per-component lets (`_inl_N_result_x`, `_inl_N_result_y`,
+  ...) and registers the name in `this.scalarized`, so every downstream
+  read of `_inl_N_result` routes through the existing SROA fast paths.
+  Net effect: **zero vec allocations** on the inlining return path,
+  even across conditional-return helpers like `clamp_speed`.
+- `isComponentSafe` was relaxed to permit POLY_FN intrinsics
+  (`max`/`sqrt`/`sin`/etc.) — these are pure and lower to `Math.*`
+  templates, so triplicating them across vec component lowerings is
+  cheaper than the vec3 alloc the fallback would otherwise emit.
+
+Result: kernel D (real-shader shape factored through 3 helpers) goes
+from 2.91× to ~26× speedup vs polymorphic, sitting within ~1.2× of
+the equivalent monolithic kernel B. Other kernels unchanged within
+variance.
+
+Smoke test 8 (`testInlinePreservesOutput`) is the correctness gate:
+inlined and `{ noInline: true }` modes must produce bit-identical
+output on a multi-helper kernel that exercises both clamp_speed's
+return paths.
+
+### Tier 2c: `var` SROA
 
 `collectScalarizable` now picks up `var v = vec...` candidates (vec
 arity from `.value.resolvedType` or from the declared type annotation).
@@ -363,84 +501,6 @@ faster wall-time). Kernel A also picked up a bonus 3× because its
 `var acc = vec3(0); ... acc = acc + ...` accumulator was the other
 unscalarized var hiding in the bench. Smoke test 9 gates correctness
 end-to-end against the polymorphic baseline.
-
-### 5. Flat TypedArray binding mode  *(up next — Tier 3)*
-
-Scoped during the Tier 1 work but deferred — Tier 1's other wins (SROA +
-builtin scalarization) consumed most of the perf headroom, so the
-remaining value of flat TypedArray is **GPU-parity** rather than raw
-speed. Plasma's WebGPU buffers are `Float32Array`s; without flat-storage
-support, the CPU fallback has to marshal each one into `{x, y, z}`
-objects per step (expensive and pointless).
-
-Design (pre-decided):
-- `compileWGSL(src, { flatStorage: true })` enables it.
-- `array<vecN<f32|u32|i32>>` storage bindings expect packed-stride
-  TypedArrays (stride=N, no padding). `array<vec3<f32>>` expects
-  `Float32Array(n*3)`.
-- Per-binding stride override available via `opts.storageLayout` for
-  std430-padded buffers if needed.
-- Emit lowers `a[i].c` to `bindings.a[i*stride + componentIndex]`
-  directly — no intermediate vec object materialization. Write-through
-  composes: `a[i] = vec3-expr` lowers to three TypedArray stores.
-- Object-mode storage stays the default for backward compat with the
-  existing smoke tests.
-- `array<struct>` not yet supported — needs struct-field-offset
-  computation per WGSL alignment rules. Follow-up.
-
-Best done as part of (or just before) the plasma integration so we can
-validate against the actual binding format plasma produces.
-
-### 6. Plasma integration
-
-The transpiler exists *for* plasma. Once build-time mode + flat-storage
-land, the integration is small:
-- `plasma/src/gpu/pipelines.js` (or a new `plasma/src/cpu/` module)
-  imports the transpiled JS modules
-- `plasma/main.js` feature-detects WebGPU; on failure, instantiates the
-  CPU backend and runs the same `step()` orchestration against it
-- The bindings object the GPU code already constructs (uniforms, storage
-  buffers as Float32Arrays) flows directly to the CPU backend when
-  `flatStorage: true` is set at compile time
-
-The original plasma plan locked `No CPU fallback` as a design decision.
-The transpiler changes that calculus: the cost of the fallback is no
-longer "maintain a parallel implementation forever" — it's "write the
-adapter shim once." Worth revisiting that decision when picking this up.
-
-### 7. Geon integration (much later)
-
-Geon is 54 shaders vs plasma's 13. The transpiler handles them all
-syntactically, but real integration is bigger:
-- Geon has more bindings, more entry points, denser control flow, more
-  feature toggles
-- Some shaders use patterns that aren't yet exercised by smoke tests
-  (CAS atomics in tree builds, multi-entry-point modules with shared
-  aggregator state, GPU↔CPU snapshot via `physics-contract.js`)
-- The existing hand-written CPU code is the reference implementation;
-  cutting over would benefit from a comparison harness (run both, diff
-  outputs, catch divergences)
-
-Don't tackle this until plasma integration has shaken out the rough
-edges of the runtime API and bindings format.
-
-### Smaller items worth a session each
-
-- `bitcast` source-type inference (currently routes only by typeArgs)
-- Matrix types (`mat3x3<f32>` etc.) — geon doesn't use, plasma doesn't
-  use, but adding for completeness is straightforward
-- Type aliases (`alias Vec3F = vec3<f32>;`) — parser accepts, resolver
-  needs to substitute
-- Dead-component elimination for scalarized builtins — if a kernel only
-  uses `gid.x`, skip emitting `gid_y`/`gid_z`. Tiny win, easy.
-- Argument-binding elimination in the inline pass — when an arg expr is
-  a plain ident, skip the `const _inl_N_p = p;` rename and just register
-  `p → p` (or the original local name) in the nameMap. Cuts ~3-6 lines
-  per call site at no semantic cost. The let-aliasing is a small extra
-  load for V8 to elide today.
-- Better error reporting from the emit phase (currently throws at the
-  first unhandled construct; would be nice to collect and report
-  several)
 
 ## Coordination notes for fresh instances
 
