@@ -122,13 +122,13 @@ console.log(`wgsl-transpile bench: vec3 FMA loop`);
 console.log(`  N=${N} particles × 8 inner × ${ITERS} iters  (+${WARMUP} warmup)`);
 console.log();
 
-const baseline = runConfig('baseline (polymorphic rt.*):');
+const baseline = runConfig('baseline (polymorphic rt.*):', { polymorphic: true });
+const inlined  = runConfig('inlined  (scalar/vec emit):');
 
-// Phase 4 will add a second config here once `compileWGSL` accepts an
-// inline-emit flag, then print a speedup ratio:
-//   const inlined = runConfig('inlined  (scalar/vec emit):', { inline: true });
-//   if (baseline && inlined) {
-//       console.log(`\n  speedup: ${(baseline / inlined).toFixed(2)}x`);
-//   }
+if (baseline && inlined) {
+    const ratio = baseline / inlined;
+    const tag = ratio >= 2 ? '🚀' : (ratio >= 1.2 ? '↑' : (ratio >= 0.9 ? '·' : '↓'));
+    console.log(`\n  speedup: ${ratio.toFixed(2)}x  ${tag}`);
+}
 
 console.log();

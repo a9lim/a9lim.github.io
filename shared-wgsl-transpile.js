@@ -1788,6 +1788,35 @@ const SWIZZLE_MAP = { x: 'x', y: 'y', z: 'z', w: 'w',
 
 /** Set of binary ops that need polymorphic scalar/vec dispatch. */
 const POLY_BIN = new Set(['+', '-', '*', '/', '%']);
+
+/** Predicate: is this expression safe to evaluate component-by-component
+ *  without changing semantics? The component-wise vec emit recurses into
+ *  the same expression once per component, so any subexpression with side
+ *  effects (function calls, generally) would fire N times instead of once.
+ *  Ident, member, paren, lit, bin/una over safe operands, and index over
+ *  safe operands are all safe. User function calls are not — neither are
+ *  intrinsics in general (some are pure but we don't have a whitelist).
+ *  vecN constructors are safe iff their args are. */
+function isComponentSafe(e) {
+    if (!e) return false;
+    switch (e.kind) {
+        case 'lit':
+        case 'ident':    return true;
+        case 'paren':    return isComponentSafe(e.value);
+        case 'member':   return isComponentSafe(e.value);
+        case 'bin':      return isComponentSafe(e.lhs) && isComponentSafe(e.rhs);
+        case 'una':      return isComponentSafe(e.value);
+        case 'index':    return isComponentSafe(e.value) && isComponentSafe(e.index);
+        case 'call': {
+            const n = e.callee;
+            if (/^vec[234]$/.test(n) || /^vec[234][fuih]$/.test(n)) {
+                return e.args.every(isComponentSafe);
+            }
+            return false;
+        }
+        default:         return false;
+    }
+}
 /** Helper-name lookup for those ops. */
 const POLY_BIN_NAME = {
     '+': 'add', '-': 'sub', '*': 'mul', '/': 'div', '%': 'mod',
@@ -1798,6 +1827,37 @@ const POLY_FN = new Set([
     'fract', 'trunc', 'exp', 'log', 'exp2', 'log2', 'pow', 'sin', 'cos',
     'tan', 'atan', 'atan2', 'clamp', 'mix', 'step', 'smoothstep',
 ]);
+
+/** Scalar-JS emission templates for POLY_FN intrinsics. When all args
+ *  to an intrinsic call resolve to scalars (or to a uniform vec shape
+ *  that we lower component-wise), the emitter substitutes the rt.*
+ *  dispatch with these direct JS expressions — same allocation win as
+ *  the binop inlining. Intrinsics not listed here keep using rt.*. */
+const SCALAR_INTRINSIC_JS = {
+    max:    (a) => `Math.max(${a[0]}, ${a[1]})`,
+    min:    (a) => `Math.min(${a[0]}, ${a[1]})`,
+    abs:    (a) => `Math.abs(${a[0]})`,
+    sqrt:   (a) => `Math.sqrt(${a[0]})`,
+    sign:   (a) => `Math.sign(${a[0]})`,
+    floor:  (a) => `Math.floor(${a[0]})`,
+    ceil:   (a) => `Math.ceil(${a[0]})`,
+    round:  (a) => `Math.round(${a[0]})`,
+    trunc:  (a) => `Math.trunc(${a[0]})`,
+    exp:    (a) => `Math.exp(${a[0]})`,
+    log:    (a) => `Math.log(${a[0]})`,
+    exp2:   (a) => `Math.pow(2, ${a[0]})`,
+    log2:   (a) => `Math.log2(${a[0]})`,
+    pow:    (a) => `Math.pow(${a[0]}, ${a[1]})`,
+    sin:    (a) => `Math.sin(${a[0]})`,
+    cos:    (a) => `Math.cos(${a[0]})`,
+    tan:    (a) => `Math.tan(${a[0]})`,
+    atan:   (a) => `Math.atan(${a[0]})`,
+    atan2:  (a) => `Math.atan2(${a[0]}, ${a[1]})`,
+    fract:  (a) => `(${a[0]} - Math.floor(${a[0]}))`,
+    clamp:  (a) => `Math.min(Math.max(${a[0]}, ${a[1]}), ${a[2]})`,
+    mix:    (a) => `(${a[0]} + (${a[1]} - ${a[0]}) * ${a[2]})`,
+    step:   (a) => `(${a[1]} < ${a[0]} ? 0 : 1)`,
+};
 
 /**
  * Emit JS source from a parsed Module AST.
@@ -2325,14 +2385,133 @@ class Emitter {
 
     emitBin(e) {
         const op = e.op;
-        const lhs = this.expr(e.lhs);
-        const rhs = this.expr(e.rhs);
         if (POLY_BIN.has(op)) {
-            return `rt.${POLY_BIN_NAME[op]}(${lhs}, ${rhs})`;
+            const lt = e.lhs?.resolvedType;
+            const rt = e.rhs?.resolvedType;
+
+            // Scalar ↔ scalar → pure inline. Zero allocation, no fn call.
+            if (lt?.kind === 'scalar' && rt?.kind === 'scalar') {
+                return `(${this.expr(e.lhs)} ${op} ${this.expr(e.rhs)})`;
+            }
+
+            // Vec involvement → component-wise object literal. Saves the
+            // allocation chain that polymorphic rt.add/sub/mul/div builds
+            // up across nested vec expressions (one allocation per binop
+            // baseline, one allocation per containing assignment with
+            // component lowering). Only safe to recurse if both operands
+            // are side-effect-free — otherwise a fn call could fire N
+            // times instead of once. `isComponentSafe` gates that.
+            const lvec = lt?.kind === 'vec' ? lt : null;
+            const rvec = rt?.kind === 'vec' ? rt : null;
+            const vec  = lvec ?? rvec;
+            if (vec
+                && (!lvec || isComponentSafe(e.lhs))
+                && (!rvec || isComponentSafe(e.rhs))) {
+                const comps = ['x', 'y', 'z', 'w'].slice(0, vec.n);
+                const parts = comps.map(c => {
+                    const ls = lvec ? this.exprComp(e.lhs, c) : this.expr(e.lhs);
+                    const rs = rvec ? this.exprComp(e.rhs, c) : this.expr(e.rhs);
+                    if (ls == null || rs == null) return null;
+                    return `${c}:(${ls} ${op} ${rs})`;
+                });
+                if (parts.every(p => p != null)) return `{${parts.join(', ')}}`;
+            }
+
+            // Mat ops, unresolved types, unsafe vec subexprs → polymorphic.
+            return `rt.${POLY_BIN_NAME[op]}(${this.expr(e.lhs)}, ${this.expr(e.rhs)})`;
         }
         // Logical/relational/bitwise — plain JS operators are fine
         // for scalars. (Vec relational ops not yet handled.)
-        return `(${lhs} ${op} ${rhs})`;
+        return `(${this.expr(e.lhs)} ${op} ${this.expr(e.rhs)})`;
+    }
+
+    /** Emit the JS source for the c-th component of a vec-typed expression.
+     *  Returns null when the node can't be lowered safely (caller falls
+     *  back to materializing the whole vec and indexing).
+     *
+     *  This is the trick that makes vec arithmetic actually fast: when an
+     *  assignment like `acc = (av * U.k + bv) * U.k - av;` is emitted as
+     *  a single `{x: ..., y: ..., z: ...}` object literal, every component
+     *  is a pure scalar expression with no intermediate vec allocations.
+     *  Baseline polymorphic emit allocates one object per binary op (4 for
+     *  the example above); inlined emit allocates one per assignment. */
+    exprComp(e, c) {
+        if (!e) return null;
+        switch (e.kind) {
+            case 'paren':
+                return this.exprComp(e.value, c);
+            case 'ident':
+                return `${this.identSource(e.name)}.${c}`;
+            case 'member': {
+                const vt = e.value?.resolvedType;
+                if (vt?.kind === 'vec') {
+                    // Multi-char swizzle: pick the source component at index c.
+                    const swiz = e.name;
+                    if (swiz.length === 1) return null;  // shouldn't reach
+                    const idx = { x: 0, y: 1, z: 2, w: 3 }[c];
+                    if (idx >= swiz.length) return null;
+                    const srcChar = SWIZZLE_MAP[swiz[idx]];
+                    return this.exprComp(e.value, srcChar);
+                }
+                // Struct member typed as vec, or unknown — materialize.
+                return `(${this.expr(e)}).${c}`;
+            }
+            case 'bin': {
+                if (!POLY_BIN.has(e.op)) return null;
+                const lt = e.lhs?.resolvedType;
+                const rt = e.rhs?.resolvedType;
+                const lvec = lt?.kind === 'vec';
+                const rvec = rt?.kind === 'vec';
+                const ls = lvec ? this.exprComp(e.lhs, c) : this.expr(e.lhs);
+                const rs = rvec ? this.exprComp(e.rhs, c) : this.expr(e.rhs);
+                if (ls == null || rs == null) return null;
+                return `(${ls} ${e.op} ${rs})`;
+            }
+            case 'una': {
+                if (e.op !== '+' && e.op !== '-') return null;
+                const vt = e.value?.resolvedType;
+                const sub = vt?.kind === 'vec'
+                    ? this.exprComp(e.value, c)
+                    : this.expr(e.value);
+                return sub != null ? `(${e.op}${sub})` : null;
+            }
+            case 'call': {
+                const name = e.callee;
+                // vecN constructor: c-th arg, or splat from a single arg.
+                if (/^vec[234]$/.test(name) || /^vec[234][fuih]$/.test(name)) {
+                    const idx = { x: 0, y: 1, z: 2, w: 3 }[c];
+                    if (e.args.length === 1) {
+                        const a0 = e.args[0];
+                        if (a0.resolvedType?.kind === 'vec') return this.exprComp(a0, c);
+                        return this.expr(a0);
+                    }
+                    if (idx < e.args.length) return this.expr(e.args[idx]);
+                    return null;
+                }
+                // Anything else: materialize (safe — call evaluated once
+                // per the outer materialization, then indexed N times,
+                // which is fine since the result is a plain object).
+                return `(${this.expr(e)}).${c}`;
+            }
+            case 'index':
+            case 'lit':
+                // Indexed access and literals: materialize.
+                return `(${this.expr(e)}).${c}`;
+        }
+        return null;
+    }
+
+    /** Identifier → JS source. Same dispatch as the `ident` arm of
+     *  `expr()` but without recursing, so `exprComp` can reuse it for
+     *  member-style component lookup. */
+    identSource(name) {
+        if (this.isLocal(name))            return _safe(name);
+        if (this.bindings.has(name))       return `bindings.${name}`;
+        if (this.workgroupVars.has(name))  return `wg.${name}`;
+        if (this.privateVars.has(name))    return `priv.${name}`;
+        if (this.constants.has(name))      return _safe(name);
+        if (this.fns.has(name))            return _safe(name);
+        return name;
     }
 
     emitUna(e) {
@@ -2452,7 +2631,33 @@ class Emitter {
             return `rt.${callee}(${args})`;
         }
 
-        // Element-wise math intrinsics → polymorphic runtime helpers.
+        // Element-wise math intrinsics. Inline as direct Math.* / scalar
+        // JS when all args are scalar; component-wise object literal when
+        // all args are vec of matching shape; fall back to polymorphic
+        // rt.* dispatch for mixed-shape, unresolved, or unsafe (i.e.
+        // anything with side-effecting subexprs that would fire N times
+        // under component lowering) cases.
+        if (POLY_FN.has(callee) && SCALAR_INTRINSIC_JS[callee]) {
+            const types = e.args.map(a => a?.resolvedType);
+            const allScalar  = types.length > 0 && types.every(t => t?.kind === 'scalar');
+            const firstVecN  = types[0]?.kind === 'vec' ? types[0].n : null;
+            const allVecSame = firstVecN != null
+                && types.every(t => t?.kind === 'vec' && t.n === firstVecN);
+            if (allScalar) {
+                const argStrs = e.args.map(a => this.expr(a));
+                return SCALAR_INTRINSIC_JS[callee](argStrs);
+            }
+            if (allVecSame && e.args.every(isComponentSafe)) {
+                const comps = ['x', 'y', 'z', 'w'].slice(0, firstVecN);
+                const parts = comps.map(c => {
+                    const cArgs = e.args.map(a => this.exprComp(a, c));
+                    if (cArgs.some(x => x == null)) return null;
+                    return `${c}:${SCALAR_INTRINSIC_JS[callee](cArgs)}`;
+                });
+                if (parts.every(p => p != null)) return `{${parts.join(', ')}}`;
+            }
+            // Fall through to polymorphic.
+        }
         if (POLY_FN.has(callee)) {
             return `rt.${callee}(${args})`;
         }
@@ -2708,6 +2913,11 @@ export function compileWGSL(source, opts = {}) {
     const rt     = opts.runtime || runtime;
     const tokens = tokenize(source);
     const ast    = parse(tokens);
+    // Run the resolver so the emitter sees `.resolvedType` on every
+    // Expr node and can emit inline scalar/vec ops where possible.
+    // `opts.polymorphic` opts out and forces the legacy rt.* dispatch
+    // path — used by the bench harness to measure the speedup.
+    if (!opts.polymorphic) resolveModule(ast);
     const result = emit(ast);
 
     // Eval target is our own deterministic emit() output — see security note above.

@@ -58,9 +58,10 @@ are enforced — adjust when bringing a new phase online.
 | tokenize      | 68/68 shaders, 13.5k lines, 100k tokens             | Full WGSL token grammar |
 | parse         | 68/68 shaders → AST                                 | Recursive descent + Pratt for exprs |
 | resolve       | 100% decl sites (15384/15384), 90.1% Expr nodes     | Symbol table + expr resolver pass |
-| emit          | 68/68 shaders → JS that parses cleanly              | Polymorphic vec runtime helpers (phase 4 inlines based on resolved types) |
+| emit          | 68/68 shaders → JS that parses cleanly              | Type-driven inline scalar/vec emit; rt.* fallback when types unresolved |
 | eval          | 68/68 shaders construct as live JS module           | Build-time mode would sidestep this |
-| dispatch      | 6/6 smoke tests pass                                | Includes barrier-split atomic reduction |
+| dispatch      | 7/7 smoke tests pass                                | Includes barrier-split atomic reduction + resolver coverage |
+| **bench**     | **~8× speedup vs polymorphic baseline** (M5 Max)    | vec3 FMA loop: 73 → 590 Mvops/sec |
 
 The resolve phase's 9.9% Expr gap is structural, not bugs: ~5% is
 JS-injected consts (geon's `buildWGSLConstants()` prepends `EPSILON`,
@@ -193,21 +194,28 @@ The performance milestone. Status:
   (polymorphic rt.*) is ~70 Mvops/sec on M5 Max. Phase 4 will add a
   second configuration toggled by a `compileWGSL` opt flag and report
   the speedup ratio.
-- ⬜ **Phase 4: Emit changes (the perf payoff)** — modify `emitBin` and
-  the POLY_FN call paths to consult `.resolvedType`: emit inline
-  `(a op b)` for scalar↔scalar, destructured object literals
-  `{x:a.x op b.x, y:..., z:...}` or size-specialized `rt.addN`/`subN`
-  helpers for vec ops, broadcast for scalar↔vec mixes. Fallback to
-  existing `rt.*` dispatch when types are unresolved. Expected
-  5-50× speedup on hot paths.
-- ⬜ **Phase 5: Resolver-coverage smoke test** — assert that for a
-  canonical kernel every Expr node has `.resolvedType` set; surface
-  drops in corpus coverage as a regression signal.
+- ✅ **Phase 4: Emit changes** — `compileWGSL` now runs `resolveModule`
+  before `emit` (opt out via `opts.polymorphic: true` for A/B). `emitBin`
+  inlines scalar↔scalar as `(a op b)` and lowers vec ops component-wise
+  into a single `{x:..., y:..., z:...}` object literal per assignment
+  (one allocation per assignment instead of one per binop) via a new
+  `exprComp(e, c)` recursive lowering method. POLY_FN intrinsics (`max`,
+  `min`, `sqrt`, `clamp`, etc.) inline as `Math.*` or hand-written scalar
+  templates for all-scalar and matching-vec arg shapes. `isComponentSafe`
+  predicate gates the recursion so side-effecting subexprs never fire
+  more than once. Anything not lowerable falls back to the existing
+  `rt.*` dispatch. **Result: 8.05× speedup on the vec3 FMA bench
+  (73 → 596 Mvops/sec on M5 Max), corpus 68/68 still green.**
+- ✅ **Phase 5: Resolver-coverage smoke test** — `testResolverCoverage`
+  in `smoke.js` compiles a canonical kernel that exercises scalar+vec
+  ops, swizzles, struct member access, control flow, intrinsics, and
+  constructors, then asserts every Expr node gets a `.resolvedType`.
+  Current: 70/70 (100%). Any drop = a new resolver gap to chase.
 
-The 9.9% Expr gap is structural (~5% JS-injected consts geon prepends
-at runtime, ~5% cascade + rarely-used intrinsics); see "Current status"
-above. None of it blocks phase 4 — graceful degradation to rt.* dispatch
-preserves correctness on every shader.
+The 9.9% corpus-wide Expr gap is structural (~5% JS-injected consts geon
+prepends at runtime, ~5% cascade + rarely-used intrinsics); see "Current
+status" above. None of it blocks the inline emit — graceful degradation
+to rt.* dispatch preserves correctness on every shader.
 
 ### 3. Plasma integration
 

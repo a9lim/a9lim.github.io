@@ -11,7 +11,8 @@
    tokenize → parse → emit → eval → dispatch → produces correct math.
    ─────────────────────────────────────────────────────────────────── */
 
-import { compileWGSL } from '../../shared-wgsl-transpile.js';
+import { compileWGSL, tokenize, parse, resolveModule }
+    from '../../shared-wgsl-transpile.js';
 
 let pass = 0, fail = 0;
 function check(name, cond, detail = '') {
@@ -229,10 +230,115 @@ function testBarrierReduction() {
           `got ${total[0]}, expected ${expected}`);
 }
 
+// ── Test 5: resolver Expr coverage on a canonical kernel ──────────
+//
+// Catches regressions in the expression resolver: every Expr node in a
+// kernel that exercises scalar + vec ops, swizzles, struct member
+// access, control flow, intrinsics, and constructors should get a
+// non-null .resolvedType. If this drops, phase-4 inline emit silently
+// reverts to the slower polymorphic path for the affected nodes —
+// correctness stays, perf erodes.
+function testResolverCoverage() {
+    console.log('test: resolver Expr coverage on canonical kernel');
+
+    const wgsl = `
+        struct Particle { pos: vec3<f32>, vel: vec3<f32>, mass: f32, };
+        struct U { n: u32, dt: f32, g: f32, _p: f32, };
+        @group(0) @binding(0) var<uniform>             uni: U;
+        @group(0) @binding(1) var<storage, read_write> ps:  array<Particle>;
+
+        const MAX_SPEED: f32 = 100.0;
+
+        fn clampSpeed(v: vec3<f32>) -> vec3<f32> {
+            let s = sqrt(v.x * v.x + v.y * v.y + v.z * v.z);
+            if (s > MAX_SPEED) { return v * (MAX_SPEED / s); }
+            return v;
+        }
+
+        @compute @workgroup_size(8, 1, 1)
+        fn step(@builtin(global_invocation_id) gid: vec3<u32>) {
+            let i = gid.x;
+            if (i >= uni.n) { return; }
+            let p = ps[i];
+            let gravity = vec3<f32>(0.0, -uni.g, 0.0);
+            var v = p.vel + gravity * uni.dt;
+            v = clampSpeed(v);
+            let pos = p.pos + v * uni.dt;
+            ps[i].pos = pos;
+            ps[i].vel = v;
+        }
+    `;
+
+    const ast = parse(tokenize(wgsl));
+    resolveModule(ast);
+
+    // Walk every Expr node, tally coverage.
+    const EXPR_KINDS = new Set(['lit','paren','ident','bin','una','call','index','member']);
+    let total = 0, typed = 0;
+    const unresolvedSamples = [];
+    const visitExpr = (e) => {
+        if (!e || !e.kind) return;
+        if (EXPR_KINDS.has(e.kind)) {
+            total++;
+            if (e.resolvedType != null) typed++;
+            else if (unresolvedSamples.length < 4) {
+                unresolvedSamples.push(`${e.kind}${e.name ? ':' + e.name : (e.callee ? '(' + e.callee + ')' : '')}`);
+            }
+        }
+        switch (e.kind) {
+            case 'paren':  visitExpr(e.value); break;
+            case 'bin':    visitExpr(e.lhs); visitExpr(e.rhs); break;
+            case 'una':    visitExpr(e.value); break;
+            case 'call':   for (const a of e.args) visitExpr(a); break;
+            case 'index':  visitExpr(e.value); visitExpr(e.index); break;
+            case 'member': visitExpr(e.value); break;
+        }
+    };
+    const visitStmt = (s) => {
+        if (!s) return;
+        switch (s.kind) {
+            case 'let': case 'var': case 'const': if (s.value) visitExpr(s.value); break;
+            case 'expr_stmt': visitExpr(s.expr); break;
+            case 'assign': case 'compound': visitExpr(s.target); visitExpr(s.value); break;
+            case 'postfix': visitExpr(s.target); break;
+            case 'return': if (s.value) visitExpr(s.value); break;
+            case 'if':
+                visitExpr(s.cond);
+                for (const x of s.then.stmts) visitStmt(x);
+                if (s.else) {
+                    if (s.else.kind === 'block') for (const x of s.else.stmts) visitStmt(x);
+                    else visitStmt(s.else);
+                }
+                break;
+            case 'for':
+                if (s.init) visitStmt(s.init);
+                if (s.cond) visitExpr(s.cond);
+                if (s.update) visitStmt(s.update);
+                for (const x of s.body.stmts) visitStmt(x);
+                break;
+            case 'while':
+                if (s.cond) visitExpr(s.cond);
+                for (const x of (s.body?.stmts ?? [])) visitStmt(x);
+                break;
+            case 'block': for (const x of s.stmts) visitStmt(x); break;
+        }
+    };
+    for (const item of ast.items) {
+        if (item.kind === 'fn') for (const s of item.body.stmts) visitStmt(s);
+    }
+
+    // Canonical kernel — chosen so every construct should resolve. Tight
+    // threshold (100%) is intentional: any drop means a new gap to chase.
+    check(`every Expr node typed (${typed}/${total})`,
+          typed === total,
+          unresolvedSamples.length ? `unresolved samples: ${unresolvedSamples.join(', ')}` : '');
+}
+
 testScalarFma();
 testVec4Arith();
 testHelpersAndControl();
 testBarrierReduction();
+testResolverCoverage();
 
 console.log();
 console.log(`${pass} passed, ${fail} failed`);
