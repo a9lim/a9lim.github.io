@@ -229,6 +229,9 @@ function testBarrierReduction() {
 
     check(`total matches expected sum`, total[0] === expected,
           `got ${total[0]}, expected ${expected}`);
+    check('workgroup reduction init phase optimized',
+          mod.metrics.workgroupReductionInits === 1 &&
+          mod.jsSource.includes('Optimized workgroup reduction init phase'));
 }
 
 // ── Test 5: resolver Expr coverage on a canonical kernel ──────────
@@ -920,6 +923,201 @@ function testBuildTimeTranspileAPI() {
     check('transpileWGSL returns generated module source', built.jsSource.includes('export default function _wgsl_module'));
 }
 
+function testNumericAndRuntimeOptimizations() {
+    console.log('test: numeric semantics, typed atomics, and runtime metrics');
+    const wgsl = `
+        struct P { n: u32, nanv: f32, _a: f32, _b: f32, };
+        @group(0) @binding(0) var<uniform> P_buf: P;
+        @group(0) @binding(1) var<storage, read_write> u_out: array<u32>;
+        @group(0) @binding(2) var<storage, read_write> i_out: array<i32>;
+        @group(0) @binding(3) var<storage, read_write> f_out: array<f32>;
+        @group(0) @binding(4) var<storage, read_write> counts: array<atomic<u32>>;
+
+        @compute @workgroup_size(1)
+        fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
+            if (gid.x >= P_buf.n) { return; }
+            var x: u32 = 0xffffffffu;
+            x += 2u;
+            let shr = 0x80000000u >> 31u;
+            let shl = (1u << 31u) >> 31u;
+            let sar = -4 >> 1;
+            u_out[gid.x] = x + shr + shl;
+            i_out[gid.x] = sar;
+            f_out[gid.x] = round(2.5) + round(3.5) + min(1.0, P_buf.nanv) + max(1.0, P_buf.nanv);
+            let old = atomicAdd(&counts[0], 2u);
+            u_out[gid.x + 1u] = old;
+        }
+    `;
+    const mod = compileWGSL(wgsl, { strictInts: true, strictF32: true });
+    const u_out = [0, 0], i_out = [0], f_out = [0], counts = [0xffffffff];
+    mod.entry.main({
+        workgroups: [1, 1, 1],
+        bindings: { P_buf: { n: 1, nanv: NaN, _a: 0, _b: 0 }, u_out, i_out, f_out, counts },
+    });
+    check('u32 shifts and compound wrap correctly', u_out[0] === 3);
+    check('i32 arithmetic right shift is signed', i_out[0] === -2);
+    check('round/min/max follow WGSL-oriented scalar helpers', f_out[0] === 8);
+    check('typed u32 atomic wraps on overflow and returns old value',
+          counts[0] === 1 && u_out[1] === 0xffffffff);
+    check('scalar compound lowering avoids polymorphic add dispatch',
+          !mod.jsSource.includes('rt.add('));
+    check('compileWGSL exposes generated-code metrics',
+          mod.metrics && mod.metrics.bytes > 0 && Number.isInteger(mod.metrics.rtAtomic));
+}
+
+function testStabilityOptionHooks() {
+    console.log('test: safe division and stable reduction options');
+    const wgsl = `
+        @group(0) @binding(0) var<storage, read_write> out: array<f32>;
+
+        @compute @workgroup_size(1)
+        fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
+            let a = vec3<f32>(3.0, 4.0, 12.0);
+            let b = vec3<f32>(1.0, 2.0, 3.0);
+            out[0] = 1.0 / 0.0;
+            out[1] = dot(a, b);
+            out[2] = length(a);
+            out[3] = distance(a, b);
+        }
+    `;
+    const mod = compileWGSL(wgsl, {
+        safeDivisions: true,
+        reductionMode: 'stable',
+    });
+    const out = [0, 0, 0, 0];
+    mod.entry.main({ workgroups: [1, 1, 1], bindings: { out } });
+    check('safeDivisions clamps scalar f32 division by zero',
+          Number.isFinite(out[0]) && out[0] > 1e20);
+    check('stable dot/length/distance execute with correct values',
+          out[1] === 47 && out[2] === 13 && Math.abs(out[3] - Math.sqrt(89)) < 1e-12);
+    check('stable reduction mode emits stable dot helper',
+          mod.jsSource.includes('rt.dotStable('));
+    check('stable reduction mode emits stable length helper',
+          mod.jsSource.includes('rt.lengthStable('));
+    check('safe division option emits typed scalar helper',
+          mod.jsSource.includes('rt.safeDivScalar('));
+}
+
+function testFlatLayoutFiniteWritesAndSpecialization() {
+    console.log('test: flat layout modes, finite writes, and specialization hooks');
+
+    const layoutWGSL = `
+        @group(0) @binding(0) var<storage, read_write> out: array<vec3<f32>>;
+        @compute @workgroup_size(1)
+        fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
+            out[1] = vec3<f32>(1.0, 2.0, 3.0);
+        }
+    `;
+    const layoutMod = compileWGSL(layoutWGSL, {
+        flatStorage: true,
+        flatStorageLayout: 'wgsl-storage',
+    });
+    const padded = new Float32Array(8);
+    layoutMod.entry.main({ workgroups: [1, 1, 1], bindings: { out: padded } });
+    check('wgsl-storage flat vec3 layout uses padded stride',
+          padded[4] === 1 && padded[5] === 2 && padded[6] === 3 && padded[3] === 0);
+
+    const finiteWGSL = `
+        struct P { zero: f32, _a: f32, _b: f32, _c: f32, };
+        @group(0) @binding(0) var<uniform> P_buf: P;
+        @group(0) @binding(1) var<storage, read_write> out: array<f32>;
+        @group(0) @binding(2) var<storage, read_write> vout: array<vec3<f32>>;
+        @compute @workgroup_size(1)
+        fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
+            let bad = 1.0 / P_buf.zero;
+            out[0] = bad;
+            vout[0] = vec3<f32>(bad, 2.0, -bad);
+        }
+    `;
+    const finiteMod = compileWGSL(finiteWGSL, {
+        finiteWrites: true,
+        finiteWriteBindings: ['out', 'vout'],
+        finiteWriteFallback: -7,
+    });
+    const out = [0], vout = [{ x: 0, y: 0, z: 0 }];
+    finiteMod.entry.main({
+        workgroups: [1, 1, 1],
+        bindings: { P_buf: { zero: 0, _a: 0, _b: 0, _c: 0 }, out, vout },
+    });
+    check('finiteWrites sanitizes scalar storage writes', out[0] === -7);
+    check('finiteWrites sanitizes object-mode vector component writes',
+          vout[0].x === -7 && vout[0].y === 2 && vout[0].z === -7);
+
+    const specWGSL = `
+        struct U { k: f32, unusedField: f32, _a: f32, _b: f32, };
+        @group(0) @binding(0) var<uniform> U_buf: U;
+        @group(0) @binding(1) var<storage, read_write> out: array<f32>;
+        @group(0) @binding(2) var<storage, read_write> unused: array<f32>;
+        @compute @workgroup_size(4, 1, 1)
+        fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
+            out[gid.x] = U_buf.k * 2.0;
+        }
+    `;
+    const spec = transpileWGSL(specWGSL, {
+        specializeUniforms: { U_buf: { k: 3 } },
+    });
+    check('uniform specialization emits literal field values',
+          spec.jsSource.includes('3 * 2') || spec.jsSource.includes('(3) * 2'));
+    check('entry-specific hoists skip unused storage bindings',
+          !spec.jsSource.includes('_b_unused'));
+    check('specialized uniform fields skip per-field aliases',
+          !spec.jsSource.includes('_u_U_buf_k'));
+    check('1D global dispatch specialization is emitted',
+          spec.jsSource.includes('if (Gy === 1 && Gz === 1)'));
+}
+
+function testStructSroaAndPointerInlining() {
+    console.log('test: mutable struct SROA and simple pointer inlining');
+    const wgsl = `
+        struct P { n: u32, _a: u32, _b: u32, _c: u32, };
+        struct Particle { pos: vec3<f32>, mass: f32, vel: vec3<f32>, charge: f32, };
+        @group(0) @binding(0) var<uniform> P_buf: P;
+        @group(0) @binding(1) var<storage, read> input: array<Particle>;
+        @group(0) @binding(2) var<storage, read_write> output: array<Particle>;
+
+        fn tweak(p: ptr<function, Particle>) {
+            (*p).charge += 5.0;
+            (*p).mass += 1.0;
+        }
+
+        @compute @workgroup_size(1)
+        fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
+            if (gid.x >= P_buf.n) { return; }
+            var acc: Particle = input[gid.x];
+            acc.pos += acc.vel;
+            output[gid.x] = acc;
+        }
+
+        @compute @workgroup_size(1)
+        fn ptr_main(@builtin(global_invocation_id) gid: vec3<u32>) {
+            var acc: Particle = input[0];
+            tweak(&acc);
+            output[0] = acc;
+        }
+    `;
+    const mod = compileWGSL(wgsl, { flatStorage: true, inlineOnly: ['tweak'] });
+    const input = new Float32Array(8);
+    const output = new Float32Array(8);
+    input.set([1, 2, 3, 4, 10, 20, 30, 40]);
+    mod.entry.main({
+        workgroups: [1, 1, 1],
+        bindings: { P_buf: { n: 1, _a: 0, _b: 0, _c: 0 }, input, output },
+    });
+    check('mutable struct SROA stores whole flat structs field-by-field',
+          output[0] === 11 && output[1] === 22 && output[2] === 33 &&
+          output[3] === 4 && output[4] === 10 && output[7] === 40);
+
+    output.fill(0);
+    mod.entry.ptr_main({
+        workgroups: [1, 1, 1],
+        bindings: { P_buf: { n: 1, _a: 0, _b: 0, _c: 0 }, input, output },
+    });
+    check('simple function pointer helper mutates local struct when inlined',
+          output[3] === 5 && output[7] === 45);
+    check('pointer helper was inlined rather than emitted as a call',
+          !mod.jsSource.includes('function tweak'));
+}
+
 function testCorpusDerivedDispatchShader() {
     console.log('test: corpus-derived geon dispatch shader executes');
     const path = new URL('../../geon/src/gpu/shaders/dispatch-args.wgsl', import.meta.url);
@@ -950,6 +1148,189 @@ function testCorpusDerivedDispatchShader() {
           `got=${JSON.stringify(dispatchArgs)} want=${JSON.stringify(want)}`);
 }
 
+// ── Test: 2D workgroup-shared tile with conditional halo loads and a
+// single top-level workgroupBarrier(). Unblocks plasma's PPM primitive
+// cache and LIC contrast normalization passes, both of which use a
+// halo-loaded shared tile larger than the workgroup with one barrier
+// between load+halo and stencil-read phases.
+//
+// Kernel shape: 8x8 workgroup, 12x12 shared tile (2-cell halo on each
+// side), 16x16 grid (exactly 2x2 workgroups so workgroup-boundary halo
+// behavior is exercised). Each thread:
+//   Phase A: load center cell into tile[lid.y+2][lid.x+2], plus
+//            conditional halo loads (W when lid.x<2, E when lid.x>=6,
+//            S when lid.y<2, N when lid.y>=6, four corners covered by
+//            combined conditions). Halo source indices clamp at array
+//            boundaries.
+//   workgroupBarrier()
+//   Phase B: read 5-point stencil from the tile (center + N + S + E + W),
+//            write Laplacian = -4*center + N + S + E + W to output.
+//
+// A bug in halo loading or in barrier phase-splitting would surface as
+// mismatches along the 8-cell-wide workgroup-internal boundaries (i.e.,
+// at i=7,8 and j=7,8 in the 16x16 grid).
+function testTwoDSharedTileHaloBarrier() {
+    console.log('test: 2D shared tile + halo loads + top-level barrier');
+
+    const wgsl = `
+        struct Params { w: u32, h: u32, _a: u32, _b: u32, };
+        @group(0) @binding(0) var<uniform>             P:      Params;
+        @group(0) @binding(1) var<storage, read>       input:  array<f32>;
+        @group(0) @binding(2) var<storage, read_write> output: array<f32>;
+
+        var<workgroup> tile : array<array<f32, 12>, 12>;
+
+        @compute @workgroup_size(8, 8, 1)
+        fn lap(
+            @builtin(global_invocation_id) gid: vec3<u32>,
+            @builtin(local_invocation_id)  lid: vec3<u32>,
+        ) {
+            // Phase A: cooperative load. The 8x8 workgroup fills the
+            // interior of the 12x12 tile; threads in the outer rings
+            // additionally load halo cells.
+            let gx = i32(gid.x);
+            let gy = i32(gid.y);
+            let lx = i32(lid.x);
+            let ly = i32(lid.y);
+            let wmax = i32(P.w) - 1;
+            let hmax = i32(P.h) - 1;
+
+            // Center cell (always).
+            let cx = clamp(gx, 0, wmax);
+            let cy = clamp(gy, 0, hmax);
+            tile[ly + 2][lx + 2] = input[u32(cy) * P.w + u32(cx)];
+
+            // W halo: lid.x < 2 loads the two cells to the west.
+            if (lid.x < 2u) {
+                let sx = clamp(gx - 2, 0, wmax);
+                let sy = clamp(gy, 0, hmax);
+                tile[ly + 2][lx] = input[u32(sy) * P.w + u32(sx)];
+            }
+            // E halo: lid.x >= 6 loads the two cells to the east.
+            if (lid.x >= 6u) {
+                let sx = clamp(gx + 2, 0, wmax);
+                let sy = clamp(gy, 0, hmax);
+                tile[ly + 2][lx + 4] = input[u32(sy) * P.w + u32(sx)];
+            }
+            // S halo.
+            if (lid.y < 2u) {
+                let sx = clamp(gx, 0, wmax);
+                let sy = clamp(gy - 2, 0, hmax);
+                tile[ly][lx + 2] = input[u32(sy) * P.w + u32(sx)];
+            }
+            // N halo.
+            if (lid.y >= 6u) {
+                let sx = clamp(gx, 0, wmax);
+                let sy = clamp(gy + 2, 0, hmax);
+                tile[ly + 4][lx + 2] = input[u32(sy) * P.w + u32(sx)];
+            }
+            // SW corner.
+            if (lid.x < 2u && lid.y < 2u) {
+                let sx = clamp(gx - 2, 0, wmax);
+                let sy = clamp(gy - 2, 0, hmax);
+                tile[ly][lx] = input[u32(sy) * P.w + u32(sx)];
+            }
+            // SE corner.
+            if (lid.x >= 6u && lid.y < 2u) {
+                let sx = clamp(gx + 2, 0, wmax);
+                let sy = clamp(gy - 2, 0, hmax);
+                tile[ly][lx + 4] = input[u32(sy) * P.w + u32(sx)];
+            }
+            // NW corner.
+            if (lid.x < 2u && lid.y >= 6u) {
+                let sx = clamp(gx - 2, 0, wmax);
+                let sy = clamp(gy + 2, 0, hmax);
+                tile[ly + 4][lx] = input[u32(sy) * P.w + u32(sx)];
+            }
+            // NE corner.
+            if (lid.x >= 6u && lid.y >= 6u) {
+                let sx = clamp(gx + 2, 0, wmax);
+                let sy = clamp(gy + 2, 0, hmax);
+                tile[ly + 4][lx + 4] = input[u32(sy) * P.w + u32(sx)];
+            }
+
+            workgroupBarrier();
+
+            // Phase B: 5-point Laplacian stencil from the shared tile.
+            if (gid.x < P.w && gid.y < P.h) {
+                let c  = tile[ly + 2][lx + 2];
+                let n_ = tile[ly + 3][lx + 2];
+                let s_ = tile[ly + 1][lx + 2];
+                let e_ = tile[ly + 2][lx + 3];
+                let w_ = tile[ly + 2][lx + 1];
+                output[gid.y * P.w + gid.x] = -4.0 * c + n_ + s_ + e_ + w_;
+            }
+        }
+    `;
+
+    const mod = compileWGSL(wgsl);
+
+    const W = 16, H = 16;
+    const input = new Array(W * H);
+    const output = new Array(W * H).fill(NaN);
+    for (let j = 0; j < H; j++) {
+        for (let i = 0; i < W; i++) {
+            const idx = j * W + i;
+            input[idx] = Math.sin(0.1 * idx) + Math.cos(0.07 * idx);
+        }
+    }
+
+    mod.entry.lap({
+        workgroups: [W / 8, H / 8, 1],   // 2x2 = 4 workgroups
+        bindings: { P: { w: W, h: H, _a: 0, _b: 0 }, input, output },
+    });
+
+    // Reference: same Laplacian on CPU, boundaries clamped (same as
+    // the kernel's clamp(...)).
+    const clamp = (v, lo, hi) => v < lo ? lo : (v > hi ? hi : v);
+    const ref = new Array(W * H);
+    for (let j = 0; j < H; j++) {
+        for (let i = 0; i < W; i++) {
+            const c  = input[j * W + i];
+            const n_ = input[clamp(j + 1, 0, H - 1) * W + i];
+            const s_ = input[clamp(j - 1, 0, H - 1) * W + i];
+            const e_ = input[j * W + clamp(i + 1, 0, W - 1)];
+            const w_ = input[j * W + clamp(i - 1, 0, W - 1)];
+            ref[j * W + i] = -4 * c + n_ + s_ + e_ + w_;
+        }
+    }
+
+    // Match every cell, with extra attention paid to the
+    // workgroup-internal boundary (i=7,8 / j=7,8) where halo correctness
+    // matters most.
+    const EPS = 1e-6;
+    let allOk = true;
+    let boundaryOk = true;
+    let firstFail = -1;
+    for (let j = 0; j < H; j++) {
+        for (let i = 0; i < W; i++) {
+            const idx = j * W + i;
+            const diff = Math.abs(output[idx] - ref[idx]);
+            if (diff > EPS) {
+                allOk = false;
+                if (firstFail < 0) firstFail = idx;
+                const onBoundary = (i === 7 || i === 8 || j === 7 || j === 8);
+                if (onBoundary) boundaryOk = false;
+            }
+        }
+    }
+
+    check('Laplacian matches CPU reference across the full grid', allOk,
+          allOk ? '' :
+            `first mismatch at idx=${firstFail} (i=${firstFail % W}, j=${(firstFail/W)|0}): ` +
+            `got ${output[firstFail]}, want ${ref[firstFail]}`);
+    check('workgroup-boundary cells correct (halo + barrier work)', boundaryOk,
+          boundaryOk ? '' : 'boundary mismatches indicate halo or phase-split bug');
+
+    // Sanity: output should vary (a bug that zeroed the tile would still
+    // produce a constant 0).
+    let varies = false;
+    for (let k = 1; k < output.length; k++) {
+        if (output[k] !== output[0]) { varies = true; break; }
+    }
+    check('output varies across the grid (sanity)', varies);
+}
+
 testScalarFma();
 testVec4Arith();
 testHelpersAndControl();
@@ -962,7 +1343,12 @@ testFlatStorageMode();
 testFlatStructStorageMode();
 testStrictNumericAndIntrinsics();
 testBuildTimeTranspileAPI();
+testNumericAndRuntimeOptimizations();
+testStabilityOptionHooks();
+testFlatLayoutFiniteWritesAndSpecialization();
+testStructSroaAndPointerInlining();
 testCorpusDerivedDispatchShader();
+testTwoDSharedTileHaloBarrier();
 
 console.log();
 console.log(`${pass} passed, ${fail} failed`);
