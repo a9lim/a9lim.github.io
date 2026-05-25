@@ -1,0 +1,5 @@
+{
+  "type": "module",
+  "private": true,
+  "description": "Test scope for shared-wgsl-transpile.js — type:module so .js files in this directory load as ESM under Node."
+}

@@ -1,0 +1,2374 @@
+/* ═══════════════════════════════════════════════════════════════════
+   shared-wgsl-transpile.js — WGSL → JavaScript transpiler.
+
+   Walking skeleton (Phase 0). Tokenizer is complete. Parser, emitter,
+   runtime, and dispatch wrapper are scaffolded with API contracts but
+   not yet implemented.
+
+   ── Why it exists ───────────────────────────────────────────────────
+   WebGPU sims on a9l.im each face the same choice: ship GPU-only and
+   strand the ~30% of visitors without WebGPU on a "your browser
+   needs..." splash, or hand-maintain a parallel CPU backend that
+   silently drifts out of sync with the GPU one (the geon experience).
+   This module is the third option: lex/parse the .wgsl source at
+   build-time or runtime and emit JS that executes the same compute
+   kernels serially. Single source of truth = the .wgsl file.
+
+   ── API contract ────────────────────────────────────────────────────
+     import { compileWGSL } from '/shared-wgsl-transpile.js';
+     const mod = compileWGSL(wgslSource);
+     mod.entry.main({
+       workgroups: [Wx, Wy, Wz],
+       bindings: { U_in: f32arr, U_out: f32arr, U_uniforms: {...} },
+     });
+
+   Bindings are passed by their WGSL identifier name (not group/binding
+   index) — friendlier than tracking bind group layouts. Storage and
+   uniform buffers come in as the caller's choice of representation
+   (flat TypedArray or per-element object); the emitted code uses the
+   runtime's read/write helpers, which dispatch on the binding's
+   declared WGSL type.
+
+   ── Architectural sketch ────────────────────────────────────────────
+     tokenize(src)            → Token[]
+     parse(tokens)            → Module AST
+     emit(ast)                → { jsSource, decls }
+     compileWGSL(src) plumbs all three plus runtime binding.
+
+   ── Runtime semantics ──────────────────────────────────────────────
+   CPU is single-threaded, so:
+   - atomicAdd / atomicMax / atomicStore / atomicLoad degrade to plain
+     reads + writes (no contention possible). Workgroup-local atomics
+     still work correctly because phases between workgroupBarrier()
+     calls run all invocations sequentially within one workgroup
+     before advancing.
+   - workgroupBarrier() splits the entry function into phases. Each
+     phase runs across all workgroup invocations before the next phase
+     begins. Workgroup-shared memory is therefore consistent at each
+     barrier as it would be on a GPU.
+   - bitcast<u32>(f32) and friends use shared Float32Array / Uint32Array
+     views for IEEE-754 round-tripping.
+
+   ── Not yet supported (will land as plasma needs them) ──────────────
+   - Matrix types (mat2x2 etc.)
+   - Texture / sampler bindings
+   - Pointer types beyond ptr<storage, array<T>, read|read_write>
+     (function-private pointers, ptr-of-ptr, etc.)
+   - Vertex / fragment entry points (compute only — render goes
+     through canvas-2d or stays GPU-only)
+   - WGSL `loop` construct with explicit continuing block
+   - `switch` statements
+   - User-defined operator overloads (none in WGSL spec, but worth
+     stating)
+
+   ─────────────────────────────────────────────────────────────────── */
+
+
+//#region 0. Shared error type
+
+export class WGSLError extends Error {
+    constructor(message, line, col) {
+        super(`WGSL:${line}:${col}: ${message}`);
+        this.line = line;
+        this.col  = col;
+    }
+}
+
+//#endregion
+
+
+//#region 1. TOKENIZER  ───────────────────────────────────────────────
+
+/** @typedef {'kw'|'ident'|'num'|'punct'|'attr'} TokenKind */
+/** @typedef {{kind: TokenKind, value: string, line: number, col: number,
+ *            isFloat?: boolean, suffix?: string, intBase?: number}} Token */
+
+/** WGSL reserved keywords (subset used by plasma + geon shaders). */
+const KEYWORDS = new Set([
+    'fn', 'struct', 'const', 'var', 'let', 'alias', 'type',
+    'if', 'else', 'for', 'while', 'loop', 'continuing', 'switch',
+    'case', 'default', 'break', 'continue', 'return', 'discard',
+    'true', 'false',
+    // address spaces & access modes — context-sensitive but always
+    // appear in known positions, fine to keep as plain idents in the
+    // token stream. Listed here for reference only; not in the set.
+]);
+
+/** Longest-match operator table. Ordered: 3-char, 2-char, 1-char. */
+const OPS_3 = ['<<=', '>>='];
+const OPS_2 = [
+    '==', '!=', '<=', '>=', '&&', '||', '<<', '>>',
+    '+=', '-=', '*=', '/=', '%=', '&=', '|=', '^=',
+    '->', '::', '++', '--',
+];
+const OPS_1 = '+-*/%<>=!&|^~()[]{},;:.?@';
+
+/**
+ * Tokenize a WGSL source string into a flat Token[].
+ * Strips whitespace and comments (line + nestable block).
+ * Throws WGSLError on lex errors. Line/col are 1-based.
+ *
+ * @param {string} src
+ * @returns {Token[]}
+ */
+export function tokenize(src) {
+    /** @type {Token[]} */
+    const out = [];
+    let i = 0;
+    let line = 1;
+    let col = 1;
+    const n = src.length;
+
+    const advance = (k) => {
+        for (let j = 0; j < k; j++) {
+            if (src.charCodeAt(i + j) === 10) { line++; col = 1; }
+            else col++;
+        }
+        i += k;
+    };
+
+    const isIdStart = (c) => (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || c === '_';
+    const isIdCont  = (c) => isIdStart(c) || (c >= '0' && c <= '9');
+    const isDigit   = (c) => c >= '0' && c <= '9';
+    const isHex     = (c) => isDigit(c) || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F');
+
+    while (i < n) {
+        const startLine = line;
+        const startCol  = col;
+        const c = src[i];
+
+        // ── Whitespace ─────────────────────────────────────────────
+        if (c === ' ' || c === '\t' || c === '\r' || c === '\n') {
+            advance(1);
+            continue;
+        }
+
+        // ── Line comment ───────────────────────────────────────────
+        if (c === '/' && src[i + 1] === '/') {
+            while (i < n && src[i] !== '\n') advance(1);
+            continue;
+        }
+
+        // ── Block comment (nestable per WGSL spec) ─────────────────
+        if (c === '/' && src[i + 1] === '*') {
+            let depth = 1;
+            advance(2);
+            while (i < n && depth > 0) {
+                if (src[i] === '/' && src[i + 1] === '*') { depth++; advance(2); }
+                else if (src[i] === '*' && src[i + 1] === '/') { depth--; advance(2); }
+                else advance(1);
+            }
+            if (depth !== 0) throw new WGSLError('unterminated block comment', startLine, startCol);
+            continue;
+        }
+
+        // ── Identifier / keyword ───────────────────────────────────
+        if (isIdStart(c)) {
+            let j = i + 1;
+            while (j < n && isIdCont(src[j])) j++;
+            const value = src.slice(i, j);
+            advance(j - i);
+            out.push({
+                kind: KEYWORDS.has(value) ? 'kw' : 'ident',
+                value, line: startLine, col: startCol,
+            });
+            continue;
+        }
+
+        // ── Numeric literal ────────────────────────────────────────
+        // Hex: 0x[0-9a-fA-F]+ (with optional u/i/f/h suffix)
+        // Int: [0-9]+ (with optional u/i/f/h suffix)
+        // Float: [0-9]+ '.' [0-9]* ([eE][+-]?[0-9]+)? (with f/h suffix)
+        //        '.'[0-9]+ ([eE][+-]?[0-9]+)? (rare; not in plasma)
+        //        [0-9]+ [eE][+-]?[0-9]+ (also valid)
+        if (isDigit(c) || (c === '.' && isDigit(src[i + 1]))) {
+            let j = i;
+            let isFloat = false;
+            let intBase = 10;
+
+            if (c === '0' && (src[i + 1] === 'x' || src[i + 1] === 'X')) {
+                intBase = 16;
+                j += 2;
+                while (j < n && isHex(src[j])) j++;
+            } else {
+                while (j < n && isDigit(src[j])) j++;
+                if (src[j] === '.' && isDigit(src[j + 1])) {
+                    isFloat = true;
+                    j++;
+                    while (j < n && isDigit(src[j])) j++;
+                } else if (src[j] === '.') {
+                    // Trailing dot — `1.` style. WGSL spec accepts.
+                    isFloat = true;
+                    j++;
+                }
+                if (src[j] === 'e' || src[j] === 'E') {
+                    isFloat = true;
+                    j++;
+                    if (src[j] === '+' || src[j] === '-') j++;
+                    while (j < n && isDigit(src[j])) j++;
+                }
+            }
+
+            const numText = src.slice(i, j);
+
+            // Optional type suffix
+            let suffix = null;
+            const sc = src[j];
+            if (sc === 'u' || sc === 'i' || sc === 'f' || sc === 'h') {
+                suffix = sc;
+                if (sc === 'f' || sc === 'h') isFloat = true;
+                j++;
+            }
+
+            advance(j - i);
+            out.push({
+                kind: 'num', value: numText, line: startLine, col: startCol,
+                isFloat, suffix, intBase,
+            });
+            continue;
+        }
+
+        // ── Attribute marker `@` is just punctuation; parser groups ─
+        // it with the following ident at the AST level.
+
+        // ── Multi-char operators ───────────────────────────────────
+        const tri = src.slice(i, i + 3);
+        if (OPS_3.includes(tri)) {
+            advance(3);
+            out.push({ kind: 'punct', value: tri, line: startLine, col: startCol });
+            continue;
+        }
+        const di = src.slice(i, i + 2);
+        if (OPS_2.includes(di)) {
+            advance(2);
+            out.push({ kind: 'punct', value: di, line: startLine, col: startCol });
+            continue;
+        }
+        if (OPS_1.indexOf(c) >= 0) {
+            advance(1);
+            out.push({ kind: 'punct', value: c, line: startLine, col: startCol });
+            continue;
+        }
+
+        throw new WGSLError(`unexpected character ${JSON.stringify(c)}`, startLine, startCol);
+    }
+
+    return out;
+}
+
+//#endregion
+
+
+//#region 2. PARSER  ──────────────────────────────────────────────────
+
+/* ── AST shapes (informal) ────────────────────────────────────────
+   Module     = { kind:'module', items: Item[] }
+   Item       = Struct | Fn | GlobalVar | Const | Alias
+   Struct     = { kind:'struct', name, fields: StructField[] }
+   StructField= { name, type, attrs }
+   Fn         = { kind:'fn', name, attrs, params, returnType?, returnAttrs, body }
+   Param      = { name, type, attrs }
+   Attr       = { kind:'attr', name, args: Expr[] }
+   GlobalVar  = { kind:'global_var', name, attrs, addressSpace, access,
+                  type, init?, group?, binding? }
+   Const      = { kind:'const', name, type?, value }
+   Alias      = { kind:'alias', name, type }
+
+   Type       = { kind:'type_scalar', name }
+              | { kind:'type_vec',    n: 2|3|4, of: Type }
+              | { kind:'type_mat',    cols, rows, of: Type }
+              | { kind:'type_array',  of: Type, count: Expr|null }
+              | { kind:'type_atomic', of: Type }
+              | { kind:'type_ptr',    addressSpace, of: Type, access? }
+              | { kind:'type_named',  name }
+
+   Stmt       = Block | Let | Var | Const | Assign | Compound | If | For
+              | While | Loop | Return | Break | Continue | Discard | ExprStmt
+   Block      = { kind:'block', stmts: Stmt[] }
+   Let        = { kind:'let',   name, type?, value }
+   Var        = { kind:'var',   name, type?, value? }
+   Assign     = { kind:'assign',     op:'=',  target, value }
+   Compound   = { kind:'compound',   op:'+='|'-='|..., target, value }
+   If         = { kind:'if',    cond, then: Block, else: Block|If|null }
+   For        = { kind:'for',   init: Stmt|null, cond: Expr|null,
+                                 update: Stmt|null, body: Block }
+   While      = { kind:'while', cond, body: Block }
+   Return     = { kind:'return', value: Expr|null }
+   ExprStmt   = { kind:'expr_stmt', expr }
+
+   Expr       = Lit | Ident | Bin | Una | Call | Member | Index | Paren
+   Lit        = { kind:'lit',    raw, isFloat, suffix?, intBase? }
+   Ident      = { kind:'ident',  name }
+   Bin        = { kind:'bin',    op, lhs, rhs }
+   Una        = { kind:'una',    op, value }
+   Call       = { kind:'call',   callee: string, typeArgs?: Type[], args: Expr[] }
+   Member     = { kind:'member', value, name }    // .x, .field
+   Index      = { kind:'index',  value, index }   // a[i]
+   Paren      = { kind:'paren',  value }
+
+   Every AST node carries `loc: {line, col}` for diagnostics.
+   ──────────────────────────────────────────────────────────────── */
+
+/** Idents that aren't keywords but introduce parameterized types. */
+const TYPE_GENERIC_IDENTS = new Set([
+    'vec2', 'vec3', 'vec4',
+    'mat2x2', 'mat2x3', 'mat2x4',
+    'mat3x2', 'mat3x3', 'mat3x4',
+    'mat4x2', 'mat4x3', 'mat4x4',
+    'array', 'atomic', 'ptr',
+]);
+
+/** Scalar type names (also valid as type constructors at expression level). */
+const SCALAR_TYPE_IDENTS = new Set(['f32', 'i32', 'u32', 'f16', 'bool']);
+
+/** Short-form vec aliases — `vec3f` ≡ `vec3<f32>`, `vec4u` ≡ `vec4<u32>`, etc. */
+const VEC_ALIAS = (() => {
+    const out = {};
+    for (const n of [2, 3, 4]) {
+        for (const [suf, sc] of [['f', 'f32'], ['u', 'u32'], ['i', 'i32'], ['h', 'f16']]) {
+            out[`vec${n}${suf}`] = { n, of: { kind: 'type_scalar', name: sc } };
+        }
+    }
+    return out;
+})();
+
+/** Compound assignment operators. */
+const COMPOUND_OPS = new Set([
+    '+=', '-=', '*=', '/=', '%=', '&=', '|=', '^=', '<<=', '>>=',
+]);
+
+/** Pratt-style binary operator precedence (higher binds tighter). */
+const BIN_PREC = {
+    '||': 1,
+    '&&': 2,
+    '|':  3,
+    '^':  4,
+    '&':  5,
+    '==': 6, '!=': 6,
+    '<':  7, '>':  7, '<=': 7, '>=': 7,
+    '<<': 8, '>>': 8,
+    '+':  9, '-':  9,
+    '*': 10, '/': 10, '%': 10,
+};
+
+/**
+ * Parse a token stream into a Module AST.
+ * @param {Token[]} tokens
+ * @returns {object}
+ */
+export function parse(tokens) {
+    const p = new Parser(tokens);
+    return p.parseModule();
+}
+
+class Parser {
+    constructor(tokens) {
+        this.tokens = tokens;
+        this.i = 0;
+        // When > 0, the expression parser treats `<`, `>`, `<=`, `>=`,
+        // `<<`, `>>` as type-bracket terminators rather than binary
+        // operators. Used while parsing inside `array<T, N>` and
+        // similar contexts where `N` is an expression.
+        this.noRelDepth = 0;
+    }
+
+    // ── Cursor primitives ──────────────────────────────────────────
+    peek(k = 0) { return this.tokens[this.i + k]; }
+    eat()       { return this.tokens[this.i++]; }
+    eof()       { return this.i >= this.tokens.length; }
+    loc()       {
+        const t = this.peek();
+        return t ? { line: t.line, col: t.col } : { line: 0, col: 0 };
+    }
+
+    /** True if the next token matches kind and (optional) value. */
+    check(kind, value) {
+        const t = this.peek();
+        if (!t || t.kind !== kind) return false;
+        if (value != null && t.value !== value) return false;
+        return true;
+    }
+
+    /** Eat and return the next token if it matches; else null. */
+    accept(kind, value) {
+        if (!this.check(kind, value)) return null;
+        return this.eat();
+    }
+
+    /** Eat and return the next token; throw if it doesn't match.
+     *  Special-cased for the closing '>' of a type/generic: the
+     *  tokenizer eagerly grabs '>>', '>=', and '>>=' as single tokens
+     *  (right-shift, greater-equal, right-shift-assign), but the
+     *  parser sometimes needs to peel one '>' off the front. */
+    expect(kind, value) {
+        if (kind === 'punct' && value === '>') {
+            const t = this.peek();
+            if (t && t.kind === 'punct' && t.value !== '>') {
+                const splits = { '>>': '>', '>=': '=', '>>=': '>=' };
+                if (splits[t.value]) {
+                    this.tokens[this.i] = {
+                        kind: 'punct', value: splits[t.value],
+                        line: t.line, col: t.col + 1,
+                    };
+                    return { kind: 'punct', value: '>', line: t.line, col: t.col };
+                }
+            }
+        }
+        if (!this.check(kind, value)) {
+            const t = this.peek();
+            const got = t ? `${t.kind} '${t.value}'` : 'EOF';
+            const want = value != null ? `'${value}'` : kind;
+            const loc = t ? { line: t.line, col: t.col } : { line: 0, col: 0 };
+            throw new WGSLError(`expected ${want}, got ${got}`, loc.line, loc.col);
+        }
+        return this.eat();
+    }
+
+    /** Eat any number of attributes (@name(args...)) and return them. */
+    parseAttrs() {
+        const out = [];
+        while (this.accept('punct', '@')) {
+            const loc = this.loc();
+            const name = this.expect('ident').value;
+            const args = [];
+            if (this.accept('punct', '(')) {
+                if (!this.check('punct', ')')) {
+                    args.push(this.parseExpr());
+                    while (this.accept('punct', ',')) args.push(this.parseExpr());
+                }
+                this.expect('punct', ')');
+            }
+            out.push({ kind: 'attr', name, args, loc });
+        }
+        return out;
+    }
+
+    // ── Module ─────────────────────────────────────────────────────
+    parseModule() {
+        const items = [];
+        while (!this.eof()) {
+            const item = this.parseTopLevel();
+            if (item) items.push(item);
+        }
+        return { kind: 'module', items };
+    }
+
+    parseTopLevel() {
+        const attrs = this.parseAttrs();
+        const t = this.peek();
+        if (!t) return null;
+
+        if (t.kind === 'kw') {
+            switch (t.value) {
+                case 'struct': return this.parseStruct(attrs);
+                case 'fn':     return this.parseFn(attrs);
+                case 'var':    return this.parseGlobalVar(attrs);
+                case 'const':  return this.parseConst(attrs);
+                case 'alias':
+                case 'type':   return this.parseAlias(attrs);
+            }
+        }
+        // Stray semicolons are tolerated.
+        if (this.accept('punct', ';')) return null;
+        throw new WGSLError(`unexpected ${t.kind} '${t.value}' at top level`, t.line, t.col);
+    }
+
+    parseStruct(attrs) {
+        const loc = this.loc();
+        this.expect('kw', 'struct');
+        const name = this.expect('ident').value;
+        this.expect('punct', '{');
+        const fields = [];
+        while (!this.check('punct', '}')) {
+            const fAttrs = this.parseAttrs();
+            const fName = this.expect('ident').value;
+            this.expect('punct', ':');
+            const fType = this.parseType();
+            fields.push({ name: fName, type: fType, attrs: fAttrs });
+            // WGSL allows comma or semicolon separators between fields.
+            if (!this.accept('punct', ',')) this.accept('punct', ';');
+        }
+        this.expect('punct', '}');
+        // Optional trailing semicolon after struct decl
+        this.accept('punct', ';');
+        return { kind: 'struct', name, fields, attrs, loc };
+    }
+
+    parseFn(attrs) {
+        const loc = this.loc();
+        this.expect('kw', 'fn');
+        const name = this.expect('ident').value;
+        this.expect('punct', '(');
+        const params = [];
+        if (!this.check('punct', ')')) {
+            params.push(this.parseParam());
+            while (this.accept('punct', ',')) {
+                if (this.check('punct', ')')) break; // trailing comma
+                params.push(this.parseParam());
+            }
+        }
+        this.expect('punct', ')');
+
+        let returnType = null;
+        let returnAttrs = [];
+        if (this.accept('punct', '->')) {
+            returnAttrs = this.parseAttrs();
+            returnType = this.parseType();
+        }
+        const body = this.parseBlock();
+        return {
+            kind: 'fn', name, attrs, params, returnType, returnAttrs, body, loc,
+        };
+    }
+
+    parseParam() {
+        const loc = this.loc();
+        const pAttrs = this.parseAttrs();
+        const pName = this.expect('ident').value;
+        this.expect('punct', ':');
+        const pType = this.parseType();
+        return { name: pName, type: pType, attrs: pAttrs, loc };
+    }
+
+    parseGlobalVar(attrs) {
+        const loc = this.loc();
+        this.expect('kw', 'var');
+        let addressSpace = null;
+        let access = null;
+        if (this.accept('punct', '<')) {
+            addressSpace = this.expect('ident').value;
+            if (this.accept('punct', ',')) {
+                access = this.expect('ident').value;
+            }
+            this.expect('punct', '>');
+        }
+        const name = this.expect('ident').value;
+        let type = null;
+        if (this.accept('punct', ':')) type = this.parseType();
+        let init = null;
+        if (this.accept('punct', '=')) init = this.parseExpr();
+        this.expect('punct', ';');
+
+        // Pull `group` and `binding` from attrs for convenience.
+        let group, binding;
+        for (const a of attrs) {
+            if (a.name === 'group'   && a.args[0]?.kind === 'lit') group   = +a.args[0].raw;
+            if (a.name === 'binding' && a.args[0]?.kind === 'lit') binding = +a.args[0].raw;
+        }
+        return {
+            kind: 'global_var', name, attrs, addressSpace, access,
+            type, init, group, binding, loc,
+        };
+    }
+
+    parseConst(attrs) {
+        const loc = this.loc();
+        this.expect('kw', 'const');
+        const name = this.expect('ident').value;
+        let type = null;
+        if (this.accept('punct', ':')) type = this.parseType();
+        this.expect('punct', '=');
+        const value = this.parseExpr();
+        this.expect('punct', ';');
+        return { kind: 'const', name, type, value, attrs, loc };
+    }
+
+    parseAlias(attrs) {
+        const loc = this.loc();
+        this.eat(); // 'alias' or 'type'
+        const name = this.expect('ident').value;
+        this.expect('punct', '=');
+        const type = this.parseType();
+        this.expect('punct', ';');
+        return { kind: 'alias', name, type, attrs, loc };
+    }
+
+    // ── Types ──────────────────────────────────────────────────────
+    parseType() {
+        const t = this.peek();
+        if (!t) throw new WGSLError('expected type', 0, 0);
+        const loc = { line: t.line, col: t.col };
+
+        // Scalars / named types are plain idents.
+        if (t.kind === 'ident' || t.kind === 'kw') {
+            if (SCALAR_TYPE_IDENTS.has(t.value)) {
+                this.eat();
+                return { kind: 'type_scalar', name: t.value, loc };
+            }
+            if (VEC_ALIAS[t.value]) {
+                this.eat();
+                const a = VEC_ALIAS[t.value];
+                return { kind: 'type_vec', n: a.n, of: a.of, loc };
+            }
+            if (TYPE_GENERIC_IDENTS.has(t.value)) {
+                return this.parseGenericType();
+            }
+            // Otherwise it's a named struct/alias type.
+            this.eat();
+            return { kind: 'type_named', name: t.value, loc };
+        }
+        throw new WGSLError(`expected type, got '${t.value}'`, t.line, t.col);
+    }
+
+    parseGenericType() {
+        const t = this.eat();
+        const loc = { line: t.line, col: t.col };
+        const name = t.value;
+
+        if (name === 'vec2' || name === 'vec3' || name === 'vec4') {
+            this.expect('punct', '<');
+            const of = this.parseType();
+            this.expect('punct', '>');
+            return { kind: 'type_vec', n: +name.slice(3), of, loc };
+        }
+        if (name.startsWith('mat')) {
+            this.expect('punct', '<');
+            const of = this.parseType();
+            this.expect('punct', '>');
+            const cols = +name[3];
+            const rows = +name[5];
+            return { kind: 'type_mat', cols, rows, of, loc };
+        }
+        if (name === 'array') {
+            this.expect('punct', '<');
+            const of = this.parseType();
+            let count = null;
+            if (this.accept('punct', ',')) count = this.parseTypeArgExpr();
+            this.expect('punct', '>');
+            return { kind: 'type_array', of, count, loc };
+        }
+        if (name === 'atomic') {
+            this.expect('punct', '<');
+            const of = this.parseType();
+            this.expect('punct', '>');
+            return { kind: 'type_atomic', of, loc };
+        }
+        if (name === 'ptr') {
+            this.expect('punct', '<');
+            const addressSpace = this.expect('ident').value;
+            this.expect('punct', ',');
+            const of = this.parseType();
+            let access = null;
+            if (this.accept('punct', ',')) access = this.expect('ident').value;
+            this.expect('punct', '>');
+            return { kind: 'type_ptr', addressSpace, of, access, loc };
+        }
+        throw new WGSLError(`unknown generic type '${name}'`, t.line, t.col);
+    }
+
+    // ── Statements & blocks ────────────────────────────────────────
+    parseBlock() {
+        const loc = this.loc();
+        this.expect('punct', '{');
+        const stmts = [];
+        while (!this.check('punct', '}')) {
+            const s = this.parseStmt();
+            if (s) stmts.push(s);
+        }
+        this.expect('punct', '}');
+        return { kind: 'block', stmts, loc };
+    }
+
+    parseStmt() {
+        const t = this.peek();
+        if (!t) throw new WGSLError('expected statement', 0, 0);
+
+        // Block
+        if (t.kind === 'punct' && t.value === '{') return this.parseBlock();
+        // Stray semicolon
+        if (t.kind === 'punct' && t.value === ';') { this.eat(); return null; }
+
+        if (t.kind === 'kw') {
+            switch (t.value) {
+                case 'let':      return this.parseLet();
+                case 'var':      return this.parseLocalVar();
+                case 'const':    return this.parseConst([]);
+                case 'if':       return this.parseIf();
+                case 'for':      return this.parseFor();
+                case 'while':    return this.parseWhile();
+                case 'loop':     return this.parseLoop();
+                case 'switch':   return this.parseSwitch();
+                case 'return':   return this.parseReturn();
+                case 'break':    this.eat(); this.expect('punct', ';');
+                                 return { kind: 'break',    loc: this.loc() };
+                case 'continue': this.eat(); this.expect('punct', ';');
+                                 return { kind: 'continue', loc: this.loc() };
+                case 'discard':  this.eat(); this.expect('punct', ';');
+                                 return { kind: 'discard',  loc: this.loc() };
+            }
+        }
+
+        // Either expression-statement, assignment, or compound assignment.
+        // Parse the LHS as an expression, then peek for an assignment operator.
+        const loc = this.loc();
+        const lhs = this.parseExpr();
+
+        const op = this.peek();
+        if (op && op.kind === 'punct') {
+            if (op.value === '=') {
+                this.eat();
+                const value = this.parseExpr();
+                this.expect('punct', ';');
+                return { kind: 'assign', op: '=', target: lhs, value, loc };
+            }
+            if (COMPOUND_OPS.has(op.value)) {
+                this.eat();
+                const value = this.parseExpr();
+                this.expect('punct', ';');
+                return { kind: 'compound', op: op.value, target: lhs, value, loc };
+            }
+            if (op.value === '++' || op.value === '--') {
+                this.eat();
+                this.expect('punct', ';');
+                return { kind: 'postfix', op: op.value, target: lhs, loc };
+            }
+        }
+
+        this.expect('punct', ';');
+        return { kind: 'expr_stmt', expr: lhs, loc };
+    }
+
+    parseLet() {
+        const loc = this.loc();
+        this.expect('kw', 'let');
+        const name = this.expect('ident').value;
+        let type = null;
+        if (this.accept('punct', ':')) type = this.parseType();
+        this.expect('punct', '=');
+        const value = this.parseExpr();
+        this.expect('punct', ';');
+        return { kind: 'let', name, type, value, loc };
+    }
+
+    parseLocalVar() {
+        const loc = this.loc();
+        this.expect('kw', 'var');
+        // Local `var` doesn't normally have an address-space qualifier
+        // (function private is implicit), but we accept `<...>` for symmetry.
+        let addressSpace = null;
+        if (this.accept('punct', '<')) {
+            addressSpace = this.expect('ident').value;
+            this.expect('punct', '>');
+        }
+        const name = this.expect('ident').value;
+        let type = null;
+        if (this.accept('punct', ':')) type = this.parseType();
+        let value = null;
+        if (this.accept('punct', '=')) value = this.parseExpr();
+        this.expect('punct', ';');
+        return { kind: 'var', name, type, value, addressSpace, loc };
+    }
+
+    parseIf() {
+        const loc = this.loc();
+        this.expect('kw', 'if');
+        // WGSL allows both `if (cond)` and `if cond` since 1.0; we
+        // tolerate either by treating the leading `(` as optional.
+        const cond = this.parseParenOrExpr();
+        const then = this.parseBlock();
+        let elseBranch = null;
+        if (this.accept('kw', 'else')) {
+            if (this.check('kw', 'if')) elseBranch = this.parseIf();
+            else                         elseBranch = this.parseBlock();
+        }
+        return { kind: 'if', cond, then, else: elseBranch, loc };
+    }
+
+    parseFor() {
+        const loc = this.loc();
+        this.expect('kw', 'for');
+        this.expect('punct', '(');
+        let init = null;
+        if (!this.check('punct', ';')) init = this.parseForInit();
+        else                            this.eat();
+        let cond = null;
+        if (!this.check('punct', ';')) cond = this.parseExpr();
+        this.expect('punct', ';');
+        let update = null;
+        if (!this.check('punct', ')')) update = this.parseForUpdate();
+        this.expect('punct', ')');
+        const body = this.parseBlock();
+        return { kind: 'for', init, cond, update, body, loc };
+    }
+
+    parseForInit() {
+        // `let i = 0` / `var i = 0` / `i = 0` / `f()`
+        if (this.check('kw', 'let')) {
+            // Eat ';' is inside parseLet — but for-init has no trailing ';'.
+            // Inline a minimal version that doesn't consume ';'.
+            const loc = this.loc();
+            this.eat();
+            const name = this.expect('ident').value;
+            let type = null;
+            if (this.accept('punct', ':')) type = this.parseType();
+            this.expect('punct', '=');
+            const value = this.parseExpr();
+            this.expect('punct', ';');
+            return { kind: 'let', name, type, value, loc };
+        }
+        if (this.check('kw', 'var')) {
+            const loc = this.loc();
+            this.eat();
+            const name = this.expect('ident').value;
+            let type = null;
+            if (this.accept('punct', ':')) type = this.parseType();
+            let value = null;
+            if (this.accept('punct', '=')) value = this.parseExpr();
+            this.expect('punct', ';');
+            return { kind: 'var', name, type, value, addressSpace: null, loc };
+        }
+        // Bare expr/assignment
+        const loc = this.loc();
+        const lhs = this.parseExpr();
+        const op = this.peek();
+        if (op && op.kind === 'punct' && op.value === '=') {
+            this.eat();
+            const value = this.parseExpr();
+            this.expect('punct', ';');
+            return { kind: 'assign', op: '=', target: lhs, value, loc };
+        }
+        if (op && op.kind === 'punct' && COMPOUND_OPS.has(op.value)) {
+            this.eat();
+            const value = this.parseExpr();
+            this.expect('punct', ';');
+            return { kind: 'compound', op: op.value, target: lhs, value, loc };
+        }
+        this.expect('punct', ';');
+        return { kind: 'expr_stmt', expr: lhs, loc };
+    }
+
+    parseForUpdate() {
+        // Similar to init but no trailing ';' allowed.
+        const loc = this.loc();
+        const lhs = this.parseExpr();
+        const op = this.peek();
+        if (op && op.kind === 'punct') {
+            if (op.value === '=') {
+                this.eat();
+                const value = this.parseExpr();
+                return { kind: 'assign', op: '=', target: lhs, value, loc };
+            }
+            if (COMPOUND_OPS.has(op.value)) {
+                this.eat();
+                const value = this.parseExpr();
+                return { kind: 'compound', op: op.value, target: lhs, value, loc };
+            }
+            if (op.value === '++' || op.value === '--') {
+                this.eat();
+                return { kind: 'postfix', op: op.value, target: lhs, loc };
+            }
+        }
+        return { kind: 'expr_stmt', expr: lhs, loc };
+    }
+
+    parseWhile() {
+        const loc = this.loc();
+        this.expect('kw', 'while');
+        const cond = this.parseParenOrExpr();
+        const body = this.parseBlock();
+        return { kind: 'while', cond, body, loc };
+    }
+
+    parseLoop() {
+        // `loop { ... continuing { ... } }`
+        // Walking-skeleton coverage: body parses; `continuing` block is
+        // captured but its semantics aren't lowered yet.
+        const loc = this.loc();
+        this.expect('kw', 'loop');
+        this.expect('punct', '{');
+        const stmts = [];
+        let continuing = null;
+        while (!this.check('punct', '}')) {
+            if (this.check('kw', 'continuing')) {
+                this.eat();
+                continuing = this.parseBlock();
+                continue;
+            }
+            const s = this.parseStmt();
+            if (s) stmts.push(s);
+        }
+        this.expect('punct', '}');
+        const body = { kind: 'block', stmts, loc };
+        return { kind: 'loop', body, continuing, loc };
+    }
+
+    parseSwitch() {
+        const loc = this.loc();
+        this.expect('kw', 'switch');
+        const selector = this.parseParenOrExpr();
+        this.expect('punct', '{');
+        const cases = [];
+        while (!this.check('punct', '}')) {
+            // Cases may be prefixed with attrs (rare but legal).
+            this.parseAttrs();
+            if (this.accept('kw', 'case')) {
+                const values = [this.parseExpr()];
+                while (this.accept('punct', ',')) {
+                    if (this.check('kw', 'default')) {
+                        // `case 0, default:` form — eat 'default' as a sentinel.
+                        this.eat();
+                        values.push({ kind: 'default', loc: this.loc() });
+                    } else if (this.check('punct', ':') || this.check('punct', '{')) {
+                        break; // trailing comma
+                    } else {
+                        values.push(this.parseExpr());
+                    }
+                }
+                this.accept('punct', ':'); // colon is optional in WGSL
+                const body = this.parseBlock();
+                cases.push({ kind: 'case', values, body, loc });
+            } else if (this.accept('kw', 'default')) {
+                this.accept('punct', ':');
+                const body = this.parseBlock();
+                cases.push({ kind: 'case', values: 'default', body, loc });
+            } else {
+                const t = this.peek();
+                throw new WGSLError(
+                    `expected 'case' or 'default' in switch, got '${t?.value}'`,
+                    t?.line ?? 0, t?.col ?? 0,
+                );
+            }
+        }
+        this.expect('punct', '}');
+        return { kind: 'switch', selector, cases, loc };
+    }
+
+    parseReturn() {
+        const loc = this.loc();
+        this.expect('kw', 'return');
+        let value = null;
+        if (!this.check('punct', ';')) value = this.parseExpr();
+        this.expect('punct', ';');
+        return { kind: 'return', value, loc };
+    }
+
+    /** `(cond)` or bare `cond` — used for if/while conditions. */
+    parseParenOrExpr() {
+        if (this.accept('punct', '(')) {
+            const e = this.parseExpr();
+            this.expect('punct', ')');
+            return e;
+        }
+        return this.parseExpr();
+    }
+
+    // ── Expressions (Pratt precedence-climbing) ────────────────────
+    parseExpr()        { return this.parseExprAt(0); }
+
+    parseExprAt(minPrec) {
+        let lhs = this.parseUnary();
+        for (;;) {
+            const t = this.peek();
+            if (!t || t.kind !== 'punct') break;
+            // Inside type-arg context, don't consume relational/shift
+            // operators — they're closing brackets.
+            if (this.noRelDepth > 0 && (
+                    t.value === '<' || t.value === '>' ||
+                    t.value === '<=' || t.value === '>=' ||
+                    t.value === '<<' || t.value === '>>')) break;
+            const prec = BIN_PREC[t.value];
+            if (prec == null || prec < minPrec) break;
+            const op = this.eat().value;
+            const rhs = this.parseExprAt(prec + 1);
+            lhs = { kind: 'bin', op, lhs, rhs, loc: lhs.loc };
+        }
+        return lhs;
+    }
+
+    /** Parse an expression that lives inside `<...>` brackets. */
+    parseTypeArgExpr() {
+        this.noRelDepth++;
+        try { return this.parseExpr(); }
+        finally { this.noRelDepth--; }
+    }
+
+    parseUnary() {
+        const t = this.peek();
+        if (t && t.kind === 'punct' && ('-!~*&'.indexOf(t.value) >= 0)
+                && t.value.length === 1) {
+            const op = this.eat().value;
+            const value = this.parseUnary();
+            return { kind: 'una', op, value, loc: { line: t.line, col: t.col } };
+        }
+        return this.parsePostfix(this.parsePrimary());
+    }
+
+    parsePostfix(expr) {
+        for (;;) {
+            const t = this.peek();
+            if (!t || t.kind !== 'punct') break;
+            if (t.value === '.') {
+                this.eat();
+                const name = this.expect('ident').value;
+                expr = { kind: 'member', value: expr, name, loc: expr.loc };
+            } else if (t.value === '[') {
+                this.eat();
+                const idx = this.parseExpr();
+                this.expect('punct', ']');
+                expr = { kind: 'index', value: expr, index: idx, loc: expr.loc };
+            } else {
+                break;
+            }
+        }
+        return expr;
+    }
+
+    parsePrimary() {
+        const t = this.peek();
+        if (!t) throw new WGSLError('unexpected EOF in expression', 0, 0);
+        const loc = { line: t.line, col: t.col };
+
+        // ── Literals ───────────────────────────────────────────────
+        if (t.kind === 'num') {
+            this.eat();
+            return {
+                kind: 'lit', raw: t.value, isFloat: !!t.isFloat,
+                suffix: t.suffix, intBase: t.intBase, loc,
+            };
+        }
+        if (t.kind === 'kw' && (t.value === 'true' || t.value === 'false')) {
+            this.eat();
+            return { kind: 'lit', raw: t.value, isFloat: false, loc };
+        }
+
+        // ── Parenthesized ──────────────────────────────────────────
+        if (t.kind === 'punct' && t.value === '(') {
+            this.eat();
+            const e = this.parseExpr();
+            this.expect('punct', ')');
+            return { kind: 'paren', value: e, loc };
+        }
+
+        // ── Bitcast<T>(x), or generic type constructor like vec4<f32>(x,y,z,w),
+        //    or array<T,N>(...), or a plain function call f(...) on an ident.
+        if (t.kind === 'ident') {
+            const name = this.eat().value;
+
+            // type-parameterized callee: vec4<f32>(...), bitcast<u32>(x),
+            // array<vec4<f32>, 2>(p0, p1), etc.
+            let typeArgs = null;
+            // Only consume `<` if this ident is a known generic. Otherwise
+            // `a<b` could be a comparison — defer to the parser's normal flow.
+            if ((TYPE_GENERIC_IDENTS.has(name) || name === 'bitcast')
+                    && this.check('punct', '<')) {
+                this.eat();
+                if (name === 'array') {
+                    // array<T> or array<T, N> where N is an expression.
+                    typeArgs = [this.parseType()];
+                    if (this.accept('punct', ',')) typeArgs.push(this.parseTypeArgExpr());
+                } else {
+                    typeArgs = [this.parseType()];
+                    while (this.accept('punct', ',')) typeArgs.push(this.parseType());
+                }
+                this.expect('punct', '>');
+            }
+
+            // Constructor / call args
+            if (this.accept('punct', '(')) {
+                const args = [];
+                if (!this.check('punct', ')')) {
+                    args.push(this.parseExpr());
+                    while (this.accept('punct', ',')) {
+                        if (this.check('punct', ')')) break; // trailing comma
+                        args.push(this.parseExpr());
+                    }
+                }
+                this.expect('punct', ')');
+                return { kind: 'call', callee: name, typeArgs, args, loc };
+            }
+
+            return { kind: 'ident', name, loc };
+        }
+
+        // Some scalar idents (`f32(x)`) live in keyword-set in other langs,
+        // but in our tokenizer they're plain idents — handled above.
+
+        throw new WGSLError(`unexpected '${t.value}' in expression`, t.line, t.col);
+    }
+}
+
+//#endregion
+
+
+//#region 3. RESOLVER  ──────────────────────────────────────────────
+//
+// Phase between parse and emit. Produces:
+//   - a shared module catalog (the same Maps the emitter walks)
+//   - a SymbolTable: typed views of every declaration site, plus a
+//     `typeFromAst` that turns parser type-nodes into Type ADT values.
+//
+// The expression resolver (phase 2 of the type-resolver arc) will
+// build on this to annotate Expr nodes with .resolvedType so emit
+// can choose inline scalar/vec paths instead of polymorphic rt.*
+// dispatch. For now this region delivers the spine: types + catalog
+// + declaration-site typing.
+
+/** Type ADT — runtime representation of WGSL types.
+ *
+ *  Shapes (all plain objects, .kind discriminated):
+ *    scalar : { kind:'scalar', name:'f32'|'i32'|'u32'|'f16'|'bool', abstract?:true }
+ *    vec    : { kind:'vec', n:2|3|4, of:Scalar }
+ *    mat    : { kind:'mat', cols, rows, of:Scalar }
+ *    array  : { kind:'array', of:Type, count:number|null }   // null = runtime-sized
+ *    atomic : { kind:'atomic', of:Scalar }
+ *    ptr    : { kind:'ptr', addressSpace, of:Type, access }
+ *    struct : { kind:'struct', name, fields:Map<name,Type>, fieldOrder:string[] }
+ *    void   : { kind:'void' }
+ *
+ *  Scalar singletons live on `T` so equality checks can be reference-fast
+ *  for the common case. Composite types are fresh objects per call site;
+ *  typeEqual() handles structural comparison when reference equality fails. */
+export const T = Object.freeze({
+    f32:  Object.freeze({ kind: 'scalar', name: 'f32' }),
+    i32:  Object.freeze({ kind: 'scalar', name: 'i32' }),
+    u32:  Object.freeze({ kind: 'scalar', name: 'u32' }),
+    f16:  Object.freeze({ kind: 'scalar', name: 'f16' }),
+    bool: Object.freeze({ kind: 'scalar', name: 'bool' }),
+    void: Object.freeze({ kind: 'void' }),
+    // Abstract numeric types — WGSL spec'd as context-coerced. We resolve
+    // greedily to the concrete sibling at use sites; flag preserved for
+    // any future widening logic that needs to know "this was abstract".
+    absInt:   Object.freeze({ kind: 'scalar', name: 'i32', abstract: true }),
+    absFloat: Object.freeze({ kind: 'scalar', name: 'f32', abstract: true }),
+});
+
+export function tVec(n, of)              { return { kind: 'vec', n, of }; }
+export function tMat(cols, rows, of)     { return { kind: 'mat', cols, rows, of }; }
+export function tArray(of, count = null) { return { kind: 'array', of, count }; }
+export function tAtomic(of)              { return { kind: 'atomic', of }; }
+export function tPtr(addressSpace, of, access = null) {
+    return { kind: 'ptr', addressSpace, of, access };
+}
+export function tStruct(name, fields = new Map(), fieldOrder = []) {
+    return { kind: 'struct', name, fields, fieldOrder };
+}
+
+/** Structural equality on Type values. */
+export function typeEqual(a, b) {
+    if (a === b)                          return true;
+    if (!a || !b || a.kind !== b.kind)    return false;
+    switch (a.kind) {
+        case 'scalar': return a.name === b.name;
+        case 'vec':    return a.n === b.n && typeEqual(a.of, b.of);
+        case 'mat':    return a.cols === b.cols && a.rows === b.rows && typeEqual(a.of, b.of);
+        case 'array':  return a.count === b.count && typeEqual(a.of, b.of);
+        case 'atomic': return typeEqual(a.of, b.of);
+        case 'ptr':    return a.addressSpace === b.addressSpace && typeEqual(a.of, b.of);
+        case 'struct': return a.name === b.name;
+        case 'void':   return true;
+        default:       return false;
+    }
+}
+
+/** Human-readable type string, used by error messages and diagnostics. */
+export function typeToString(t) {
+    if (!t) return '<unresolved>';
+    switch (t.kind) {
+        case 'scalar': return t.name;
+        case 'vec':    return `vec${t.n}<${typeToString(t.of)}>`;
+        case 'mat':    return `mat${t.cols}x${t.rows}<${typeToString(t.of)}>`;
+        case 'array':  return t.count != null
+                              ? `array<${typeToString(t.of)}, ${t.count}>`
+                              : `array<${typeToString(t.of)}>`;
+        case 'atomic': return `atomic<${typeToString(t.of)}>`;
+        case 'ptr':    return `ptr<${t.addressSpace}, ${typeToString(t.of)}>`;
+        case 'struct': return t.name;
+        case 'void':   return 'void';
+        default:       return '<unknown>';
+    }
+}
+
+/** Tiny constant-folder for `array<T, N>` count expressions. Kept
+ *  narrow on purpose — handles integer literals + simple negation.
+ *  Anything more elaborate falls back to null (runtime-sized array). */
+function constFoldInt(expr) {
+    if (!expr) return null;
+    if (expr.kind === 'lit' && !expr.isFloat) {
+        const n = parseInt(expr.raw, 10);
+        return Number.isFinite(n) ? n : null;
+    }
+    if (expr.kind === 'paren') return constFoldInt(expr.value);
+    if (expr.kind === 'una' && expr.op === '-') {
+        const v = constFoldInt(expr.value);
+        return v == null ? null : -v;
+    }
+    return null;
+}
+
+/** Single pass over ast.items that buckets top-level declarations.
+ *  Consumed by both the resolver and the emitter so the walk happens
+ *  exactly once. Aliases are preserved distinctly from structs so the
+ *  resolver can substitute them when typing expressions. */
+export function catalogModule(ast) {
+    const c = {
+        structs:       new Map(),  // name → Struct AST
+        constants:     new Map(),  // name → Const AST
+        bindings:      new Map(),  // name → GlobalVar AST (uniform/storage)
+        workgroupVars: new Map(),  // name → GlobalVar AST (var<workgroup>)
+        privateVars:   new Map(),  // name → GlobalVar AST (var<private>)
+        fns:           new Map(),  // name → Fn AST
+        aliases:       new Map(),  // name → Alias AST
+        entryPoints:   [],         // Fn[] with @compute attr
+    };
+    for (const item of ast.items) {
+        switch (item.kind) {
+            case 'struct': c.structs.set(item.name, item);   break;
+            case 'const':  c.constants.set(item.name, item); break;
+            case 'alias':  c.aliases.set(item.name, item);   break;
+            case 'global_var':
+                if (item.addressSpace === 'workgroup')      c.workgroupVars.set(item.name, item);
+                else if (item.addressSpace === 'private')   c.privateVars.set(item.name, item);
+                else                                         c.bindings.set(item.name, item);
+                break;
+            case 'fn':
+                c.fns.set(item.name, item);
+                if (item.attrs.some(a => a.name === 'compute')) c.entryPoints.push(item);
+                break;
+        }
+    }
+    return c;
+}
+
+/** Module-level symbol table. Built once per AST and queried throughout
+ *  resolution and emission. Holds the catalog plus type-resolved views
+ *  of every declaration site:
+ *    - structTypes:        struct name → Type ('struct' kind)
+ *    - constTypes:         const name → Type (only when declared; inferred
+ *                          consts are filled in by the expression resolver)
+ *    - bindingTypes:       binding name → Type
+ *    - workgroupVarTypes:  wg var name → Type
+ *    - privateVarTypes:    priv var name → Type
+ *    - fnSignatures:       fn name → { params:[{name,type}], returnType }
+ *
+ *  Aliases are resolved on-demand via resolveNamed(); cycles are guarded.
+ *  Struct shells and fn signatures are built in dependency-friendly order
+ *  (shells first, then bodies) so cross-references resolve regardless of
+ *  declaration order in the source. */
+export class SymbolTable {
+    constructor(catalog) {
+        this.catalog           = catalog;
+        this.structTypes       = new Map();
+        this.constTypes        = new Map();
+        this.bindingTypes      = new Map();
+        this.workgroupVarTypes = new Map();
+        this.privateVarTypes   = new Map();
+        this.fnSignatures      = new Map();
+        this._build();
+    }
+
+    _build() {
+        // Pass 1: struct shells, so fields in pass 2 can reference any
+        // other struct regardless of declaration order.
+        for (const [name] of this.catalog.structs) {
+            this.structTypes.set(name, tStruct(name));
+        }
+        // Pass 2: struct fields. Mutates the shell objects in place.
+        for (const [name, st] of this.catalog.structs) {
+            const stype = this.structTypes.get(name);
+            for (const f of st.fields) {
+                stype.fields.set(f.name, this.typeFromAst(f.type));
+                stype.fieldOrder.push(f.name);
+            }
+        }
+        // Pass 3: bindings + wg + priv vars.
+        for (const [name, g] of this.catalog.bindings)
+            this.bindingTypes.set(name, this.typeFromAst(g.type));
+        for (const [name, g] of this.catalog.workgroupVars)
+            this.workgroupVarTypes.set(name, this.typeFromAst(g.type));
+        for (const [name, g] of this.catalog.privateVars)
+            this.privateVarTypes.set(name, this.typeFromAst(g.type));
+        // Pass 4: declared consts. Inferred (no type annotation) consts
+        // are typed by the expression resolver when it walks `c.value`.
+        for (const [name, c] of this.catalog.constants) {
+            if (c.type) this.constTypes.set(name, this.typeFromAst(c.type));
+        }
+        // Pass 5: fn signatures.
+        for (const [name, fn] of this.catalog.fns) {
+            const params = fn.params.map(p => ({
+                name: p.name,
+                type: this.typeFromAst(p.type),
+            }));
+            const returnType = fn.returnType ? this.typeFromAst(fn.returnType) : T.void;
+            this.fnSignatures.set(name, { params, returnType });
+        }
+    }
+
+    /** Convert a parser type-node into a Type ADT value. Returns null for
+     *  any unresolvable named reference — callers tolerate partial info
+     *  and the emitter falls back to its polymorphic codepath. */
+    typeFromAst(node, seen = null) {
+        if (!node) return null;
+        switch (node.kind) {
+            case 'type_scalar': return T[node.name] ?? null;
+            case 'type_vec':    return tVec(node.n, this.typeFromAst(node.of, seen));
+            case 'type_mat':    return tMat(node.cols, node.rows, this.typeFromAst(node.of, seen));
+            case 'type_array': {
+                const count = node.count != null ? constFoldInt(node.count) : null;
+                return tArray(this.typeFromAst(node.of, seen), count);
+            }
+            case 'type_atomic': return tAtomic(this.typeFromAst(node.of, seen));
+            case 'type_ptr':    return tPtr(node.addressSpace, this.typeFromAst(node.of, seen), node.access);
+            case 'type_named':  return this.resolveNamed(node.name, seen);
+            default: return null;
+        }
+    }
+
+    /** Resolve a named type — built-in scalar, predeclared vec/mat shortform,
+     *  struct, or alias chain. Cycle guard runs through `seen`; only
+     *  allocated when an alias actually chains, so the common path stays
+     *  allocation-free. */
+    resolveNamed(name, seen = null) {
+        if (T[name])                       return T[name];
+        if (PREDECLARED_TYPES[name])       return PREDECLARED_TYPES[name];
+        if (this.structTypes.has(name))    return this.structTypes.get(name);
+        if (this.catalog.aliases.has(name)) {
+            const guard = seen ?? new Set();
+            if (guard.has(name)) return null;   // cycle
+            guard.add(name);
+            const aliasAst = this.catalog.aliases.get(name);
+            return this.typeFromAst(aliasAst.type, guard);
+        }
+        return null;
+    }
+}
+
+/** Predeclared WGSL type aliases — `vec3f` ≡ `vec3<f32>`, `mat4x4h` ≡
+ *  `mat4x4<f16>`, etc. The parser pre-bakes the vec shortforms into
+ *  type_vec nodes directly (see VEC_ALIAS), but the mat shortforms fall
+ *  through to type_named and the resolver expands them here. Listed
+ *  together so future shortforms have an obvious home. */
+const PREDECLARED_TYPES = (() => {
+    const out = {};
+    const suf = { f: T.f32, u: T.u32, i: T.i32, h: T.f16 };
+    for (const n of [2, 3, 4])
+        for (const [s, sc] of Object.entries(suf))
+            out[`vec${n}${s}`] = tVec(n, sc);
+    for (const c of [2, 3, 4])
+        for (const r of [2, 3, 4])
+            for (const [s, sc] of Object.entries(suf))
+                out[`mat${c}x${r}${s}`] = tMat(c, r, sc);
+    return Object.freeze(out);
+})();
+
+/** Build a SymbolTable for a parsed AST. */
+export function resolveModule(ast) {
+    return new SymbolTable(catalogModule(ast));
+}
+
+//#endregion
+
+
+//#region 4. EMITTER  ────────────────────────────────────────────────
+
+/* ── Emit shape ───────────────────────────────────────────────────
+   The emitted module is a single JS function that takes the runtime
+   namespace and returns `{ entry, bindings }`:
+
+      function transpiled(rt) {
+        // user-defined constants and helper fns hoist into closure
+        const SOME_CONST = 1.0;
+        function helper(x) { ... }
+        const entry = Object.create(null);
+        entry.main = function ({ workgroups, bindings }) {
+          const [Wx, Wy, Wz] = workgroups;
+          const wg = { tile_max: 0u };   // workgroup-local vars
+          for (let wgz=0; wgz<Wz; wgz++) for (let wgy=0; wgy<Wy; wgy++) for (let wgx=0; wgx<Wx; wgx++) {
+            // reset wg
+            wg.tile_max = 0;
+            // Phase 0 — statements before first barrier
+            for (let lz=0; lz<Lz; lz++) for (let ly=0; ly<Ly; ly++) for (let lx=0; lx<Lx; lx++) {
+              const __gid = { x: wgx*Lx+lx, y: wgy*Ly+ly, z: wgz*Lz+lz };
+              const __lid = { x: lx, y: ly, z: lz };
+              const __lidx = lz*Ly*Lx + ly*Lx + lx;
+              // ... emitted body of phase 0 ...
+            }
+            // Phase 1 ... etc.
+          }
+        };
+        return { entry, bindings: ['U_in', 'U_out', ...] };
+      }
+
+   ── Conventions ──────────────────────────────────────────────────
+   - vec/mat types are `{x, y, z, w}` (or `{x, y}` etc.) objects. Vec
+     binary ops dispatch through `rt.add/sub/mul/div/mod` which handle
+     scalar↔vec, vec↔scalar, vec↔vec polymorphism. Slower than inline
+     scalar code; correctness first, optimize later.
+   - struct values are plain objects keyed by field name.
+   - storage buffers come from `bindings.<name>`. Reads and writes go
+     through `rt.loadElem/storeElem` so the caller can pass either a
+     flat TypedArray (4 entries per vec4) or an array of objects.
+   - workgroup vars live in the per-workgroup `wg` object, reset at
+     the start of each workgroup iteration.
+   - workgroupBarrier() inside an entry function splits the body into
+     phases; each phase loops over all workgroup invocations before
+     the next phase begins.
+   - atomics: `&buf[i]` lowers to `rt.addressOf(buf, i)`, `atomicAdd`
+     etc. take the resulting handle.
+   - `return` inside an invocation must be modeled as `continue` of
+     the innermost invocation loop (since the wrapping fn isn't the
+     entry itself). We compile entry-body returns into `__ret;
+     continue __invoc;`.
+   ──────────────────────────────────────────────────────────────── */
+
+/** JS reserved words that may collide with WGSL identifiers. Renamed
+ *  by prepending an underscore at every declaration site, and reads
+ *  of those declarations consistently use the renamed form. Member
+ *  access (`obj.in`) is fine in JS and isn't escaped. */
+const JS_RESERVED = new Set([
+    'in', 'of', 'class', 'do', 'try', 'catch', 'finally', 'new',
+    'this', 'super', 'extends', 'import', 'export', 'from', 'as',
+    'async', 'await', 'yield', 'typeof', 'instanceof', 'delete',
+    'void', 'null', 'undefined', 'enum', 'implements', 'interface',
+    'package', 'protected', 'public', 'static', 'with',
+    'debugger', 'arguments', 'eval',
+]);
+function _safe(name) { return JS_RESERVED.has(name) ? '_' + name : name; }
+
+/** WGSL swizzle character → vec object property. Both x/y/z/w and
+ *  r/g/b/a refer to the same components per the WGSL spec. We store
+ *  vecs as {x,y,z,w} JS objects, so rgba aliases get remapped. */
+const SWIZZLE_MAP = { x: 'x', y: 'y', z: 'z', w: 'w',
+                      r: 'x', g: 'y', b: 'z', a: 'w' };
+
+/** Set of binary ops that need polymorphic scalar/vec dispatch. */
+const POLY_BIN = new Set(['+', '-', '*', '/', '%']);
+/** Helper-name lookup for those ops. */
+const POLY_BIN_NAME = {
+    '+': 'add', '-': 'sub', '*': 'mul', '/': 'div', '%': 'mod',
+};
+/** Element-wise math intrinsics that may receive vec args. */
+const POLY_FN = new Set([
+    'max', 'min', 'abs', 'sqrt', 'sign', 'floor', 'ceil', 'round',
+    'fract', 'trunc', 'exp', 'log', 'exp2', 'log2', 'pow', 'sin', 'cos',
+    'tan', 'atan', 'atan2', 'clamp', 'mix', 'step', 'smoothstep',
+]);
+
+/**
+ * Emit JS source from a parsed Module AST.
+ * @param {object} ast
+ * @returns {{ jsSource: string, entryPoints: string[], bindings: string[] }}
+ */
+export function emit(ast) {
+    const e = new Emitter(ast);
+    return e.emitModule();
+}
+
+class Emitter {
+    constructor(ast) {
+        this.ast    = ast;
+        this.out    = [];
+        this.indent = 0;
+
+        // Shared module catalog — same Maps the resolver consumes, so
+        // the walk over ast.items happens exactly once per compile.
+        const cat = catalogModule(ast);
+        this.structs       = cat.structs;
+        this.constants     = cat.constants;
+        this.bindings      = cat.bindings;
+        this.workgroupVars = cat.workgroupVars;
+        this.privateVars   = cat.privateVars;
+        this.fns           = cat.fns;
+        this.entryPoints   = cat.entryPoints;
+        // Aliases are still transparent at emit time — fall through to
+        // the standard ident path. The resolver substitutes them when
+        // typing expressions.
+
+        // Scope stack of Sets — names of locals introduced so far in
+        // the current function body. Used to disambiguate "is this
+        // ident a local or a global?".
+        this.localScopes = [];
+    }
+
+    // ── Output ─────────────────────────────────────────────────────
+    line(s) { this.out.push('    '.repeat(this.indent) + s); }
+    blank() { this.out.push(''); }
+    open()  { this.indent++; }
+    close() { this.indent--; }
+
+    // ── Emit module text ──────────────────────────────────────────
+    emitModule() {
+        this.open(); // body lives inside the (implicit) module fn
+
+        // Constants and helper fns hoist into the closure.
+        for (const c of this.constants.values()) this.emitConst(c);
+        if (this.constants.size > 0) this.blank();
+
+        for (const f of this.fns.values()) {
+            if (f.attrs.some(a => a.name === 'compute')) continue;
+            this.emitFn(f);
+            this.blank();
+        }
+
+        this.line('const entry = Object.create(null);');
+        for (const f of this.entryPoints) {
+            this.emitEntry(f);
+        }
+
+        this.blank();
+        this.line(`return { entry, bindings: ${JSON.stringify([...this.bindings.keys()])} };`);
+        this.close();
+
+        const body = this.out.join('\n') + '\n';
+        const jsSource =
+            '// Auto-generated from WGSL by shared-wgsl-transpile.js\n' +
+            '// DO NOT EDIT — regenerate from the .wgsl source.\n' +
+            '\n' +
+            'export default function _wgsl_module(rt) {\n' +
+            body +
+            '}\n';
+
+        return {
+            jsSource,
+            body,
+            entryPoints: this.entryPoints.map(f => f.name),
+            bindings: [...this.bindings.keys()],
+        };
+    }
+
+    emitConst(c) {
+        // Push a temporary empty scope so `expr` treats names as globals.
+        this.localScopes = [];
+        this.line(`const ${_safe(c.name)} = ${this.expr(c.value)};`);
+    }
+
+    emitFn(f) {
+        const params = f.params.map(p => _safe(p.name)).join(', ');
+        this.line(`function ${_safe(f.name)}(${params}) {`);
+        this.open();
+        // Each fn opens a fresh local scope. Params count as locals.
+        this.localScopes = [new Set(f.params.map(p => p.name))];
+        for (const s of f.body.stmts) this.stmt(s);
+        this.close();
+        this.line('}');
+    }
+
+    emitEntry(f) {
+        // Pull workgroup size from @workgroup_size(X, Y?, Z?).
+        const wsAttr = f.attrs.find(a => a.name === 'workgroup_size');
+        const sx = wsAttr ? this.constExprInt(wsAttr.args[0]) : 1;
+        const sy = wsAttr && wsAttr.args[1] ? this.constExprInt(wsAttr.args[1]) : 1;
+        const sz = wsAttr && wsAttr.args[2] ? this.constExprInt(wsAttr.args[2]) : 1;
+
+        // Map builtin params to runtime-provided names so we can
+        // reference them inside the invocation body.
+        // Supported builtins (subset that plasma+geon use):
+        //   global_invocation_id, local_invocation_id, local_invocation_index,
+        //   workgroup_id, num_workgroups
+        const builtinBindings = [];   // [{paramName, expr}]
+        for (const p of f.params) {
+            const a = p.attrs.find(x => x.name === 'builtin');
+            if (!a) continue;
+            const which = a.args[0]?.name;
+            const e = {
+                global_invocation_id:  '__gid',
+                local_invocation_id:   '__lid',
+                local_invocation_index:'__lidx',
+                workgroup_id:          '__wgid',
+                num_workgroups:        '__nwg',
+            }[which];
+            if (e) builtinBindings.push({ name: p.name, init: e });
+        }
+
+        // Workgroup-local vars: reset at the start of each workgroup.
+        const wgEntries = [...this.workgroupVars.values()].map(v => {
+            return { name: v.name, init: this.defaultInit(v.type) };
+        });
+
+        // ── Phase splitting ──────────────────────────────────────────
+        // Top-level workgroupBarrier()/storageBarrier() calls split the
+        // entry body into phases. Each phase runs across all workgroup
+        // invocations before the next phase begins; workgroup-shared
+        // memory is therefore consistent at each barrier as on a GPU.
+        // Limitation: barriers nested inside if/for/while aren't lifted
+        // out (would require duplicating control flow). plasma+geon use
+        // only top-level barriers so this covers the real cases.
+        const phases = this.splitPhases(f.body.stmts);
+
+        this.blank();
+        this.line(`entry[${JSON.stringify(f.name)}] = function ({ workgroups, bindings }) {`);
+        this.open();
+        this.line(`const [Wx, Wy, Wz] = workgroups;`);
+        this.line(`const Lx = ${sx}, Ly = ${sy}, Lz = ${sz};`);
+        if (wgEntries.length) {
+            this.line(`const wg = Object.create(null);`);
+        }
+
+        this.line(`for (let wgz = 0; wgz < Wz; wgz++)`);
+        this.line(`for (let wgy = 0; wgy < Wy; wgy++)`);
+        this.line(`for (let wgx = 0; wgx < Wx; wgx++) {`);
+        this.open();
+        if (wgEntries.length) {
+            for (const w of wgEntries) this.line(`wg.${w.name} = ${w.init};`);
+        }
+        this.line(`const __nwg = rt.vec3(Wx, Wy, Wz);`);
+        this.line(`const __wgid = rt.vec3(wgx, wgy, wgz);`);
+
+        // Emit one invocation triple-loop per phase. Each iteration
+        // sets up the per-invocation builtins (gid/lid/lidx) and runs
+        // the phase body inside the __invocation labeled block so that
+        // an early WGSL `return` can `break __invocation` out cleanly.
+        for (let p = 0; p < phases.length; p++) {
+            if (phases.length > 1) this.line(`// Phase ${p}`);
+            this.line(`for (let lz = 0; lz < Lz; lz++)`);
+            this.line(`for (let ly = 0; ly < Ly; ly++)`);
+            this.line(`for (let lx = 0; lx < Lx; lx++) {`);
+            this.open();
+            this.line(`const __gid = rt.vec3(wgx*Lx + lx, wgy*Ly + ly, wgz*Lz + lz);`);
+            this.line(`const __lid = rt.vec3(lx, ly, lz);`);
+            this.line(`const __lidx = lz*Ly*Lx + ly*Lx + lx;`);
+            for (const b of builtinBindings) {
+                this.line(`const ${_safe(b.name)} = ${b.init};`);
+            }
+            this.line(`__invocation: {`);
+            this.open();
+            this.localScopes = [new Set(f.params.map(p => p.name))];
+            for (const s of phases[p]) this.stmt(s, /*inEntry=*/true);
+            this.close();
+            this.line(`}`);
+            this.close();
+            this.line(`}`); // close invocation triple loop
+        }
+
+        this.close();
+        this.line(`}`); // close workgroup triple loop
+        this.close();
+        this.line(`};`);
+    }
+
+    /** Split a list of statements at top-level barrier calls. Returns
+     *  Array<Stmt[]> with len = (barriers + 1). The barrier calls
+     *  themselves are dropped from the output. */
+    splitPhases(stmts) {
+        const phases = [[]];
+        for (const s of stmts) {
+            if (this.isBarrier(s)) phases.push([]);
+            else phases[phases.length - 1].push(s);
+        }
+        return phases;
+    }
+
+    isBarrier(s) {
+        return s.kind === 'expr_stmt' &&
+               s.expr.kind === 'call' &&
+               (s.expr.callee === 'workgroupBarrier' ||
+                s.expr.callee === 'storageBarrier');
+    }
+
+    /** Best-effort default init for a workgroup-local var. */
+    defaultInit(type) {
+        if (type.kind === 'type_atomic') return '0';
+        if (type.kind === 'type_scalar') return type.name === 'bool' ? 'false' : '0';
+        if (type.kind === 'type_vec') {
+            const z = type.of.name === 'bool' ? 'false' : '0';
+            return `rt.vec${type.n}(${Array(type.n).fill(z).join(', ')})`;
+        }
+        return 'null';
+    }
+
+    /** Resolve a literal/named const expr to a JS-side integer constant. */
+    constExprInt(expr) {
+        if (expr.kind === 'lit') return parseInt(expr.raw, expr.intBase || 10);
+        if (expr.kind === 'ident') {
+            const c = this.constants.get(expr.name);
+            if (c) return this.constExprInt(c.value);
+        }
+        if (expr.kind === 'paren') return this.constExprInt(expr.value);
+        throw new WGSLError(`expected constant int expression`,
+            expr.loc?.line ?? 0, expr.loc?.col ?? 0);
+    }
+
+    // ── Statements ─────────────────────────────────────────────────
+    stmt(s, inEntry = false) {
+        switch (s.kind) {
+            case 'block':
+                this.line('{');
+                this.open();
+                this.localScopes.push(new Set());
+                for (const x of s.stmts) this.stmt(x, inEntry);
+                this.localScopes.pop();
+                this.close();
+                this.line('}');
+                break;
+
+            case 'let':
+                this.declareLocal(s.name);
+                this.line(`const ${_safe(s.name)} = ${this.expr(s.value)};`);
+                break;
+
+            case 'var':
+                this.declareLocal(s.name);
+                if (s.value != null)
+                    this.line(`let ${_safe(s.name)} = ${this.expr(s.value)};`);
+                else
+                    this.line(`let ${_safe(s.name)} = ${this.defaultInit(s.type || { kind: 'type_scalar', name: 'f32' })};`);
+                break;
+
+            case 'const':
+                this.declareLocal(s.name);
+                this.line(`const ${_safe(s.name)} = ${this.expr(s.value)};`);
+                break;
+
+            case 'assign': {
+                const target = this.lvalue(s.target);
+                this.line(`${target} = ${this.expr(s.value)};`);
+                break;
+            }
+
+            case 'compound': {
+                const target = this.lvalue(s.target);
+                const op = s.op.slice(0, -1); // strip trailing '='
+                if (POLY_BIN.has(op)) {
+                    const helper = POLY_BIN_NAME[op];
+                    this.line(`${target} = rt.${helper}(${target}, ${this.expr(s.value)});`);
+                } else {
+                    this.line(`${target} ${s.op} ${this.expr(s.value)};`);
+                }
+                break;
+            }
+
+            case 'postfix': {
+                const target = this.lvalue(s.target);
+                this.line(`${target}${s.op};`);
+                break;
+            }
+
+            case 'if': {
+                this.line(`if (${this.expr(s.cond)}) {`);
+                this.open();
+                this.localScopes.push(new Set());
+                for (const x of s.then.stmts) this.stmt(x, inEntry);
+                this.localScopes.pop();
+                this.close();
+                if (s.else) {
+                    if (s.else.kind === 'if') {
+                        // else-if chain — re-enter recursively but
+                        // tag the leading `else `.
+                        this.lineRaw('} else ');
+                        // Append the next "if" inline by mutating last line.
+                        this.appendIf(s.else, inEntry);
+                    } else {
+                        this.line('} else {');
+                        this.open();
+                        this.localScopes.push(new Set());
+                        for (const x of s.else.stmts) this.stmt(x, inEntry);
+                        this.localScopes.pop();
+                        this.close();
+                        this.line('}');
+                    }
+                } else {
+                    this.line('}');
+                }
+                break;
+            }
+
+            case 'for': {
+                this.localScopes.push(new Set());
+                const initStr = s.init ? this.forStmtInline(s.init) : '';
+                const condStr = s.cond ? this.expr(s.cond) : '';
+                const updStr  = s.update ? this.forUpdateInline(s.update) : '';
+                this.line(`for (${initStr}; ${condStr}; ${updStr}) {`);
+                this.open();
+                for (const x of s.body.stmts) this.stmt(x, inEntry);
+                this.close();
+                this.line('}');
+                this.localScopes.pop();
+                break;
+            }
+
+            case 'while':
+                this.line(`while (${this.expr(s.cond)}) {`);
+                this.open();
+                this.localScopes.push(new Set());
+                for (const x of s.body.stmts) this.stmt(x, inEntry);
+                this.localScopes.pop();
+                this.close();
+                this.line('}');
+                break;
+
+            case 'loop':
+                // Walking-skeleton coverage: `loop { ... }` only,
+                // continuing block ignored for now.
+                this.line('while (true) {');
+                this.open();
+                this.localScopes.push(new Set());
+                for (const x of s.body.stmts) this.stmt(x, inEntry);
+                this.localScopes.pop();
+                this.close();
+                this.line('}');
+                break;
+
+            case 'switch': {
+                this.line(`switch (${this.expr(s.selector)}) {`);
+                this.open();
+                for (const c of s.cases) {
+                    if (c.values === 'default') {
+                        this.line('default: {');
+                    } else {
+                        for (const v of c.values) {
+                            if (v.kind === 'default') this.line('default: ');
+                            else this.line(`case ${this.expr(v)}: `);
+                        }
+                        this.line('{');
+                    }
+                    this.open();
+                    this.localScopes.push(new Set());
+                    for (const x of c.body.stmts) this.stmt(x, inEntry);
+                    this.localScopes.pop();
+                    this.line('break;');
+                    this.close();
+                    this.line('}');
+                }
+                this.close();
+                this.line('}');
+                break;
+            }
+
+            case 'return':
+                if (inEntry) {
+                    // Inside an entry point, `return` means "stop this
+                    // invocation" — break to the labeled invocation
+                    // block (continuing the for-loop on the next line).
+                    this.line(`break __invocation;`);
+                } else {
+                    this.line(`return${s.value ? ' ' + this.expr(s.value) : ''};`);
+                }
+                break;
+
+            case 'break':    this.line('break;');    break;
+            case 'continue': this.line('continue;'); break;
+            case 'discard':
+                // `discard` is fragment-only. We don't really execute
+                // fragment shaders CPU-side; emit a plain return so the
+                // surrounding fn unwinds correctly inside or outside an
+                // entry block. (For compute, `discard` is invalid WGSL
+                // and won't appear in real input.)
+                this.line(inEntry ? 'break __invocation;' : 'return;');
+                break;
+
+            case 'expr_stmt':
+                this.line(`${this.expr(s.expr)};`);
+                break;
+
+            default:
+                throw new WGSLError(`emit: unknown stmt kind '${s.kind}'`,
+                    s.loc?.line ?? 0, s.loc?.col ?? 0);
+        }
+    }
+
+    /** Append raw text without indent (used for `else` join). */
+    lineRaw(s) { this.out.push('    '.repeat(this.indent) + s.replace(/\n$/, '')); }
+
+    /** Render an `if` chain continuing from a prior `}` else. */
+    appendIf(node, inEntry) {
+        // We just placed `} else ` — append `if (cond) {` on same line.
+        const i = this.out.length - 1;
+        this.out[i] = this.out[i] + `if (${this.expr(node.cond)}) {`;
+        this.open();
+        this.localScopes.push(new Set());
+        for (const x of node.then.stmts) this.stmt(x, inEntry);
+        this.localScopes.pop();
+        this.close();
+        if (node.else) {
+            if (node.else.kind === 'if') {
+                this.lineRaw('} else ');
+                this.appendIf(node.else, inEntry);
+            } else {
+                this.line('} else {');
+                this.open();
+                this.localScopes.push(new Set());
+                for (const x of node.else.stmts) this.stmt(x, inEntry);
+                this.localScopes.pop();
+                this.close();
+                this.line('}');
+            }
+        } else {
+            this.line('}');
+        }
+    }
+
+    /** Render a for-init statement inline (no leading indent / trailing ;). */
+    forStmtInline(s) {
+        switch (s.kind) {
+            case 'let':
+                this.declareLocal(s.name);
+                return `let ${_safe(s.name)} = ${this.expr(s.value)}`;
+            case 'var':
+                this.declareLocal(s.name);
+                return `let ${_safe(s.name)} = ${s.value != null ? this.expr(s.value) : '0'}`;
+            case 'assign':
+                return `${this.lvalue(s.target)} = ${this.expr(s.value)}`;
+            case 'compound': {
+                const op = s.op.slice(0, -1);
+                if (POLY_BIN.has(op)) {
+                    const helper = POLY_BIN_NAME[op];
+                    return `${this.lvalue(s.target)} = rt.${helper}(${this.lvalue(s.target)}, ${this.expr(s.value)})`;
+                }
+                return `${this.lvalue(s.target)} ${s.op} ${this.expr(s.value)}`;
+            }
+            case 'postfix':
+                return `${this.lvalue(s.target)}${s.op}`;
+            case 'expr_stmt':
+                return this.expr(s.expr);
+        }
+        throw new WGSLError(`emit: bad for-init kind '${s.kind}'`,
+            s.loc?.line ?? 0, s.loc?.col ?? 0);
+    }
+    forUpdateInline(s) { return this.forStmtInline(s); }
+
+    declareLocal(name) {
+        const top = this.localScopes[this.localScopes.length - 1];
+        if (top) top.add(name);
+    }
+
+    isLocal(name) {
+        for (let i = this.localScopes.length - 1; i >= 0; i--) {
+            if (this.localScopes[i].has(name)) return true;
+        }
+        return false;
+    }
+
+    // ── Expressions → JS strings ──────────────────────────────────
+    expr(e) {
+        switch (e.kind) {
+            case 'lit':   return this.emitLit(e);
+            case 'ident': return this.emitIdent(e);
+            case 'bin':   return this.emitBin(e);
+            case 'una':   return this.emitUna(e);
+            case 'call':  return this.emitCall(e);
+            case 'member':return this.emitMember(e);
+            case 'index': return this.emitIndex(e);
+            case 'paren': return `(${this.expr(e.value)})`;
+        }
+        throw new WGSLError(`emit: unknown expr kind '${e.kind}'`,
+            e.loc?.line ?? 0, e.loc?.col ?? 0);
+    }
+
+    emitLit(e) {
+        if (e.raw === 'true' || e.raw === 'false') return e.raw;
+        // Numeric — strip suffix, return as JS number literal.
+        let txt = e.raw;
+        // Hex stays as-is, with leading 0x.
+        return txt;
+    }
+
+    emitIdent(e) {
+        const name = e.name;
+        // Locals, constants, and user fns are emitted as bare idents
+        // (possibly escaped). Globals living on `bindings`/`wg`/`priv`
+        // use member access on those container objects — no escape
+        // needed since `.in` etc. are valid JS member accessors.
+        if (this.isLocal(name)) return _safe(name);
+        if (this.bindings.has(name))    return `bindings.${name}`;
+        if (this.workgroupVars.has(name)) return `wg.${name}`;
+        if (this.privateVars.has(name))   return `priv.${name}`;
+        if (this.constants.has(name))   return _safe(name);
+        if (this.fns.has(name))         return _safe(name);
+        // Unknown — likely a built-in constant or runtime intrinsic.
+        return name;
+    }
+
+    emitBin(e) {
+        const op = e.op;
+        const lhs = this.expr(e.lhs);
+        const rhs = this.expr(e.rhs);
+        if (POLY_BIN.has(op)) {
+            return `rt.${POLY_BIN_NAME[op]}(${lhs}, ${rhs})`;
+        }
+        // Logical/relational/bitwise — plain JS operators are fine
+        // for scalars. (Vec relational ops not yet handled.)
+        return `(${lhs} ${op} ${rhs})`;
+    }
+
+    emitUna(e) {
+        const v = this.expr(e.value);
+        if (e.op === '&') {
+            // Address-of: only meaningful for atomic ops; emit a handle.
+            // The argument is expected to be an Index or Member; lower
+            // it to rt.addressOf(container, key).
+            return this.addressOfExpr(e.value);
+        }
+        if (e.op === '*') {
+            // Pointer dereference — pointers are just the underlying
+            // value in our model. So `(*p)[i]` is `p[i]`.
+            return v;
+        }
+        return `(${e.op}${v})`;
+    }
+
+    /** Lower `&expr` into `rt.addressOf(container, key)`.
+     *  Routes a few cases:
+     *  - `&buf[i]` → addressOf(bindings.buf, i)  for arrays
+     *  - `&singleAtomic` (storage binding declared as `atomic<T>`) →
+     *      addressOf(bindings.name, 0): the caller passes a tiny
+     *      indexable container `[v]` to give the address a place to
+     *      live, since JS can't return a writable reference to a
+     *      plain property otherwise.
+     *  - `&wgAtomic` (workgroup-local atomic) → addressOf(wg, 'name')
+     *  - `&struct.field` → addressOf(structExpr, 'field') */
+    addressOfExpr(e) {
+        if (e.kind === 'index') {
+            return `rt.addressOf(${this.expr(e.value)}, ${this.expr(e.index)})`;
+        }
+        if (e.kind === 'member') {
+            return `rt.addressOf(${this.expr(e.value)}, ${JSON.stringify(e.name)})`;
+        }
+        if (e.kind === 'ident') {
+            const name = e.name;
+            if (this.bindings.has(name)) {
+                const b = this.bindings.get(name);
+                if (b.type.kind === 'type_atomic') {
+                    // Scalar storage atomic — caller passes [v]; we
+                    // address into that single-element container.
+                    return `rt.addressOf(bindings.${name}, 0)`;
+                }
+                return `rt.addressOf(bindings, ${JSON.stringify(name)})`;
+            }
+            if (this.workgroupVars.has(name)) {
+                return `rt.addressOf(wg, ${JSON.stringify(name)})`;
+            }
+            if (this.privateVars.has(name)) {
+                return `rt.addressOf(priv, ${JSON.stringify(name)})`;
+            }
+            if (this.isLocal(name)) {
+                // `&local` for a struct/object local: pass the object
+                // reference directly. JS objects are mutable, so
+                // `(*ptr).field = x` (emitted as `ptr.field = x`) will
+                // propagate back to the original. For *scalar* locals
+                // this is a known limitation (mutations through the
+                // pointer won't write back) but the common usage in
+                // plasma+geon is struct accumulators, which work.
+                return _safe(name);
+            }
+            throw new WGSLError(`addressOf: unknown ident '${name}'`,
+                e.loc?.line ?? 0, e.loc?.col ?? 0);
+        }
+        throw new WGSLError(`addressOf: unsupported operand`,
+            e.loc?.line ?? 0, e.loc?.col ?? 0);
+    }
+
+    emitCall(e) {
+        const callee = e.callee;
+        const args = e.args.map(a => this.expr(a)).join(', ');
+
+        // Vec constructor: vec4<f32>(...), vec3f(...), vec2(...).
+        // Match shape from typeArgs or shorthand suffix.
+        if (e.typeArgs && (callee === 'vec2' || callee === 'vec3' || callee === 'vec4')) {
+            return `rt.${callee}(${args})`;
+        }
+        if (callee.startsWith('vec') && /^vec[234][fuih]?$/.test(callee)) {
+            return `rt.${callee.slice(0, 4)}(${args})`;
+        }
+
+        // Scalar type casts: f32(x), i32(x), u32(x), bool(x).
+        if (SCALAR_TYPE_IDENTS.has(callee)) {
+            return `rt.${callee}(${args})`;
+        }
+
+        // bitcast<T>(x) → rt.bitcast_<T>_<from>(x). We don't track
+        // source type here, so use the runtime to pick: for now,
+        // hard-route to f32→u32 (the form plasma uses); generalize
+        // once a type-resolver pass exists.
+        if (callee === 'bitcast') {
+            const t = e.typeArgs?.[0];
+            if (t?.kind === 'type_scalar' && t.name === 'u32')
+                return `rt.bitcast_u32_f32(${args})`;
+            if (t?.kind === 'type_scalar' && t.name === 'f32')
+                return `rt.bitcast_f32_u32(${args})`;
+            if (t?.kind === 'type_scalar' && t.name === 'i32')
+                return `rt.bitcast_i32_f32(${args})`;
+        }
+
+        // Array constructor: array<T, N>(...) builds a typed array.
+        // For element type vec4<f32>, an "array" is also a flat backing
+        // buffer per our storage convention — but as a return value
+        // we'll surface it as a JS array of vecs/structs for now.
+        if (callee === 'array') {
+            return `[${args}]`;
+        }
+
+        // workgroupBarrier / storageBarrier — call runtime stub.
+        if (callee === 'workgroupBarrier' || callee === 'storageBarrier') {
+            return `rt.${callee}()`;
+        }
+
+        // Atomic intrinsics: atomicLoad/Store/Add/...
+        if (callee.startsWith('atomic')) {
+            return `rt.${callee}(${args})`;
+        }
+
+        // Element-wise math intrinsics → polymorphic runtime helpers.
+        if (POLY_FN.has(callee)) {
+            return `rt.${callee}(${args})`;
+        }
+
+        // select(a, b, cond) → rt.select (note WGSL argument order).
+        if (callee === 'select') {
+            return `rt.select(${args})`;
+        }
+
+        // Struct constructor (struct name with args).
+        if (this.structs.has(callee)) {
+            const s = this.structs.get(callee);
+            const argList = e.args.map(a => this.expr(a));
+            const parts = s.fields.map((f, i) =>
+                `${f.name}: ${argList[i] ?? this.defaultInit(f.type)}`);
+            return `{ ${parts.join(', ')} }`;
+        }
+
+        // User-defined function call.
+        return `${callee}(${args})`;
+    }
+
+    emitMember(e) {
+        const name = e.name;
+        // ── Swizzles ─────────────────────────────────────────────
+        // WGSL allows `.x/.y/.z/.w` and `.r/.g/.b/.a` for single
+        // components, and multi-char combinations like `.xyz`,
+        // `.rgba`, `.wzyx` as vec constructors.
+        // Heuristic: if name is 1-4 chars of [xyzwrgba] (without
+        // mixing the two halves), treat as a swizzle.
+        if (name.length >= 1 && name.length <= 4 &&
+                /^[xyzw]+$|^[rgba]+$/.test(name)) {
+            const target = this.expr(e.value);
+            const comps = [...name].map(c => SWIZZLE_MAP[c]);
+            if (comps.length === 1) return `${target}.${comps[0]}`;
+            // Multi-component swizzle. Evaluate target into a temp to
+            // avoid re-evaluation; for simple ident expressions this is
+            // a no-op since the value is already a variable read.
+            if (e.value.kind === 'ident' || e.value.kind === 'member' ||
+                    e.value.kind === 'index') {
+                const args = comps.map(c => `${target}.${c}`).join(', ');
+                return `rt.vec${comps.length}(${args})`;
+            }
+            // Fall through: wrap in IIFE to capture once.
+            const args = comps.map(c => `_v.${c}`).join(', ');
+            return `((_v) => rt.vec${comps.length}(${args}))(${target})`;
+        }
+        // Ordinary struct field / vec component named `.x` etc.
+        return `${this.expr(e.value)}.${name}`;
+    }
+
+    emitIndex(e) {
+        // Index access: arr[i]. For storage buffers of vec types the
+        // caller must pass an array of vecs, OR use rt.loadElem. For
+        // walking skeleton, use direct index access for both.
+        return `${this.expr(e.value)}[${this.expr(e.index)}]`;
+    }
+
+    /** L-value form for assignment targets. */
+    lvalue(e) { return this.expr(e); }
+}
+
+//#endregion
+
+
+//#region 4. RUNTIME  ─────────────────────────────────────────────────
+
+/** Float ↔ uint bitcast scratch space. Shared across all callers. */
+const _bitBuf = new ArrayBuffer(8);
+const _f32 = new Float32Array(_bitBuf);
+const _u32 = new Uint32Array(_bitBuf);
+const _i32 = new Int32Array(_bitBuf);
+
+/** True if `x` is one of the {x,y,[z],[w]} vec shapes we emit. */
+const _isVec = (x) => x !== null && typeof x === 'object' && 'x' in x && 'y' in x;
+/** Apply a scalar-binary op `f` element-wise, broadcasting scalars. */
+const _binOp = (a, b, f) => {
+    if (!_isVec(a) && !_isVec(b)) return f(a, b);
+    if (_isVec(a) && _isVec(b)) {
+        const o = { x: f(a.x, b.x), y: f(a.y, b.y) };
+        if ('z' in a) o.z = f(a.z, b.z);
+        if ('w' in a) o.w = f(a.w, b.w);
+        return o;
+    }
+    if (_isVec(a)) {
+        const o = { x: f(a.x, b), y: f(a.y, b) };
+        if ('z' in a) o.z = f(a.z, b);
+        if ('w' in a) o.w = f(a.w, b);
+        return o;
+    }
+    const o = { x: f(a, b.x), y: f(a, b.y) };
+    if ('z' in b) o.z = f(a, b.z);
+    if ('w' in b) o.w = f(a, b.w);
+    return o;
+};
+/** Apply a scalar fn elementwise (single vec arg, or pass-through scalar). */
+const _mapOp = (a, f) => {
+    if (!_isVec(a)) return f(a);
+    const o = { x: f(a.x), y: f(a.y) };
+    if ('z' in a) o.z = f(a.z);
+    if ('w' in a) o.w = f(a.w);
+    return o;
+};
+
+/**
+ * Runtime helpers exposed to emitted code. Kept tiny — most WGSL
+ * intrinsics map directly to JS Math functions. Vec types are
+ * `{x, y, [z], [w]}` objects; matrix types reserved for later.
+ *
+ * Polymorphic ops (`add/sub/mul/div/mod`, and most math intrinsics)
+ * accept any combination of scalar / vec inputs and broadcast where
+ * needed. Slower than inline scalar code; correctness first,
+ * performance after a type-resolver pass lands.
+ */
+export const runtime = {
+    // ── Type constructors ──────────────────────────────────────────
+    vec2: (x = 0, y) => (y === undefined ? { x, y: x } : { x, y }),
+    vec3: (x = 0, y, z) => (y === undefined ? { x, y: x, z: x }
+                                            : { x, y, z: z ?? 0 }),
+    vec4: (x = 0, y, z, w) => (y === undefined ? { x, y: x, z: x, w: x }
+                                               : { x, y, z: z ?? 0, w: w ?? 0 }),
+
+    // ── Scalar casts ───────────────────────────────────────────────
+    // Note: WGSL `f32(x)` rounds-to-nearest-even at the f32 type.
+    // Math.fround is the standard JS f32 rounding step.
+    f32: (x) => Math.fround(+x),
+    i32: (x) => (+x) | 0,
+    u32: (x) => (+x) >>> 0,
+    bool: (x) => !!x,
+
+    // ── Polymorphic arithmetic (scalar ↔ vec broadcast) ────────────
+    add: (a, b) => _binOp(a, b, (x, y) => x + y),
+    sub: (a, b) => _binOp(a, b, (x, y) => x - y),
+    mul: (a, b) => _binOp(a, b, (x, y) => x * y),
+    div: (a, b) => _binOp(a, b, (x, y) => x / y),
+    mod: (a, b) => _binOp(a, b, (x, y) => x - y * Math.trunc(x / y)),  // WGSL: trunc-toward-zero
+
+    // ── Math intrinsics (polymorphic) ──────────────────────────────
+    max: (a, b) => _binOp(a, b, Math.max),
+    min: (a, b) => _binOp(a, b, Math.min),
+    abs: (a)    => _mapOp(a, Math.abs),
+    sqrt:(a)    => _mapOp(a, Math.sqrt),
+    sign:(a)    => _mapOp(a, Math.sign),
+    floor:(a)   => _mapOp(a, Math.floor),
+    ceil: (a)   => _mapOp(a, Math.ceil),
+    round:(a)   => _mapOp(a, Math.round),
+    fract:(a)   => _mapOp(a, (x) => x - Math.floor(x)),
+    trunc:(a)   => _mapOp(a, Math.trunc),
+    exp:  (a)   => _mapOp(a, Math.exp),
+    log:  (a)   => _mapOp(a, Math.log),
+    exp2: (a)   => _mapOp(a, (x) => Math.pow(2, x)),
+    log2: (a)   => _mapOp(a, Math.log2),
+    pow:  (a, b) => _binOp(a, b, Math.pow),
+    sin:  (a)   => _mapOp(a, Math.sin),
+    cos:  (a)   => _mapOp(a, Math.cos),
+    tan:  (a)   => _mapOp(a, Math.tan),
+    atan: (a)   => _mapOp(a, Math.atan),
+    atan2:(a, b) => _binOp(a, b, Math.atan2),
+    clamp:(x, lo, hi) => _binOp(_binOp(x, lo, Math.max), hi, Math.min),
+    mix:  (a, b, t)  => _binOp(a, _binOp(_binOp(b, a, (q, w) => q - w), t, (q, w) => q * w), (q, w) => q + w),
+    step: (edge, x)  => _binOp(edge, x, (e, v) => v < e ? 0 : 1),
+    smoothstep: (e0, e1, x) => {
+        const t = _binOp(_binOp(x, e0, (a, b) => a - b),
+                         _binOp(e1, e0, (a, b) => a - b),
+                         (a, b) => Math.max(0, Math.min(1, a / b)));
+        return _binOp(_binOp(t, t, (a, b) => a * b),
+                      _binOp(_mapOp(t, (a) => 3 - 2 * a), 1, (a) => a),
+                      (a, b) => a * b);
+    },
+
+    // ── WGSL `select(a, b, cond)` returns b if cond else a. ───────
+    // NB: WGSL's `select` puts the condition last, opposite of `?:`.
+    select: (falseVal, trueVal, cond) => cond ? trueVal : falseVal,
+
+    // ── Bitcast (round-trip via shared buffer) ─────────────────────
+    bitcast_u32_f32: (f) => { _f32[0] = f; return _u32[0]; },
+    bitcast_f32_u32: (u) => { _u32[0] = u >>> 0; return _f32[0]; },
+    bitcast_i32_f32: (f) => { _f32[0] = f; return _i32[0]; },
+    bitcast_f32_i32: (i) => { _i32[0] = i | 0; return _f32[0]; },
+
+    // ── Atomics (single-threaded — degrade to plain ops) ──────────
+    // `target` is a {ref, key} handle so we can mutate by reference.
+    atomicLoad:  (t)          => t.ref[t.key],
+    atomicStore: (t, v)       => { t.ref[t.key] = v; },
+    atomicAdd:   (t, v)       => { const o = t.ref[t.key]; t.ref[t.key] = o + v; return o; },
+    atomicSub:   (t, v)       => { const o = t.ref[t.key]; t.ref[t.key] = o - v; return o; },
+    atomicMax:   (t, v)       => { const o = t.ref[t.key]; if (v > o) t.ref[t.key] = v; return o; },
+    atomicMin:   (t, v)       => { const o = t.ref[t.key]; if (v < o) t.ref[t.key] = v; return o; },
+    atomicAnd:   (t, v)       => { const o = t.ref[t.key]; t.ref[t.key] = o & v; return o; },
+    atomicOr:    (t, v)       => { const o = t.ref[t.key]; t.ref[t.key] = o | v; return o; },
+    atomicXor:   (t, v)       => { const o = t.ref[t.key]; t.ref[t.key] = o ^ v; return o; },
+    atomicExchange: (t, v)    => { const o = t.ref[t.key]; t.ref[t.key] = v; return o; },
+    atomicCompareExchangeWeak: (t, expected, v) => {
+        const o = t.ref[t.key];
+        if (o === expected) { t.ref[t.key] = v; return { old_value: o, exchanged: true }; }
+        return { old_value: o, exchanged: false };
+    },
+
+    // Construct an atomic handle from an object+key pair. Emitted
+    // code calls this for both global storage atomics (`&buf[i]`) and
+    // workgroup-local atomics (`&wg.tile_max`).
+    addressOf: (ref, key) => ({ ref, key }),
+
+    // ── Workgroup barrier ─────────────────────────────────────────
+    // Becomes a no-op marker at runtime; the emitter handles phase
+    // splitting structurally, so by the time we reach this fn the
+    // synchronization has already been arranged. Kept callable so
+    // hand-written test harnesses don't crash.
+    workgroupBarrier: () => {},
+    storageBarrier:   () => {},
+};
+
+//#endregion
+
+
+//#region 5. DISPATCH WRAPPER (stub)  ─────────────────────────────────
+
+/**
+ * Wrap a per-thread function body into a workgroup-grid dispatcher.
+ * Future work: hook in phase splitting for workgroupBarrier(), and
+ * workgroup-local memory reset between workgroups.
+ *
+ * @param {Function} _threadFn  Emitted per-invocation function.
+ * @param {[number,number,number]} _workgroupSize  From @workgroup_size.
+ * @returns {Function}
+ */
+export function wrapEntry(_threadFn, _workgroupSize) {
+    throw new WGSLError('wrapEntry: not yet implemented', 0, 0);
+}
+
+//#endregion
+
+
+//#region 6. TOP-LEVEL API  ───────────────────────────────────────────
+
+/**
+ * Compile WGSL source into an executable JS module object.
+ *
+ * Security note: this function constructs a JS Function from the
+ * emitted source string. That dynamic compilation is intentional —
+ * it IS the transpiler — and is only safe because the input is a
+ * `.wgsl` file under your own control (build-time author, or runtime
+ * fetched from your own origin under the existing CSP). Do not call
+ * this on WGSL strings that came from network input you don't trust.
+ * Build-time use (regenerate sibling `.js` once, ship the artifact)
+ * sidesteps the runtime-eval concern entirely.
+ *
+ * @param {string} source
+ * @param {{ debug?: boolean, runtime?: object }} [opts]
+ * @returns {{ entry: Object<string, Function>, bindings: string[], jsSource: string }}
+ */
+export function compileWGSL(source, opts = {}) {
+    const rt     = opts.runtime || runtime;
+    const tokens = tokenize(source);
+    const ast    = parse(tokens);
+    const result = emit(ast);
+
+    // Eval target is our own deterministic emit() output — see security note above.
+    // eslint-disable-next-line no-new-func -- transpiler output, see fn doc
+    const factory = new Function('rt', result.body);
+    const mod = factory(rt);
+
+    if (opts.debug) {
+        console.log('[wgsl-transpile] tokens:', tokens.length);
+        console.log('[wgsl-transpile] entry points:', result.entryPoints);
+        console.log('[wgsl-transpile] bindings:', result.bindings);
+    }
+    return {
+        entry: mod.entry,
+        bindings: mod.bindings,
+        jsSource: result.jsSource,
+    };
+}
+
+//#endregion
