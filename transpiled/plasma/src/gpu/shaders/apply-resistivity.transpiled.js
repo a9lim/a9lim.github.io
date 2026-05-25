@@ -2,7 +2,8 @@
 // source: plasma/src/gpu/shaders/apply-resistivity.wgsl
 // helpers-sha256: b91e2ee1e6d4fdceaccac2b8f5db37fbde9a5d2b76ef88f1977bbfcf6e6e2833
 // wgsl-transpile sha256: 0b50876f7d65a6a7454f3293cbfa19f5c972e07204a4e0c849a8e8f2c2033366
-// generated: 2026-05-25T23:32:29.806Z
+// wgsl-opts: {"flatStorage":true,"collectErrors":true}
+// generated: 2026-05-25T23:39:36.660Z
 export default function _wgsl_module(rt) {
     const BC_PERIODIC = 0;
     const BC_OUTFLOW = 1;

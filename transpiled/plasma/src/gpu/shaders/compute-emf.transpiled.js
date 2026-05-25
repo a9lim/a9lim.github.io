@@ -2,7 +2,8 @@
 // source: plasma/src/gpu/shaders/compute-emf.wgsl
 // helpers-sha256: b91e2ee1e6d4fdceaccac2b8f5db37fbde9a5d2b76ef88f1977bbfcf6e6e2833
 // wgsl-transpile sha256: 9eaeda26b40e54b53043e71ff1aa04d4c752674830d69d1f2eb53d20d46111a5
-// generated: 2026-05-25T23:32:29.812Z
+// wgsl-opts: {"flatStorage":true,"collectErrors":true}
+// generated: 2026-05-25T23:39:36.666Z
 export default function _wgsl_module(rt) {
     const BC_PERIODIC = 0;
     const BC_OUTFLOW = 1;

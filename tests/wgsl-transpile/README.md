@@ -39,6 +39,13 @@ node tests/wgsl-transpile/run.js --quiet  # only print failures
 # the emitted JS actually executes correctly against canned input.
 node tests/wgsl-transpile/smoke.js
 
+# Validates the build-time .transpiled.js artifacts under transpiled/.
+# Checks headers are well-formed, source-hashes match live .wgsl, and
+# each artifact body is byte-identical to a fresh transpileWGSL() call
+# with the same opts. Doesn't re-run the build (would skew the skip-on-
+# unchanged invariant). Run after `node _build.mjs`.
+node tests/wgsl-transpile/build-smoke.js
+
 # Microbench for the emit pipeline. Four kernels (FMA, Verlet, n-body
 # var accumulator, helper-heavy spring) each run baseline (polymorphic
 # rt.*) and optimized (full stack: resolveModule + inline + SROA) and

@@ -1,11 +1,16 @@
 {
-  "generatedAt": "2026-05-25T23:32:28.087Z",
+  "generatedAt": "2026-05-25T23:39:34.869Z",
   "lastDeploy": {
-    "hash": "5051bd8",
-    "iso": "2026-05-25T16:27:48-07:00",
-    "subject": "build: rename _build.js → _build.mjs (ESM conversion)"
+    "hash": "3552260",
+    "iso": "2026-05-25T16:33:40-07:00",
+    "subject": "wgsl-transpile: build-time artifact writer + plasma shader pre-transpile"
   },
   "commits": [
+    {
+      "hash": "3552260",
+      "iso": "2026-05-25T16:33:40-07:00",
+      "subject": "wgsl-transpile: build-time artifact writer + plasma shader pre-transpile"
+    },
     {
       "hash": "5051bd8",
       "iso": "2026-05-25T16:27:48-07:00",
@@ -30,11 +35,6 @@
       "hash": "05b8b86",
       "iso": "2026-05-25T13:30:50-07:00",
       "subject": "wgsl-transpile: refresh README — restructure, add Resolver+Inline sections, update LOC"
-    },
-    {
-      "hash": "28ae5c4",
-      "iso": "2026-05-25T13:21:48-07:00",
-      "subject": "wgsl-transpile: var SROA for mutable vec locals (~14x on var-heavy kernel)"
     }
   ],
   "stats": {
@@ -42,6 +42,6 @@
     "posts": 1,
     "scriptureWorks": 16,
     "scriptureChapters": 2724,
-    "sourceLines": 24687
+    "sourceLines": 31518
   }
 }

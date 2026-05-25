@@ -684,11 +684,16 @@ function transpileOneDir({ dir, opts }) {
       }
     }
 
+    // Opts are encoded in the header so build-smoke.js can reproduce
+    // the transpile call from the artifact alone — keeps the test
+    // data-driven instead of needing to duplicate WGSL_SHADER_DIRS.
+    const headerOpts = JSON.stringify(opts);
     const header = [
       '// Auto-generated from WGSL by _build.mjs — DO NOT EDIT.',
       `// source: ${relative(ROOT, rec.abs)}`,
       `// helpers-sha256: ${helperHash}`,
       `// wgsl-transpile sha256: ${unitHash}`,
+      `// wgsl-opts: ${headerOpts}`,
       `// generated: ${new Date().toISOString()}`,
       '',
     ].join('\n');

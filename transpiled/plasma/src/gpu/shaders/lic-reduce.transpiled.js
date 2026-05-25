@@ -2,7 +2,8 @@
 // source: plasma/src/gpu/shaders/lic-reduce.wgsl
 // helpers-sha256: b91e2ee1e6d4fdceaccac2b8f5db37fbde9a5d2b76ef88f1977bbfcf6e6e2833
 // wgsl-transpile sha256: 9c24667291a532b29c582513800f0373f62490a6ae7c72165596536e0d35d70b
-// generated: 2026-05-25T23:32:29.816Z
+// wgsl-opts: {"flatStorage":true,"collectErrors":true}
+// generated: 2026-05-25T23:39:36.670Z
 export default function _wgsl_module(rt) {
     const BC_PERIODIC = 0;
     const BC_OUTFLOW = 1;

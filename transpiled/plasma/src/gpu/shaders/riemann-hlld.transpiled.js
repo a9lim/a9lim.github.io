@@ -2,7 +2,8 @@
 // source: plasma/src/gpu/shaders/riemann-hlld.wgsl
 // helpers-sha256: b91e2ee1e6d4fdceaccac2b8f5db37fbde9a5d2b76ef88f1977bbfcf6e6e2833
 // wgsl-transpile sha256: 75c0aba68ba4648d12f5ad63c300d8d612a15993795e7318296cb244bb851d8f
-// generated: 2026-05-25T23:32:29.824Z
+// wgsl-opts: {"flatStorage":true,"collectErrors":true}
+// generated: 2026-05-25T23:39:36.679Z
 export default function _wgsl_module(rt) {
     const BC_PERIODIC = 0;
     const BC_OUTFLOW = 1;
