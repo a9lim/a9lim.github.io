@@ -294,12 +294,12 @@ analyzer pass.
 Genuinely-not-yet-done work, in approximate priority order. (Landed
 work and its history is in the next section.)
 
-### Build-time artifact writer + `_build.js` integration
+### Build-time artifact writer + `_build.mjs` integration
 
 `transpileWGSL()` now exposes the no-eval build-time API. The remaining
 work is a shader-walker that finds every `.wgsl` in the repo (or just per
 sim), calls `transpileWGSL()`, and emits a sibling `.transpiled.js` file.
-Hook that into the existing optional `_build.js`. After this lands, CPU
+Hook that into the existing optional `_build.mjs`. After this lands, CPU
 backends can `import` the transpiled artifact directly instead of running
 the transpiler at runtime, which:
 
@@ -307,11 +307,11 @@ the transpiler at runtime, which:
 - Removes the parser/emitter from the browser bundle entirely
 - Makes transpile errors surface at build time, not on first load
 - Adds a build step authors need to remember (mitigated: it's optional
-  in the current `_build.js` flow, and dev mode can keep runtime
+  in the current `_build.mjs` flow, and dev mode can keep runtime
   transpile as the fast-iteration path)
 
 Estimate: ~100 LOC of new code in a new `tools/wgsl-build.js` (or fold
-into `_build.js`), plus a few lines in the per-sim `pipelines.js` to
+into `_build.mjs`), plus a few lines in the per-sim `pipelines.js` to
 prefer the transpiled artifact when present. Mostly grunt work.
 
 ### Plasma integration

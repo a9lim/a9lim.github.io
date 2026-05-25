@@ -23,7 +23,7 @@ for item in "$REPO"/*; do
   name=$(basename "$item")
   case "$name" in
     .git|.github|.claude|.wrangler|_dev-assets|node_modules) continue ;;
-    _worker.js|_build.js|AGENTS.md|CLAUDE.md|dev.sh) continue ;;
+    _worker.js|_build.mjs|AGENTS.md|CLAUDE.md|dev.sh) continue ;;
     *) ln -s "$item" "$DEV/$name" ;;
   esac
 done

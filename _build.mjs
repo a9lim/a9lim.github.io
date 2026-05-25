@@ -1,11 +1,11 @@
 #!/usr/bin/env node
-'use strict';
 
-const { readFileSync, writeFileSync, existsSync } = require('fs');
-const { execFileSync, spawnSync } = require('child_process');
-const { join } = require('path');
+import { readFileSync, writeFileSync, existsSync } from 'node:fs';
+import { execFileSync, spawnSync } from 'node:child_process';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-const ROOT = __dirname;
+const ROOT = dirname(fileURLToPath(import.meta.url));
 const SITE = 'https://a9l.im';
 
 // --- helpers ---

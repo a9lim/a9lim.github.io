@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Builds resume.pdf from resume.tex via tectonic and moves it to repo root.
-# Invoked by _build.js (graceful skip if tectonic missing).
+# Invoked by _build.mjs (graceful skip if tectonic missing).
 
 set -euo pipefail
 
