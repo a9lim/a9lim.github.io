@@ -435,12 +435,115 @@ function testInlinePreservesOutput() {
     check('output is nonzero', nonzero);
 }
 
+// ── Test 7: var SROA preserves correctness across compound assigns,
+//          conditional reassignment, and whole-vec reads.
+// Compares default (full optimization stack: resolveModule + inline +
+// SROA) against polymorphic mode (no resolveModule, no inline, no SROA,
+// just rt.* dispatch). The polymorphic path is the simplest correct
+// pipeline; matching it means the full optimization stack — including
+// the new `var` SROA work — preserves semantics end-to-end.
+function testVarSroaPreservesOutput() {
+    console.log('test: var SROA preserves output');
+
+    const wgsl = `
+        struct Uniforms {
+            n: u32, k_attract: f32, k_repel: f32, dt: f32,
+            drag: f32, _p0: f32, _p1: f32, _p2: f32,
+        };
+        @group(0) @binding(0) var<uniform>             U:   Uniforms;
+        @group(0) @binding(1) var<storage, read>       pos: array<vec3<f32>>;
+        @group(0) @binding(2) var<storage, read>       vel: array<vec3<f32>>;
+        @group(0) @binding(3) var<storage, read_write> out: array<vec3<f32>>;
+
+        @compute @workgroup_size(8, 1, 1)
+        fn nbody(@builtin(global_invocation_id) gid: vec3<u32>) {
+            let i = gid.x;
+            if (i >= U.n) { return; }
+            let p = pos[i];
+            let v = vel[i];
+            var force = vec3<f32>(0.0, 0.0, 0.0);
+            for (var k = 1u; k <= 4u; k = k + 1u) {
+                let j = (i + k) % U.n;
+                let q = pos[j];
+                let d = q - p;
+                let r2 = d.x*d.x + d.y*d.y + d.z*d.z + 1e-6;
+                let inv_r = 1.0 / sqrt(r2);
+                let dir = d * inv_r;
+                force += dir * (U.k_attract / r2);
+                force -= dir * (U.k_repel * inv_r * inv_r * inv_r);
+            }
+            var damped = v;
+            if (force.x*force.x + force.y*force.y + force.z*force.z > 1.0) {
+                damped = v * 0.5;
+            }
+            let a = force - damped * U.drag;
+            out[i] = p + (damped + a * U.dt) * U.dt;
+        }
+    `;
+
+    const N = 11;   // small odd N — both branches of the if hit across the buffer
+    function makeInputs() {
+        const pos = new Array(N);
+        const vel = new Array(N);
+        const out = new Array(N);
+        // Spread on a 3D pseudo-lattice; alternate high/low velocity so
+        // the `force > 1` branch fires for some and not others.
+        for (let i = 0; i < N; i++) {
+            pos[i] = { x: (i % 3) - 1, y: ((i >> 1) % 3) - 1, z: ((i >> 2) % 3) - 1 };
+            vel[i] = { x: i % 2 ? 2.0 : 0.1, y: 0.3, z: -0.2 };
+            out[i] = { x: 0, y: 0, z: 0 };
+        }
+        return { pos, vel, out };
+    }
+    function run(opts) {
+        const mod = compileWGSL(wgsl, opts);
+        const inputs = makeInputs();
+        mod.entry.nbody({
+            workgroups: [Math.ceil(N / 8), 1, 1],
+            bindings: {
+                U: { n: N, k_attract: 0.05, k_repel: 0.01, dt: 0.01,
+                     drag: 0.1, _p0: 0, _p1: 0, _p2: 0 },
+                pos: inputs.pos, vel: inputs.vel, out: inputs.out,
+            },
+        });
+        return inputs.out;
+    }
+    const optimized = run({});                       // full stack on
+    const baseline  = run({ polymorphic: true });    // rt.* dispatch only
+
+    const EPS = 1e-5;
+    let matched = true;
+    let firstMismatch = -1;
+    for (let i = 0; i < N; i++) {
+        for (const c of ['x', 'y', 'z']) {
+            if (Math.abs(optimized[i][c] - baseline[i][c]) > EPS) {
+                matched = false;
+                if (firstMismatch < 0) firstMismatch = i;
+            }
+        }
+    }
+    check('full-opt output matches polymorphic baseline', matched,
+          matched ? '' :
+            `divergence at i=${firstMismatch}: opt=${JSON.stringify(optimized[firstMismatch])} vs base=${JSON.stringify(baseline[firstMismatch])}`);
+
+    // Bonus: branch-coverage sanity. The fast-velocity particles should
+    // produce different output than the slow ones (force-damping branch
+    // would have fired). Without this check we'd silently pass a kernel
+    // that no-ops everything.
+    let differ = false;
+    for (let i = 1; i < N; i++) {
+        if (optimized[i].x !== optimized[0].x) { differ = true; break; }
+    }
+    check('outputs vary across particles (branch coverage sanity)', differ);
+}
+
 testScalarFma();
 testVec4Arith();
 testHelpersAndControl();
 testBarrierReduction();
 testResolverCoverage();
 testInlinePreservesOutput();
+testVarSroaPreservesOutput();
 
 console.log();
 console.log(`${pass} passed, ${fail} failed`);

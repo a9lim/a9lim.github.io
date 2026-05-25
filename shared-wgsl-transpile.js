@@ -2904,14 +2904,24 @@ class Emitter {
                     if (s.value) visitExpr(s.value);
                     break;
                 }
-                case 'var':
-                    // `var` not yet scalarized — would need mutable
-                    // scalar lets and write-through on every assign.
-                    // Falls through to normal emit.
+                case 'var': {
+                    if (seen.has(s.name)) {
+                        banned.add(s.name);
+                    } else {
+                        seen.add(s.name);
+                        // Arity from .value's resolved type when available,
+                        // otherwise from the declared type annotation. The
+                        // annotation path covers `var v: vec3<f32>;` with no
+                        // initializer (default-zero per component at emit).
+                        let arity = null;
+                        const t = s.value?.resolvedType;
+                        if (t?.kind === 'vec') arity = t.n;
+                        else if (s.type?.kind === 'type_vec') arity = s.type.n;
+                        if (arity != null) candidate.set(s.name, arity);
+                    }
                     if (s.value) visitExpr(s.value);
-                    if (seen.has(s.name)) banned.add(s.name);
-                    else seen.add(s.name);
                     break;
+                }
                 case 'block':
                     for (const x of s.stmts) visitStmt(x);
                     break;
@@ -2939,9 +2949,25 @@ class Emitter {
                     }
                     break;
                 case 'for':
-                    if (s.init)   visitStmt(s.init);
+                    // For-init / for-update decls can't be scalarized:
+                    // forStmtInline emits each as a single JS expression,
+                    // with no room to introduce N per-component bindings.
+                    // Ban any declared name in those slots before walking,
+                    // so the candidate map never picks them up. Cheap
+                    // safety net — vec lets in for-init are rare in WGSL,
+                    // but a scalarization that the emitter then can't honor
+                    // would crash with "var name not defined" at runtime.
+                    if (s.init) {
+                        if (s.init.kind === 'let' || s.init.kind === 'const' || s.init.kind === 'var')
+                            banned.add(s.init.name);
+                        visitStmt(s.init);
+                    }
                     if (s.cond)   visitExpr(s.cond);
-                    if (s.update) visitStmt(s.update);
+                    if (s.update) {
+                        if (s.update.kind === 'let' || s.update.kind === 'const' || s.update.kind === 'var')
+                            banned.add(s.update.name);
+                        visitStmt(s.update);
+                    }
                     for (const x of s.body.stmts) visitStmt(x);
                     break;
                 case 'while':
@@ -3102,6 +3128,123 @@ class Emitter {
         return true;
     }
 
+    /** Emit a `var` declaration whose name has been picked for SROA.
+     *  Declares N mutable JS `let`s named `${name}_x`/`${name}_y`/...
+     *  initialized from the AST value (or default-zero per component
+     *  when no initializer is present).
+     *
+     *  Init paths mirror emitScalarizedLet's:
+     *    - direct: when value is component-safe and doesn't need
+     *      materialization, emit one let per component using
+     *      `exprComp(value, c)` — no intermediate object allocated
+     *    - indirect: materialize into a tmp once, then split — one
+     *      vec alloc, equal to the non-SROA cost (still wins on
+     *      subsequent assigns)
+     *    - no init: zero per component (or `false` for vec<bool>) */
+    emitScalarizedVarDecl(name, valueExpr, declType, arity) {
+        const comps = ['x', 'y', 'z', 'w'].slice(0, arity);
+        if (valueExpr == null) {
+            // No init — use the same zero shape defaultInit picks for
+            // the wholevec case, but spread across the per-component lets.
+            // (Vec<bool> default is `false`; everything else is 0.)
+            const isBool = declType?.kind === 'type_vec'
+                && declType.of?.name === 'bool';
+            const z = isBool ? 'false' : '0';
+            for (let i = 0; i < arity; i++) {
+                this.line(`let ${_safe(name)}_${comps[i]} = ${z};`);
+            }
+            return;
+        }
+        const compExprs = isComponentSafe(valueExpr)
+            ? comps.map(c => this.exprComp(valueExpr, c))
+            : null;
+        if (compExprs && compExprs.every(x => x != null)
+                && !this.exprNeedsMaterialize(valueExpr)) {
+            for (let i = 0; i < arity; i++) {
+                this.line(`let ${_safe(name)}_${comps[i]} = ${compExprs[i]};`);
+            }
+            return;
+        }
+        const tmp = `_sroa_${this.sroaCounter++}`;
+        this.line(`const ${tmp} = ${this.expr(valueExpr)};`);
+        for (let i = 0; i < arity; i++) {
+            this.line(`let ${_safe(name)}_${comps[i]} = ${tmp}.${comps[i]};`);
+        }
+    }
+
+    /** Emit a store to a scalarized var. Handles both plain assign
+     *  (`compoundOp = null`) and compound assign (`+=`/`-=`/etc.).
+     *
+     *  RHS shape variants:
+     *    - vec with component-safe expr: per-component stores via
+     *      exprComp — zero allocations. Component values capture into
+     *      `_wt0..` temps first so `force += f(force)` swizzle-rotate
+     *      and self-referential patterns stay safe.
+     *    - scalar broadcast on a compound (e.g., `force *= 0.5`):
+     *      capture once into a scalar tmp, apply to each component.
+     *    - vec but not component-safe (e.g., a non-inlined user fn
+     *      call returning vec): materialize once into a tmp, then
+     *      apply to each component. One alloc per assign — same as
+     *      the non-SROA cost, still wins on the surrounding loop.  */
+    emitScalarizedVarStore(name, valueExpr, compoundOp) {
+        const arity = this.scalarized.get(name);
+        const comps = ['x', 'y', 'z', 'w'].slice(0, arity);
+        const vt = valueExpr.resolvedType;
+        const isVecRhs = vt?.kind === 'vec';
+        const isScalarRhs = vt?.kind === 'scalar';
+        const op = compoundOp || '=';   // '=' / '+=' / '-=' / '*=' / '/=' / '%='
+
+        // Fast path: vec RHS, component-safe → per-component stores
+        // captured into _wt tmps first.
+        if (isVecRhs && isComponentSafe(valueExpr)) {
+            const compExprs = comps.map(c => this.exprComp(valueExpr, c));
+            if (compExprs.every(x => x != null)) {
+                this.line(`{`);
+                this.open();
+                for (let i = 0; i < arity; i++) {
+                    this.line(`const _wt${i} = ${compExprs[i]};`);
+                }
+                for (let i = 0; i < arity; i++) {
+                    this.line(`${_safe(name)}_${comps[i]} ${op} _wt${i};`);
+                }
+                this.close();
+                this.line(`}`);
+                return;
+            }
+        }
+
+        // Scalar broadcast on a compound — capture the scalar once,
+        // apply to each component. (Plain `=` with scalar RHS would be
+        // a WGSL type error and shouldn't reach here.)
+        if (isScalarRhs && compoundOp != null && isComponentSafe(valueExpr)) {
+            this.line(`{`);
+            this.open();
+            this.line(`const _wt = ${this.expr(valueExpr)};`);
+            for (let i = 0; i < arity; i++) {
+                this.line(`${_safe(name)}_${comps[i]} ${op} _wt;`);
+            }
+            this.close();
+            this.line(`}`);
+            return;
+        }
+
+        // Fallback: materialize once into a tmp, then split. One alloc
+        // per store — same as the non-SROA cost; the win is in the
+        // surrounding loop (avoided per-iteration allocs on the no-call
+        // assign sites).
+        const tmp = `_sroa_${this.sroaCounter++}`;
+        this.line(`const ${tmp} = ${this.expr(valueExpr)};`);
+        if (isScalarRhs) {
+            for (let i = 0; i < arity; i++) {
+                this.line(`${_safe(name)}_${comps[i]} ${op} ${tmp};`);
+            }
+        } else {
+            for (let i = 0; i < arity; i++) {
+                this.line(`${_safe(name)}_${comps[i]} ${op} ${tmp}.${comps[i]};`);
+            }
+        }
+    }
+
     // ── Statements ─────────────────────────────────────────────────
     stmt(s, inEntry = false) {
         switch (s.kind) {
@@ -3125,6 +3268,13 @@ class Emitter {
 
             case 'var':
                 this.declareLocal(s.name);
+                {
+                    const arity = this.scalarized.get(s.name);
+                    if (arity != null) {
+                        this.emitScalarizedVarDecl(s.name, s.value, s.type, arity);
+                        break;
+                    }
+                }
                 if (s.value != null)
                     this.line(`let ${_safe(s.name)} = ${this.expr(s.value)};`);
                 else
@@ -3140,6 +3290,15 @@ class Emitter {
             }
 
             case 'assign': {
+                // Scalarized-var target: per-component stores. Must run
+                // before tryEmitVecWriteThrough because that path emits
+                // `${expr}.x = ...` and emitIdent on a scalarized name
+                // rematerializes via `rt.vec3(name_x, ...)` — writing to
+                // a fresh object would silently drop the update.
+                if (s.target.kind === 'ident' && this.scalarized.has(s.target.name)) {
+                    this.emitScalarizedVarStore(s.target.name, s.value, /*compoundOp=*/null);
+                    break;
+                }
                 if (this.tryEmitVecWriteThrough(s.target, s.value)) break;
                 const target = this.lvalue(s.target);
                 this.line(`${target} = ${this.expr(s.value)};`);
@@ -3147,6 +3306,12 @@ class Emitter {
             }
 
             case 'compound': {
+                // Scalarized-var compound assign: per-component native JS
+                // op-assigns (`force_x += rhs_x; ...`), no rt.* dispatch.
+                if (s.target.kind === 'ident' && this.scalarized.has(s.target.name)) {
+                    this.emitScalarizedVarStore(s.target.name, s.value, s.op);
+                    break;
+                }
                 const target = this.lvalue(s.target);
                 const op = s.op.slice(0, -1); // strip trailing '='
                 if (POLY_BIN.has(op)) {
