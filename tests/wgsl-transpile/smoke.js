@@ -334,11 +334,113 @@ function testResolverCoverage() {
           unresolvedSamples.length ? `unresolved samples: ${unresolvedSamples.join(', ')}` : '');
 }
 
+// ── Test 6: inlining preserves correctness across a chain of vec helpers
+// Guards step 1 of the optimization arc. Compiles the same shader twice
+// — once with inlining enabled (the default), once with `opts.noInline`
+// — and checks both produce identical output on the same input. Also
+// checks the conditional-return path in clamp_speed-style helpers (one
+// branch returns a fresh vec, the other returns the param directly):
+// both must route through the scalarized result var without drift.
+function testInlinePreservesOutput() {
+    console.log('test: small-fn inlining preserves output');
+
+    const wgsl = `
+        struct Uniforms { n: u32, dt: f32, damping: f32, k: f32,
+                          rest: f32, v_max: f32, _p0: f32, _p1: f32, };
+        @group(0) @binding(0) var<uniform>             U:       Uniforms;
+        @group(0) @binding(1) var<storage, read>       pos_in:  array<vec3<f32>>;
+        @group(0) @binding(2) var<storage, read>       vel_in:  array<vec3<f32>>;
+        @group(0) @binding(3) var<storage, read_write> pos_out: array<vec3<f32>>;
+        @group(0) @binding(4) var<storage, read_write> vel_out: array<vec3<f32>>;
+
+        fn safe_normalize(d: vec3<f32>) -> vec3<f32> {
+            let len = sqrt(d.x*d.x + d.y*d.y + d.z*d.z);
+            return d * (1.0 / max(len, 1e-6));
+        }
+        fn spring_force(p: vec3<f32>, q: vec3<f32>, k: f32, rest: f32) -> vec3<f32> {
+            let d = q - p;
+            let len = sqrt(d.x*d.x + d.y*d.y + d.z*d.z);
+            let dir = d * (1.0 / max(len, 1e-6));
+            return dir * (k * (len - rest));
+        }
+        fn clamp_speed(v: vec3<f32>, mx: f32) -> vec3<f32> {
+            let s = sqrt(v.x*v.x + v.y*v.y + v.z*v.z);
+            if (s > mx) { return v * (mx / s); }
+            return v;
+        }
+
+        @compute @workgroup_size(8, 1, 1)
+        fn step(@builtin(global_invocation_id) gid: vec3<u32>) {
+            let i = gid.x;
+            if (i >= U.n) { return; }
+            let p = pos_in[i];
+            let v = vel_in[i];
+            let j = min(i + 1u, U.n - 1u);
+            let q = pos_in[j];
+            let f = spring_force(p, q, U.k, U.rest);
+            let drag = safe_normalize(v) * U.damping;
+            let v_new = clamp_speed(v - drag + f * U.dt, U.v_max);
+            let p_new = p + v_new * U.dt;
+            pos_out[i] = p_new;
+            vel_out[i] = v_new;
+        }
+    `;
+
+    const N = 13;   // odd to exercise both >v_max and ≤v_max branches
+    function makeInputs() {
+        const pos_in  = new Array(N);
+        const vel_in  = new Array(N);
+        const pos_out = new Array(N);
+        const vel_out = new Array(N);
+        // Mix slow + fast particles so clamp_speed's branch hits both
+        // arms across the buffer.
+        for (let i = 0; i < N; i++) {
+            pos_in[i]  = { x: i * 0.3, y: i * 0.1, z: -i * 0.2 };
+            vel_in[i]  = { x: (i % 2 ? 30.0 : 0.3), y: 0.2, z: -0.1 };
+            pos_out[i] = { x: 0, y: 0, z: 0 };
+            vel_out[i] = { x: 0, y: 0, z: 0 };
+        }
+        return { pos_in, vel_in, pos_out, vel_out };
+    }
+    function run(opts) {
+        const mod = compileWGSL(wgsl, opts);
+        const inputs = makeInputs();
+        mod.entry.step({
+            workgroups: [Math.ceil(N / 8), 1, 1],
+            bindings: {
+                U: { n: N, dt: 0.05, damping: 0.1, k: 3.0,
+                     rest: 0.5, v_max: 2.0, _p0: 0, _p1: 0 },
+                pos_in: inputs.pos_in, vel_in: inputs.vel_in,
+                pos_out: inputs.pos_out, vel_out: inputs.vel_out,
+            },
+        });
+        return { pos: inputs.pos_out, vel: inputs.vel_out };
+    }
+    const inlined  = run({});                 // default: inlining on
+    const noInline = run({ noInline: true }); // bypass path
+
+    const EPS = 1e-6;
+    let matched = true;
+    for (let i = 0; i < N; i++) {
+        for (const c of ['x', 'y', 'z']) {
+            if (Math.abs(inlined.pos[i][c] - noInline.pos[i][c]) > EPS) matched = false;
+            if (Math.abs(inlined.vel[i][c] - noInline.vel[i][c]) > EPS) matched = false;
+        }
+    }
+    check('inlined output matches non-inlined on the same shader', matched,
+          matched ? '' : `divergence at first mismatch: pos[0]=${JSON.stringify(inlined.pos[0])} vs ${JSON.stringify(noInline.pos[0])}`);
+
+    // Bonus: output is nonzero (sanity — both paths actually executed).
+    const nonzero = inlined.pos.some(p => p.x !== 0 || p.y !== 0 || p.z !== 0);
+    check('output is nonzero', nonzero);
+}
+
 testScalarFma();
 testVec4Arith();
 testHelpersAndControl();
 testBarrierReduction();
 testResolverCoverage();
+testInlinePreservesOutput();
 
 console.log();
 console.log(`${pass} passed, ${fail} failed`);

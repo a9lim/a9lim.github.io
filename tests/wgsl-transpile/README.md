@@ -58,30 +58,38 @@ are enforced — adjust when bringing a new phase online.
 | tokenize      | 68/68 shaders, 13.5k lines, 100k tokens             | Full WGSL token grammar |
 | parse         | 68/68 shaders → AST                                 | Recursive descent + Pratt for exprs |
 | resolve       | 100% decl sites (15389/15389), 90.1% Expr nodes     | Symbol table + expr resolver pass |
-| emit          | 68/68 shaders → JS that parses cleanly              | Type-driven inline scalar/vec emit, SROA for vec lets, builtin scalarization, write-through stores; rt.* fallback when types unresolved |
+| inline        | per-fn budget K=8 stmts / M=4 sites, AST-rewrite    | Lifts inlinable calls into pre-stmts; scalarized result vars compose with SROA so helper-shaped kernels approach monolithic perf |
+| emit          | 68/68 shaders → JS that parses cleanly              | Type-driven inline scalar/vec emit, SROA for vec lets, builtin scalarization, write-through stores, POLY_FN intrinsic component lowering; rt.* fallback when types unresolved |
 | eval          | 68/68 shaders construct as live JS module           | Build-time mode would sidestep this |
-| dispatch      | 7/7 smoke tests pass                                | Includes barrier-split atomic reduction + resolver coverage |
-| **bench**     | **~21-26× speedup vs polymorphic baseline** (M5 Max) | Two kernels: FMA (arithmetic-heavy), Verlet (storage-I/O-dominant — real shader shape) |
+| dispatch      | 9/9 smoke tests pass                                | Includes barrier-split atomic reduction, resolver coverage, inline-vs-non-inline output parity |
+| **bench**     | **~22-27× speedup vs polymorphic baseline** on real-shader shapes; **~26.8× on helper-heavy** (was ~2.9× pre-inline) | Four kernels: FMA (arithmetic), Verlet (storage I/O), N-body (`var`-heavy), helper-heavy |
 
-Bench detail (N=100k particles × 30 iters, post Tier 1):
+Bench detail (N=100k particles × 20 iters, post small-fn inlining):
 
-| Kernel              | Baseline    | Inlined emit | Speedup | Per-particle |
-|---------------------|-------------|--------------|---------|--------------|
-| A: vec3 FMA loop    | ~2.2 ms/iter (allocation-bound) | ~2.0 ms/iter | ~22-29× | — |
-| B: Verlet step      | ~21 ms/iter | ~0.9 ms/iter | ~21-31× | ~9 ns |
+| Kernel                          | Baseline | Inlined emit | Speedup | Per-particle |
+|---------------------------------|----------|--------------|---------|--------------|
+| A: vec3 FMA loop                | ~40 ms/iter | ~1.8 ms/iter | ~22-23× | — |
+| B: Verlet step (monolithic)     | ~23 ms/iter | ~0.85 ms/iter | ~27× | ~8.5 ns |
+| C: N-body var accumulator       | ~100 ms/iter | ~29 ms/iter | ~3.5× | ~290 ns (target for var-SROA) |
+| D: helper-heavy spring step     | ~27 ms/iter | ~1.0 ms/iter | ~27× | ~10 ns |
 
 Variance 20-30% across runs from V8 warmup + GC. Kernel B at 0.85ms/iter
 is approaching native-compiled JS throughput — within ~1.4× of what
-hand-written allocation-free JS would do on the same kernel.
+hand-written allocation-free JS would do on the same kernel. Kernel D
+sits within ~1.2× of B's monolithic perf despite being factored through
+three helper fns: small-fn inlining + scalarized result vars close the
+factoring overhead almost entirely.
 
 The compounding optimizations that got us here (each measured individually
 on top of the previous):
 
 1. Phase-4 inline emit (pre-session baseline) — kernel A 7.3×, kernel B 7.2×
-2. Step 1: write-through for fresh-vec assigns — kernel A → 19×, kernel B unchanged
-3. Step 1.5a: SROA for let-bound vec locals — kernel A → 21×, kernel B → 11.5×
-4. Step 1.5b: emitMember SROA fast-path — kernel A unchanged, kernel B → 16.5×
-5. Step 1.5c: builtin (gid/lid/wgid/nwg) scalarization — kernel A → 31×, kernel B → 19×
+2. Tier 1a: write-through for fresh-vec assigns — kernel A → 19×, kernel B unchanged
+3. Tier 1b: SROA for let-bound vec locals — kernel A → 21×, kernel B → 11.5×
+4. Tier 1c: emitMember SROA fast-path — kernel A unchanged, kernel B → 16.5×
+5. Tier 1d: builtin (gid/lid/wgid/nwg) scalarization — kernel A → 31×, kernel B → 19×
+6. Tier 2a: small-fn inlining w/ scalarized result vars — kernel D 2.9× → 26.8×, others unchanged within variance
+7. Tier 2b: POLY_FN intrinsic component lowering in isComponentSafe — kernel D refined further, no regression elsewhere
 
 The resolve phase's 9.9% Expr gap is structural, not bugs: ~5% is
 JS-injected consts (geon's `buildWGSLConstants()` prepends `EPSILON`,
@@ -90,7 +98,7 @@ any `.wgsl` file the harness can see), ~5% is cascading from those plus
 a handful of rarely-used intrinsics. At actual compile time these all
 resolve fine; the corpus walker is just blind to them.
 
-The 6 smoke tests cover:
+The 9 smoke tests cover:
 1. Scalar FMA over a 1D buffer (`y = scale * x + offset`)
 2. Bindings catalog correctness
 3. vec4 arithmetic with struct member access
@@ -98,6 +106,12 @@ The 6 smoke tests cover:
 5. (implicit in 1-4) the basic dispatch loop semantics
 6. Workgroup-level atomic reduction across a barrier — proves phase
    splitting correctly serializes invocations at `workgroupBarrier()`
+7. Resolver Expr coverage on a canonical kernel (100% expected)
+8. Inlined-vs-non-inlined output parity on a 3-helper kernel —
+   guards small-fn inlining's correctness contract: `compileWGSL(src)`
+   and `compileWGSL(src, { noInline: true })` must produce identical
+   outputs on the same input, including across clamp_speed-style
+   conditional-return paths
 
 ## Architecture (read before editing)
 
@@ -186,7 +200,50 @@ Estimate: ~150 LOC of new code in a new `tools/wgsl-build.js` (or fold
 into `_build.js`), plus a few lines in the per-sim `pipelines.js` to
 prefer the transpiled artifact when present. Mostly grunt work.
 
-### 2. Type resolver + inline-scalar emit + SROA  *(landed)*
+### 2. Small-fn inlining  *(landed — Tier 2a)*
+
+AST-level pass between `resolveModule` and `emit` that splices small
+helper bodies into their call sites. Defaults: `inlineBudget` = 8
+top-level stmts per fn, `inlineCallLimit` = 4 static call sites across
+the module. Recursive fns (self- or mutual-) excluded; fns with ptr
+params or `&` uses excluded; entry points (`@compute`) are inlining
+targets, not inlinees.
+
+Mechanism:
+- For each call site of an inlinable helper, the lifter walks the
+  enclosing stmt's expressions depth-first (inner calls expanded first)
+  and replaces the call node with an ident pointing to a per-call-site
+  result var (`_inl_N_result`).
+- Helper params bind to fresh `_inl_N_paramName` lets (themselves SROA
+  candidates at emit time — vec args lower to per-component lets when
+  the arg expression is scalarized).
+- Helper body is alpha-renamed with the same `_inl_N_` prefix and
+  wrapped in `_inl_N: { ... }`. `return v;` rewrites into a synthetic
+  `inline_return_set` stmt (per-component stores for vec results, plain
+  whole-object assign for scalar/mat) followed by `break _inl_N`.
+- Vec-returning helpers get a **scalarized result var**: instead of one
+  mutable JS let holding a `{x,y,z}` object, the labeled-stmt emit
+  declares per-component lets (`_inl_N_result_x`, `_inl_N_result_y`,
+  ...) and registers the name in `this.scalarized`, so every downstream
+  read of `_inl_N_result` routes through the existing SROA fast paths.
+  Net effect: **zero vec allocations** on the inlining return path,
+  even across conditional-return helpers like `clamp_speed`.
+- `isComponentSafe` was relaxed to permit POLY_FN intrinsics
+  (`max`/`sqrt`/`sin`/etc.) — these are pure and lower to `Math.*`
+  templates, so triplicating them across vec component lowerings is
+  cheaper than the vec3 alloc the fallback would otherwise emit.
+
+Result: kernel D (real-shader shape factored through 3 helpers) goes
+from 2.91× to 26.78× speedup vs polymorphic, sitting within ~1.2× of
+the equivalent monolithic kernel B. Other kernels unchanged within
+variance.
+
+Smoke test 8 (`testInlinePreservesOutput`) is the correctness gate:
+inlined and `{ noInline: true }` modes must produce bit-identical
+output on a multi-helper kernel that exercises both clamp_speed's
+return paths.
+
+### 3. Type resolver + inline-scalar emit + SROA  *(landed)*
 
 The performance milestone. All phases complete; see the bench table at
 the top of this file for measured numbers.
@@ -254,7 +311,33 @@ prepends at runtime, ~5% cascade + rarely-used intrinsics); see "Current
 status" above. None of it blocks the inline emit — graceful degradation
 to rt.* dispatch preserves correctness on every shader.
 
-### 3. Flat TypedArray binding mode  *(deferred to plasma integration)*
+### 4. `var` SROA  *(up next — Tier 2b)*
+
+Kernel C still sits at ~3.5× speedup vs polymorphic, ~34× slower than
+the let-only Verlet kernel B at the same step count. The whole gap is
+the `var force = vec3(0); ... force += dir * k;` pattern — today's
+emit keeps `var` vec locals as live `{x,y,z}` objects, so each `+=`
+allocates a fresh object.
+
+Sketched plan:
+- Extend `collectScalarizable` to recognize `var v = vec...` candidates
+  with no `&v` uses and no whole-vec stores from polymorphic-fallback
+  sources. Both arms of any `if`/`else` reassigning the var must agree
+  on the scalarization decision; the collect pass enforces this.
+- Compound assigns lower component-wise: `force += rhs` →
+  `force_x += rhs_x; force_y += rhs_y; force_z += rhs_z` via the
+  existing per-component write-through machinery, but targeting
+  per-component lets instead of object properties.
+- Conditional reassignment (`if (cond) { v = e; }`) lowers to per-
+  component conditional stores. Whole-vec reads in unmodelled control
+  flow still rematerialize via `rt.vecN(v_x, v_y, v_z)` as the safety
+  net.
+- The synthetic inline-result-var path (above) already proves this
+  shape works for a constrained case — generalizing to user-declared
+  vars is the same machinery applied to `collectScalarizable`-discovered
+  candidates instead of only inline-pass-discovered ones.
+
+### 5. Flat TypedArray binding mode  *(deferred to plasma integration)*
 
 Scoped during the Tier 1 work but deferred — Tier 1's other wins (SROA +
 builtin scalarization) consumed most of the perf headroom, so the
@@ -281,7 +364,7 @@ Design (pre-decided):
 Best done as part of (or just before) the plasma integration so we can
 validate against the actual binding format plasma produces.
 
-### 4. Plasma integration
+### 6. Plasma integration
 
 The transpiler exists *for* plasma. Once build-time mode + flat-storage
 land, the integration is small:
@@ -298,7 +381,7 @@ The transpiler changes that calculus: the cost of the fallback is no
 longer "maintain a parallel implementation forever" — it's "write the
 adapter shim once." Worth revisiting that decision when picking this up.
 
-### 5. Geon integration (much later)
+### 7. Geon integration (much later)
 
 Geon is 54 shaders vs plasma's 13. The transpiler handles them all
 syntactically, but real integration is bigger:
@@ -317,19 +400,17 @@ edges of the runtime API and bindings format.
 ### Smaller items worth a session each
 
 - `bitcast` source-type inference (currently routes only by typeArgs)
-- SROA for `var` (mutable) vec locals — currently only `let`/`const`
-  vec locals scalarize. Vars are rarer in plasma/geon kernels, but
-  kernel A's `var acc = vec3(0)` would benefit by another small amount.
-  Needs care around compound-assign (`+=`) and conditional reassignment.
 - Matrix types (`mat3x3<f32>` etc.) — geon doesn't use, plasma doesn't
   use, but adding for completeness is straightforward
 - Type aliases (`alias Vec3F = vec3<f32>;`) — parser accepts, resolver
   needs to substitute
-- Small-fn inlining — inline ≤K-stmt helpers called from ≤M sites so
-  vec lowering can see through the call boundary. Helps any shader with
-  `clampSpeed`-shape helpers.
 - Dead-component elimination for scalarized builtins — if a kernel only
   uses `gid.x`, skip emitting `gid_y`/`gid_z`. Tiny win, easy.
+- Argument-binding elimination in the inline pass — when an arg expr is
+  a plain ident, skip the `const _inl_N_p = p;` rename and just register
+  `p → p` (or the original local name) in the nameMap. Cuts ~3-6 lines
+  per call site at no semantic cost. The let-aliasing is a small extra
+  load for V8 to elide today.
 - Better error reporting from the emit phase (currently throws at the
   first unhandled construct; would be nice to collect and report
   several)

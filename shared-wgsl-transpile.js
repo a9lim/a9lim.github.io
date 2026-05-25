@@ -1740,6 +1740,643 @@ export function resolveModule(ast) {
 //#endregion
 
 
+//#region 3.5. INLINE PASS  ──────────────────────────────────────────
+
+/* AST-level pass that inlines small user-defined helper fns at every
+   call site that is reachable from the surrounding statement context.
+   Runs after resolveModule and before emit, so:
+
+     - existing nodes keep their .resolvedType (we clone via shallow
+       spread, never re-typing)
+     - every newly-introduced binding (`let _inl_N_p = ...`, helper
+       internals like `let _inl_N_d = q - p`) becomes a candidate for
+       SROA that collectScalarizable picks up at emit time
+     - the helper-call frame and its return-value allocation both
+       disappear; the body's vec arithmetic fuses into the entry fn's
+       component-wise stream
+
+   Inlining policy (defaults, all opts-overridable):
+     - K_BUDGET = 8     max top-level stmts in the helper body
+     - M_SITES  = 4     max static call sites for the helper across the
+                        module (counted across entry-points + other fns)
+     - skip if the fn has any ptr param (would need address-tracking)
+     - skip if the fn participates in any call cycle (recursion)
+     - skip entry points (@compute) — they're the inlining target, not
+       the inlinee
+
+   The pass introduces two synthetic stmt kinds the emitter handles:
+     - 'labeled'      → `${label}: { ${body} }` plus, when the helper
+                        returns a value, a hoisted `let ${resultName};`
+                        immediately before the labeled block
+     - 'break_label'  → `break ${label};` — pairs with 'labeled'
+
+   Result vars are plain JS `let` (mutable) bindings. They alias the
+   helper's return into the surrounding scope; subsequent `let x =
+   resultIdent` then becomes a SROA candidate just like any other vec
+   binding, and emit's component-wise fast path handles it.  */
+
+const INLINE_DEFAULT_BUDGET    = 8;
+const INLINE_DEFAULT_CALLSITES = 4;
+
+/** Walk a statement list and gather every fn-callee name referenced
+ *  in expression position. Used for both call-count and recursion-
+ *  graph construction. Out-parameter `out` is the result set. */
+function _findCalleesInStmts(stmts, fnsCatalog, out) {
+    for (const s of stmts) _findCalleesInStmt(s, fnsCatalog, out);
+}
+function _findCalleesInStmt(s, fnsCatalog, out) {
+    if (!s) return;
+    switch (s.kind) {
+        case 'let': case 'const':
+            if (s.value) _findCalleesInExpr(s.value, fnsCatalog, out); break;
+        case 'var':
+            if (s.value) _findCalleesInExpr(s.value, fnsCatalog, out); break;
+        case 'assign': case 'compound':
+            _findCalleesInExpr(s.target, fnsCatalog, out);
+            if (s.value) _findCalleesInExpr(s.value, fnsCatalog, out); break;
+        case 'postfix':
+            _findCalleesInExpr(s.target, fnsCatalog, out); break;
+        case 'expr_stmt':
+            _findCalleesInExpr(s.expr, fnsCatalog, out); break;
+        case 'return':
+            if (s.value) _findCalleesInExpr(s.value, fnsCatalog, out); break;
+        case 'block':
+            _findCalleesInStmts(s.stmts, fnsCatalog, out); break;
+        case 'if':
+            _findCalleesInExpr(s.cond, fnsCatalog, out);
+            _findCalleesInStmts(s.then.stmts, fnsCatalog, out);
+            if (s.else) {
+                if (s.else.kind === 'if') _findCalleesInStmt(s.else, fnsCatalog, out);
+                else _findCalleesInStmts(s.else.stmts, fnsCatalog, out);
+            }
+            break;
+        case 'for':
+            if (s.init)   _findCalleesInStmt(s.init,   fnsCatalog, out);
+            if (s.cond)   _findCalleesInExpr(s.cond,   fnsCatalog, out);
+            if (s.update) _findCalleesInStmt(s.update, fnsCatalog, out);
+            _findCalleesInStmts(s.body.stmts, fnsCatalog, out);
+            break;
+        case 'while':
+            _findCalleesInExpr(s.cond, fnsCatalog, out);
+            _findCalleesInStmts(s.body?.stmts ?? [], fnsCatalog, out);
+            break;
+        case 'loop':
+            _findCalleesInStmts(s.body.stmts, fnsCatalog, out); break;
+        case 'switch':
+            _findCalleesInExpr(s.selector, fnsCatalog, out);
+            for (const c of s.cases) _findCalleesInStmts(c.body.stmts, fnsCatalog, out);
+            break;
+    }
+}
+function _findCalleesInExpr(e, fnsCatalog, out) {
+    if (!e) return;
+    switch (e.kind) {
+        case 'call':
+            // Only user fns participate in inlining bookkeeping. Built-ins,
+            // vecN/struct constructors etc. are dispatched specially by
+            // emitCall and never become inline targets.
+            if (typeof e.callee === 'string' && fnsCatalog.has(e.callee)) {
+                out.add(e.callee);
+            }
+            for (const a of e.args) _findCalleesInExpr(a, fnsCatalog, out);
+            break;
+        case 'bin':    _findCalleesInExpr(e.lhs, fnsCatalog, out); _findCalleesInExpr(e.rhs, fnsCatalog, out); break;
+        case 'una':    _findCalleesInExpr(e.value, fnsCatalog, out); break;
+        case 'paren':  _findCalleesInExpr(e.value, fnsCatalog, out); break;
+        case 'member': _findCalleesInExpr(e.value, fnsCatalog, out); break;
+        case 'index':  _findCalleesInExpr(e.value, fnsCatalog, out); _findCalleesInExpr(e.index, fnsCatalog, out); break;
+    }
+}
+
+/** Count the number of "weighty" statements in a body. Nested control
+ *  flow blocks contribute their inner count too — a body of `if (...)
+ *  { a; b; c; }` counts as 4 (the if itself + 3 inner stmts). Used as
+ *  the inlining budget cutoff. */
+function _countBodyStmts(stmts) {
+    let n = 0;
+    for (const s of stmts) n += _countStmt(s);
+    return n;
+}
+function _countStmt(s) {
+    if (!s) return 0;
+    switch (s.kind) {
+        case 'block':  return 1 + _countBodyStmts(s.stmts);
+        case 'if': {
+            let n = 1 + _countBodyStmts(s.then.stmts);
+            if (s.else) {
+                if (s.else.kind === 'if') n += _countStmt(s.else);
+                else n += _countBodyStmts(s.else.stmts);
+            }
+            return n;
+        }
+        case 'for':    return 1 + _countBodyStmts(s.body.stmts);
+        case 'while':  return 1 + _countBodyStmts(s.body?.stmts ?? []);
+        case 'loop':   return 1 + _countBodyStmts(s.body.stmts);
+        case 'switch': {
+            let n = 1;
+            for (const c of s.cases) n += _countBodyStmts(c.body.stmts);
+            return n;
+        }
+        default: return 1;
+    }
+}
+
+/** Walk a fn's params; return true if any has a ptr type or carries
+ *  an `&` use inside the body. The first-pass inliner avoids these
+ *  because address-tracking through alpha-rename adds real complexity
+ *  with little win — pointer params are rare in plasma/geon helpers. */
+function _hasPtrLikeShape(fn) {
+    for (const p of fn.params) {
+        if (p.type?.kind === 'type_ptr') return true;
+    }
+    // Quick scan for unary `&` (address-of) in the body. Conservative:
+    // any `&` short-circuits the candidate. The transform would need to
+    // either pass-by-reference (object aliasing) or rewrite addressOf
+    // calls — both nontrivial.
+    let found = false;
+    const visitE = (e) => {
+        if (!e || found) return;
+        if (e.kind === 'una' && e.op === '&') { found = true; return; }
+        switch (e.kind) {
+            case 'bin':    visitE(e.lhs); visitE(e.rhs); break;
+            case 'una':    visitE(e.value); break;
+            case 'paren':  visitE(e.value); break;
+            case 'member': visitE(e.value); break;
+            case 'index':  visitE(e.value); visitE(e.index); break;
+            case 'call':   for (const a of e.args) visitE(a); break;
+        }
+    };
+    const visitS = (s) => {
+        if (!s || found) return;
+        switch (s.kind) {
+            case 'let': case 'const': case 'var':
+                if (s.value) visitE(s.value); break;
+            case 'assign': case 'compound':
+                visitE(s.target); if (s.value) visitE(s.value); break;
+            case 'postfix':   visitE(s.target); break;
+            case 'expr_stmt': visitE(s.expr); break;
+            case 'return':    if (s.value) visitE(s.value); break;
+            case 'block':     for (const x of s.stmts) visitS(x); break;
+            case 'if':
+                visitE(s.cond);
+                for (const x of s.then.stmts) visitS(x);
+                if (s.else) {
+                    if (s.else.kind === 'if') visitS(s.else);
+                    else for (const x of s.else.stmts) visitS(x);
+                }
+                break;
+            case 'for':
+                if (s.init)   visitS(s.init);
+                if (s.cond)   visitE(s.cond);
+                if (s.update) visitS(s.update);
+                for (const x of s.body.stmts) visitS(x);
+                break;
+            case 'while':
+                visitE(s.cond);
+                for (const x of (s.body?.stmts ?? [])) visitS(x);
+                break;
+            case 'loop':
+                for (const x of s.body.stmts) visitS(x); break;
+            case 'switch':
+                visitE(s.selector);
+                for (const c of s.cases) for (const x of c.body.stmts) visitS(x);
+                break;
+        }
+    };
+    for (const s of fn.body.stmts) visitS(s);
+    return found;
+}
+
+/** Compute the set of fn names that participate in any call cycle
+ *  (self-recursive OR mutually recursive). Excluded from inlining
+ *  regardless of size; the call-stack guard inside `_expandInlineCall`
+ *  is belt-and-suspenders for any case this misses. */
+function _findRecursiveFns(calleesOf) {
+    const recursive = new Set();
+    for (const name of calleesOf.keys()) {
+        // BFS from `name`; if we hit `name` again, it's in a cycle.
+        const stack = [...(calleesOf.get(name) ?? new Set())];
+        const seen  = new Set();
+        while (stack.length) {
+            const cur = stack.pop();
+            if (cur === name) { recursive.add(name); break; }
+            if (seen.has(cur)) continue;
+            seen.add(cur);
+            const callees = calleesOf.get(cur);
+            if (callees) for (const c of callees) stack.push(c);
+        }
+    }
+    return recursive;
+}
+
+/** Decide which fns are inlinable. Returns a Map<fnName, fnAst>. */
+function _pickInlinable(cat, opts) {
+    const budget    = opts.inlineBudget    ?? INLINE_DEFAULT_BUDGET;
+    const callLimit = opts.inlineCallLimit ?? INLINE_DEFAULT_CALLSITES;
+
+    // Static call counts: how many times each user fn appears as a callee
+    // anywhere in the module (entry-point bodies + helper bodies).
+    const callCounts = new Map();
+    const calleesOf  = new Map();   // fnName → Set<calleeName>
+    const collectInto = (body, ownerKey) => {
+        const callees = new Set();
+        _findCalleesInStmts(body.stmts, cat.fns, callees);
+        if (ownerKey != null) calleesOf.set(ownerKey, callees);
+        for (const c of callees) {
+            // Each *expression-position call* counts as one site. Currently
+            // we conservatively count "appears anywhere in this body" once
+            // per body, which under-counts repeated calls within one body
+            // but matches the common "helper called from N different
+            // call sites" intuition. Sufficient for the cap; tighten if it
+            // ever fires falsely.
+            callCounts.set(c, (callCounts.get(c) || 0) + 1);
+        }
+    };
+    for (const [name, fn] of cat.fns) collectInto(fn.body, name);
+
+    const recursive = _findRecursiveFns(calleesOf);
+
+    const inlinable = new Map();
+    for (const [name, fn] of cat.fns) {
+        if (fn.attrs.some(a => a.name === 'compute')) continue;
+        if (recursive.has(name))                       continue;
+        if (_hasPtrLikeShape(fn))                      continue;
+        const stmtCount = _countBodyStmts(fn.body.stmts);
+        if (stmtCount > budget)                        continue;
+        const sites = callCounts.get(name) || 0;
+        if (sites === 0)                               continue;
+        if (sites > callLimit)                         continue;
+        inlinable.set(name, fn);
+    }
+    return inlinable;
+}
+
+/** Clone an expression with idents renamed via `nameMap`. The returned
+ *  node tree is structurally a shallow copy at every level — original
+ *  nodes are not mutated, but unmodified sub-nodes are shared by
+ *  reference (resolvedType included). */
+function _cloneExprRenamed(e, nameMap) {
+    if (!e) return e;
+    switch (e.kind) {
+        case 'lit':   return e;
+        case 'ident': {
+            const repl = nameMap.get(e.name);
+            return repl ? { ...e, name: repl } : e;
+        }
+        case 'bin':   return { ...e,
+            lhs: _cloneExprRenamed(e.lhs, nameMap),
+            rhs: _cloneExprRenamed(e.rhs, nameMap) };
+        case 'una':   return { ...e, value: _cloneExprRenamed(e.value, nameMap) };
+        case 'paren': return { ...e, value: _cloneExprRenamed(e.value, nameMap) };
+        case 'call':  return { ...e, args: e.args.map(a => _cloneExprRenamed(a, nameMap)) };
+        case 'member':return { ...e, value: _cloneExprRenamed(e.value, nameMap) };
+        case 'index': return { ...e,
+            value: _cloneExprRenamed(e.value, nameMap),
+            index: _cloneExprRenamed(e.index, nameMap) };
+    }
+    return e;
+}
+
+/** Clone a statement with locals renamed (prefix added) and `return`
+ *  rewritten into `resultName = expr; break label;`. `nameMap` is
+ *  mutated as we walk: each let/var/const decl registers its prefixed
+ *  name. WGSL forbids true shadowing of a binding within the same fn
+ *  scope, so a flat per-expansion namespace is sound. */
+function _cloneStmtRenamed(s, nameMap, ctx) {
+    if (!s) return s;
+    switch (s.kind) {
+        case 'let': case 'const': {
+            const renamed = ctx.prefix + s.name;
+            nameMap.set(s.name, renamed);
+            return { ...s, name: renamed,
+                value: s.value ? _cloneExprRenamed(s.value, nameMap) : s.value };
+        }
+        case 'var': {
+            const renamed = ctx.prefix + s.name;
+            nameMap.set(s.name, renamed);
+            return { ...s, name: renamed,
+                value: s.value ? _cloneExprRenamed(s.value, nameMap) : null };
+        }
+        case 'assign':
+            return { ...s,
+                target: _cloneExprRenamed(s.target, nameMap),
+                value:  _cloneExprRenamed(s.value,  nameMap) };
+        case 'compound':
+            return { ...s,
+                target: _cloneExprRenamed(s.target, nameMap),
+                value:  _cloneExprRenamed(s.value,  nameMap) };
+        case 'postfix':
+            return { ...s, target: _cloneExprRenamed(s.target, nameMap) };
+        case 'expr_stmt':
+            return { ...s, expr: _cloneExprRenamed(s.expr, nameMap) };
+        case 'return': {
+            // Rewrite into a single 'inline_return_set' stmt: stores the
+            // return value into the synthetic result let and breaks out
+            // of the labeled block. We can't reuse plain 'assign' here
+            // because that route triggers write-through (`.x = ...`),
+            // which corrupts an uninitialized JS let. The direct whole-
+            // object assign synthesized here matches what a non-inlined
+            // helper does: one fresh vec object materializes, the result
+            // let aliases it. SROA on the result let happens at the call
+            // site's binding (`let v_new = _inl_N_result`) so the single
+            // alloc is read through scalar component access downstream.
+            if (s.value && ctx.resultName) {
+                const v = _cloneExprRenamed(s.value, nameMap);
+                return {
+                    kind: 'inline_return_set',
+                    resultName: ctx.resultName,
+                    label:      ctx.labelName,
+                    value:      v,
+                    scalarized: !!ctx.scalarized,
+                    arity:      ctx.arity || 0,
+                    loc:        s.loc,
+                };
+            }
+            return { kind: 'break_label', label: ctx.labelName, loc: s.loc };
+        }
+        case 'block':
+            return { ...s, stmts: s.stmts.map(x => _cloneStmtRenamed(x, nameMap, ctx)) };
+        case 'if':
+            return { ...s,
+                cond: _cloneExprRenamed(s.cond, nameMap),
+                then: { ...s.then, stmts: s.then.stmts.map(x => _cloneStmtRenamed(x, nameMap, ctx)) },
+                else: s.else
+                    ? (s.else.kind === 'if'
+                        ? _cloneStmtRenamed(s.else, nameMap, ctx)
+                        : { ...s.else, stmts: s.else.stmts.map(x => _cloneStmtRenamed(x, nameMap, ctx)) })
+                    : null };
+        case 'for':
+            return { ...s,
+                init:   s.init   ? _cloneStmtRenamed(s.init,   nameMap, ctx) : null,
+                cond:   s.cond   ? _cloneExprRenamed(s.cond,   nameMap)      : null,
+                update: s.update ? _cloneStmtRenamed(s.update, nameMap, ctx) : null,
+                body:   { ...s.body, stmts: s.body.stmts.map(x => _cloneStmtRenamed(x, nameMap, ctx)) } };
+        case 'while':
+            return { ...s,
+                cond: _cloneExprRenamed(s.cond, nameMap),
+                body: { ...s.body, stmts: (s.body?.stmts ?? []).map(x => _cloneStmtRenamed(x, nameMap, ctx)) } };
+        case 'loop':
+            return { ...s, body: { ...s.body, stmts: s.body.stmts.map(x => _cloneStmtRenamed(x, nameMap, ctx)) } };
+        case 'switch':
+            return { ...s,
+                selector: _cloneExprRenamed(s.selector, nameMap),
+                cases: s.cases.map(c => ({ ...c,
+                    body: { ...c.body, stmts: c.body.stmts.map(x => _cloneStmtRenamed(x, nameMap, ctx)) } })) };
+        case 'break': case 'continue': case 'discard':
+        case 'break_label':
+            return s;
+    }
+    return s;
+}
+
+/** Expand one call into a sequence of stmts that, when emitted, run
+ *  the helper inline. Returns `{ lifted, replacement }` where `lifted`
+ *  is an array of stmts to splice BEFORE the call's enclosing stmt and
+ *  `replacement` is the expr to use in place of the call expression. */
+function _expandInlineCall(callExpr, fn, counter, inlinable, callStack) {
+    const id           = counter.n++;
+    const prefix       = `_inl_${id}_`;
+    const labelName    = `_inl_${id}`;
+    const hasResult    = !!fn.returnType;
+    const resultName   = hasResult ? `${labelName}_result` : null;
+    // Vec-returning helpers get a *scalarized* result var: instead of
+    // one mutable JS let holding a {x,y,z} object, we emit per-component
+    // lets (`_inl_N_result_x`, `_inl_N_result_y`, `_inl_N_result_z`).
+    // The return-rewrite then stores components directly, and the
+    // labeled-stmt emit registers the name in `this.scalarized` so
+    // downstream reads route through the existing SROA fast paths.
+    // Net: zero vec allocations per call, even on the return path.
+    const isVecResult = hasResult && fn.returnType.kind === 'type_vec';
+    const resultArity = isVecResult ? fn.returnType.n : 0;
+    const lifted       = [];
+
+    // Bind args to fresh locals. Each binding is a 'let' stmt so SROA
+    // can scalarize vec args at emit time. Args themselves may contain
+    // further inlinable calls — those were already lifted by the
+    // caller's pass before we got here.
+    for (let i = 0; i < fn.params.length; i++) {
+        const p   = fn.params[i];
+        const arg = callExpr.args[i];
+        const renamedName = prefix + p.name;
+        lifted.push({
+            kind:  'let',
+            name:  renamedName,
+            type:  p.type ?? null,
+            value: arg,
+            loc:   callExpr.loc,
+        });
+    }
+
+    // Clone-rename the body (registers each local in nameMap as we go).
+    const nameMap = new Map();
+    for (const p of fn.params) nameMap.set(p.name, prefix + p.name);
+    const renamedBody = fn.body.stmts.map(s =>
+        _cloneStmtRenamed(s, nameMap, {
+            prefix, resultName, labelName,
+            scalarized: isVecResult, arity: resultArity,
+        }));
+
+    // Recursively inline calls inside the renamed body. The call-stack
+    // guard adds `fn.name` so a transitively-recursive cycle that
+    // somehow escaped the recursive-fn check still terminates.
+    const nextStack = new Set(callStack);
+    nextStack.add(fn.name);
+    const innerInlined = _inlineStmtList(renamedBody, inlinable, counter, nextStack);
+
+    // Wrap in the labeled block. resultName, when set, is emitted as
+    // hoisted JS bindings immediately before the labeled block — either
+    // a single `let ${resultName};` for scalar/void/mat returns, or N
+    // per-component lets for vec returns (then registered as scalarized
+    // so subsequent reads route through the SROA fast paths).
+    lifted.push({
+        kind: 'labeled',
+        label: labelName,
+        resultName,
+        resultType: hasResult ? fn.returnType : null,
+        scalarized: isVecResult,
+        arity:      resultArity,
+        body: { kind: 'block', stmts: innerInlined, loc: callExpr.loc },
+        loc: callExpr.loc,
+    });
+
+    const replacement = hasResult
+        ? { kind: 'ident', name: resultName, resolvedType: callExpr.resolvedType ?? null, loc: callExpr.loc }
+        : null;
+
+    return { lifted, replacement };
+}
+
+/** Walk an expression. For every inlinable call encountered (depth-
+ *  first — innermost first), append its expansion stmts to `lifted`
+ *  and replace the call node with an ident pointing to the result var.
+ *  Returns the (possibly rewritten) expr. Callers can rely on the
+ *  return value preserving .resolvedType on the substituted node. */
+function _liftCallsInExpr(e, inlinable, counter, callStack, lifted) {
+    if (!e) return e;
+    switch (e.kind) {
+        case 'lit':   return e;
+        case 'ident': return e;
+        case 'paren': return { ...e, value: _liftCallsInExpr(e.value, inlinable, counter, callStack, lifted) };
+        case 'bin':   return { ...e,
+            lhs: _liftCallsInExpr(e.lhs, inlinable, counter, callStack, lifted),
+            rhs: _liftCallsInExpr(e.rhs, inlinable, counter, callStack, lifted) };
+        case 'una': {
+            // Don't lift inside `&expr` — addressOf needs the call to remain
+            // an l-value-rooted expression. (We already excluded ptr helpers
+            // so this is a defensive guard, not a real case in the corpus.)
+            if (e.op === '&') return e;
+            return { ...e, value: _liftCallsInExpr(e.value, inlinable, counter, callStack, lifted) };
+        }
+        case 'member':return { ...e, value: _liftCallsInExpr(e.value, inlinable, counter, callStack, lifted) };
+        case 'index': return { ...e,
+            value: _liftCallsInExpr(e.value, inlinable, counter, callStack, lifted),
+            index: _liftCallsInExpr(e.index, inlinable, counter, callStack, lifted) };
+        case 'call': {
+            // Recurse into args FIRST so inner calls expand before the outer.
+            const liftedArgs = e.args.map(a =>
+                _liftCallsInExpr(a, inlinable, counter, callStack, lifted));
+            const withArgs = { ...e, args: liftedArgs };
+            const target = inlinable.get(e.callee);
+            if (!target || callStack.has(e.callee)) return withArgs;
+            const { lifted: stmts, replacement } =
+                _expandInlineCall(withArgs, target, counter, inlinable, callStack);
+            for (const s of stmts) lifted.push(s);
+            // Void helpers can only be called from expr_stmt context;
+            // the caller maps `null` to a no-op replacement.
+            return replacement ?? { kind: 'lit', raw: 'undefined', resolvedType: null, loc: e.loc };
+        }
+    }
+    return e;
+}
+
+/** Lift inlinable calls out of any expressions in stmt `s`. Returns
+ *  an array of stmts (pre-lifted + the rewritten s). Recurses into
+ *  sub-stmts so calls inside nested blocks are also inlined. */
+function _inlineStmt(s, inlinable, counter, callStack) {
+    if (!s) return [];
+    // Allow recursion into nested control-flow without lifting calls
+    // into a parent scope — calls inside an if/for/etc are lifted at
+    // their own block-local level, immediately preceding the enclosing
+    // stmt within the same block. This is achieved by recursing into
+    // the body stmt list and processing each one's lifts independently.
+    const lift = (expr) => {
+        const lifted = [];
+        const out = expr ? _liftCallsInExpr(expr, inlinable, counter, callStack, lifted) : expr;
+        return { lifted, out };
+    };
+    switch (s.kind) {
+        case 'let': case 'const': {
+            const { lifted, out } = lift(s.value);
+            return [...lifted, { ...s, value: out }];
+        }
+        case 'var': {
+            const { lifted, out } = lift(s.value);
+            return [...lifted, { ...s, value: out ?? null }];
+        }
+        case 'assign': {
+            // Target side of an assign is an lvalue; we don't lift calls
+            // out of it (would change l-value identity). Lift the rhs only.
+            const { lifted, out } = lift(s.value);
+            return [...lifted, { ...s, value: out }];
+        }
+        case 'compound': {
+            const { lifted, out } = lift(s.value);
+            return [...lifted, { ...s, value: out }];
+        }
+        case 'postfix':
+            return [s];
+        case 'expr_stmt': {
+            const { lifted, out } = lift(s.expr);
+            // If the whole expr was a void inlinable call, the replacement
+            // is a dummy `undefined`. Skip the expr_stmt in that case —
+            // the side-effects already executed inside the labeled block.
+            if (out && out.kind === 'lit' && out.raw === 'undefined') {
+                return lifted;
+            }
+            return [...lifted, { ...s, expr: out }];
+        }
+        case 'return': {
+            const { lifted, out } = lift(s.value);
+            return [...lifted, { ...s, value: out ?? null }];
+        }
+        case 'block':
+            return [{ ...s, stmts: _inlineStmtList(s.stmts, inlinable, counter, callStack) }];
+        case 'if': {
+            const { lifted, out } = lift(s.cond);
+            const newIf = {
+                ...s,
+                cond: out,
+                then: { ...s.then, stmts: _inlineStmtList(s.then.stmts, inlinable, counter, callStack) },
+                else: s.else
+                    ? (s.else.kind === 'if'
+                        ? _inlineStmt(s.else, inlinable, counter, callStack)[0]
+                        : { ...s.else, stmts: _inlineStmtList(s.else.stmts, inlinable, counter, callStack) })
+                    : null,
+            };
+            return [...lifted, newIf];
+        }
+        case 'for': {
+            // for-init/update can contain calls but inlining into their
+            // single-stmt slots would force us to spill before the loop.
+            // Keep the loop's structure: lift the cond's calls before
+            // the loop header; lift body calls into body block.
+            const init   = s.init   ? _inlineStmt(s.init,   inlinable, counter, callStack)[0] : null;
+            const condR  = s.cond   ? lift(s.cond)   : { lifted: [], out: null };
+            const update = s.update ? _inlineStmt(s.update, inlinable, counter, callStack)[0] : null;
+            const body   = { ...s.body, stmts: _inlineStmtList(s.body.stmts, inlinable, counter, callStack) };
+            return [
+                ...condR.lifted,
+                { ...s, init, cond: condR.out, update, body },
+            ];
+        }
+        case 'while': {
+            const condR = lift(s.cond);
+            const body  = { ...s.body, stmts: _inlineStmtList(s.body?.stmts ?? [], inlinable, counter, callStack) };
+            return [...condR.lifted, { ...s, cond: condR.out, body }];
+        }
+        case 'loop':
+            return [{ ...s, body: { ...s.body, stmts: _inlineStmtList(s.body.stmts, inlinable, counter, callStack) } }];
+        case 'switch': {
+            const selR = lift(s.selector);
+            const cases = s.cases.map(c => ({ ...c,
+                body: { ...c.body, stmts: _inlineStmtList(c.body.stmts, inlinable, counter, callStack) } }));
+            return [...selR.lifted, { ...s, selector: selR.out, cases }];
+        }
+        default:
+            return [s];
+    }
+}
+
+function _inlineStmtList(stmts, inlinable, counter, callStack) {
+    const out = [];
+    for (const s of stmts) {
+        const expanded = _inlineStmt(s, inlinable, counter, callStack);
+        for (const x of expanded) out.push(x);
+    }
+    return out;
+}
+
+/** Run the inline pass over a module AST. Mutates `ast.items` in
+ *  place — every fn body has its calls to inlinable helpers expanded. */
+export function inlineModulePass(ast, opts = {}) {
+    const cat = catalogModule(ast);
+    const inlinable = _pickInlinable(cat, opts);
+    if (inlinable.size === 0) return { inlinable };
+
+    const counter = { n: 0 };
+    for (const item of ast.items) {
+        if (item.kind !== 'fn') continue;
+        // Allow inlining inside helpers themselves so chains cascade
+        // (helper-of-helper). The call-stack guard prevents loops.
+        const baseStack = new Set([item.name]);
+        item.body.stmts = _inlineStmtList(item.body.stmts, inlinable, counter, baseStack);
+    }
+    return { inlinable };
+}
+
+//#endregion
+
+
 //#region 4. EMITTER  ────────────────────────────────────────────────
 
 /* ── Emit shape ───────────────────────────────────────────────────
@@ -1871,6 +2508,17 @@ function isComponentSafe(e) {
         case 'call': {
             const n = e.callee;
             if (/^vec[234]$/.test(n) || /^vec[234][fuih]$/.test(n)) {
+                return e.args.every(isComponentSafe);
+            }
+            // POLY_FN intrinsics are pure (no side effects) and lower to
+            // either Math.* or short scalar templates. Permitting them
+            // here means component-wise lowering can see through
+            // `vec * (1.0/max(len,e))`-shape exprs that otherwise force
+            // a materialize+read fallback. The triplicate-Math.max cost
+            // is a few ns; the avoided vec alloc is ~20ns + GC pressure.
+            // Scalar casts (f32/i32/u32/bool) and bitcast are likewise
+            // pure scalar-shaped helpers.
+            if (POLY_FN.has(n) && SCALAR_INTRINSIC_JS[n]) {
                 return e.args.every(isComponentSafe);
             }
             return false;
@@ -2267,6 +2915,21 @@ class Emitter {
                 case 'block':
                     for (const x of s.stmts) visitStmt(x);
                     break;
+                case 'labeled':
+                    // Synthesized by inline pass. Body is a block; lets
+                    // inside are SROA candidates just like any other.
+                    // (resultName itself is a JS let, not SROA-tracked —
+                    // var SROA will pick that up in step 2.)
+                    for (const x of s.body.stmts) visitStmt(x);
+                    break;
+                case 'inline_return_set':
+                    // Synthesized return-rewrite. Visit the value expr so
+                    // any `&local` use inside the return path correctly
+                    // disqualifies the referenced local from SROA. (Real
+                    // case unlikely — we exclude `&`-using helpers from
+                    // inlining — but the contract should stay symmetric.)
+                    if (s.value) visitExpr(s.value);
+                    break;
                 case 'if':
                     visitExpr(s.cond);
                     for (const x of s.then.stmts) visitStmt(x);
@@ -2605,6 +3268,80 @@ class Emitter {
 
             case 'break':    this.line('break;');    break;
             case 'continue': this.line('continue;'); break;
+
+            case 'labeled': {
+                // Synthesized by inline pass. Hoist the result binding(s)
+                // immediately before the labeled block:
+                //   - vec return: per-component lets + register as scalarized
+                //     so downstream reads route through exprComp's SROA path
+                //   - scalar / mat / void return: single mutable JS let
+                if (s.scalarized && s.arity > 0) {
+                    const comps = ['x', 'y', 'z', 'w'].slice(0, s.arity);
+                    const decls = comps.map(c => `${s.resultName}_${c}`).join(', ');
+                    this.line(`let ${decls};`);
+                    // Register so emitMember / exprComp / emitIdent take the
+                    // scalarized fast paths for any read of the result name.
+                    this.scalarized.set(s.resultName, s.arity);
+                    for (const c of comps) this.declareLocal(`${s.resultName}_${c}`);
+                } else if (s.resultName) {
+                    this.line(`let ${s.resultName};`);
+                    this.declareLocal(s.resultName);
+                }
+                this.line(`${s.label}: {`);
+                this.open();
+                this.localScopes.push(new Set());
+                for (const x of s.body.stmts) this.stmt(x, inEntry);
+                this.localScopes.pop();
+                this.close();
+                this.line(`}`);
+                break;
+            }
+
+            case 'break_label':
+                this.line(`break ${s.label};`);
+                break;
+
+            case 'inline_return_set': {
+                // Synthesized by inline pass for non-void helper returns.
+                // Two paths:
+                //   - scalarized vec result: per-component stores via
+                //     exprComp, capturing each component into a tmp first
+                //     so swizzle-rotate-style returns (`return vec3(v.y,
+                //     v.z, v.x)`) are safe under self-reference. Zero vec
+                //     allocations on the return path.
+                //   - scalar / mat / unscalarizable result: direct whole-
+                //     object assign; never write-through, since the JS
+                //     let was hoisted uninitialized.
+                if (s.scalarized && s.arity > 0) {
+                    const comps = ['x', 'y', 'z', 'w'].slice(0, s.arity);
+                    const compExprs = isComponentSafe(s.value)
+                        ? comps.map(c => this.exprComp(s.value, c))
+                        : null;
+                    if (compExprs && compExprs.every(x => x != null)) {
+                        for (let i = 0; i < s.arity; i++) {
+                            this.line(`const _ir${i} = ${compExprs[i]};`);
+                        }
+                        for (let i = 0; i < s.arity; i++) {
+                            this.line(`${s.resultName}_${comps[i]} = _ir${i};`);
+                        }
+                    } else {
+                        // Couldn't lower component-wise (intrinsic call etc.);
+                        // materialize once, then split into the scalarized
+                        // result lets. Still saves the per-call frame and
+                        // allocates one vec object instead of N (the helper
+                        // intermediates were already SROA'd above).
+                        this.line(`const _ir_obj = ${this.expr(s.value)};`);
+                        for (let i = 0; i < s.arity; i++) {
+                            this.line(`${s.resultName}_${comps[i]} = _ir_obj.${comps[i]};`);
+                        }
+                    }
+                } else {
+                    this.line(`${s.resultName} = ${this.expr(s.value)};`);
+                }
+                this.line(`break ${s.label};`);
+                break;
+            }
+
             case 'discard':
                 // `discard` is fragment-only. We don't really execute
                 // fragment shaders CPU-side; emit a plain return so the
@@ -3312,6 +4049,11 @@ export function compileWGSL(source, opts = {}) {
     // `opts.polymorphic` opts out and forces the legacy rt.* dispatch
     // path — used by the bench harness to measure the speedup.
     if (!opts.polymorphic) resolveModule(ast);
+    // Inline small user fns so SROA + write-through see through call
+    // boundaries. Polymorphic mode skips inlining for an apples-to-
+    // apples A/B with the legacy rt.* path; `opts.noInline` lets a
+    // caller opt out for debugging.
+    if (!opts.polymorphic && !opts.noInline) inlineModulePass(ast, opts);
     const result = emit(ast);
 
     // Eval target is our own deterministic emit() output — see security note above.
