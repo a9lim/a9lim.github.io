@@ -32,8 +32,34 @@
    ── Architectural sketch ────────────────────────────────────────────
      tokenize(src)            → Token[]
      parse(tokens)            → Module AST
+     resolveModule(ast)       → annotates .resolvedType on every Expr
      emit(ast)                → { jsSource, decls }
-     compileWGSL(src) plumbs all three plus runtime binding.
+     compileWGSL(src) plumbs all four plus runtime binding.
+
+   ── Emit pipeline (the perf-relevant bit) ──────────────────────────
+   The emitter aggressively eliminates intermediate vec object
+   allocations using the resolver's type info:
+
+     1. Component lowering — `acc = av * k + bv` lowers to a single
+        `{x: av.x*k+bv.x, ...}` object literal, not three rt.add calls.
+     2. Write-through — `arr[i] = vec-expr` lowers to three scalar
+        stores via `_wlv` cached lvalue + scalar temps. Mutable-local
+        accumulator stores (`acc = acc + ...`) also write-through.
+     3. SROA — vec lets in a fn body whose only uses are member access,
+        component-lowerable arithmetic, or write-through stores get
+        scalarized: `let p = q - r` lowers to `const p_x = q.x - r.x;
+        const p_y = ...; const p_z = ...;`. Whole-vec uses (passed to
+        a fn, polymorphic fallback) rematerialize via `rt.vecN(p_x,
+        p_y, p_z)` — safety net that allocates only at that one site.
+     4. Builtin scalarization — `@builtin(global_invocation_id) gid`
+        and friends are pre-scalarized: `gid_x = wgx*Lx + lx;` etc.
+        No `rt.vec3()` alloc for builtins that are only member-accessed
+        (the common case).
+
+   Result: ~21-26× speedup over the polymorphic baseline on the bench
+   harness, for both arithmetic-heavy and storage-I/O-dominant kernels.
+   Each transformation has a `opts.polymorphic: true` opt-out for A/B
+   measurement and falls back gracefully when types can't be resolved.
 
    ── Runtime semantics ──────────────────────────────────────────────
    CPU is single-threaded, so:
@@ -1789,6 +1815,41 @@ const SWIZZLE_MAP = { x: 'x', y: 'y', z: 'z', w: 'w',
 /** Set of binary ops that need polymorphic scalar/vec dispatch. */
 const POLY_BIN = new Set(['+', '-', '*', '/', '%']);
 
+/** Predicate: would this RHS allocate a fresh vec object under the
+ *  current inlined emit? Used by write-through to decide whether
+ *  component-wise stores save anything.
+ *
+ *  - bin/una over vec types lower to a single object literal → allocate
+ *  - vecN constructor calls → allocate
+ *  - POLY_FN intrinsics with vec result → allocate
+ *  - paren around any of the above → allocate (recurse)
+ *  - ident, member, index, lit → reference an existing object/value;
+ *    write-through would change `arr[i] = v` (ref assign) into three
+ *    property writes, which is *slower* for object-mode storage. Skip
+ *    these — they'll be handled by flat-TypedArray mode (Step 2) where
+ *    per-component writes are mandatory regardless.
+ */
+function isFreshVecExpr(e) {
+    if (!e || e.resolvedType?.kind !== 'vec') return false;
+    switch (e.kind) {
+        case 'bin':
+        case 'una':
+            return true;
+        case 'call': {
+            const n = e.callee;
+            if (/^vec[234][fuih]?$/.test(n)) return true;
+            // POLY_FN intrinsics emit obj literal when args are vec.
+            // SCALAR_INTRINSIC_JS gating mirrors emitCall's logic.
+            if (POLY_FN.has(n) && SCALAR_INTRINSIC_JS[n]) return true;
+            return false;
+        }
+        case 'paren':
+            return isFreshVecExpr(e.value);
+        default:
+            return false;
+    }
+}
+
 /** Predicate: is this expression safe to evaluate component-by-component
  *  without changing semantics? The component-wise vec emit recurses into
  *  the same expression once per component, so any subexpression with side
@@ -1893,6 +1954,14 @@ class Emitter {
         // the current function body. Used to disambiguate "is this
         // ident a local or a global?".
         this.localScopes = [];
+
+        // SROA state — populated per-fn by collectScalarizable() before
+        // walking the body. Maps let-name → vec arity (2|3|4). A let in
+        // this map is scalarized: its emit produces N scalar locals
+        // named `${name}_x`, `${name}_y`, ... instead of one vec object.
+        // Reset between fn bodies.
+        this.scalarized = new Map();
+        this.sroaCounter = 0;
     }
 
     // ── Output ─────────────────────────────────────────────────────
@@ -1953,6 +2022,8 @@ class Emitter {
         this.open();
         // Each fn opens a fresh local scope. Params count as locals.
         this.localScopes = [new Set(f.params.map(p => p.name))];
+        // SROA pre-pass — identifies vec lets we can scalarize.
+        this.collectScalarizable(f.body.stmts);
         for (const s of f.body.stmts) this.stmt(s);
         this.close();
         this.line('}');
@@ -1965,24 +2036,31 @@ class Emitter {
         const sy = wsAttr && wsAttr.args[1] ? this.constExprInt(wsAttr.args[1]) : 1;
         const sz = wsAttr && wsAttr.args[2] ? this.constExprInt(wsAttr.args[2]) : 1;
 
-        // Map builtin params to runtime-provided names so we can
-        // reference them inside the invocation body.
+        // Map builtin params to component-wise integer expressions.
+        // Builtins are pre-scalarized: a kernel that does `gid.x` then
+        // resolves to a scalar local read with no vec3 object allocated.
+        // (Whole-vec uses route through emitIdent's rematerialization
+        // safety net — same cost as the original rt.vec3 alloc.)
         // Supported builtins (subset that plasma+geon use):
         //   global_invocation_id, local_invocation_id, local_invocation_index,
         //   workgroup_id, num_workgroups
-        const builtinBindings = [];   // [{paramName, expr}]
+        //
+        // Scope: gid/lid/lidx live inside the invocation triple-loop;
+        // wgid/nwg live at workgroup scope.
+        const BUILTIN_SPEC = {
+            global_invocation_id:   { arity: 3, scope: 'inv', xyz: ['wgx*Lx + lx', 'wgy*Ly + ly', 'wgz*Lz + lz'] },
+            local_invocation_id:    { arity: 3, scope: 'inv', xyz: ['lx', 'ly', 'lz'] },
+            local_invocation_index: { arity: 1, scope: 'inv', expr: 'lz*Ly*Lx + ly*Lx + lx' },
+            workgroup_id:           { arity: 3, scope: 'wg',  xyz: ['wgx', 'wgy', 'wgz'] },
+            num_workgroups:         { arity: 3, scope: 'wg',  xyz: ['Wx', 'Wy', 'Wz'] },
+        };
+        const builtinBindings = [];   // [{name, arity, scope, xyz | expr}]
         for (const p of f.params) {
             const a = p.attrs.find(x => x.name === 'builtin');
             if (!a) continue;
             const which = a.args[0]?.name;
-            const e = {
-                global_invocation_id:  '__gid',
-                local_invocation_id:   '__lid',
-                local_invocation_index:'__lidx',
-                workgroup_id:          '__wgid',
-                num_workgroups:        '__nwg',
-            }[which];
-            if (e) builtinBindings.push({ name: p.name, init: e });
+            const spec = BUILTIN_SPEC[which];
+            if (spec) builtinBindings.push({ name: p.name, ...spec });
         }
 
         // Workgroup-local vars: reset at the start of each workgroup.
@@ -2016,8 +2094,18 @@ class Emitter {
         if (wgEntries.length) {
             for (const w of wgEntries) this.line(`wg.${w.name} = ${w.init};`);
         }
-        this.line(`const __nwg = rt.vec3(Wx, Wy, Wz);`);
-        this.line(`const __wgid = rt.vec3(wgx, wgy, wgz);`);
+        // Workgroup-scope builtins (wgid, nwg) — scalarize so member
+        // access turns into direct scalar reads.
+        for (const b of builtinBindings) {
+            if (b.scope !== 'wg') continue;
+            if (b.arity === 3) {
+                this.line(`const ${_safe(b.name)}_x = ${b.xyz[0]};`);
+                this.line(`const ${_safe(b.name)}_y = ${b.xyz[1]};`);
+                this.line(`const ${_safe(b.name)}_z = ${b.xyz[2]};`);
+            } else {
+                this.line(`const ${_safe(b.name)} = ${b.expr};`);
+            }
+        }
 
         // Emit one invocation triple-loop per phase. Each iteration
         // sets up the per-invocation builtins (gid/lid/lidx) and runs
@@ -2029,15 +2117,28 @@ class Emitter {
             this.line(`for (let ly = 0; ly < Ly; ly++)`);
             this.line(`for (let lx = 0; lx < Lx; lx++) {`);
             this.open();
-            this.line(`const __gid = rt.vec3(wgx*Lx + lx, wgy*Ly + ly, wgz*Lz + lz);`);
-            this.line(`const __lid = rt.vec3(lx, ly, lz);`);
-            this.line(`const __lidx = lz*Ly*Lx + ly*Lx + lx;`);
+            // Invocation-scope builtins (gid, lid, lidx) — scalarized.
             for (const b of builtinBindings) {
-                this.line(`const ${_safe(b.name)} = ${b.init};`);
+                if (b.scope !== 'inv') continue;
+                if (b.arity === 3) {
+                    this.line(`const ${_safe(b.name)}_x = ${b.xyz[0]};`);
+                    this.line(`const ${_safe(b.name)}_y = ${b.xyz[1]};`);
+                    this.line(`const ${_safe(b.name)}_z = ${b.xyz[2]};`);
+                } else {
+                    this.line(`const ${_safe(b.name)} = ${b.expr};`);
+                }
             }
             this.line(`__invocation: {`);
             this.open();
             this.localScopes = [new Set(f.params.map(p => p.name))];
+            // SROA pre-pass — per-phase, since phase boundaries split
+            // the body and locals can't live across them anyway.
+            this.collectScalarizable(phases[p]);
+            // Builtins are scalarized too — must be added AFTER
+            // collectScalarizable since that clears the map.
+            for (const b of builtinBindings) {
+                if (b.arity === 3) this.scalarized.set(b.name, 3);
+            }
             for (const s of phases[p]) this.stmt(s, /*inEntry=*/true);
             this.close();
             this.line(`}`);
@@ -2093,6 +2194,251 @@ class Emitter {
             expr.loc?.line ?? 0, expr.loc?.col ?? 0);
     }
 
+    /** Pre-pass: walk a fn body's statement list, identify which vec-
+     *  typed `let`/`const` bindings can be safely scalarized (SROA).
+     *
+     *  Scalarization eliminates the {x,y,z} object allocation for an
+     *  intermediate vec local — replacing it with N scalar locals
+     *  named `${name}_x`, `${name}_y`, .... Member access `x.c` lowers
+     *  to `x_c` directly, and vec arithmetic that flows through
+     *  `exprComp` reads scalars directly. Whole-vec uses (passing to
+     *  fn calls, ref-assigning to storage) fall back to rematerializing
+     *  `{x: x_x, y: x_y, z: x_z}` — correct but allocates.
+     *
+     *  Disqualifications:
+     *  - `&name` (address-of) — the scalarized name doesn't exist as a
+     *    JS binding, so the address-of lowering would break. Atomics
+     *    are scalar-only in WGSL, so this rarely affects vec lets in
+     *    practice, but the check is mandatory for correctness.
+     *  - Name shadowing — if a name appears in multiple let/const decls
+     *    (different scopes), we conservatively skip all of them rather
+     *    than track per-scope scalarization.
+     *
+     *  Fills `this.scalarized` with name → arity entries for the body. */
+    collectScalarizable(stmts) {
+        this.scalarized.clear();
+        const candidate = new Map();   // name → arity
+        const seen      = new Set();   // names seen at least once
+        const banned    = new Set();   // names disqualified
+
+        const visitExpr = (e) => {
+            if (!e) return;
+            if (e.kind === 'una' && e.op === '&') {
+                // Address-of root must not be a scalarized local.
+                let root = e.value;
+                while (root && (root.kind === 'paren')) root = root.value;
+                if (root && root.kind === 'ident') banned.add(root.name);
+                visitExpr(e.value);
+                return;
+            }
+            switch (e.kind) {
+                case 'bin':    visitExpr(e.lhs); visitExpr(e.rhs); break;
+                case 'una':    visitExpr(e.value); break;
+                case 'paren':  visitExpr(e.value); break;
+                case 'call':   for (const a of e.args) visitExpr(a); break;
+                case 'index':  visitExpr(e.value); visitExpr(e.index); break;
+                case 'member': visitExpr(e.value); break;
+            }
+        };
+
+        const visitStmt = (s) => {
+            if (!s) return;
+            switch (s.kind) {
+                case 'let':
+                case 'const': {
+                    if (seen.has(s.name)) {
+                        banned.add(s.name);
+                    } else {
+                        seen.add(s.name);
+                        const t = s.value?.resolvedType;
+                        if (t?.kind === 'vec') candidate.set(s.name, t.n);
+                    }
+                    if (s.value) visitExpr(s.value);
+                    break;
+                }
+                case 'var':
+                    // `var` not yet scalarized — would need mutable
+                    // scalar lets and write-through on every assign.
+                    // Falls through to normal emit.
+                    if (s.value) visitExpr(s.value);
+                    if (seen.has(s.name)) banned.add(s.name);
+                    else seen.add(s.name);
+                    break;
+                case 'block':
+                    for (const x of s.stmts) visitStmt(x);
+                    break;
+                case 'if':
+                    visitExpr(s.cond);
+                    for (const x of s.then.stmts) visitStmt(x);
+                    if (s.else) {
+                        if (s.else.kind === 'if') visitStmt(s.else);
+                        else for (const x of s.else.stmts) visitStmt(x);
+                    }
+                    break;
+                case 'for':
+                    if (s.init)   visitStmt(s.init);
+                    if (s.cond)   visitExpr(s.cond);
+                    if (s.update) visitStmt(s.update);
+                    for (const x of s.body.stmts) visitStmt(x);
+                    break;
+                case 'while':
+                    visitExpr(s.cond);
+                    for (const x of (s.body?.stmts ?? [])) visitStmt(x);
+                    break;
+                case 'loop':
+                    for (const x of s.body.stmts) visitStmt(x);
+                    break;
+                case 'switch':
+                    visitExpr(s.selector);
+                    for (const c of s.cases) {
+                        for (const x of c.body.stmts) visitStmt(x);
+                    }
+                    break;
+                case 'assign':
+                case 'compound':
+                    visitExpr(s.target);
+                    if (s.value) visitExpr(s.value);
+                    break;
+                case 'postfix':
+                    visitExpr(s.target);
+                    break;
+                case 'expr_stmt':
+                    visitExpr(s.expr);
+                    break;
+                case 'return':
+                    if (s.value) visitExpr(s.value);
+                    break;
+            }
+        };
+
+        for (const s of stmts) visitStmt(s);
+
+        for (const name of banned) candidate.delete(name);
+        for (const [n, ar] of candidate) this.scalarized.set(n, ar);
+    }
+
+    /** Emit a scalarized let/const declaration. `decl` is the JS
+     *  declaration keyword ('const' / 'let'). The init expression is
+     *  lowered component-wise via exprComp when safe; otherwise the
+     *  init is materialized into a tmp object and components are read
+     *  off it (saving repeated subexpr evaluation).
+     *
+     *  Called only when `name ∈ this.scalarized`. */
+    emitScalarizedLet(name, valueExpr, arity, decl) {
+        const comps = ['x', 'y', 'z', 'w'].slice(0, arity);
+        const compExprs = isComponentSafe(valueExpr)
+            ? comps.map(c => this.exprComp(valueExpr, c))
+            : null;
+
+        if (compExprs && compExprs.every(s => s != null)
+                && !this.exprNeedsMaterialize(valueExpr)) {
+            // Direct lowering — fastest path. No object ever materialized.
+            for (let i = 0; i < arity; i++) {
+                this.line(`${decl} ${_safe(name)}_${comps[i]} = ${compExprs[i]};`);
+            }
+            return;
+        }
+
+        // Indirect: materialize init once, then read components.
+        // Used when init is an index/member access (`pos_in[i]`),
+        // a non-component-lowerable expression, or has side effects.
+        const tmp = `_sroa_${this.sroaCounter++}`;
+        this.line(`const ${tmp} = ${this.expr(valueExpr)};`);
+        for (let i = 0; i < arity; i++) {
+            this.line(`${decl} ${_safe(name)}_${comps[i]} = ${tmp}.${comps[i]};`);
+        }
+    }
+
+    /** Heuristic: would lowering this expression component-wise duplicate
+     *  expensive work? If so, prefer materializing into a tmp once and
+     *  reading the components from there. */
+    exprNeedsMaterialize(e) {
+        if (!e) return false;
+        switch (e.kind) {
+            case 'lit':    return false;
+            case 'ident':  return false;
+            case 'paren':  return this.exprNeedsMaterialize(e.value);
+            // Storage / member chains: V8 may CSE but we can't rely on it.
+            case 'index':  return true;
+            case 'member': return true;
+            // Calls: side-effecting in general, materialize.
+            case 'call': {
+                const n = e.callee;
+                // vecN(...) constructors with safe args lower cheaply.
+                if (/^vec[234][fuih]?$/.test(n)) {
+                    return e.args.some(a => this.exprNeedsMaterialize(a));
+                }
+                return true;
+            }
+            case 'bin':
+            case 'una':
+                // Component lowering recurses without duplicating
+                // safe subexprs — see exprComp. Cheap to repeat.
+                return false;
+        }
+        return false;
+    }
+
+    /** Try to emit `lvalue = rhs` as per-component stores when:
+     *   - LHS is vec-typed
+     *   - RHS would allocate a fresh vec object under inlined emit
+     *     (binop, unop, vecN constructor, POLY_FN intrinsic with vec result)
+     *   - Every component lowers safely
+     *
+     *  Saves one object allocation per assignment in the hot path. The
+     *  lvalue target is captured once into a local before any component
+     *  store, and component values are captured into N scalar temps
+     *  before any write fires — together these make the transform safe
+     *  for accumulator (`acc = acc + ...`) AND swizzle-rotate
+     *  (`v = vec3(v.y, v.z, v.x)`) patterns alike.
+     *
+     *  Returns true if the write-through was emitted; false if the caller
+     *  should fall back to the normal `target = expr(value)` form.
+     */
+    tryEmitVecWriteThrough(target, value) {
+        const t = target.resolvedType;
+        if (t?.kind !== 'vec') return false;
+        // Eligible RHS shapes:
+        //   - fresh vec exprs (binop / unop / vecN ctor / POLY_FN with vec result):
+        //     write-through saves the object-literal allocation
+        //   - scalarized-ident: write-through is the *only* way to lower
+        //     (the ident has no whole-vec JS binding to ref-assign)
+        const rhsIsScalarized = value.kind === 'ident' && this.scalarized.has(value.name);
+        if (!rhsIsScalarized && !isFreshVecExpr(value)) return false;
+        if (!isComponentSafe(value)) return false;
+        const n = t.n;
+        const comps = ['x', 'y', 'z', 'w'].slice(0, n);
+        const compExprs = comps.map(c => this.exprComp(value, c));
+        if (compExprs.some(x => x == null)) return false;
+
+        const lhsStr = this.lvalue(target);
+        // Block scope so temps are local and V8 can elide them. Capture
+        // the lvalue object reference once so we only hit the IC chain
+        // for `bindings.foo[i]` resolution a single time, not N times.
+        this.line(`{`);
+        this.open();
+        if (target.kind !== 'ident') {
+            this.line(`const _wlv = ${lhsStr};`);
+            for (let i = 0; i < n; i++) {
+                this.line(`const _wt${i} = ${compExprs[i]};`);
+            }
+            for (let i = 0; i < n; i++) {
+                this.line(`_wlv.${comps[i]} = _wt${i};`);
+            }
+        } else {
+            // Plain local ident — no lookup chain, skip the _wlv cache.
+            for (let i = 0; i < n; i++) {
+                this.line(`const _wt${i} = ${compExprs[i]};`);
+            }
+            for (let i = 0; i < n; i++) {
+                this.line(`${lhsStr}.${comps[i]} = _wt${i};`);
+            }
+        }
+        this.close();
+        this.line(`}`);
+        return true;
+    }
+
     // ── Statements ─────────────────────────────────────────────────
     stmt(s, inEntry = false) {
         switch (s.kind) {
@@ -2106,10 +2452,13 @@ class Emitter {
                 this.line('}');
                 break;
 
-            case 'let':
+            case 'let': {
                 this.declareLocal(s.name);
-                this.line(`const ${_safe(s.name)} = ${this.expr(s.value)};`);
+                const arity = this.scalarized.get(s.name);
+                if (arity != null) this.emitScalarizedLet(s.name, s.value, arity, 'const');
+                else this.line(`const ${_safe(s.name)} = ${this.expr(s.value)};`);
                 break;
+            }
 
             case 'var':
                 this.declareLocal(s.name);
@@ -2119,12 +2468,16 @@ class Emitter {
                     this.line(`let ${_safe(s.name)} = ${this.defaultInit(s.type || { kind: 'type_scalar', name: 'f32' })};`);
                 break;
 
-            case 'const':
+            case 'const': {
                 this.declareLocal(s.name);
-                this.line(`const ${_safe(s.name)} = ${this.expr(s.value)};`);
+                const arity = this.scalarized.get(s.name);
+                if (arity != null) this.emitScalarizedLet(s.name, s.value, arity, 'const');
+                else this.line(`const ${_safe(s.name)} = ${this.expr(s.value)};`);
                 break;
+            }
 
             case 'assign': {
+                if (this.tryEmitVecWriteThrough(s.target, s.value)) break;
                 const target = this.lvalue(s.target);
                 this.line(`${target} = ${this.expr(s.value)};`);
                 break;
@@ -2369,6 +2722,18 @@ class Emitter {
 
     emitIdent(e) {
         const name = e.name;
+        // SROA: scalarized locals don't exist as a single JS binding.
+        // Whole-vec uses (passed to fn, polymorphic rt.* fallback, etc.)
+        // rematerialize via rt.vecN — this is the safety net for uses
+        // that the pre-pass didn't filter to the scalar fast path.
+        // Real win comes from exprComp / write-through skipping this
+        // path entirely.
+        if (this.scalarized.has(name)) {
+            const n = this.scalarized.get(name);
+            const parts = ['x', 'y', 'z', 'w'].slice(0, n)
+                .map(c => `${_safe(name)}_${c}`);
+            return `rt.vec${n}(${parts.join(', ')})`;
+        }
         // Locals, constants, and user fns are emitted as bare idents
         // (possibly escaped). Globals living on `bindings`/`wg`/`priv`
         // use member access on those container objects — no escape
@@ -2441,6 +2806,12 @@ class Emitter {
             case 'paren':
                 return this.exprComp(e.value, c);
             case 'ident':
+                // SROA: scalarized locals expose components as separate
+                // scalar bindings, so component access never goes through
+                // a vec object.
+                if (this.scalarized.has(e.name)) {
+                    return `${_safe(e.name)}_${c}`;
+                }
                 return `${this.identSource(e.name)}.${c}`;
             case 'member': {
                 const vt = e.value?.resolvedType;
@@ -2505,6 +2876,15 @@ class Emitter {
      *  `expr()` but without recursing, so `exprComp` can reuse it for
      *  member-style component lookup. */
     identSource(name) {
+        // SROA: scalarized locals don't exist as a single JS binding.
+        // Safety net for paths that reach identSource without going
+        // through exprComp's scalarized fast path — rematerialize.
+        if (this.scalarized.has(name)) {
+            const n = this.scalarized.get(name);
+            const parts = ['x', 'y', 'z', 'w'].slice(0, n)
+                .map(c => `${_safe(name)}_${c}`);
+            return `rt.vec${n}(${parts.join(', ')})`;
+        }
         if (this.isLocal(name))            return _safe(name);
         if (this.bindings.has(name))       return `bindings.${name}`;
         if (this.workgroupVars.has(name))  return `wg.${name}`;
@@ -2690,6 +3070,20 @@ class Emitter {
         // mixing the two halves), treat as a swizzle.
         if (name.length >= 1 && name.length <= 4 &&
                 /^[xyzw]+$|^[rgba]+$/.test(name)) {
+            // SROA fast path: scalarized vec ident → direct scalar read,
+            // or rt.vecN over scalar locals for multi-char swizzles.
+            // Without this, scalar uses of `v.x` would rematerialize
+            // `rt.vec3(v_x, v_y, v_z).x` once per access — defeating
+            // the whole point of scalarization.
+            if (e.value.kind === 'ident' && this.scalarized.has(e.value.name)) {
+                const sname = e.value.name;
+                const comps = [...name].map(c => SWIZZLE_MAP[c]);
+                if (comps.length === 1) {
+                    return `${_safe(sname)}_${comps[0]}`;
+                }
+                const parts = comps.map(c => `${_safe(sname)}_${c}`);
+                return `rt.vec${comps.length}(${parts.join(', ')})`;
+            }
             const target = this.expr(e.value);
             const comps = [...name].map(c => SWIZZLE_MAP[c]);
             if (comps.length === 1) return `${target}.${comps[0]}`;

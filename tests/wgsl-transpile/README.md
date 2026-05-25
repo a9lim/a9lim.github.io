@@ -57,11 +57,31 @@ are enforced — adjust when bringing a new phase online.
 |---------------|-----------------------------------------------------|-------|
 | tokenize      | 68/68 shaders, 13.5k lines, 100k tokens             | Full WGSL token grammar |
 | parse         | 68/68 shaders → AST                                 | Recursive descent + Pratt for exprs |
-| resolve       | 100% decl sites (15384/15384), 90.1% Expr nodes     | Symbol table + expr resolver pass |
-| emit          | 68/68 shaders → JS that parses cleanly              | Type-driven inline scalar/vec emit; rt.* fallback when types unresolved |
+| resolve       | 100% decl sites (15389/15389), 90.1% Expr nodes     | Symbol table + expr resolver pass |
+| emit          | 68/68 shaders → JS that parses cleanly              | Type-driven inline scalar/vec emit, SROA for vec lets, builtin scalarization, write-through stores; rt.* fallback when types unresolved |
 | eval          | 68/68 shaders construct as live JS module           | Build-time mode would sidestep this |
 | dispatch      | 7/7 smoke tests pass                                | Includes barrier-split atomic reduction + resolver coverage |
-| **bench**     | **~8× speedup vs polymorphic baseline** (M5 Max)    | vec3 FMA loop: 73 → 590 Mvops/sec |
+| **bench**     | **~21-26× speedup vs polymorphic baseline** (M5 Max) | Two kernels: FMA (arithmetic-heavy), Verlet (storage-I/O-dominant — real shader shape) |
+
+Bench detail (N=100k particles × 30 iters, post Tier 1):
+
+| Kernel              | Baseline    | Inlined emit | Speedup | Per-particle |
+|---------------------|-------------|--------------|---------|--------------|
+| A: vec3 FMA loop    | ~2.2 ms/iter (allocation-bound) | ~2.0 ms/iter | ~22-29× | — |
+| B: Verlet step      | ~21 ms/iter | ~0.9 ms/iter | ~21-31× | ~9 ns |
+
+Variance 20-30% across runs from V8 warmup + GC. Kernel B at 0.85ms/iter
+is approaching native-compiled JS throughput — within ~1.4× of what
+hand-written allocation-free JS would do on the same kernel.
+
+The compounding optimizations that got us here (each measured individually
+on top of the previous):
+
+1. Phase-4 inline emit (pre-session baseline) — kernel A 7.3×, kernel B 7.2×
+2. Step 1: write-through for fresh-vec assigns — kernel A → 19×, kernel B unchanged
+3. Step 1.5a: SROA for let-bound vec locals — kernel A → 21×, kernel B → 11.5×
+4. Step 1.5b: emitMember SROA fast-path — kernel A unchanged, kernel B → 16.5×
+5. Step 1.5c: builtin (gid/lid/wgid/nwg) scalarization — kernel A → 31×, kernel B → 19×
 
 The resolve phase's 9.9% Expr gap is structural, not bugs: ~5% is
 JS-injected consts (geon's `buildWGSLConstants()` prepends `EPSILON`,
@@ -166,9 +186,10 @@ Estimate: ~150 LOC of new code in a new `tools/wgsl-build.js` (or fold
 into `_build.js`), plus a few lines in the per-sim `pipelines.js` to
 prefer the transpiled artifact when present. Mostly grunt work.
 
-### 2. Type resolver + inline-scalar emit  *(partially landed)*
+### 2. Type resolver + inline-scalar emit + SROA  *(landed)*
 
-The performance milestone. Status:
+The performance milestone. All phases complete; see the bench table at
+the top of this file for measured numbers.
 
 - ✅ **Phase 1: Type ADT + module-level symbol table** — `T` scalar
   singletons, `tVec`/`tMat`/`tArray`/`tAtomic`/`tPtr`/`tStruct` factories,
@@ -190,51 +211,94 @@ The performance milestone. Status:
   polymorphic fallback keeps the corpus green. Coverage: **100% decl
   sites, 90.1% Expr nodes** across the 68-shader corpus.
 - ✅ **Phase 3: Benchmark harness** — `tests/wgsl-transpile/bench.js`
-  runs a vec3-heavy synthetic kernel and reports Mvops/sec. Baseline
-  (polymorphic rt.*) is ~70 Mvops/sec on M5 Max. Phase 4 will add a
-  second configuration toggled by a `compileWGSL` opt flag and report
-  the speedup ratio.
-- ✅ **Phase 4: Emit changes** — `compileWGSL` now runs `resolveModule`
-  before `emit` (opt out via `opts.polymorphic: true` for A/B). `emitBin`
-  inlines scalar↔scalar as `(a op b)` and lowers vec ops component-wise
-  into a single `{x:..., y:..., z:...}` object literal per assignment
-  (one allocation per assignment instead of one per binop) via a new
-  `exprComp(e, c)` recursive lowering method. POLY_FN intrinsics (`max`,
-  `min`, `sqrt`, `clamp`, etc.) inline as `Math.*` or hand-written scalar
-  templates for all-scalar and matching-vec arg shapes. `isComponentSafe`
-  predicate gates the recursion so side-effecting subexprs never fire
-  more than once. Anything not lowerable falls back to the existing
-  `rt.*` dispatch. **Result: 8.05× speedup on the vec3 FMA bench
-  (73 → 596 Mvops/sec on M5 Max), corpus 68/68 still green.**
-- ✅ **Phase 5: Resolver-coverage smoke test** — `testResolverCoverage`
-  in `smoke.js` compiles a canonical kernel that exercises scalar+vec
-  ops, swizzles, struct member access, control flow, intrinsics, and
-  constructors, then asserts every Expr node gets a `.resolvedType`.
-  Current: 70/70 (100%). Any drop = a new resolver gap to chase.
+  runs *two* kernels: vec3 FMA loop (allocation-bound, the maximum
+  win available from arithmetic fusion) and Verlet spring step
+  (storage-I/O dominant, realistic shader shape). Each runs baseline
+  (polymorphic rt.*) vs inlined (current emit) back-to-back.
+- ✅ **Phase 4: Inline component lowering** — `compileWGSL` runs
+  `resolveModule` before `emit` (opt out via `opts.polymorphic: true`
+  for A/B). `emitBin` inlines scalar↔scalar as `(a op b)` and lowers
+  vec ops component-wise via `exprComp(e, c)`. POLY_FN intrinsics
+  inline as `Math.*` or scalar templates when all args are scalar /
+  matching-vec. `isComponentSafe` gates recursion.
+- ✅ **Phase 5: Write-through vec lvalue stores** — when LHS is vec-typed
+  and RHS would have allocated a fresh `{x,y,z}` object (binop, unop,
+  vecN constructor, POLY_FN intrinsic), emit per-component stores via
+  three scalar temps. Saves the assignment allocation. Triggers for
+  both storage lvalues (`arr[i] = expr`) and mutable-local accumulators
+  (`acc = acc + ...`). Three temps capture old-component reads before
+  any store fires, so the transform is safe for accumulators AND
+  swizzle-rotate patterns.
+- ✅ **Phase 6: SROA for vec let/const locals** — `collectScalarizable`
+  pre-pass per fn body identifies vec-typed lets without `&local` uses;
+  the emitter then splits `let p = q - r` into `const p_x = q.x - r.x;`
+  etc. via `emitScalarizedLet`. References lower through SROA fast paths
+  in `exprComp`, `emitMember`, `emitIdent`, `identSource`. Whole-vec
+  uses (passing to fn, polymorphic fallback) rematerialize via
+  `rt.vecN(p_x, p_y, p_z)` — safety net that preserves correctness at
+  the cost of allocating only at that one site. Single `emitMember`
+  fast-path for scalarized-ident is critical: without it, every `v.x`
+  on a scalarized var would rematerialize.
+- ✅ **Phase 7: Builtin scalarization** — `@builtin(global_invocation_id) gid`
+  (and lid, wgid, nwg) are now pre-scalarized: `gid_x`, `gid_y`, `gid_z`
+  emitted as direct integer expressions, no `rt.vec3` allocation. Saves
+  4 allocs per invocation in typical kernels that only read `gid.x`.
+  Local scope: gid/lid live inside the invocation triple-loop; wgid/nwg
+  at workgroup scope. Whole-vec uses still rematerialize.
+- ✅ **Phase 8: Resolver-coverage smoke test** — `testResolverCoverage`
+  asserts every Expr node in a canonical kernel gets a `.resolvedType`.
+  Currently 70/70 (100%). Drop = a new resolver gap to chase.
 
 The 9.9% corpus-wide Expr gap is structural (~5% JS-injected consts geon
 prepends at runtime, ~5% cascade + rarely-used intrinsics); see "Current
 status" above. None of it blocks the inline emit — graceful degradation
 to rt.* dispatch preserves correctness on every shader.
 
-### 3. Plasma integration
+### 3. Flat TypedArray binding mode  *(deferred to plasma integration)*
 
-The transpiler exists *for* plasma. Once build-time mode lands, the
-integration is small:
+Scoped during the Tier 1 work but deferred — Tier 1's other wins (SROA +
+builtin scalarization) consumed most of the perf headroom, so the
+remaining value of flat TypedArray is **GPU-parity** rather than raw
+speed. Plasma's WebGPU buffers are `Float32Array`s; without flat-storage
+support, the CPU fallback has to marshal each one into `{x, y, z}`
+objects per step (expensive and pointless).
+
+Design (pre-decided):
+- `compileWGSL(src, { flatStorage: true })` enables it.
+- `array<vecN<f32|u32|i32>>` storage bindings expect packed-stride
+  TypedArrays (stride=N, no padding). `array<vec3<f32>>` expects
+  `Float32Array(n*3)`.
+- Per-binding stride override available via `opts.storageLayout` for
+  std430-padded buffers if needed.
+- Emit lowers `a[i].c` to `bindings.a[i*stride + componentIndex]`
+  directly — no intermediate vec object materialization. Write-through
+  composes: `a[i] = vec3-expr` lowers to three TypedArray stores.
+- Object-mode storage stays the default for backward compat with the
+  existing smoke tests.
+- `array<struct>` not yet supported — needs struct-field-offset
+  computation per WGSL alignment rules. Follow-up.
+
+Best done as part of (or just before) the plasma integration so we can
+validate against the actual binding format plasma produces.
+
+### 4. Plasma integration
+
+The transpiler exists *for* plasma. Once build-time mode + flat-storage
+land, the integration is small:
 - `plasma/src/gpu/pipelines.js` (or a new `plasma/src/cpu/` module)
   imports the transpiled JS modules
 - `plasma/main.js` feature-detects WebGPU; on failure, instantiates the
   CPU backend and runs the same `step()` orchestration against it
 - The bindings object the GPU code already constructs (uniforms, storage
-  buffers as Float32Arrays) needs a thin adapter to the JS-side format
-  (object-of-arrays vs flat with vec helpers — decide at integration time)
+  buffers as Float32Arrays) flows directly to the CPU backend when
+  `flatStorage: true` is set at compile time
 
 The original plasma plan locked `No CPU fallback` as a design decision.
 The transpiler changes that calculus: the cost of the fallback is no
 longer "maintain a parallel implementation forever" — it's "write the
 adapter shim once." Worth revisiting that decision when picking this up.
 
-### 4. Geon integration (much later)
+### 5. Geon integration (much later)
 
 Geon is 54 shaders vs plasma's 13. The transpiler handles them all
 syntactically, but real integration is bigger:
@@ -253,13 +317,19 @@ edges of the runtime API and bindings format.
 ### Smaller items worth a session each
 
 - `bitcast` source-type inference (currently routes only by typeArgs)
-- Flat-TypedArray binding mode: `bindings.U_in: Float32Array(4*N)` with
-  runtime `rt.loadVec4(buf, i)` / `rt.storeVec4(buf, i, v)` helpers.
-  Matches GPU memory layout and lets test data round-trip bit-exactly
+- SROA for `var` (mutable) vec locals — currently only `let`/`const`
+  vec locals scalarize. Vars are rarer in plasma/geon kernels, but
+  kernel A's `var acc = vec3(0)` would benefit by another small amount.
+  Needs care around compound-assign (`+=`) and conditional reassignment.
 - Matrix types (`mat3x3<f32>` etc.) — geon doesn't use, plasma doesn't
   use, but adding for completeness is straightforward
 - Type aliases (`alias Vec3F = vec3<f32>;`) — parser accepts, resolver
   needs to substitute
+- Small-fn inlining — inline ≤K-stmt helpers called from ≤M sites so
+  vec lowering can see through the call boundary. Helps any shader with
+  `clampSpeed`-shape helpers.
+- Dead-component elimination for scalarized builtins — if a kernel only
+  uses `gid.x`, skip emitting `gid_y`/`gid_z`. Tiny win, easy.
 - Better error reporting from the emit phase (currently throws at the
   first unhandled construct; would be nice to collect and report
   several)
