@@ -42,6 +42,10 @@ function testScalarFma() {
     const mod = compileWGSL(wgsl);
     check('compile produces entry.main', !!mod.entry.main);
     check('bindings exposed', JSON.stringify(mod.bindings) === '["U","input","output"]');
+    check('entryInfo exposes workgroup and global-loop metadata',
+          JSON.stringify(mod.entryInfo?.main?.workgroupSize) === '[8,1,1]' &&
+          mod.entryInfo.main.globalLoop === true &&
+          mod.entryInfo.main.phases === 1);
 
     const N = 17;   // odd to exercise the early-out guard
     const input = new Array(N);
@@ -232,6 +236,70 @@ function testBarrierReduction() {
     check('workgroup reduction init phase optimized',
           mod.metrics.workgroupReductionInits === 1 &&
           mod.jsSource.includes('Optimized workgroup reduction init phase'));
+}
+
+function testSyntheticReductionSequenceEntry() {
+    console.log('test: synthetic reset/reduce/finalize sequence entry');
+
+    const wgsl = `
+        struct U { n: u32, _a: u32, _b: u32, _c: u32, };
+        @group(0) @binding(0) var<uniform> U_buf: U;
+        @group(0) @binding(1) var<storage, read>       input: array<f32>;
+        @group(0) @binding(2) var<storage, read_write> total: atomic<u32>;
+        @group(0) @binding(3) var<storage, read_write> out:   array<f32>;
+
+        var<workgroup> tile: atomic<u32>;
+
+        @compute @workgroup_size(1)
+        fn reset() {
+            atomicStore(&total, 0u);
+        }
+
+        @compute @workgroup_size(4, 1, 1)
+        fn reduce(
+            @builtin(global_invocation_id) gid: vec3<u32>,
+            @builtin(local_invocation_index) lid: u32,
+        ) {
+            if (lid == 0u) { atomicStore(&tile, 0u); }
+            workgroupBarrier();
+            if (gid.x < U_buf.n) {
+                atomicAdd(&tile, u32(input[gid.x] * 100.0));
+            }
+            workgroupBarrier();
+            if (lid == 0u) {
+                atomicAdd(&total, atomicLoad(&tile));
+            }
+        }
+
+        @compute @workgroup_size(1)
+        fn finalize() {
+            out[0] = f32(atomicLoad(&total)) * 0.01;
+        }
+    `;
+
+    const mod = compileWGSL(wgsl);
+    const input = [1.25, 2.5, 3.75, 4.0, 5.5, 6.25, 7.0];
+    const runExplicit = { total: [123], out: [NaN] };
+    const runFused = { total: [123], out: [NaN] };
+    const bindingsExplicit = { U_buf: { n: input.length, _a: 0, _b: 0, _c: 0 }, input, ...runExplicit };
+    const bindingsFused = { U_buf: { n: input.length, _a: 0, _b: 0, _c: 0 }, input, ...runFused };
+    const reduceWorkgroups = [Math.ceil(input.length / 4), 1, 1];
+
+    mod.entry.reset({ workgroups: [1, 1, 1], bindings: bindingsExplicit });
+    mod.entry.reduce({ workgroups: reduceWorkgroups, bindings: bindingsExplicit });
+    mod.entry.finalize({ workgroups: [1, 1, 1], bindings: bindingsExplicit });
+
+    mod.entry.reset_reduce_finalize({ workgroups: reduceWorkgroups, bindings: bindingsFused });
+
+    const expected = input.reduce((a, b) => a + Math.floor(b * 100), 0) * 0.01;
+    check('synthetic sequence entry is exposed with metadata',
+          typeof mod.entry.reset_reduce_finalize === 'function' &&
+          mod.entryInfo.reset_reduce_finalize?.sequence === true &&
+          mod.entryInfo.reset_reduce_finalize.workgroupEntry === 'reduce');
+    check('synthetic sequence matches explicit reset/reduce/finalize',
+          Math.abs(runFused.out[0] - runExplicit.out[0]) < 1e-6 &&
+          Math.abs(runFused.out[0] - expected) < 1e-6,
+          `got ${runFused.out[0]}, expected ${expected}`);
 }
 
 // ── Test 5: resolver Expr coverage on a canonical kernel ──────────
@@ -774,6 +842,26 @@ function testFlatStorageMode() {
         if (flatOut[i][0] !== 0 || flatOut[i][1] !== 0 || flatOut[i][2] !== 0) { nonzero = true; break; }
     }
     check('flat outputs nonzero (TypedArray actually written)', nonzero);
+
+    const selective = compileWGSL(wgsl, { flatStorage: true, flatStorageBindings: ['out'] });
+    const selectiveObj = makeObjInputs();
+    const selectiveOut = new Float32Array(N * 3);
+    selective.entry.step({
+        workgroups: [Math.ceil(N / 8), 1, 1],
+        bindings: { P: { n: N, k: 4.0, damping: 0.98, dt: 0.016 },
+                    pos: selectiveObj.pos, vel: selectiveObj.vel, out: selectiveOut },
+    });
+    let selectiveOK = true;
+    for (let i = 0; i < N; i++) {
+        for (let c = 0; c < 3; c++) {
+            if (Math.abs(objOut[i][c] - selectiveOut[i*3+c]) > EPS) selectiveOK = false;
+        }
+    }
+    check('selective flat-storage flattens only allow-listed bindings',
+          selectiveOK &&
+          selective.jsSource.includes('_b_out[_wbase + 0]') &&
+          !selective.jsSource.includes('_b_pos[_b +') &&
+          !selective.jsSource.includes('_b_vel[_b +'));
 }
 
 function testFlatStructStorageMode() {
@@ -861,6 +949,65 @@ function testFlatStructStorageMode() {
     check('flat struct output matches object-mode output', ok,
           ok ? '' : `first differing particle ${first}`);
     check('flat struct stride follows WGSL layout', flatMod.jsSource.includes('* 8'));
+
+    function makeSoA() {
+        const input = {
+            pos: new Float32Array(N * 3),
+            mass: new Float32Array(N),
+            vel: new Float32Array(N * 3),
+            charge: new Float32Array(N),
+        };
+        const output = {
+            pos: new Float32Array(N * 3),
+            mass: new Float32Array(N),
+            vel: new Float32Array(N * 3),
+            charge: new Float32Array(N),
+        };
+        for (let i = 0; i < N; i++) {
+            input.pos[i * 3 + 0] = i + 0.1;
+            input.pos[i * 3 + 1] = i + 0.2;
+            input.pos[i * 3 + 2] = i + 0.3;
+            input.mass[i] = i + 10;
+            input.vel[i * 3 + 0] = i + 1;
+            input.vel[i * 3 + 1] = i + 2;
+            input.vel[i * 3 + 2] = i + 3;
+            input.charge[i] = -i;
+        }
+        return { input, output };
+    }
+    const soaMod = compileWGSL(wgsl, {
+        flatStorage: true,
+        storageLayout: {
+            input: { mode: 'soa' },
+            output: { mode: 'soa' },
+        },
+    });
+    const soa = makeSoA();
+    soaMod.entry.step({
+        workgroups: [Math.ceil(N / 4), 1, 1],
+        bindings: { P: { n: N, dt: 0.5, _a: 0, _b: 0 }, input: soa.input, output: soa.output },
+    });
+    let soaOK = true;
+    for (let i = 0; i < N; i++) {
+        const want = obj.output[i];
+        const pos = [soa.output.pos[i * 3], soa.output.pos[i * 3 + 1], soa.output.pos[i * 3 + 2]];
+        const vel = [soa.output.vel[i * 3], soa.output.vel[i * 3 + 1], soa.output.vel[i * 3 + 2]];
+        if (Math.abs(want.pos.x - pos[0]) > 1e-5 ||
+            Math.abs(want.pos.y - pos[1]) > 1e-5 ||
+            Math.abs(want.pos.z - pos[2]) > 1e-5 ||
+            Math.abs(want.mass - soa.output.mass[i]) > 1e-5 ||
+            Math.abs(want.vel.x - vel[0]) > 1e-5 ||
+            Math.abs(want.vel.y - vel[1]) > 1e-5 ||
+            Math.abs(want.vel.z - vel[2]) > 1e-5 ||
+            Math.abs(want.charge - soa.output.charge[i]) > 1e-5) {
+            soaOK = false;
+        }
+    }
+    check('SoA flat struct output matches object-mode output', soaOK);
+    check('SoA flat struct mode addresses field arrays directly',
+          soaMod.jsSource.includes('_b_input.pos[') &&
+          soaMod.jsSource.includes('_b_output.vel[') &&
+          !soaMod.jsSource.includes('_b_output[_wbase +'));
 }
 
 function testStrictNumericAndIntrinsics() {
@@ -920,7 +1067,16 @@ function testBuildTimeTranspileAPI() {
     `;
     const built = transpileWGSL(wgsl);
     check('transpileWGSL returns entry metadata', JSON.stringify(built.entryPoints) === '["main"]');
+    check('transpileWGSL returns entryInfo metadata',
+          JSON.stringify(built.entryInfo?.main?.workgroupSize) === '[1,1,1]' &&
+          built.entryInfo.main.globalLoop === true);
     check('transpileWGSL returns generated module source', built.jsSource.includes('export default function _wgsl_module'));
+    const mod = compileWGSL(wgsl);
+    const out = [0];
+    const bound = mod.bind({ out });
+    bound.main([1, 1, 1]);
+    check('compileWGSL exposes prebound positional entry dispatch',
+          out[0] === 42 && built.jsSource.includes('const bind = function'));
 }
 
 function testNumericAndRuntimeOptimizations() {
@@ -944,12 +1100,13 @@ function testNumericAndRuntimeOptimizations() {
             u_out[gid.x] = x + shr + shl;
             i_out[gid.x] = sar;
             f_out[gid.x] = round(2.5) + round(3.5) + min(1.0, P_buf.nanv) + max(1.0, P_buf.nanv);
+            f_out[gid.x + 1u] = clamp(P_buf.nanv, 0.0, 1.0);
             let old = atomicAdd(&counts[0], 2u);
             u_out[gid.x + 1u] = old;
         }
     `;
     const mod = compileWGSL(wgsl, { strictInts: true, strictF32: true });
-    const u_out = [0, 0], i_out = [0], f_out = [0], counts = [0xffffffff];
+    const u_out = [0, 0], i_out = [0], f_out = [0, 0], counts = [0xffffffff];
     mod.entry.main({
         workgroups: [1, 1, 1],
         bindings: { P_buf: { n: 1, nanv: NaN, _a: 0, _b: 0 }, u_out, i_out, f_out, counts },
@@ -957,6 +1114,7 @@ function testNumericAndRuntimeOptimizations() {
     check('u32 shifts and compound wrap correctly', u_out[0] === 3);
     check('i32 arithmetic right shift is signed', i_out[0] === -2);
     check('round/min/max follow WGSL-oriented scalar helpers', f_out[0] === 8);
+    check('clamp preserves NaN semantics', Number.isNaN(f_out[1]));
     check('typed u32 atomic wraps on overflow and returns old value',
           counts[0] === 1 && u_out[1] === 0xffffffff);
     check('scalar compound lowering avoids polymorphic add dispatch',
@@ -1064,6 +1222,488 @@ function testFlatLayoutFiniteWritesAndSpecialization() {
           !spec.jsSource.includes('_u_U_buf_k'));
     check('1D global dispatch specialization is emitted',
           spec.jsSource.includes('if (Gy === 1 && Gz === 1)'));
+
+    const branchWGSL = `
+        struct Mode { axis: u32, _a: u32, _b: u32, _c: u32, };
+        @group(0) @binding(0) var<uniform> mode: Mode;
+        @group(0) @binding(1) var<storage, read_write> out: array<u32>;
+        @compute @workgroup_size(1)
+        fn main() {
+            let axis = mode.axis;
+            if (axis == 0u) {
+                out[0] = 11u;
+            } else {
+                out[0] = 22u;
+            }
+        }
+    `;
+    const branchMod = compileWGSL(branchWGSL, {
+        specializeUniforms: { mode: { axis: 0 } },
+    });
+    const branchOut = [0];
+    branchMod.entry.main({ workgroups: [1, 1, 1], bindings: { out: branchOut } });
+    check('uniform specialization prunes const-alias branch bodies',
+          branchMod.metrics.staticBranchPrunes > 0 &&
+          !branchMod.jsSource.includes('= 22') &&
+          branchOut[0] === 11);
+}
+
+function testPhaseLocalReplayAcrossBarrier() {
+    console.log('test: phase-local let replay across barrier');
+
+    const wgsl = `
+        struct Params { mode: u32, _a: u32, _b: u32, _c: u32, scale: f32, bias: f32, _d: f32, _e: f32, };
+        @group(0) @binding(0) var<uniform> P: Params;
+        @group(0) @binding(1) var<storage, read_write> out: array<f32>;
+
+        var<workgroup> tile: array<f32, 4>;
+
+        @compute @workgroup_size(4, 1, 1)
+        fn main(
+            @builtin(global_invocation_id) gid: vec3<u32>,
+            @builtin(local_invocation_index) lid: u32,
+        ) {
+            let mode = P.mode;
+            let idx = gid.x;
+            let base = f32(mode) + P.scale;
+
+            tile[lid] = base + f32(lid);
+            workgroupBarrier();
+
+            if (mode == 1u) {
+                out[idx] = tile[lid] * base + P.bias;
+            } else {
+                out[idx] = -999.0;
+            }
+        }
+    `;
+
+    const mod = compileWGSL(wgsl, {
+        specializeUniforms: { P: { mode: 1 } },
+    });
+    const out = new Array(4).fill(NaN);
+    mod.entry.main({
+        workgroups: [1, 1, 1],
+        bindings: { P: { scale: 2, bias: 0.25, _a: 0, _b: 0, _c: 0, _d: 0, _e: 0 }, out },
+    });
+
+    const want = [9.25, 12.25, 15.25, 18.25];
+    check('pre-barrier locals replay into post-barrier phase',
+          JSON.stringify(out) === JSON.stringify(want),
+          `got ${JSON.stringify(out)}, expected ${JSON.stringify(want)}`);
+    check('replayed specialized local prunes post-barrier branch',
+          mod.metrics.staticBranchPrunes > 0 &&
+          !mod.jsSource.includes('-999'));
+}
+
+function testFunctionParamSpecialization() {
+    console.log('test: function-param specialization and static select');
+
+    const wgsl = `
+        struct U { axis: u32, _a: u32, _b: u32, _c: u32, };
+        @group(0) @binding(0) var<uniform> U_buf: U;
+        @group(0) @binding(1) var<storage, read_write> out: array<f32>;
+
+        fn pick(a: f32, b: f32, axis: u32) -> f32 {
+            let chosen = select(a, b, axis == 1u);
+            if (axis == 1u) {
+                return chosen + 10.0;
+            }
+            return chosen + 20.0;
+        }
+
+        @compute @workgroup_size(1)
+        fn main() {
+            out[0] = pick(2.0, 5.0, U_buf.axis);
+        }
+    `;
+
+    const mod = compileWGSL(wgsl, {
+        inlineNever: ['pick'],
+        specializeUniforms: { U_buf: { axis: 1 } },
+        specializeFunctionParams: { pick: { axis: 1 } },
+    });
+    const out = [NaN];
+    mod.entry.main({ workgroups: [1, 1, 1], bindings: { out } });
+    const helperSrc = mod.jsSource.slice(0, mod.jsSource.indexOf('const entry'));
+
+    check('specialized helper param preserves output',
+          out[0] === 15,
+          `got ${out[0]}, expected 15`);
+    check('specialized helper param prunes branch and select',
+          mod.metrics.staticBranchPrunes > 0 &&
+          helperSrc.includes('const chosen = b;') &&
+          !helperSrc.includes('if ((axis == 1))') &&
+          !helperSrc.includes('?'));
+}
+
+function testGeneratedCodeFastPaths() {
+    console.log('test: generated-code fast paths for casts, 2D loops, vec ctors, and mixed intrinsics');
+    const wgsl = `
+        struct P { w: u32, h: u32, _a: u32, _b: u32, };
+        @group(0) @binding(0) var<uniform> P_buf: P;
+        @group(0) @binding(1) var<storage, read_write> color: array<vec4<f32>>;
+        @group(0) @binding(2) var<storage, read_write> ints: array<u32>;
+
+        @compute @workgroup_size(4, 4, 1)
+        fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
+            if (gid.x >= P_buf.w || gid.y >= P_buf.h) { return; }
+            let idx = gid.y * P_buf.w + gid.x;
+            let base = vec3<f32>(f32(gid.x) * 0.25, f32(gid.y) * 0.5, 0.25);
+            let rgba = vec4<f32>(base.rgb, 1.0);
+            let blend = mix(rgba, vec4<f32>(1.0), 0.25);
+            color[idx] = clamp(blend, 0.0, 1.0);
+            ints[0] = u32(i32(-1));
+        }
+    `;
+    const mod = compileWGSL(wgsl);
+    const color = Array.from({ length: 4 }, () => ({ x: 0, y: 0, z: 0, w: 0 }));
+    const ints = [0];
+    mod.entry.main({
+        workgroups: [4, 4, 1],
+        domain: [2, 2, 1],
+        bindings: { P_buf: { w: 2, h: 2, _a: 0, _b: 0 }, color, ints },
+    });
+
+    check('2D global dispatch specialization is emitted',
+          mod.jsSource.includes('else if (Gz === 1)'));
+    check('2D origin-zero dispatch is row-major without divide/mod decode',
+          mod.jsSource.includes('for (let __gy = 0, __rowBase = 0; __gy <') &&
+          !mod.jsSource.includes('Math.floor(__g / Gx)'));
+    check('canonical gid-bound guard clips loop limits instead of branching per cell',
+          mod.jsSource.includes('const __clipXBound =') &&
+          mod.jsSource.includes('const __clipYBound =') &&
+          mod.jsSource.includes('Math.min(Gx, __clipXBound)') &&
+          !mod.jsSource.includes('if (((gid_x >='));
+    check('domain-sized CPU dispatch hook is emitted',
+          mod.jsSource.includes('domain && domain[0]'));
+    check('default scalar casts inline instead of calling rt.f32/u32/i32',
+          !/\brt\.(?:f32|u32|i32)\(/.test(mod.jsSource));
+    check('mixed vec/scalar mix and clamp inline without polymorphic dispatch',
+          !/\brt\.(?:mix|clamp|clampScalar)\(/.test(mod.jsSource));
+    check('vec constructor with vec argument flattens without rt.vec4',
+          !/\brt\.vec4\(/.test(mod.jsSource));
+    check('fast-path shader executes expected values',
+          Math.abs(color[3].x - 0.4375) < 1e-6 &&
+          Math.abs(color[3].y - 0.625) < 1e-6 &&
+          Math.abs(color[3].z - 0.4375) < 1e-6 &&
+          color[3].w === 1 &&
+          ints[0] === 0xffffffff);
+    const shardedColor = Array.from({ length: 16 }, () => ({ x: 0, y: 0, z: 0, w: 0 }));
+    mod.entry.main({
+        workgroups: [4, 4, 1],
+        domain: [2, 2, 1],
+        origin: [1, 1, 0],
+        bindings: { P_buf: { w: 4, h: 4, _a: 0, _b: 0 }, color: shardedColor, ints: [0] },
+    });
+    check('origin offset preserves global_invocation_id for row-sharded CPU dispatch',
+          shardedColor[0].w === 0 &&
+          Math.abs(shardedColor[10].x - 0.625) < 1e-6 &&
+          shardedColor[10].y === 1 &&
+          Math.abs(shardedColor[10].z - 0.4375) < 1e-6 &&
+          shardedColor[10].w === 1);
+    check('origin-aware dispatch path is emitted',
+          mod.jsSource.includes('origin && origin[0]') &&
+          mod.jsSource.includes('if (Ox === 0 && Oy === 0)'));
+    const paddedColor = Array.from({ length: 16 }, () => ({ x: -1, y: -1, z: -1, w: -1 }));
+    mod.entry.main({
+        workgroups: [1, 1, 1],
+        bindings: { P_buf: { w: 2, h: 2, _a: 0, _b: 0 }, color: paddedColor, ints: [0] },
+    });
+    check('clipped loop preserves padded-dispatch guard semantics',
+          paddedColor.slice(0, 4).every(px => px.w === 1) &&
+          paddedColor.slice(4).every(px => px.w === -1));
+
+    const dynamicReturnWGSL = `
+        @group(0) @binding(0) var<storage, read_write> out: array<f32>;
+        @compute @workgroup_size(4, 1, 1)
+        fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
+            if (gid.x == 0u) { return; }
+            out[gid.x] = 1.0;
+        }
+    `;
+    const dynamicReturn = compileWGSL(dynamicReturnWGSL);
+    check('non-clippable early-return entries keep invocation label',
+          dynamicReturn.jsSource.includes('__invocation: {'));
+
+    const noReturnWGSL = `
+        @group(0) @binding(0) var<storage, read_write> out: array<f32>;
+        @compute @workgroup_size(4, 1, 1)
+        fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
+            out[gid.x] = f32(gid.x) * 2.0;
+        }
+    `;
+    const noReturn = compileWGSL(noReturnWGSL);
+    const noReturnOut = new Array(4).fill(NaN);
+    noReturn.entry.main({ workgroups: [1, 1, 1], bindings: { out: noReturnOut } });
+    check('no-return entries omit invocation label',
+          !noReturn.jsSource.includes('__invocation: {') &&
+          JSON.stringify(noReturnOut) === JSON.stringify([0, 2, 4, 6]));
+
+    const profileWGSL = `
+        @group(0) @binding(0) var<storage, read_write> out: array<f32>;
+        fn hot_helper(x: f32) -> f32 {
+            var y = x;
+            y += 1.0; y += 2.0; y += 3.0; y += 4.0;
+            y += 5.0; y += 6.0; y += 7.0; y += 8.0;
+            return y;
+        }
+        @compute @workgroup_size(1)
+        fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
+            out[0] = hot_helper(1.0);
+        }
+    `;
+    const cold = transpileWGSL(profileWGSL);
+    const hot = transpileWGSL(profileWGSL, { inlineProfile: { hot_helper: { hotness: 1 } } });
+    check('profile-guided inlining can lift the default statement budget',
+          /function hot_helper/.test(cold.body) && !/function hot_helper/.test(hot.body));
+}
+
+function testFixedWorkgroupSpecialization() {
+    console.log('test: fixed-workgroup dispatch specialization');
+    const wgsl = `
+        @group(0) @binding(0) var<storage, read_write> out: array<f32>;
+
+        @compute @workgroup_size(2, 2, 1)
+        fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
+            let i = gid.y * 4u + gid.x;
+            out[i] = f32(gid.x) + 10.0 * f32(gid.y);
+        }
+    `;
+    const mod = compileWGSL(wgsl, { fixedWorkgroups: [2, 2, 1] });
+    const out = new Float32Array(16);
+    mod.entry.main({ workgroups: [99, 99, 1], bindings: { out } });
+    let ok = true;
+    for (let y = 0; y < 4; y++) {
+        for (let x = 0; x < 4; x++) {
+            if (out[y * 4 + x] !== x + 10 * y) ok = false;
+        }
+    }
+    check('fixedWorkgroups bakes the dispatch size into execution',
+          ok && out.length === 16);
+    check('fixedWorkgroups skips runtime workgroup destructuring',
+          mod.jsSource.includes('const Wx = 2, Wy = 2, Wz = 1;') &&
+          !mod.jsSource.includes('const [Wx, Wy, Wz] = workgroups;'));
+}
+
+function testInlineActualCallCounts() {
+    console.log('test: actual call-site counting for inlining caps');
+    const wgsl = `
+        @group(0) @binding(0) var<storage, read_write> out: array<f32>;
+
+        fn tiny(x: f32) -> f32 {
+            return x + 1.0;
+        }
+
+        @compute @workgroup_size(1)
+        fn main() {
+            out[0] = tiny(1.0) + tiny(2.0);
+        }
+    `;
+
+    const capped = compileWGSL(wgsl, { inlineCallLimit: 1 });
+    const cappedOut = [NaN];
+    capped.entry.main({ workgroups: [1, 1, 1], bindings: { out: cappedOut } });
+    check('repeated calls in one expression count as separate inline sites',
+          /function tiny/.test(capped.jsSource) && cappedOut[0] === 5);
+
+    const allowed = compileWGSL(wgsl, { inlineCallLimit: 2 });
+    const allowedOut = [NaN];
+    allowed.entry.main({ workgroups: [1, 1, 1], bindings: { out: allowedOut } });
+    check('call-site cap still allows exactly-budgeted repeated helper calls',
+          !/function tiny/.test(allowed.jsSource) && allowedOut[0] === 5);
+
+    const manyWGSL = `
+        @group(0) @binding(0) var<storage, read_write> out: array<f32>;
+        fn bump(x: f32) -> f32 { return x + 1.0; }
+        @compute @workgroup_size(1)
+        fn main() {
+            out[0] = bump(1.0) + bump(2.0) + bump(3.0) + bump(4.0) + bump(5.0) + bump(6.0);
+        }
+    `;
+    const many = compileWGSL(manyWGSL);
+    const manyOut = [NaN];
+    many.entry.main({ workgroups: [1, 1, 1], bindings: { out: manyOut } });
+    check('default inliner keeps tiny scalar helpers inline past call-count cap',
+          !/function bump/.test(many.jsSource) && manyOut[0] === 27);
+
+    const branchyWGSL = `
+        @group(0) @binding(0) var<storage, read_write> out: array<f32>;
+        fn branchy(x: f32) -> f32 {
+            var y = x;
+            if (x > 0.0) {
+                y += 1.0;
+            } else {
+                y -= 1.0;
+            }
+            y += 2.0;
+            y += 3.0;
+            return y;
+        }
+        @compute @workgroup_size(1)
+        fn main() {
+            out[0] = branchy(1.0);
+        }
+    `;
+    const branchCold = compileWGSL(branchyWGSL);
+    const branchHot = compileWGSL(branchyWGSL, { inlineHotFns: ['branchy'] });
+    const branchOut = [NaN];
+    branchCold.entry.main({ workgroups: [1, 1, 1], bindings: { out: branchOut } });
+    check('default inliner avoids larger branchy helpers',
+          /function branchy/.test(branchCold.jsSource) && branchOut[0] === 7);
+    check('hot hint can still inline larger branchy helpers',
+          !/function branchy/.test(branchHot.jsSource));
+}
+
+function testSwizzleStorePropagation() {
+    console.log('test: multi-component swizzle store propagation');
+    const wgsl = `
+        @group(0) @binding(0) var<storage, read_write> out: array<vec4<f32>>;
+
+        @compute @workgroup_size(1)
+        fn main() {
+            var v = vec4<f32>(1.0, 2.0, 3.0, 4.0);
+            v.xy = v.yx;
+            v.zw = vec2<f32>(9.0, 8.0);
+            out[0] = v;
+            out[1] = vec4<f32>(10.0, 20.0, 30.0, 40.0);
+            out[1].rgb = out[0].bgr;
+            out[1].a = 99.0;
+        }
+    `;
+    const mod = compileWGSL(wgsl, { flatStorage: true });
+    const out = new Float32Array(8);
+    mod.entry.main({ workgroups: [1, 1, 1], bindings: { out } });
+    check('local swizzle stores preserve rotate and partial writes',
+          out[0] === 2 && out[1] === 1 && out[2] === 9 && out[3] === 8);
+    check('flat storage swizzle store writes selected components only',
+          out[4] === 9 && out[5] === 1 && out[6] === 2 && out[7] === 99);
+    check('swizzle stores lower to component writes instead of JS swizzle lvalues',
+          !mod.jsSource.includes('.xy =') &&
+          !mod.jsSource.includes('.rgb =') &&
+          mod.jsSource.includes('_b_out[_wbase + 0]') &&
+          mod.jsSource.includes('_b_out[_wbase + 2]'));
+}
+
+function testScalarReturnClone() {
+    console.log('test: scalar-return clones for non-inlined vec helpers');
+    const wgsl = `
+        @group(0) @binding(0) var<storage, read_write> out: array<f32>;
+
+        fn pick(p: vec3<f32>) -> vec3<f32> {
+            let q = p + vec3<f32>(1.0, 2.0, 3.0);
+            return q;
+        }
+
+        @compute @workgroup_size(1)
+        fn main() {
+            out[0] = pick(vec3<f32>(3.0, 4.0, 5.0)).x +
+                     pick(vec3<f32>(3.0, 4.0, 5.0)).z;
+        }
+    `;
+    const mod = compileWGSL(wgsl, { noInline: true });
+    const out = new Float32Array(1);
+    mod.entry.main({ workgroups: [1, 1, 1], bindings: { out } });
+    const xBody = mod.jsSource.match(/function __wgsl_ret_pick_x\([^)]*\) \{([\s\S]*?)\n    \}/)?.[1] || '';
+    const zBody = mod.jsSource.match(/function __wgsl_ret_pick_z\([^)]*\) \{([\s\S]*?)\n    \}/)?.[1] || '';
+    check('scalar-return clone preserves direct component-read output',
+          Math.abs(out[0] - 12) < 1e-6);
+    check('scalar-return clones are emitted for both used components',
+          mod.jsSource.includes('function __wgsl_ret_pick_x') &&
+          mod.jsSource.includes('function __wgsl_ret_pick_z'));
+    check('component reads call scalar clones instead of helper(...).component',
+          mod.jsSource.includes('__wgsl_ret_pick_x({') &&
+          mod.jsSource.includes('__wgsl_ret_pick_z({') &&
+          !mod.jsSource.includes('pick({x:3, y:4, z:5}).x'));
+    check('scalar clone return path avoids vec object materialization',
+          xBody.includes('return q_x;') &&
+          zBody.includes('return q_z;') &&
+          !xBody.includes('return {') &&
+          !zBody.includes('return {'));
+}
+
+function testFixedArrayReturnSroa() {
+    console.log('test: fixed-size array return SROA');
+    const wgsl = `
+        @group(0) @binding(0) var<storage, read_write> out: array<vec4<f32>>;
+
+        fn pack_pair(a: vec4<f32>, b: vec4<f32>) -> array<vec4<f32>, 2> {
+            let bias = vec4<f32>(0.5, 0.25, 0.125, 0.0);
+            return array<vec4<f32>, 2>(a + bias, b * 2.0);
+        }
+
+        @compute @workgroup_size(1)
+        fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
+            let pair = pack_pair(
+                vec4<f32>(1.0, 2.0, 3.0, 4.0),
+                vec4<f32>(5.0, 6.0, 7.0, 8.0),
+            );
+            out[0] = pair[0];
+            out[1] = pair[1];
+            out[2] = pair[0] + pair[1];
+        }
+    `;
+    const mod = compileWGSL(wgsl, { flatStorage: true });
+    const out = new Float32Array(12);
+    mod.entry.main({ workgroups: [1, 1, 1], bindings: { out } });
+    check('fixed array return executes through flat storage',
+          out[0] === 1.5 && out[1] === 2.25 && out[2] === 3.125 && out[3] === 4 &&
+          out[4] === 10 && out[5] === 12 && out[6] === 14 && out[7] === 16 &&
+          out[8] === 11.5 && out[9] === 14.25 && out[10] === 17.125 && out[11] === 20);
+    check('fixed array return helper is inlined',
+          !/function pack_pair/.test(mod.jsSource));
+    check('fixed array return avoids materializing the returned JS array',
+          !/_inl_\d+_result\s*=\s*\[/.test(mod.jsSource) &&
+          !/const pair\s*=\s*\[/.test(mod.jsSource));
+}
+
+function testNestedStructSroa() {
+    console.log('test: nested struct SROA and struct-return scalarization');
+    const wgsl = `
+        struct Inner { v: vec3<f32>, q: f32, };
+        struct Outer { a: Inner, b: Inner, };
+        @group(0) @binding(0) var<storage, read_write> out: array<f32>;
+
+        fn make_inner(x: f32) -> Inner {
+            return Inner(vec3<f32>(x, x + 1.0, x + 2.0), x + 3.0);
+        }
+
+        fn make_outer(x: f32) -> Outer {
+            return Outer(make_inner(x), make_inner(x + 10.0));
+        }
+
+        @compute @workgroup_size(1)
+        fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
+            var o: Outer;
+            o.a = make_inner(1.0);
+            o.b = make_inner(10.0);
+            let c = o.a.v + o.b.v;
+            let d = make_outer(2.0);
+            out[0] = c.x;
+            out[1] = c.y;
+            out[2] = c.z;
+            out[3] = o.a.q + o.b.q;
+            out[4] = d.a.v.y + d.b.q;
+            o.a.v.x = o.a.v.y + 4.0;
+            out[5] = o.a.v.x;
+            let copied = o.a;
+            out[6] = copied.v.z + copied.q;
+        }
+    `;
+    const mod = compileWGSL(wgsl);
+    const out = new Array(7).fill(NaN);
+    mod.entry.main({ workgroups: [1, 1, 1], bindings: { out } });
+    const want = [11, 13, 15, 17, 18, 6, 7];
+    check('nested struct SROA executes with nested member writes',
+          out.every((v, i) => Math.abs(v - want[i]) < 1e-6),
+          `got ${JSON.stringify(out)}, expected ${JSON.stringify(want)}`);
+    check('nested struct-return helpers are inlined',
+          !/function make_inner/.test(mod.jsSource) && !/function make_outer/.test(mod.jsSource));
+    check('nested struct returns avoid whole-object result materialization',
+          !/_inl_\d+_result\s*=\s*\{/.test(mod.jsSource));
+    check('nested struct locals avoid placeholder object fields',
+          !/let\s+o_a\s*=\s*null/.test(mod.jsSource) &&
+          !/let\s+copied_v\s*=\s*null/.test(mod.jsSource));
 }
 
 function testStructSroaAndPointerInlining() {
@@ -1264,6 +1904,11 @@ function testTwoDSharedTileHaloBarrier() {
     `;
 
     const mod = compileWGSL(wgsl);
+    check('2D scalar workgroup tile flattens to one reusable TypedArray',
+          mod.metrics.flatWorkgroupArrays === 1 &&
+          mod.metrics.flatWorkgroupSlots === 144 &&
+          mod.jsSource.includes('new Float32Array(144)') &&
+          !mod.jsSource.includes('Array.from({ length: 12 }'));
 
     const W = 16, H = 16;
     const input = new Array(W * H);
@@ -1329,6 +1974,47 @@ function testTwoDSharedTileHaloBarrier() {
         if (output[k] !== output[0]) { varies = true; break; }
     }
     check('output varies across the grid (sanity)', varies);
+}
+
+// ── Test: fixed-size workgroup arrays of structs flatten to a packed
+// TypedArray, while preserving barrier-visible struct stores and SROA
+// reads. This is the CPU-side shape used by plasma's MhdPrim tile.
+function testFlatWorkgroupStructArray() {
+    console.log('test: flat workgroup array<struct> memory');
+
+    const wgsl = `
+        struct Cell { rho: f32, temp: f32, pres: f32, };
+        @group(0) @binding(0) var<storage, read_write> out: array<f32>;
+
+        var<workgroup> cells : array<array<Cell, 2>, 2>;
+
+        @compute @workgroup_size(2, 2, 1)
+        fn main(
+            @builtin(global_invocation_id) gid: vec3<u32>,
+            @builtin(local_invocation_id)  lid: vec3<u32>,
+        ) {
+            cells[lid.y][lid.x] = Cell(f32(gid.x), f32(gid.y), f32(gid.x + gid.y));
+            workgroupBarrier();
+
+            let c = cells[lid.y][lid.x];
+            let d = cells[1u - lid.y][1u - lid.x];
+            out[gid.y * 2u + gid.x] = c.rho + 10.0 * c.temp + 100.0 * c.pres + d.pres;
+        }
+    `;
+
+    const mod = compileWGSL(wgsl);
+    const out = [0, 0, 0, 0];
+    mod.entry.main({ workgroups: [1, 1, 1], bindings: { out } });
+
+    check('workgroup struct tile computes expected cross-tile values',
+          JSON.stringify(out) === JSON.stringify([2, 102, 111, 211]),
+          `got ${JSON.stringify(out)}`);
+    check('workgroup struct tile flattens to compact Float32Array',
+          mod.metrics.flatWorkgroupArrays === 1 &&
+          mod.metrics.flatWorkgroupSlots === 12 &&
+          mod.jsSource.includes('new Float32Array(12)'));
+    check('workgroup struct tile avoids nested object-array allocation',
+          !mod.jsSource.includes('Array.from({ length: 2 }'));
 }
 
 // ── Test: collectErrors mode records unsupported constructs ───────
@@ -1522,6 +2208,7 @@ testScalarFma();
 testVec4Arith();
 testHelpersAndControl();
 testBarrierReduction();
+testSyntheticReductionSequenceEntry();
 testResolverCoverage();
 testInlinePreservesOutput();
 testVarSroaPreservesOutput();
@@ -1533,9 +2220,19 @@ testBuildTimeTranspileAPI();
 testNumericAndRuntimeOptimizations();
 testStabilityOptionHooks();
 testFlatLayoutFiniteWritesAndSpecialization();
+testPhaseLocalReplayAcrossBarrier();
+testFunctionParamSpecialization();
+testGeneratedCodeFastPaths();
+testFixedWorkgroupSpecialization();
+testInlineActualCallCounts();
+testSwizzleStorePropagation();
+testScalarReturnClone();
+testFixedArrayReturnSroa();
+testNestedStructSroa();
 testStructSroaAndPointerInlining();
 testCorpusDerivedDispatchShader();
 testTwoDSharedTileHaloBarrier();
+testFlatWorkgroupStructArray();
 testCollectErrorsMode();
 testArgBindingElision();
 

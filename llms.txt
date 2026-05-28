@@ -4,7 +4,7 @@ url: https://a9l.im
 description: Free interactive educational simulations for physics, biology, finance, political science, and sacred texts.
 language: en
 license: AGPL-3.0
-updated: 2026-05-16
+updated: 2026-05-27
 ---
 
 # a9l.im
@@ -20,6 +20,7 @@ updated: 2026-05-16
 - [Scripture](https://a9l.im/scripture/): Sacred text reader with sixteen works from multiple traditions, full-text search, and concordance
 - [Miasma](https://a9l.im/miasma): Stochastic spatial epidemic simulator with multi-strain evolution, configurable compartmental model, six-topology hex grid, and intervention painting
 - [Pile](https://a9l.im/pile): Semi-realistic nuclear reactor simulator with PWR, RBMK-1000, and molten-salt reactor types — 1D axial point-kinetics neutronics, xenon, decay heat, burnup, and coupled plant safety systems
+- [Plasma](https://a9l.im/plasma): WebGPU-only 2D resistive magnetohydrodynamics simulator — HLLD Riemann solver, PPM reconstruction with characteristic-variable limiting, RK3 SSP time integration, constrained transport on a Yee-style staggered grid, tabulated cooling and heating, anisotropic Spitzer conduction, Hall MHD, ambipolar diffusion, Biermann battery, viscosity, self-gravity, and grey radiation
 
 ## Blog
 

@@ -1,9 +1,9 @@
 /* ═══════════════════════════════════════════════════════════════════
    shared-wgsl-transpile.js — WGSL → JavaScript transpiler.
 
-   Walking skeleton (Phase 0). Tokenizer is complete. Parser, emitter,
-   runtime, and dispatch wrapper are scaffolded with API contracts but
-   not yet implemented.
+   Production path for CPU-fallback compute shaders. Tokenize → parse →
+   resolve → inline/SROA → emit is live; build-time artifacts under
+   /transpiled/ are the preferred browser path.
 
    ── Why it exists ───────────────────────────────────────────────────
    WebGPU sims on a9l.im each face the same choice: ship GPU-only and
@@ -19,6 +19,8 @@
      const mod = compileWGSL(wgslSource);
      mod.entry.main({
        workgroups: [Wx, Wy, Wz],
+       domain: [Nx, Ny, 1],     // optional exact CPU iteration domain
+       origin: [0, y0, 0],       // optional global_invocation_id offset for sharding
        bindings: { U_in: f32arr, U_out: f32arr, U_uniforms: {...} },
      });
 
@@ -49,15 +51,15 @@
         component-lowerable arithmetic, or write-through stores get
         scalarized: `let p = q - r` lowers to `const p_x = q.x - r.x;
         const p_y = ...; const p_z = ...;`. Whole-vec uses (passed to
-        a fn, polymorphic fallback) rematerialize via `rt.vecN(p_x,
-        p_y, p_z)` — safety net that allocates only at that one site.
+        a fn, polymorphic fallback) rematerialize as object literals —
+        safety net that allocates only at that one site.
      4. Builtin scalarization — `@builtin(global_invocation_id) gid`
         and friends are pre-scalarized: `gid_x = wgx*Lx + lx;` etc.
         No `rt.vec3()` alloc for builtins that are only member-accessed
         (the common case).
 
-   Result: ~21-26× speedup over the polymorphic baseline on the bench
-   harness, for both arithmetic-heavy and storage-I/O-dominant kernels.
+   Result: ~33-115× speedup over the polymorphic baseline on the bench
+   harness, across arithmetic-heavy and storage-I/O-dominant kernels.
    Each transformation has a `opts.polymorphic: true` opt-out for A/B
    measurement and falls back gracefully when types can't be resolved.
 
@@ -1784,6 +1786,8 @@ export function resolveModule(ast) {
      - K_BUDGET = 8     max top-level stmts in the helper body
      - M_SITES  = 4     max static call sites for the helper across the
                         module (counted across entry-points + other fns)
+     - branchy helpers use a smaller default budget unless profile/hot
+       metadata marks them worth duplicating
      - skip if the fn has any ptr param (would need address-tracking)
      - skip if the fn participates in any call cycle (recursion)
      - skip entry points (@compute) — they're the inlining target, not
@@ -1803,9 +1807,28 @@ export function resolveModule(ast) {
 const INLINE_DEFAULT_BUDGET    = 8;
 const INLINE_DEFAULT_CALLSITES = 4;
 
+function _inlineProfileHotness(opts, name) {
+    const hot = opts.inlineHotFns ? new Set(opts.inlineHotFns) : null;
+    if (hot?.has(name)) return 1;
+    const p = opts.inlineProfile || opts.inlineProfiles;
+    if (!p) return 0;
+    const rec = p[name] ?? p.functions?.[name];
+    if (typeof rec === 'number') return rec;
+    if (rec && typeof rec.hotness === 'number') return rec.hotness;
+    if (rec && typeof rec.samples === 'number') return rec.samples;
+    if (rec && rec.hot === true) return 1;
+    return 0;
+}
+
+function _isTinyScalarInlineCandidate(fn, stmtCount, opts) {
+    if (opts.inlineTinyScalar === false) return false;
+    const budget = opts.inlineTinyScalarBudget ?? 1;
+    return stmtCount <= budget && fn.returnType?.kind === 'type_scalar';
+}
+
 /** Walk a statement list and gather every fn-callee name referenced
- *  in expression position. Used for both call-count and recursion-
- *  graph construction. Out-parameter `out` is the result set. */
+ *  in expression position. Used for recursion-graph construction.
+ *  Out-parameter `out` is the result set. */
 function _findCalleesInStmts(stmts, fnsCatalog, out) {
     for (const s of stmts) _findCalleesInStmt(s, fnsCatalog, out);
 }
@@ -1879,6 +1902,80 @@ function _findCalleesInExpr(e, fnsCatalog, out) {
     }
 }
 
+/** Count expression-position helper call sites. This intentionally does
+ *  not de-duplicate within a body: `f(x) + f(y)` is two inlining sites,
+ *  because duplicating the helper twice is exactly the cost cap is meant
+ *  to model. */
+function _countCalleesInStmts(stmts, fnsCatalog, out) {
+    for (const s of stmts) _countCalleesInStmt(s, fnsCatalog, out);
+}
+function _countCalleesInStmt(s, fnsCatalog, out) {
+    if (!s) return;
+    switch (s.kind) {
+        case 'let': case 'const':
+            if (s.value) _countCalleesInExpr(s.value, fnsCatalog, out); break;
+        case 'var':
+            if (s.value) _countCalleesInExpr(s.value, fnsCatalog, out); break;
+        case 'assign': case 'compound':
+            _countCalleesInExpr(s.target, fnsCatalog, out);
+            if (s.value) _countCalleesInExpr(s.value, fnsCatalog, out); break;
+        case 'postfix':
+            _countCalleesInExpr(s.target, fnsCatalog, out); break;
+        case 'expr_stmt':
+            _countCalleesInExpr(s.expr, fnsCatalog, out); break;
+        case 'return':
+            if (s.value) _countCalleesInExpr(s.value, fnsCatalog, out); break;
+        case 'block':
+            _countCalleesInStmts(s.stmts, fnsCatalog, out); break;
+        case 'labeled':
+            _countCalleesInStmts(s.body.stmts, fnsCatalog, out); break;
+        case 'inline_return_set':
+            if (s.value) _countCalleesInExpr(s.value, fnsCatalog, out); break;
+        case 'if':
+            _countCalleesInExpr(s.cond, fnsCatalog, out);
+            _countCalleesInStmts(s.then.stmts, fnsCatalog, out);
+            if (s.else) {
+                if (s.else.kind === 'if') _countCalleesInStmt(s.else, fnsCatalog, out);
+                else _countCalleesInStmts(s.else.stmts, fnsCatalog, out);
+            }
+            break;
+        case 'for':
+            if (s.init)   _countCalleesInStmt(s.init,   fnsCatalog, out);
+            if (s.cond)   _countCalleesInExpr(s.cond,   fnsCatalog, out);
+            if (s.update) _countCalleesInStmt(s.update, fnsCatalog, out);
+            _countCalleesInStmts(s.body.stmts, fnsCatalog, out);
+            break;
+        case 'while':
+            _countCalleesInExpr(s.cond, fnsCatalog, out);
+            _countCalleesInStmts(s.body?.stmts ?? [], fnsCatalog, out);
+            break;
+        case 'loop':
+            _countCalleesInStmts(s.body.stmts, fnsCatalog, out);
+            if (s.continuing) _countCalleesInStmts(s.continuing.stmts, fnsCatalog, out);
+            break;
+        case 'switch':
+            _countCalleesInExpr(s.selector, fnsCatalog, out);
+            for (const c of s.cases) _countCalleesInStmts(c.body.stmts, fnsCatalog, out);
+            break;
+    }
+}
+function _countCalleesInExpr(e, fnsCatalog, out) {
+    if (!e) return;
+    switch (e.kind) {
+        case 'call':
+            if (typeof e.callee === 'string' && fnsCatalog.has(e.callee)) {
+                out.set(e.callee, (out.get(e.callee) || 0) + 1);
+            }
+            for (const a of e.args) _countCalleesInExpr(a, fnsCatalog, out);
+            break;
+        case 'bin':    _countCalleesInExpr(e.lhs, fnsCatalog, out); _countCalleesInExpr(e.rhs, fnsCatalog, out); break;
+        case 'una':    _countCalleesInExpr(e.value, fnsCatalog, out); break;
+        case 'paren':  _countCalleesInExpr(e.value, fnsCatalog, out); break;
+        case 'member': _countCalleesInExpr(e.value, fnsCatalog, out); break;
+        case 'index':  _countCalleesInExpr(e.value, fnsCatalog, out); _countCalleesInExpr(e.index, fnsCatalog, out); break;
+    }
+}
+
 /** Count the number of "weighty" statements in a body. Nested control
  *  flow blocks contribute their inner count too — a body of `if (...)
  *  { a; b; c; }` counts as 4 (the if itself + 3 inner stmts). Used as
@@ -1910,6 +2007,25 @@ function _countStmt(s) {
         }
         default: return 1;
     }
+}
+
+function _hasBranchyControlFlow(stmts) {
+    for (const s of stmts) {
+        if (!s) continue;
+        switch (s.kind) {
+            case 'if':
+            case 'switch':
+            case 'for':
+            case 'while':
+            case 'loop':
+                return true;
+            case 'block':
+            case 'labeled':
+                if (_hasBranchyControlFlow(s.stmts || s.body?.stmts || [])) return true;
+                break;
+        }
+    }
+    return false;
 }
 
 /** Walk a fn's params; return true if any has a ptr type or carries
@@ -2011,6 +2127,14 @@ function _findRecursiveFns(calleesOf) {
 function _pickInlinable(cat, opts) {
     const budget    = opts.inlineBudget    ?? INLINE_DEFAULT_BUDGET;
     const callLimit = opts.inlineCallLimit ?? INLINE_DEFAULT_CALLSITES;
+    const hotBudget = opts.inlineHotBudget ?? Math.max(budget, 24);
+    const hotCallLimit = opts.inlineHotCallLimit ?? Math.max(callLimit, 24);
+    const hotThreshold = opts.inlineHotThreshold ?? 1;
+    const arrayReturnBudget = opts.inlineArrayReturnBudget ?? Math.max(budget, 32);
+    const arrayReturnCallLimit = opts.inlineArrayReturnCallLimit ?? callLimit;
+    const tinyScalarCallLimit = opts.inlineTinyScalarCallLimit ?? Math.max(callLimit, 64);
+    const branchyBudget = opts.inlineBranchyBudget ?? Math.min(budget, 4);
+    const userCallLimit = opts.inlineCallLimit != null;
     const only = opts.inlineOnly ? new Set(opts.inlineOnly) : null;
     const never = opts.inlineNever ? new Set(opts.inlineNever) : null;
 
@@ -2020,16 +2144,12 @@ function _pickInlinable(cat, opts) {
     const calleesOf  = new Map();   // fnName → Set<calleeName>
     const collectInto = (body, ownerKey) => {
         const callees = new Set();
+        const counts = new Map();
         _findCalleesInStmts(body.stmts, cat.fns, callees);
+        _countCalleesInStmts(body.stmts, cat.fns, counts);
         if (ownerKey != null) calleesOf.set(ownerKey, callees);
-        for (const c of callees) {
-            // Each *expression-position call* counts as one site. Currently
-            // we conservatively count "appears anywhere in this body" once
-            // per body, which under-counts repeated calls within one body
-            // but matches the common "helper called from N different
-            // call sites" intuition. Sufficient for the cap; tighten if it
-            // ever fires falsely.
-            callCounts.set(c, (callCounts.get(c) || 0) + 1);
+        for (const [c, n] of counts) {
+            callCounts.set(c, (callCounts.get(c) || 0) + n);
         }
     };
     for (const [name, fn] of cat.fns) collectInto(fn.body, name);
@@ -2044,10 +2164,24 @@ function _pickInlinable(cat, opts) {
         if (recursive.has(name))                       continue;
         if (_hasPtrLikeShape(fn))                      continue;
         const stmtCount = _countBodyStmts(fn.body.stmts);
-        if (stmtCount > budget)                        continue;
+        const hotness = _inlineProfileHotness(opts, name);
+        const arrayReturn = _fixedArrayReturnShape(fn.returnType);
+        const tinyScalar = _isTinyScalarInlineCandidate(fn, stmtCount, opts);
+        let effectiveBudget = hotness >= hotThreshold
+            ? hotBudget
+            : (arrayReturn ? arrayReturnBudget : budget);
+        if (hotness < hotThreshold && _hasBranchyControlFlow(fn.body.stmts)) {
+            effectiveBudget = Math.min(effectiveBudget, branchyBudget);
+        }
+        const effectiveCallLimit = hotness >= hotThreshold
+            ? hotCallLimit
+            : (arrayReturn
+                ? arrayReturnCallLimit
+                : (tinyScalar && !userCallLimit ? tinyScalarCallLimit : callLimit));
+        if (stmtCount > effectiveBudget)               continue;
         const sites = callCounts.get(name) || 0;
         if (sites === 0)                               continue;
-        if (sites > callLimit)                         continue;
+        if (sites > effectiveCallLimit)                continue;
         inlinable.set(name, fn);
     }
     return inlinable;
@@ -2143,10 +2277,13 @@ function _cloneStmtRenamed(s, nameMap, ctx) {
                 return {
                     kind: 'inline_return_set',
                     resultName: ctx.resultName,
+                    resultType: ctx.resultType,
                     label:      ctx.labelName,
                     value:      v,
                     scalarized: !!ctx.scalarized,
                     arity:      ctx.arity || 0,
+                    arrayScalarized: !!ctx.arrayScalarized,
+                    structScalarized: !!ctx.structScalarized,
                     loc:        s.loc,
                 };
             }
@@ -2355,6 +2492,9 @@ function _expandInlineCall(callExpr, fn, counter, inlinable, callStack) {
     // Net: zero vec allocations per call, even on the return path.
     const isVecResult = hasResult && fn.returnType.kind === 'type_vec';
     const resultArity = isVecResult ? fn.returnType.n : 0;
+    const arrayResultShape = hasResult ? _fixedArrayReturnShape(fn.returnType) : null;
+    const isArrayResult = !!arrayResultShape;
+    const isStructResult = hasResult && fn.returnType.kind === 'type_named';
     const lifted       = [];
 
     // Per-call nameMap. Built up below: elided args register the caller's
@@ -2414,7 +2554,10 @@ function _expandInlineCall(callExpr, fn, counter, inlinable, callStack) {
     const renamedBody = fn.body.stmts.map(s =>
         _cloneStmtRenamed(s, nameMap, {
             prefix, resultName, labelName,
+            resultType: fn.returnType,
             scalarized: isVecResult, arity: resultArity,
+            arrayScalarized: isArrayResult,
+            structScalarized: isStructResult,
         }));
 
     // Recursively inline calls inside the renamed body. The call-stack
@@ -2436,6 +2579,9 @@ function _expandInlineCall(callExpr, fn, counter, inlinable, callStack) {
         resultType: hasResult ? fn.returnType : null,
         scalarized: isVecResult,
         arity:      resultArity,
+        arrayScalarized: isArrayResult,
+        arrayShape: arrayResultShape,
+        structScalarized: isStructResult,
         body: { kind: 'block', stmts: innerInlined, loc: callExpr.loc },
         loc: callExpr.loc,
     });
@@ -2622,13 +2768,15 @@ export function inlineModulePass(ast, opts = {}) {
 
 /* ── Emit shape ───────────────────────────────────────────────────
    The emitted module is a single JS function that takes the runtime
-   namespace and returns `{ entry, bindings }`:
+   namespace and returns `{ entry, bind, bindings, entryInfo }`:
 
       function transpiled(rt) {
         // user-defined constants and helper fns hoist into closure
         const SOME_CONST = 1.0;
         function helper(x) { ... }
         const entry = Object.create(null);
+        const entryInfo = Object.create(null);
+        entryInfo.main = { workgroupSize: [8, 8, 1], phases: 1, globalLoop: true, workgroupMemory: false };
         entry.main = function ({ workgroups, bindings }) {
           const [Wx, Wy, Wz] = workgroups;
           const wg = { tile_max: 0u };   // workgroup-local vars
@@ -2645,7 +2793,8 @@ export function inlineModulePass(ast, opts = {}) {
             // Phase 1 ... etc.
           }
         };
-        return { entry, bindings: ['U_in', 'U_out', ...] };
+        const bind = (bindings) => ({ main(workgroups, domain, origin) { ... } });
+        return { entry, bind, bindings: ['U_in', 'U_out', ...], entryInfo };
       }
 
    ── Conventions ──────────────────────────────────────────────────
@@ -2838,13 +2987,13 @@ const SCALAR_INTRINSIC_JS = {
     tanh:   (a) => `Math.tanh(${a[0]})`,
     inverseSqrt: (a) => `(1 / Math.sqrt(${a[0]}))`,
     fract:  (a) => `(${a[0]} - Math.floor(${a[0]}))`,
-    clamp:  (a) => `rt.clampScalar(${a[0]}, ${a[1]}, ${a[2]})`,
+    clamp:  (a) => `(((_x, _lo, _hi) => { const _mx = _x < _lo ? _lo : _x; return _hi < _mx ? _hi : _mx; })(${a[0]}, ${a[1]}, ${a[2]}))`,
     mix:    (a) => `(${a[0]} + (${a[1]} - ${a[0]}) * ${a[2]})`,
     step:   (a) => `(${a[1]} < ${a[0]} ? 0 : 1)`,
-    smoothstep: (a) => `(((_t) => _t * _t * (3 - 2 * _t))(rt.clampScalar((${a[2]} - ${a[0]}) / (${a[1]} - ${a[0]}), 0, 1)))`,
+    smoothstep: (a) => `(((_t) => _t * _t * (3 - 2 * _t))(((_x) => { const _mx = _x < 0 ? 0 : _x; return 1 < _mx ? 1 : _mx; })((${a[2]} - ${a[0]}) / (${a[1]} - ${a[0]}))))`,
     degrees:(a) => `((${a[0]}) * 57.29577951308232)`,
     radians:(a) => `((${a[0]}) * 0.017453292519943295)`,
-    saturate:(a) => `rt.clampScalar(${a[0]}, 0, 1)`,
+    saturate:(a) => `(((_x) => { const _mx = _x < 0 ? 0 : _x; return 1 < _mx ? 1 : _mx; })(${a[0]}))`,
 };
 
 function _jsLiteral(v) {
@@ -2858,6 +3007,32 @@ function _jsLiteral(v) {
     if (typeof v === 'boolean') return v ? 'true' : 'false';
     if (v == null) return 'null';
     return JSON.stringify(v);
+}
+
+function _literalNumber(e) {
+    if (e?.kind !== 'lit' || e.raw === 'true' || e.raw === 'false' || e.raw === 'undefined') return null;
+    const v = e.intBase === 16 ? parseInt(e.raw, 16) : Number(e.raw);
+    return Number.isFinite(v) ? v : null;
+}
+
+function _typeArrayConstCount(typeAst) {
+    if (!typeAst || typeAst.kind !== 'type_array' || !typeAst.count) return null;
+    if (typeAst.count.kind === 'lit') return parseInt(typeAst.count.raw, typeAst.count.intBase || 10);
+    return null;
+}
+
+function _fixedArrayReturnShape(typeAst) {
+    const count = _typeArrayConstCount(typeAst);
+    if (!Number.isFinite(count) || count <= 0 || count > 8) return null;
+    const elem = typeAst.of;
+    if (!elem) return null;
+    if (elem.kind === 'type_vec') {
+        return { kind: 'vec', count, arity: elem.n };
+    }
+    if (elem.kind === 'type_scalar') {
+        return { kind: 'scalar', count };
+    }
+    return null;
 }
 
 function _countGeneratedRuntimeCalls(body) {
@@ -2886,7 +3061,7 @@ function _countGeneratedRuntimeCalls(body) {
  *
  * @param {object} ast
  * @param {object} [opts]
- * @returns {{ jsSource: string, body: string, entryPoints: string[], bindings: string[], metrics: object, errors: Array<{phase:string,kind:string,message:string,line:number,col:number}> }}
+ * @returns {{ jsSource: string, body: string, entryPoints: string[], bindings: string[], entryInfo: object, metrics: object, errors: Array<{phase:string,kind:string,message:string,line:number,col:number}> }}
  */
 export function emit(ast, opts = {}) {
     const e = new Emitter(ast, opts);
@@ -2925,6 +3100,7 @@ class Emitter {
         // the current function body. Used to disambiguate "is this
         // ident a local or a global?".
         this.localScopes = [];
+        this.constScopes = [];
 
         // SROA state — populated per-fn by collectScalarizable() before
         // walking the body. Maps let-name → vec arity (2|3|4). A let in
@@ -2935,6 +3111,8 @@ class Emitter {
         this.scalarizedIds = new Map();   // resolver local id -> arity
         this.structScalarized = new Map();    // source name -> struct SROA spec
         this.structScalarizedIds = new Map(); // resolver local id -> struct SROA spec
+        this.arrayScalarized = new Map();     // source name -> fixed array SROA spec
+        this.arrayScalarizedIds = new Map();  // resolver local id -> fixed array SROA spec
         this.sroaCounter = 0;
 
         // Entry-body hot-path aliases. Helper fns live outside entry
@@ -2946,6 +3124,17 @@ class Emitter {
         this.usedUniformFields = new Map();
         this.usedEntryBindings = new Set();
         this.optimizedWorkgroupReductionInits = 0;
+        this.staticBranchPrunes = 0;
+        this.entryInfo = Object.create(null);
+        this.entryInternalNames = new Map();
+        this.entryInternalCounter = 0;
+        this.returnComponent = null;
+        this.fixedWorkgroups = Array.isArray(opts.fixedWorkgroups) && opts.fixedWorkgroups.length >= 3
+            ? opts.fixedWorkgroups.slice(0, 3).map(v => Math.max(0, Math.trunc(Number(v) || 0)))
+            : null;
+        if (this.fixedWorkgroups && !this.fixedWorkgroups.every(v => v > 0)) {
+            this.fixedWorkgroups = null;
+        }
 
         // Flat TypedArray storage mode (Tier 3). When `opts.flatStorage`
         // is true, `array<vecN<f32|u32|i32>>` storage bindings are
@@ -2964,8 +3153,16 @@ class Emitter {
         // modes — so they're omitted from this map.
         this.flatBindings = new Map();
         if (opts && opts.flatStorage) {
+            const flatOnly = Array.isArray(opts.flatStorageBindings)
+                ? new Set(opts.flatStorageBindings)
+                : null;
+            const flatExcept = Array.isArray(opts.flatStorageExcept)
+                ? new Set(opts.flatStorageExcept)
+                : null;
             for (const [name, b] of this.bindings) {
                 if (b.addressSpace !== 'storage') continue;
+                if (flatOnly && !flatOnly.has(name)) continue;
+                if (flatExcept?.has(name)) continue;
                 const arrType = this.sym.typeFromAst(b.type);
                 if (!arrType || arrType.kind !== 'array') continue;
                 const elem = arrType.of;
@@ -2994,8 +3191,21 @@ class Emitter {
                             if (f) f.offset = off;
                         }
                     }
+                    const structLayoutMode = override?.mode || opts.flatStructLayout || opts.storageStructLayout || 'aos';
+                    if (structLayoutMode === 'soa') {
+                        let soaOk = true;
+                        for (const f of fields.values()) {
+                            if (f.kind !== 'scalar' && f.kind !== 'vec') soaOk = false;
+                            if (f.ctype !== 'f32' && f.ctype !== 'u32' && f.ctype !== 'i32') soaOk = false;
+                            f.soaStride = f.kind === 'vec'
+                                ? (override?.fieldStrides?.[f.name] || f.arity)
+                                : 1;
+                        }
+                        if (!soaOk) continue;
+                    }
                     this.flatBindings.set(name, {
                         kind: 'struct',
+                        layout: structLayoutMode === 'soa' ? 'soa' : 'aos',
                         stride,
                         structName: elem.name,
                         fields,
@@ -3006,6 +3216,25 @@ class Emitter {
                 // existing emit already works for both modes.
             }
         }
+
+        // Flat workgroup memory mode. Fixed-size workgroup arrays of
+        // numeric scalars, vecs, or structs-of-numeric fields lower to
+        // one TypedArray per workgroup var instead of nested JS arrays
+        // and object trees. This is deliberately conservative: a var is
+        // flattened only if every module use is a full index chain like
+        // `tile[y][x]`. Partial row aliases (`let r = tile[y]`) keep the
+        // legacy object layout.
+        this.flatWorkgroupVars = new Map();
+        if (opts && opts.flatWorkgroupMemory) {
+            for (const [name, g] of this.workgroupVars) {
+                const layout = this.workgroupFlatLayout(g.type);
+                if (layout && this.workgroupFlatUsageSafe(name, layout)) {
+                    this.flatWorkgroupVars.set(name, layout);
+                }
+            }
+        }
+
+        this.scalarReturnClones = this.collectScalarReturnCloneUses();
     }
 
     scalarLayout(t) {
@@ -3061,6 +3290,296 @@ class Emitter {
         }
         const size = _alignTo(offset, maxAlign);
         return { align: maxAlign, size, strideSlots: size / 4, fields, kind: 'struct' };
+    }
+
+    uniformNumericCtype(layout) {
+        if (!layout) return null;
+        const seen = new Set();
+        const visit = (l) => {
+            if (!l) return false;
+            if (l.kind === 'scalar' || l.kind === 'vec') {
+                const ct = l.ctype;
+                if (ct !== 'f32' && ct !== 'u32' && ct !== 'i32') return false;
+                seen.add(ct);
+                return true;
+            }
+            if (l.kind === 'struct') {
+                for (const field of l.fields.values()) {
+                    if (field.kind === 'struct') {
+                        if (!visit(this.structLayout(field.structName))) return false;
+                    } else if (field.kind === 'scalar' || field.kind === 'vec') {
+                        const ct = field.ctype;
+                        if (ct !== 'f32' && ct !== 'u32' && ct !== 'i32') return false;
+                        seen.add(ct);
+                    } else {
+                        return false;
+                    }
+                }
+                return true;
+            }
+            return false;
+        };
+        if (!visit(layout) || seen.size !== 1) return null;
+        return [...seen][0];
+    }
+
+    workgroupFlatElementLayout(elemType) {
+        const t = concretize(elemType);
+        if (!t) return null;
+        if (t.kind === 'scalar') {
+            if (t.name !== 'f32' && t.name !== 'u32' && t.name !== 'i32') return null;
+            return { kind: 'scalar', stride: 1, ctype: t.name };
+        }
+        if (t.kind === 'vec') {
+            const ct = t.of?.name;
+            if (ct !== 'f32' && ct !== 'u32' && ct !== 'i32') return null;
+            if (t.n < 2 || t.n > 4) return null;
+            return { kind: 'vec', stride: t.n, ctype: ct, arity: t.n };
+        }
+        if (t.kind === 'struct') {
+            const layout = this.structLayout(t.name);
+            const ctype = this.uniformNumericCtype(layout);
+            if (!layout || !ctype) return null;
+            for (const field of layout.fields.values()) {
+                if (field.kind === 'struct') return null;
+            }
+            return {
+                kind: 'struct',
+                stride: layout.strideSlots,
+                ctype,
+                structName: t.name,
+                fields: new Map(layout.fields),
+            };
+        }
+        return null;
+    }
+
+    workgroupFlatLayout(typeAst) {
+        const dims = [];
+        let cur = typeAst;
+        while (cur?.kind === 'type_array') {
+            if (!cur.count) return null;
+            let n;
+            try { n = this.constExprInt(cur.count); }
+            catch { return null; }
+            if (!Number.isFinite(n) || n <= 0) return null;
+            dims.push(n);
+            cur = cur.of;
+        }
+        if (!dims.length) return null;
+        const elemType = this.sym.typeFromAst(cur);
+        const elemLayout = this.workgroupFlatElementLayout(elemType);
+        if (!elemLayout) return null;
+        const dimStrides = new Array(dims.length);
+        let stride = 1;
+        for (let i = dims.length - 1; i >= 0; i--) {
+            dimStrides[i] = stride;
+            stride *= dims[i];
+        }
+        const slotStrides = dimStrides.map(s => s * elemLayout.stride);
+        return {
+            ...elemLayout,
+            dims,
+            dimStrides,
+            slotStrides,
+            totalElements: stride,
+            totalSlots: stride * elemLayout.stride,
+        };
+    }
+
+    typedArrayCtor(ctype) {
+        if (ctype === 'f32') return 'Float32Array';
+        if (ctype === 'u32') return 'Uint32Array';
+        if (ctype === 'i32') return 'Int32Array';
+        return null;
+    }
+
+    workgroupFlatInit(layout) {
+        const ctor = this.typedArrayCtor(layout.ctype);
+        return ctor ? `new ${ctor}(${layout.totalSlots})` : this.defaultInit(layout.type);
+    }
+
+    workgroupFlatUsageSafe(name, layout) {
+        let ok = true;
+        const fail = () => { ok = false; };
+        const hasRoot = (e) => {
+            if (!e || !ok) return false;
+            if (e.kind === 'ident') return e.name === name;
+            if (e.kind === 'paren') return hasRoot(e.value);
+            if (e.kind === 'index') return hasRoot(e.value) || hasRoot(e.index);
+            if (e.kind === 'member') return hasRoot(e.value);
+            if (e.kind === 'bin') return hasRoot(e.lhs) || hasRoot(e.rhs);
+            if (e.kind === 'una') return hasRoot(e.value);
+            if (e.kind === 'call') return e.args.some(hasRoot);
+            return false;
+        };
+        const visitExpr = (e) => {
+            if (!e || !ok) return;
+            if (e.kind === 'ident' && e.name === name) {
+                fail();
+                return;
+            }
+            if (e.kind === 'una' && e.op === '&' && hasRoot(e.value)) {
+                fail();
+                return;
+            }
+            if (e.kind === 'index') {
+                const chain = this.indexChain(e);
+                if (chain?.root?.kind === 'ident' && chain.root.name === name) {
+                    if (chain.indices.length !== layout.dims.length) {
+                        fail();
+                        return;
+                    }
+                    for (const idx of chain.indices) visitExpr(idx);
+                    return;
+                }
+                visitExpr(e.value);
+                visitExpr(e.index);
+                return;
+            }
+            switch (e.kind) {
+                case 'bin':    visitExpr(e.lhs); visitExpr(e.rhs); break;
+                case 'una':    visitExpr(e.value); break;
+                case 'paren':  visitExpr(e.value); break;
+                case 'call':   for (const a of e.args) visitExpr(a); break;
+                case 'member': visitExpr(e.value); break;
+            }
+        };
+        const visitStmt = (s) => {
+            if (!s || !ok) return;
+            switch (s.kind) {
+                case 'let': case 'var': case 'const':
+                    if (s.value) visitExpr(s.value); break;
+                case 'expr_stmt': visitExpr(s.expr); break;
+                case 'assign': case 'compound':
+                    visitExpr(s.target); if (s.value) visitExpr(s.value); break;
+                case 'postfix': visitExpr(s.target); break;
+                case 'return': if (s.value) visitExpr(s.value); break;
+                case 'block': for (const x of s.stmts) visitStmt(x); break;
+                case 'labeled': for (const x of s.body.stmts) visitStmt(x); break;
+                case 'inline_return_set': visitExpr(s.value); break;
+                case 'if':
+                    visitExpr(s.cond);
+                    for (const x of s.then.stmts) visitStmt(x);
+                    if (s.else) {
+                        if (s.else.kind === 'if') visitStmt(s.else);
+                        else for (const x of s.else.stmts) visitStmt(x);
+                    }
+                    break;
+                case 'for':
+                    if (s.init) visitStmt(s.init);
+                    if (s.cond) visitExpr(s.cond);
+                    if (s.update) visitStmt(s.update);
+                    for (const x of s.body.stmts) visitStmt(x);
+                    break;
+                case 'while':
+                    visitExpr(s.cond);
+                    for (const x of (s.body?.stmts ?? [])) visitStmt(x);
+                    break;
+                case 'loop':
+                    for (const x of s.body.stmts) visitStmt(x);
+                    if (s.continuing) for (const x of s.continuing.stmts) visitStmt(x);
+                    break;
+                case 'switch':
+                    visitExpr(s.selector);
+                    for (const c of s.cases) for (const x of c.body.stmts) visitStmt(x);
+                    break;
+            }
+        };
+        for (const f of this.fns.values()) {
+            for (const s of f.body.stmts) visitStmt(s);
+            if (!ok) break;
+        }
+        return ok;
+    }
+
+    indexChain(e) {
+        if (!e || e.kind !== 'index') return null;
+        const indices = [];
+        let cur = e;
+        while (cur?.kind === 'index') {
+            indices.unshift(cur.index);
+            cur = cur.value;
+        }
+        return { root: cur, indices };
+    }
+
+    flatWorkgroupAccessInfo(e) {
+        if (this.flatWorkgroupVars.size === 0) return null;
+        const chain = this.indexChain(e);
+        if (!chain || chain.root?.kind !== 'ident') return null;
+        const flat = this.flatWorkgroupVars.get(chain.root.name);
+        if (!flat || chain.indices.length !== flat.dims.length) return null;
+        return { flat, baseName: chain.root.name, indices: chain.indices };
+    }
+
+    flatWorkgroupBaseExpr(info) {
+        const terms = [];
+        for (let i = 0; i < info.indices.length; i++) {
+            const stride = info.flat.slotStrides[i];
+            const idx = this.expr(info.indices[i]);
+            terms.push(stride === 1 ? `(${idx})` : `((${idx}) * ${stride})`);
+        }
+        return terms.length ? `(${terms.join(' + ')})` : '0';
+    }
+
+    flatWorkgroupRead(info, c = null, baseExpr = null) {
+        const baseSrc = `wg.${info.baseName}`;
+        const base = baseExpr || this.flatWorkgroupBaseExpr(info);
+        if (c != null) return `${baseSrc}[${base} + ${COMP_IDX[c]}]`;
+        if (info.flat.kind === 'scalar') return `${baseSrc}[${base}]`;
+        if (info.flat.kind === 'vec') {
+            const parts = VEC_COMPS.slice(0, info.flat.arity)
+                .map(k => `${k}:${baseSrc}[_b + ${COMP_IDX[k]}]`);
+            return `((_b) => ({${parts.join(', ')}}))(${base})`;
+        }
+        if (info.flat.kind === 'struct') {
+            return this.flatStructObject(info.flat, baseSrc, base);
+        }
+        return `${baseSrc}[${base}]`;
+    }
+
+    flatStructObject(flat, baseSrc, baseExpr, baseOffset = 0) {
+        const parts = [];
+        if (flat.layout === 'soa') {
+            for (const [fname, field] of flat.fields) {
+                if (field.kind === 'scalar') {
+                    parts.push(`${fname}: ${baseSrc}.${fname}[_b]`);
+                } else if (field.kind === 'vec') {
+                    const comps = VEC_COMPS.slice(0, field.arity)
+                        .map(c => `${c}:${baseSrc}.${fname}[(_b) * ${field.soaStride} + ${COMP_IDX[c]}]`);
+                    parts.push(`${fname}: {${comps.join(', ')}}`);
+                }
+            }
+            return `((_b) => ({ ${parts.join(', ')} }))(${baseExpr})`;
+        }
+        for (const [fname, field] of flat.fields) {
+            const offset = baseOffset + field.offset;
+            if (field.kind === 'scalar') {
+                parts.push(`${fname}: ${baseSrc}[_b + ${offset}]`);
+            } else if (field.kind === 'vec') {
+                const comps = VEC_COMPS.slice(0, field.arity)
+                    .map(c => `${c}:${baseSrc}[_b + ${offset + COMP_IDX[c]}]`);
+                parts.push(`${fname}: {${comps.join(', ')}}`);
+            } else if (field.kind === 'struct') {
+                const child = this.structLayout(field.structName);
+                if (child) {
+                    const nested = this.flatStructObject(child, baseSrc, '_b', offset);
+                    parts.push(`${fname}: ${nested}`);
+                }
+            }
+        }
+        if (baseExpr === '_b') return `{ ${parts.join(', ')} }`;
+        return `((_b) => ({ ${parts.join(', ')} }))(${baseExpr})`;
+    }
+
+    flatWorkgroupStructMemberInfo(e) {
+        if (!e || e.kind !== 'member') return null;
+        const info = this.flatWorkgroupAccessInfo(e.value);
+        if (!info || info.flat.kind !== 'struct') return null;
+        const field = info.flat.fields.get(e.name);
+        if (!field) return null;
+        return { ...info, field };
     }
 
     /** Return flat-storage metadata if `e` is `bindings.X[i]` on a
@@ -3129,13 +3648,36 @@ class Emitter {
     }
 
     flatBaseExpr(info) {
+        if (info.flat?.kind === 'struct' && info.flat.layout === 'soa') {
+            return `(${this.expr(info.index)})`;
+        }
         return `((${this.expr(info.index)}) * ${info.flat.stride} + ${info.offset || 0})`;
+    }
+
+    flatScalarRead(info, baseExpr = null) {
+        const baseSrc = this.bindingSource(info.baseName);
+        if (info.flat?.layout === 'soa') {
+            const base = baseExpr || this.flatBaseExpr(info);
+            return `${baseSrc}.${info.field.name}[${base}]`;
+        }
+        return `${baseSrc}[((${this.expr(info.index)}) * ${info.flat.stride} + ${info.field.offset})]`;
     }
 
     flatVecRead(info, c, baseExpr = null) {
         const baseSrc = this.bindingSource(info.baseName);
         const base = baseExpr || this.flatBaseExpr(info);
+        if (info.flat?.layout === 'soa' && info.field) {
+            return `${baseSrc}.${info.field.name}[(${base}) * ${info.field.soaStride} + ${COMP_IDX[c]}]`;
+        }
         return `${baseSrc}[${base} + ${COMP_IDX[c]}]`;
+    }
+
+    flatVecLvalue(info, c, baseExpr = '_wbase') {
+        const baseSrc = this.bindingSource(info.baseName);
+        if (info.flat?.layout === 'soa' && info.field) {
+            return `${baseSrc}.${info.field.name}[(${baseExpr}) * ${info.field.soaStride} + ${COMP_IDX[c]}]`;
+        }
+        return `${baseSrc}[${baseExpr} + ${COMP_IDX[c]}]`;
     }
 
     storageRootName(e) {
@@ -3183,6 +3725,40 @@ class Emitter {
         return `bindings.${name}`;
     }
 
+    entryInternalName(name) {
+        let internal = this.entryInternalNames.get(name);
+        if (!internal) {
+            internal = `__entry_${this.entryInternalCounter++}_${_safe(name)}`;
+            this.entryInternalNames.set(name, internal);
+        }
+        return internal;
+    }
+
+    emitEntryObjectWrapper(name, internalName) {
+        this.line(`entry[${JSON.stringify(name)}] = function ({ workgroups, bindings, domain, origin }) {`);
+        this.open();
+        this.line(`return ${internalName}(workgroups, bindings, domain, origin);`);
+        this.close();
+        this.line(`};`);
+    }
+
+    emitBindAPI() {
+        this.blank();
+        this.line(`const bind = function (bindings) {`);
+        this.open();
+        this.line(`const bound = Object.create(null);`);
+        for (const [name, internal] of this.entryInternalNames) {
+            this.line(`bound[${JSON.stringify(name)}] = function (workgroups, domain, origin) {`);
+            this.open();
+            this.line(`return ${internal}(workgroups, bindings, domain, origin);`);
+            this.close();
+            this.line(`};`);
+        }
+        this.line(`return bound;`);
+        this.close();
+        this.line(`};`);
+    }
+
     uniformFieldSource(bindingName, fieldName) {
         const specialized = this.opts.specializeUniforms?.[bindingName];
         if (specialized && Object.prototype.hasOwnProperty.call(specialized, fieldName)) {
@@ -3214,22 +3790,38 @@ class Emitter {
             if (f.attrs.some(a => a.name === 'compute')) continue;
             if (reachableFns && !reachableFns.has(f.name)) continue;
             this.emitFn(f);
+            const cloneComps = this.scalarReturnClones.get(f.name);
+            if (cloneComps?.size && f.returnType?.kind === 'type_vec') {
+                for (const comp of [...cloneComps].sort()) {
+                    this.blank();
+                    this.emitFn(f, {
+                        name: this.scalarReturnCloneName(f.name, comp),
+                        returnComponent: comp,
+                    });
+                }
+            }
             this.blank();
         }
 
         this.line('const entry = Object.create(null);');
+        this.line('const entryInfo = Object.create(null);');
         for (const f of this.entryPoints) {
             this.emitEntry(f);
         }
+        this.emitSyntheticSequenceEntries();
+        this.emitBindAPI();
 
         this.blank();
-        this.line(`return { entry, bindings: ${JSON.stringify([...this.bindings.keys()])} };`);
+        this.line(`return { entry, bind, bindings: ${JSON.stringify([...this.bindings.keys()])}, entryInfo };`);
         this.close();
 
         const body = this.out.join('\n') + '\n';
         const metrics = {
             ..._countGeneratedRuntimeCalls(body),
             workgroupReductionInits: this.optimizedWorkgroupReductionInits,
+            flatWorkgroupArrays: this.flatWorkgroupVars.size,
+            flatWorkgroupSlots: [...this.flatWorkgroupVars.values()].reduce((n, v) => n + v.totalSlots, 0),
+            staticBranchPrunes: this.staticBranchPrunes,
         };
         const jsSource =
             '// Auto-generated from WGSL by shared-wgsl-transpile.js\n' +
@@ -3244,12 +3836,63 @@ class Emitter {
             body,
             entryPoints: this.entryPoints.map(f => f.name),
             bindings: [...this.bindings.keys()],
+            entryInfo: this.entryInfo,
             metrics,
             // A1: non-fatal emit errors when `opts.collectErrors` was
             // set. Always an array (empty in the common case) so callers
             // don't have to existence-check.
             errors: this.errors,
         };
+    }
+
+    syntheticSequenceSpecs() {
+        const names = new Set(this.entryPoints.map(f => f.name));
+        const out = [];
+        const add = (name, entries, workgroupEntry) => {
+            if (names.has(name) || this.entryInfo[name]) return;
+            if (!entries.every(e => names.has(e) && this.entryInfo[e])) return;
+            out.push({ name, entries, workgroupEntry });
+        };
+        add('reset_reduce_finalize', ['reset', 'reduce', 'finalize'], 'reduce');
+        add('reset_main', ['reset', 'main'], 'main');
+        return out;
+    }
+
+    emitSyntheticSequenceEntries() {
+        const specs = this.syntheticSequenceSpecs();
+        if (!specs.length) return;
+        this.blank();
+        for (const spec of specs) {
+            const workInfo = this.entryInfo[spec.workgroupEntry] || {};
+            const info = {
+                sequence: true,
+                fusedDispatch: true,
+                entries: spec.entries,
+                workgroupEntry: spec.workgroupEntry,
+                workgroupSize: workInfo.workgroupSize || [1, 1, 1],
+                phases: spec.entries.reduce((n, e) => n + (this.entryInfo[e]?.phases || 0), 0),
+                globalLoop: false,
+                workgroupMemory: spec.entries.some(e => !!this.entryInfo[e]?.workgroupMemory),
+                flatWorkgroupArrays: spec.entries.reduce((n, e) => n + (this.entryInfo[e]?.flatWorkgroupArrays || 0), 0),
+                optimizedWorkgroupReductionInits: spec.entries.reduce((n, e) => n + (this.entryInfo[e]?.optimizedWorkgroupReductionInits || 0), 0),
+            };
+            this.entryInfo[spec.name] = info;
+            this.line(`entryInfo[${JSON.stringify(spec.name)}] = ${JSON.stringify(info)};`);
+            const internalName = this.entryInternalName(spec.name);
+            this.line(`function ${internalName}(workgroups, bindings, domain, origin) {`);
+            this.open();
+            for (const entryName of spec.entries) {
+                const child = this.entryInternalName(entryName);
+                if (entryName === spec.workgroupEntry) {
+                    this.line(`${child}(workgroups, bindings, domain, origin);`);
+                } else {
+                    this.line(`${child}([1, 1, 1], bindings, undefined, undefined);`);
+                }
+            }
+            this.close();
+            this.line(`}`);
+            this.emitEntryObjectWrapper(spec.name, internalName);
+        }
     }
 
     reachableFunctionNames() {
@@ -3279,21 +3922,136 @@ class Emitter {
     emitConst(c) {
         // Push a temporary empty scope so `expr` treats names as globals.
         this.localScopes = [];
+        this.constScopes = [];
         this.line(`const ${_safe(c.name)} = ${this.expr(c.value)};`);
     }
 
-    emitFn(f) {
+    scalarReturnCloneName(fnName, comp) {
+        return `__wgsl_ret_${_safe(fnName)}_${comp}`;
+    }
+
+    collectScalarReturnCloneUses() {
+        if (this.opts.scalarReturnClones === false) return new Map();
+        const out = new Map();
+        const add = (fnName, comp) => {
+            const fn = this.fns.get(fnName);
+            if (!fn || fn.returnType?.kind !== 'type_vec') return;
+            if (!VEC_COMPS.slice(0, fn.returnType.n).includes(comp)) return;
+            if (!out.has(fnName)) out.set(fnName, new Set());
+            out.get(fnName).add(comp);
+        };
+        const visitExpr = (e) => {
+            if (!e) return;
+            if (e.kind === 'member') {
+                const comp = e.name.length === 1 ? SWIZZLE_MAP[e.name] : null;
+                if (comp && e.value?.kind === 'call') add(e.value.callee, comp);
+                visitExpr(e.value);
+                return;
+            }
+            switch (e.kind) {
+                case 'bin':
+                    visitExpr(e.lhs); visitExpr(e.rhs); break;
+                case 'una':
+                case 'paren':
+                    visitExpr(e.value); break;
+                case 'index':
+                    visitExpr(e.value); visitExpr(e.index); break;
+                case 'call':
+                    for (const a of e.args) visitExpr(a);
+                    break;
+            }
+        };
+        const visitStmt = (s) => {
+            if (!s) return;
+            switch (s.kind) {
+                case 'let': case 'const': case 'var':
+                    visitExpr(s.value); break;
+                case 'assign': case 'compound':
+                    visitExpr(s.target); visitExpr(s.value); break;
+                case 'postfix':
+                    visitExpr(s.target); break;
+                case 'expr_stmt':
+                    visitExpr(s.expr); break;
+                case 'return':
+                    visitExpr(s.value); break;
+                case 'block':
+                case 'labeled':
+                    for (const x of (s.stmts || s.body?.stmts || [])) visitStmt(x);
+                    break;
+                case 'inline_return_set':
+                    visitExpr(s.value); break;
+                case 'if':
+                    visitExpr(s.cond);
+                    for (const x of s.then.stmts) visitStmt(x);
+                    if (s.else) {
+                        if (s.else.kind === 'if') visitStmt(s.else);
+                        else for (const x of s.else.stmts) visitStmt(x);
+                    }
+                    break;
+                case 'for':
+                    visitStmt(s.init); visitExpr(s.cond); visitStmt(s.update);
+                    for (const x of s.body.stmts) visitStmt(x);
+                    break;
+                case 'while':
+                    visitExpr(s.cond);
+                    for (const x of (s.body?.stmts ?? [])) visitStmt(x);
+                    break;
+                case 'loop':
+                    for (const x of s.body.stmts) visitStmt(x);
+                    if (s.continuing) for (const x of s.continuing.stmts) visitStmt(x);
+                    break;
+                case 'switch':
+                    visitExpr(s.selector);
+                    for (const c of s.cases) for (const x of c.body.stmts) visitStmt(x);
+                    break;
+            }
+        };
+        for (const fn of this.fns.values()) {
+            for (const s of fn.body.stmts) visitStmt(s);
+        }
+        return out;
+    }
+
+    emitScalarReturnCloneCall(callExpr, comp) {
+        const fn = this.fns.get(callExpr?.callee);
+        if (!fn || fn.returnType?.kind !== 'type_vec') return null;
+        if (!this.scalarReturnClones.get(fn.name)?.has(comp)) return null;
+        const args = callExpr.args.map(a => this.expr(a)).join(', ');
+        return `${this.scalarReturnCloneName(fn.name, comp)}(${args})`;
+    }
+
+    emitFn(f, opts = {}) {
+        const fnName = opts.name || _safe(f.name);
         const params = f.params.map(p => _safe(p.name)).join(', ');
-        this.line(`function ${_safe(f.name)}(${params}) {`);
+        this.line(`function ${fnName}(${params}) {`);
         this.open();
         // Each fn opens a fresh local scope. Params count as locals.
         this.localScopes = [new Set(f.params.map(p => p.name))];
+        this.constScopes = [new Map()];
+        const prevReturnComponent = this.returnComponent;
+        this.returnComponent = opts.returnComponent || null;
+        this.seedSpecializedFunctionParams(f);
         // SROA pre-pass — identifies vec lets we can scalarize.
         this.collectScalarizable(f.body.stmts);
         this.emitParamScalarHoists(f.params);
         for (const s of f.body.stmts) this.stmt(s);
+        this.returnComponent = prevReturnComponent;
         this.close();
         this.line('}');
+    }
+
+    seedSpecializedFunctionParams(f) {
+        const spec = this.opts.specializeFunctionParams?.[f.name];
+        if (!spec) return;
+        const scope = this.constScopes[0];
+        if (!scope) return;
+        for (const p of f.params) {
+            if (!Object.prototype.hasOwnProperty.call(spec, p.name)) continue;
+            const v = spec[p.name];
+            if (typeof v === 'number' || typeof v === 'boolean') {
+                scope.set(p.name, v);
+            }
+        }
     }
 
     emitParamScalarHoists(params) {
@@ -3349,7 +4107,13 @@ class Emitter {
 
         // Workgroup-local vars: reset at the start of each workgroup.
         const wgEntries = [...this.workgroupVars.values()].map(v => {
-            return { name: v.name, init: this.defaultInit(v.type) };
+            const flat = this.flatWorkgroupVars.get(v.name) || null;
+            return {
+                name: v.name,
+                type: v.type,
+                flat,
+                init: flat ? this.workgroupFlatInit(flat) : this.defaultInit(v.type),
+            };
         });
 
         // ── Phase splitting ──────────────────────────────────────────
@@ -3369,17 +4133,7 @@ class Emitter {
             phases = phases.slice(1);
             this.optimizedWorkgroupReductionInits += workgroupReductionInits.length;
         }
-
-        this.blank();
-        this.line(`entry[${JSON.stringify(f.name)}] = function ({ workgroups, bindings }) {`);
-        this.open();
-        this.line(`const [Wx, Wy, Wz] = workgroups;`);
-        this.line(`const Lx = ${sx}, Ly = ${sy}, Lz = ${sz};`);
-        this.bindingAliasesActive = true;
-        this.emitEntryBindingHoists(this.usedEntryBindings);
-        if (wgEntries.length) {
-            this.line(`const wg = Object.create(null);`);
-        }
+        phases = this.replayPhaseLocalDecls(phases, new Set(builtinBindings.map(b => b.name)));
 
         const canUseGlobalLoops =
             phases.length === 1 &&
@@ -3389,11 +4143,40 @@ class Emitter {
                 return !use || b.scope === 'inv' && b.name &&
                     (b.arity === 3 && b.xyz?.[0] === 'wgx*Lx + lx');
             });
+
+        this.blank();
+        const info = {
+            workgroupSize: [sx, sy, sz],
+            phases: phases.length,
+            globalLoop: canUseGlobalLoops,
+            workgroupMemory: wgEntries.length > 0,
+            flatWorkgroupArrays: wgEntries.filter(w => w.flat).length,
+            optimizedWorkgroupReductionInits: workgroupReductionInits ? workgroupReductionInits.length : 0,
+        };
+        this.entryInfo[f.name] = info;
+        this.line(`entryInfo[${JSON.stringify(f.name)}] = ${JSON.stringify(info)};`);
+        const internalName = this.entryInternalName(f.name);
+        this.line(`function ${internalName}(workgroups, bindings, domain, origin) {`);
+        this.open();
+        if (this.fixedWorkgroups) {
+            this.line(`const Wx = ${this.fixedWorkgroups[0]}, Wy = ${this.fixedWorkgroups[1]}, Wz = ${this.fixedWorkgroups[2]};`);
+        } else {
+            this.line(`const [Wx, Wy, Wz] = workgroups;`);
+        }
+        this.line(`const Lx = ${sx}, Ly = ${sy}, Lz = ${sz};`);
+        this.bindingAliasesActive = true;
+        this.emitEntryBindingHoists(this.usedEntryBindings);
+        if (wgEntries.length) {
+            this.line(`const wg = Object.create(null);`);
+            for (const w of wgEntries) this.line(`wg.${w.name} = ${w.init};`);
+        }
+
         if (canUseGlobalLoops) {
             this.emitGlobalLoopEntry(f, phases[0], builtinBindings);
             this.bindingAliasesActive = false;
             this.close();
-            this.line(`};`);
+            this.line(`}`);
+            this.emitEntryObjectWrapper(f.name, internalName);
             return;
         }
 
@@ -3402,7 +4185,10 @@ class Emitter {
         this.line(`for (let wgx = 0; wgx < Wx; wgx++) {`);
         this.open();
         if (wgEntries.length) {
-            for (const w of wgEntries) this.line(`wg.${w.name} = ${w.init};`);
+            for (const w of wgEntries) {
+                if (w.flat) this.line(`wg.${w.name}.fill(0);`);
+                else this.emitWorkgroupReset(`wg.${w.name}`, w.type);
+            }
         }
         if (workgroupReductionInits) {
             this.line(`// Optimized workgroup reduction init phase`);
@@ -3412,16 +4198,16 @@ class Emitter {
         }
         // Workgroup-scope builtins (wgid, nwg) — scalarize so member
         // access turns into direct scalar reads.
-            for (const b of builtinBindings) {
-                if (b.scope !== 'wg') continue;
-                if (b.arity === 3) {
-                    if (this.shouldEmitBuiltinComponent(b.name, 'x')) this.line(`const ${_safe(b.name)}_x = ${b.xyz[0]};`);
-                    if (this.shouldEmitBuiltinComponent(b.name, 'y')) this.line(`const ${_safe(b.name)}_y = ${b.xyz[1]};`);
-                    if (this.shouldEmitBuiltinComponent(b.name, 'z')) this.line(`const ${_safe(b.name)}_z = ${b.xyz[2]};`);
-                } else {
-                    if (this.shouldEmitBuiltinScalar(b.name)) this.line(`const ${_safe(b.name)} = ${b.expr};`);
-                }
+        for (const b of builtinBindings) {
+            if (b.scope !== 'wg') continue;
+            if (b.arity === 3) {
+                if (this.shouldEmitBuiltinComponent(b.name, 'x')) this.line(`const ${_safe(b.name)}_x = ${b.xyz[0]};`);
+                if (this.shouldEmitBuiltinComponent(b.name, 'y')) this.line(`const ${_safe(b.name)}_y = ${b.xyz[1]};`);
+                if (this.shouldEmitBuiltinComponent(b.name, 'z')) this.line(`const ${_safe(b.name)}_z = ${b.xyz[2]};`);
+            } else {
+                if (this.shouldEmitBuiltinScalar(b.name)) this.line(`const ${_safe(b.name)} = ${b.expr};`);
             }
+        }
 
         // Emit one invocation triple-loop per phase. Each iteration
         // sets up the per-invocation builtins (gid/lid/lidx) and runs
@@ -3429,10 +4215,27 @@ class Emitter {
         // an early WGSL `return` can `break __invocation` out cleanly.
         for (let p = 0; p < phases.length; p++) {
             if (phases.length > 1) this.line(`// Phase ${p}`);
-            this.line(`for (let lz = 0; lz < Lz; lz++)`);
-            this.line(`for (let ly = 0; ly < Ly; ly++)`);
-            this.line(`for (let lx = 0; lx < Lx; lx++) {`);
+            this.line(`{`);
             this.open();
+            let loopDepth = 0;
+            if (sz === 1) this.line(`const lz = 0;`);
+            else {
+                this.line(`for (let lz = 0; lz < Lz; lz++) {`);
+                this.open();
+                loopDepth++;
+            }
+            if (sy === 1) this.line(`const ly = 0;`);
+            else {
+                this.line(`for (let ly = 0; ly < Ly; ly++) {`);
+                this.open();
+                loopDepth++;
+            }
+            if (sx === 1) this.line(`const lx = 0;`);
+            else {
+                this.line(`for (let lx = 0; lx < Lx; lx++) {`);
+                this.open();
+                loopDepth++;
+            }
             // Invocation-scope builtins (gid, lid, lidx) — scalarized.
             for (const b of builtinBindings) {
                 if (b.scope !== 'inv') continue;
@@ -3444,9 +4247,11 @@ class Emitter {
                     if (this.shouldEmitBuiltinScalar(b.name)) this.line(`const ${_safe(b.name)} = ${b.expr};`);
                 }
             }
-            this.line(`__invocation: {`);
+            const invocationLabel = this.phaseNeedsInvocationLabel(phases[p]);
+            this.line(invocationLabel ? `__invocation: {` : `{`);
             this.open();
             this.localScopes = [new Set(f.params.map(p => p.name))];
+            this.constScopes = [new Map()];
             // SROA pre-pass — per-phase, since phase boundaries split
             // the body and locals can't live across them anyway.
             this.collectScalarizable(phases[p]);
@@ -3458,15 +4263,20 @@ class Emitter {
             for (const s of phases[p]) this.stmt(s, /*inEntry=*/true);
             this.close();
             this.line(`}`);
+            while (loopDepth-- > 0) {
+                this.close();
+                this.line(`}`);
+            }
             this.close();
-            this.line(`}`); // close invocation triple loop
+            this.line(`}`); // close invocation loop block
         }
 
         this.close();
         this.line(`}`); // close workgroup triple loop
         this.bindingAliasesActive = false;
         this.close();
-        this.line(`};`);
+        this.line(`}`);
+        this.emitEntryObjectWrapper(f.name, internalName);
     }
 
     emitEntryBindingHoists(usedBindings = null) {
@@ -3495,52 +4305,259 @@ class Emitter {
 
     emitGlobalLoopEntry(f, stmts, builtinBindings) {
         const globalBuiltins = builtinBindings.filter(b => b.scope === 'inv' && b.arity === 3);
-        const primary = globalBuiltins[0] || null;
-        const primaryName = primary ? _safe(primary.name) : '__gid';
-        const loopX = primary && this.shouldEmitBuiltinComponent(primary.name, 'x') ? `${primaryName}_x` : '__gx';
-        const loopY = primary && this.shouldEmitBuiltinComponent(primary.name, 'y') ? `${primaryName}_y` : '__gy';
-        const loopZ = primary && this.shouldEmitBuiltinComponent(primary.name, 'z') ? `${primaryName}_z` : '__gz';
-        this.line(`const Gx = Wx * Lx, Gy = Wy * Ly, Gz = Wz * Lz;`);
+        const clipGuard = this.detectEntryClipGuard(stmts, globalBuiltins);
+        const loopX = '__gx';
+        const loopY = '__gy';
+        const loopZ = '__gz';
+        const clippedUpper = (axis, upper) =>
+            clipGuard?.bounds?.[axis] ? `Math.min(${upper}, __clip${axis.toUpperCase()}Bound)` : upper;
+        this.line(`const Gx = domain && domain[0] != null ? domain[0] : Wx * Lx;`);
+        this.line(`const Gy = domain && domain[1] != null ? domain[1] : Wy * Ly;`);
+        this.line(`const Gz = domain && domain[2] != null ? domain[2] : Wz * Lz;`);
+        this.line(`const Ox = origin && origin[0] != null ? origin[0] : 0;`);
+        this.line(`const Oy = origin && origin[1] != null ? origin[1] : 0;`);
+        this.line(`const Oz = origin && origin[2] != null ? origin[2] : 0;`);
+        this.line(`const Xn = Ox + Gx, Yn = Oy + Gy, Zn = Oz + Gz;`);
+        if (clipGuard) this.emitEntryClipBounds(clipGuard);
         this.line(`if (Gy === 1 && Gz === 1) {`);
         this.open();
-        this.line(`for (let ${loopX} = 0; ${loopX} < Gx; ${loopX}++) {`);
+        const oneDYGuard = clipGuard?.bounds?.y ? 'Oy < __clipYBound' : null;
+        const oneDZGuard = clipGuard?.bounds?.z ? 'Oz < __clipZBound' : null;
+        const oneDGuards = [oneDYGuard, oneDZGuard].filter(Boolean);
+        if (oneDGuards.length) {
+            this.line(`if (${oneDGuards.join(' && ')}) {`);
+            this.open();
+        }
+        const oneDXLimit = clipGuard?.bounds?.x ? '__clipXn' : 'Xn';
+        if (clipGuard?.bounds?.x) this.line(`const __clipXn = ${clippedUpper('x', 'Xn')};`);
+        this.line(`for (let ${loopX} = Ox; ${loopX} < ${oneDXLimit}; ${loopX}++) {`);
         this.open();
-        this.emitGlobalLoopInvocationBody(f, stmts, globalBuiltins, loopX, '0', '0');
+        this.emitGlobalLoopInvocationBody(f, stmts, globalBuiltins, loopX, 'Oy', 'Oz', clipGuard?.stmt || null);
+        this.close();
+        this.line(`}`);
+        if (oneDGuards.length) {
+            this.close();
+            this.line(`}`);
+        }
+        this.close();
+        this.line(`} else if (Gz === 1) {`);
+        this.open();
+        this.line(`if (Ox === 0 && Oy === 0) {`);
+        this.open();
+        const zeroClipX = clipGuard?.bounds?.x ? '__clipGx' : 'Gx';
+        const zeroClipY = clipGuard?.bounds?.y ? '__clipGy' : 'Gy';
+        if (clipGuard?.bounds?.x) this.line(`const __clipGx = ${clippedUpper('x', 'Gx')};`);
+        if (clipGuard?.bounds?.y) this.line(`const __clipGy = ${clippedUpper('y', 'Gy')};`);
+        this.line(`for (let ${loopY} = 0, __rowBase = 0; ${loopY} < ${zeroClipY}; ${loopY}++, __rowBase += Gx) {`);
+        this.open();
+        this.line(`for (let ${loopX} = 0; ${loopX} < ${zeroClipX}; ${loopX}++) {`);
+        this.open();
+        this.emitGlobalLoopInvocationBody(f, stmts, globalBuiltins, loopX, loopY, 'Oz', clipGuard?.stmt || null);
+        this.close();
+        this.line(`}`);
         this.close();
         this.line(`}`);
         this.close();
         this.line(`} else {`);
         this.open();
-        this.line(`for (let ${loopZ} = 0; ${loopZ} < Gz; ${loopZ}++)`);
-        this.line(`for (let ${loopY} = 0; ${loopY} < Gy; ${loopY}++)`);
-        this.line(`for (let ${loopX} = 0; ${loopX} < Gx; ${loopX}++) {`);
+        const twoDXn = clipGuard?.bounds?.x ? '__clipXn' : 'Xn';
+        const twoDYn = clipGuard?.bounds?.y ? '__clipYn' : 'Yn';
+        if (clipGuard?.bounds?.x) this.line(`const __clipXn = ${clippedUpper('x', 'Xn')};`);
+        if (clipGuard?.bounds?.y) this.line(`const __clipYn = ${clippedUpper('y', 'Yn')};`);
+        this.line(`for (let ${loopY} = Oy; ${loopY} < ${twoDYn}; ${loopY}++)`);
+        this.line(`for (let ${loopX} = Ox; ${loopX} < ${twoDXn}; ${loopX}++) {`);
         this.open();
-        this.emitGlobalLoopInvocationBody(f, stmts, globalBuiltins, loopX, loopY, loopZ);
+        this.emitGlobalLoopInvocationBody(f, stmts, globalBuiltins, loopX, loopY, 'Oz', clipGuard?.stmt || null);
+        this.close();
+        this.line(`}`);
+        this.close();
+        this.line(`}`);
+        this.close();
+        this.line(`} else {`);
+        this.open();
+        const threeDXn = clipGuard?.bounds?.x ? '__clipXn' : 'Xn';
+        const threeDYn = clipGuard?.bounds?.y ? '__clipYn' : 'Yn';
+        const threeDZn = clipGuard?.bounds?.z ? '__clipZn' : 'Zn';
+        if (clipGuard?.bounds?.x) this.line(`const __clipXn = ${clippedUpper('x', 'Xn')};`);
+        if (clipGuard?.bounds?.y) this.line(`const __clipYn = ${clippedUpper('y', 'Yn')};`);
+        if (clipGuard?.bounds?.z) this.line(`const __clipZn = ${clippedUpper('z', 'Zn')};`);
+        this.line(`for (let ${loopZ} = Oz; ${loopZ} < ${threeDZn}; ${loopZ}++)`);
+        this.line(`for (let ${loopY} = Oy; ${loopY} < ${threeDYn}; ${loopY}++)`);
+        this.line(`for (let ${loopX} = Ox; ${loopX} < ${threeDXn}; ${loopX}++) {`);
+        this.open();
+        this.emitGlobalLoopInvocationBody(f, stmts, globalBuiltins, loopX, loopY, loopZ, clipGuard?.stmt || null);
         this.close();
         this.line(`}`);
         this.close();
         this.line(`}`);
     }
 
-    emitGlobalLoopInvocationBody(f, stmts, globalBuiltins, loopX, loopY, loopZ) {
+    emitEntryClipBounds(clipGuard) {
+        for (const axis of ['x', 'y', 'z']) {
+            const expr = clipGuard.bounds[axis];
+            if (!expr) continue;
+            this.line(`const __clip${axis.toUpperCase()}Bound = ${this.exprWithAliases(expr, clipGuard.aliases)};`);
+        }
+    }
+
+    detectEntryClipGuard(stmts, globalBuiltins) {
+        const gid = globalBuiltins.find(b => b.which === 'global_invocation_id');
+        if (!gid) return null;
+        const aliases = new Map();
+        for (const s of stmts || []) {
+            const parsed = this.parseClipGuardStmt(s, gid.name, aliases);
+            if (parsed) return parsed;
+            if ((s.kind === 'let' || s.kind === 'const') && s.value) {
+                aliases.set(s.name, s.value);
+                continue;
+            }
+            // Only hoist the canonical leading guard shape. Once real work
+            // starts, preserving statement order is more important than
+            // trying to be clever.
+            return null;
+        }
+        return null;
+    }
+
+    parseClipGuardStmt(s, gidName, aliases) {
+        if (!s || s.kind !== 'if' || s.else) return null;
+        const thenStmts = s.then?.stmts || [];
+        if (thenStmts.length !== 1 || thenStmts[0].kind !== 'return' || thenStmts[0].value) return null;
+        const terms = this.collectOrTerms(s.cond);
+        if (!terms.length) return null;
+        const bounds = Object.create(null);
+        for (const term of terms) {
+            if (term.kind !== 'bin' || term.op !== '>=') return null;
+            const lhs = term.lhs;
+            if (lhs?.kind !== 'member' || lhs.value?.kind !== 'ident' || lhs.value.name !== gidName) return null;
+            if (!['x', 'y', 'z'].includes(lhs.name) || bounds[lhs.name]) return null;
+            bounds[lhs.name] = term.rhs;
+        }
+        return { stmt: s, bounds, aliases: new Map(aliases) };
+    }
+
+    collectOrTerms(expr) {
+        if (!expr) return [];
+        if (expr.kind === 'paren') return this.collectOrTerms(expr.value);
+        if (expr.kind === 'bin' && expr.op === '||') {
+            return [...this.collectOrTerms(expr.lhs), ...this.collectOrTerms(expr.rhs)];
+        }
+        return [expr];
+    }
+
+    exprWithAliases(expr, aliases) {
+        return this.expr(this.replaceExprAliases(expr, aliases, 0));
+    }
+
+    replaceExprAliases(expr, aliases, depth) {
+        if (!expr || depth > 16) return expr;
+        switch (expr.kind) {
+            case 'ident': {
+                const aliased = aliases.get(expr.name);
+                return aliased ? this.replaceExprAliases(aliased, aliases, depth + 1) : expr;
+            }
+            case 'paren':
+                return { ...expr, value: this.replaceExprAliases(expr.value, aliases, depth + 1) };
+            case 'una':
+                return { ...expr, value: this.replaceExprAliases(expr.value, aliases, depth + 1) };
+            case 'bin':
+                return {
+                    ...expr,
+                    lhs: this.replaceExprAliases(expr.lhs, aliases, depth + 1),
+                    rhs: this.replaceExprAliases(expr.rhs, aliases, depth + 1),
+                };
+            case 'call':
+                return { ...expr, args: (expr.args || []).map(a => this.replaceExprAliases(a, aliases, depth + 1)) };
+            case 'member':
+                return { ...expr, value: this.replaceExprAliases(expr.value, aliases, depth + 1) };
+            case 'index':
+                return {
+                    ...expr,
+                    value: this.replaceExprAliases(expr.value, aliases, depth + 1),
+                    index: this.replaceExprAliases(expr.index, aliases, depth + 1),
+                };
+            default:
+                return expr;
+        }
+    }
+
+    emitGlobalLoopInvocationBody(f, stmts, globalBuiltins, loopX, loopY, loopZ, skipStmt = null) {
+        const bodyStmts = skipStmt ? stmts.filter(s => s !== skipStmt) : stmts;
         for (const b of globalBuiltins) {
             const bx = `${_safe(b.name)}_x`;
             const by = `${_safe(b.name)}_y`;
             const bz = `${_safe(b.name)}_z`;
-            if (this.shouldEmitBuiltinComponent(b.name, 'x') && bx !== loopX) this.line(`const ${bx} = ${loopX};`);
-            if (this.shouldEmitBuiltinComponent(b.name, 'y') && by !== loopY) this.line(`const ${by} = ${loopY};`);
-            if (this.shouldEmitBuiltinComponent(b.name, 'z') && bz !== loopZ) this.line(`const ${bz} = ${loopZ};`);
+            if (this.shouldEmitBuiltinComponent(b.name, 'x')) this.line(`const ${bx} = ${loopX};`);
+            if (this.shouldEmitBuiltinComponent(b.name, 'y')) this.line(`const ${by} = ${loopY};`);
+            if (this.shouldEmitBuiltinComponent(b.name, 'z')) this.line(`const ${bz} = ${loopZ};`);
         }
-        this.line(`__invocation: {`);
+        const invocationLabel = this.phaseNeedsInvocationLabel(bodyStmts);
+        this.line(invocationLabel ? `__invocation: {` : `{`);
         this.open();
         this.localScopes = [new Set(f.params.map(p => p.name))];
-        this.collectScalarizable(stmts);
+        this.constScopes = [new Map()];
+        this.collectScalarizable(bodyStmts);
         for (const b of globalBuiltins) {
             if (b.arity === 3) this.scalarized.set(b.name, 3);
         }
-        for (const s of stmts) this.stmt(s, /*inEntry=*/true);
+        for (const s of bodyStmts) this.stmt(s, /*inEntry=*/true);
         this.close();
         this.line(`}`);
+    }
+
+    phaseNeedsInvocationLabel(stmts) {
+        const visitExpr = (e) => {
+            if (!e) return false;
+            switch (e.kind) {
+                case 'paren': return visitExpr(e.value);
+                case 'bin': return visitExpr(e.lhs) || visitExpr(e.rhs);
+                case 'una': return visitExpr(e.value);
+                case 'call': return (e.args || []).some(visitExpr);
+                case 'index': return visitExpr(e.value) || visitExpr(e.index);
+                case 'member': return visitExpr(e.value);
+                default: return false;
+            }
+        };
+        const visit = (s) => {
+            if (!s) return false;
+            switch (s.kind) {
+                case 'return':
+                case 'discard':
+                    return true;
+                case 'block':
+                    return (s.stmts || []).some(visit);
+                case 'if':
+                    return (s.then?.stmts || []).some(visit) ||
+                        (s.else?.kind === 'if'
+                            ? visit(s.else)
+                            : (s.else?.stmts || []).some(visit));
+                case 'for':
+                case 'while':
+                case 'loop':
+                    return (s.body?.stmts || []).some(visit);
+                case 'switch':
+                    return (s.cases || []).some(c => (c.body?.stmts || []).some(visit));
+                case 'labeled':
+                    return (s.body?.stmts || []).some(visit);
+                case 'inline_return_set':
+                case 'break_label':
+                    return false;
+                case 'let':
+                case 'var':
+                case 'const':
+                    return visitExpr(s.value);
+                case 'expr_stmt':
+                    return visitExpr(s.expr);
+                case 'assign':
+                case 'compound':
+                    return visitExpr(s.target) || visitExpr(s.value);
+                case 'postfix':
+                    return visitExpr(s.target);
+                default:
+                    return false;
+            }
+        };
+        return (stmts || []).some(visit);
     }
 
     /** Split a list of statements at top-level barrier calls. Returns
@@ -3553,6 +4570,55 @@ class Emitter {
             else phases[phases.length - 1].push(s);
         }
         return phases;
+    }
+
+    replayPhaseLocalDecls(phases, builtinNames) {
+        const replay = [];
+        const replayNames = new Set();
+        const out = [];
+        for (const phase of phases) {
+            out.push(replay.length ? [...replay, ...phase] : phase);
+            for (const s of phase) {
+                if (!this.isReplayablePhaseDecl(s, builtinNames, replayNames)) continue;
+                replay.push(s);
+                replayNames.add(s.name);
+            }
+        }
+        return out;
+    }
+
+    isReplayablePhaseDecl(s, builtinNames, replayNames) {
+        if (!s || (s.kind !== 'let' && s.kind !== 'const')) return false;
+        if (!s.value || replayNames.has(s.name)) return false;
+        const visit = (e) => {
+            if (!e) return true;
+            switch (e.kind) {
+                case 'lit': return true;
+                case 'ident':
+                    if (builtinNames.has(e.name) || replayNames.has(e.name) || this.constants.has(e.name)) return true;
+                    return false;
+                case 'member':
+                    if (e.value?.kind === 'ident' && builtinNames.has(e.value.name)) return true;
+                    if (e.value?.kind === 'ident') {
+                        const b = this.bindings.get(e.value.name);
+                        if (b?.addressSpace === 'uniform') return true;
+                    }
+                    return visit(e.value);
+                case 'index':
+                    return false;
+                case 'paren':
+                    return visit(e.value);
+                case 'una':
+                    return e.op !== '&' && visit(e.value);
+                case 'bin':
+                    return visit(e.lhs) && visit(e.rhs);
+                case 'call':
+                    if (this.fns.has(e.callee)) return false;
+                    return e.args.every(visit);
+            }
+            return false;
+        };
+        return visit(s.value);
     }
 
     isBarrier(s) {
@@ -3880,13 +4946,39 @@ class Emitter {
         return out;
     }
 
+    emitWorkgroupReset(target, type, depth = 0) {
+        if (type.kind === 'type_array') {
+            const n = type.count ? this.constExprInt(type.count) : 0;
+            const i = `_wgr${depth}`;
+            this.line(`for (let ${i} = 0; ${i} < ${n}; ${i}++) {`);
+            this.open();
+            this.emitWorkgroupReset(`${target}[${i}]`, type.of, depth + 1);
+            this.close();
+            this.line(`}`);
+            return;
+        }
+        if (type.kind === 'type_named') {
+            const st = this.structs.get(type.name);
+            if (st) {
+                for (const f of st.fields) this.emitWorkgroupReset(`${target}.${f.name}`, f.type, depth);
+                return;
+            }
+        }
+        if (type.kind === 'type_vec') {
+            const z = type.of.name === 'bool' ? 'false' : '0';
+            for (const c of VEC_COMPS.slice(0, type.n)) this.line(`${target}.${c} = ${z};`);
+            return;
+        }
+        this.line(`${target} = ${this.defaultInit(type)};`);
+    }
+
     /** Best-effort default init for a workgroup-local var. */
     defaultInit(type) {
         if (type.kind === 'type_atomic') return '0';
         if (type.kind === 'type_scalar') return type.name === 'bool' ? 'false' : '0';
         if (type.kind === 'type_vec') {
             const z = type.of.name === 'bool' ? 'false' : '0';
-            return `rt.vec${type.n}(${Array(type.n).fill(z).join(', ')})`;
+            return `({ ${VEC_COMPS.slice(0, type.n).map(c => `${c}: ${z}`).join(', ')} })`;
         }
         if (type.kind === 'type_array') {
             const n = type.count ? this.constExprInt(type.count) : 0;
@@ -3935,6 +5027,14 @@ class Emitter {
         this.scalarized.set(name, arity);
     }
 
+    setArrayScalarizedSynthetic(name, spec) {
+        if (spec) this.arrayScalarized.set(name, spec);
+    }
+
+    setStructScalarizedSynthetic(name, spec) {
+        if (spec) this.structScalarized.set(name, spec);
+    }
+
     structSroaSpec(name, type) {
         if (!type || type.kind !== 'struct') return null;
         const fields = [];
@@ -3946,10 +5046,255 @@ class Emitter {
             if (ft.kind === 'vec') {
                 field.arity = ft.n;
                 field.comps = VEC_COMPS.slice(0, ft.n).map(c => `${safe}_${c}`);
+            } else if (ft.kind === 'struct') {
+                field.child = this.structSroaSpec(safe, ft);
+                if (!field.child) return null;
+            } else if (ft.kind !== 'scalar') {
+                return null;
             }
             fields.push(field);
         }
         return { name, type, fields };
+    }
+
+    structSroaObject(spec) {
+        const parts = spec.fields.map(f => {
+            if (f.type.kind === 'vec') {
+                const vals = VEC_COMPS.slice(0, f.arity)
+                    .map((c, i) => `${c}:${f.comps[i]}`);
+                return `${f.name}: {${vals.join(', ')}}`;
+            }
+            if (f.child) return `${f.name}: ${this.structSroaObject(f.child)}`;
+            return `${f.name}: ${f.safe}`;
+        });
+        return `{ ${parts.join(', ')} }`;
+    }
+
+    emitStructSroaFromObjectSource(spec, source, decl = null) {
+        for (const field of spec.fields) {
+            const lhs = (name) => `${decl ? decl + ' ' : ''}${name}`;
+            if (field.type.kind === 'scalar') {
+                this.line(`${lhs(field.safe)} = ${source}.${field.name};`);
+            } else if (field.type.kind === 'vec') {
+                for (let k = 0; k < field.arity; k++) {
+                    const c = VEC_COMPS[k];
+                    this.line(`${lhs(field.comps[k])} = ${source}.${field.name}.${c};`);
+                }
+            } else if (field.child) {
+                this.emitStructSroaFromObjectSource(field.child, `${source}.${field.name}`, decl);
+            }
+        }
+    }
+
+    emitStructSroaDefaults(spec, decl = null) {
+        for (const field of spec.fields) {
+            const lhs = (name) => `${decl ? decl + ' ' : ''}${name}`;
+            if (field.type.kind === 'scalar') {
+                const z = field.type.name === 'bool' ? 'false' : '0';
+                this.line(`${lhs(field.safe)} = ${z};`);
+            } else if (field.type.kind === 'vec') {
+                const z = field.type.of?.name === 'bool' ? 'false' : '0';
+                for (const comp of field.comps) this.line(`${lhs(comp)} = ${z};`);
+            } else if (field.child) {
+                this.emitStructSroaDefaults(field.child, decl);
+            }
+        }
+    }
+
+    emitStructSroaDecls(spec, decl = 'let') {
+        for (const field of spec.fields) {
+            if (field.type.kind === 'scalar') {
+                this.line(`${decl} ${field.safe};`);
+            } else if (field.type.kind === 'vec') {
+                for (const comp of field.comps) this.line(`${decl} ${comp};`);
+            } else if (field.child) {
+                this.emitStructSroaDecls(field.child, decl);
+            }
+        }
+    }
+
+    emitStructSroaFromSroa(dstSpec, srcSpec, decl = null) {
+        const lhs = (name) => `${decl ? decl + ' ' : ''}${name}`;
+        for (const dst of dstSpec.fields) {
+            const src = srcSpec.fields.find(f => f.name === dst.name);
+            if (!src) {
+                if (dst.child) this.emitStructSroaDefaults(dst.child, decl);
+                else if (dst.type.kind === 'scalar') {
+                    const z = dst.type.name === 'bool' ? 'false' : '0';
+                    this.line(`${lhs(dst.safe)} = ${z};`);
+                } else if (dst.type.kind === 'vec') {
+                    const z = dst.type.of?.name === 'bool' ? 'false' : '0';
+                    for (const comp of dst.comps) this.line(`${lhs(comp)} = ${z};`);
+                }
+                continue;
+            }
+            if (dst.type.kind === 'scalar') {
+                this.line(`${lhs(dst.safe)} = ${src.safe};`);
+            } else if (dst.type.kind === 'vec') {
+                for (let k = 0; k < dst.arity; k++) this.line(`${lhs(dst.comps[k])} = ${src.comps[k]};`);
+            } else if (dst.child && src.child) {
+                this.emitStructSroaFromSroa(dst.child, src.child, decl);
+            } else if (dst.child) {
+                this.emitStructSroaDefaults(dst.child, decl);
+            }
+        }
+    }
+
+    emitStructSroaFromFlat(spec, flatLayout, baseSrc, flatBase, decl = null, baseOffset = 0) {
+        const lhs = (name) => `${decl ? decl + ' ' : ''}${name}`;
+        if (flatLayout.layout === 'soa') {
+            for (const field of spec.fields) {
+                const finfo = flatLayout.fields.get(field.name);
+                if (!finfo) {
+                    if (field.child) this.emitStructSroaDefaults(field.child, decl);
+                    else if (field.type.kind === 'scalar') {
+                        const z = field.type.name === 'bool' ? 'false' : '0';
+                        this.line(`${lhs(field.safe)} = ${z};`);
+                    } else if (field.type.kind === 'vec') {
+                        const z = field.type.of?.name === 'bool' ? 'false' : '0';
+                        for (const comp of field.comps) this.line(`${lhs(comp)} = ${z};`);
+                    }
+                    continue;
+                }
+                if (field.type.kind === 'scalar') {
+                    this.line(`${lhs(field.safe)} = ${baseSrc}.${finfo.name}[${flatBase}];`);
+                } else if (field.type.kind === 'vec') {
+                    for (let k = 0; k < field.arity; k++) {
+                        this.line(`${lhs(field.comps[k])} = ${baseSrc}.${finfo.name}[(${flatBase}) * ${finfo.soaStride} + ${k}];`);
+                    }
+                } else if (field.child) {
+                    this.emitStructSroaDefaults(field.child, decl);
+                }
+            }
+            return;
+        }
+        for (const field of spec.fields) {
+            const finfo = flatLayout.fields.get(field.name);
+            if (!finfo) {
+                if (field.child) this.emitStructSroaDefaults(field.child, decl);
+                else if (field.type.kind === 'scalar') {
+                    const z = field.type.name === 'bool' ? 'false' : '0';
+                    this.line(`${lhs(field.safe)} = ${z};`);
+                } else if (field.type.kind === 'vec') {
+                    const z = field.type.of?.name === 'bool' ? 'false' : '0';
+                    for (const comp of field.comps) this.line(`${lhs(comp)} = ${z};`);
+                }
+                continue;
+            }
+            const offset = baseOffset + finfo.offset;
+            if (field.type.kind === 'scalar') {
+                this.line(`${lhs(field.safe)} = ${baseSrc}[${flatBase} + ${offset}];`);
+            } else if (field.type.kind === 'vec') {
+                for (let k = 0; k < field.arity; k++) {
+                    this.line(`${lhs(field.comps[k])} = ${baseSrc}[${flatBase} + ${offset + k}];`);
+                }
+            } else if (field.child) {
+                const childLayout = this.structLayout(field.type.name);
+                if (childLayout) this.emitStructSroaFromFlat(field.child, childLayout, baseSrc, flatBase, decl, offset);
+                else this.emitStructSroaDefaults(field.child, decl);
+            }
+        }
+    }
+
+    emitStructSroaFromCtor(spec, callExpr, decl = null) {
+        const lhs = (name) => `${decl ? decl + ' ' : ''}${name}`;
+        for (let i = 0; i < spec.fields.length; i++) {
+            const field = spec.fields[i];
+            const arg = callExpr.args[i];
+            if (field.type.kind === 'scalar') {
+                const z = field.type.name === 'bool' ? 'false' : '0';
+                this.line(`${lhs(field.safe)} = ${arg ? this.expr(arg) : z};`);
+                continue;
+            }
+            if (field.type.kind === 'vec') {
+                let tmp = null;
+                const z = field.type.of?.name === 'bool' ? 'false' : '0';
+                for (let k = 0; k < field.arity; k++) {
+                    const c = VEC_COMPS[k];
+                    let src = null;
+                    if (arg && isComponentSafe(arg)) src = this.exprComp(arg, c);
+                    if (!src && arg) {
+                        if (!tmp) {
+                            tmp = `_sroa_${this.sroaCounter++}`;
+                            this.line(`const ${tmp} = ${this.expr(arg)};`);
+                        }
+                        src = `${tmp}.${c}`;
+                    }
+                    this.line(`${lhs(field.comps[k])} = ${src ?? z};`);
+                }
+                continue;
+            }
+            if (field.child) {
+                if (arg) this.emitStructSroaFromValue(field.child, arg, decl);
+                else this.emitStructSroaDefaults(field.child, decl);
+            }
+        }
+    }
+
+    emitStructSroaFromValue(spec, valueExpr, decl = null) {
+        if (!spec) return false;
+        if (!valueExpr) {
+            this.emitStructSroaDefaults(spec, decl);
+            return true;
+        }
+        const sourceSroa = valueExpr.kind === 'ident' ? this.structSroaForIdent(valueExpr) : null;
+        if (sourceSroa) {
+            this.emitStructSroaFromSroa(spec, sourceSroa, decl);
+            return true;
+        }
+        const sourceMember = valueExpr.kind === 'member' ? this.structSroaMemberInfo(valueExpr) : null;
+        if (sourceMember?.field?.child) {
+            this.emitStructSroaFromSroa(spec, sourceMember.field.child, decl);
+            return true;
+        }
+        const flatStruct = valueExpr.kind === 'index' ? this.flatTargetInfo(valueExpr) : null;
+        if (flatStruct?.kind === 'struct') {
+            const flatBase = `_sroa_${this.sroaCounter++}_base`;
+            const baseSrc = this.bindingSource(valueExpr.value.name);
+            const baseExpr = flatStruct.layout === 'soa'
+                ? `(${this.expr(valueExpr.index)})`
+                : `((${this.expr(valueExpr.index)}) * ${flatStruct.stride})`;
+            this.line(`const ${flatBase} = ${baseExpr};`);
+            this.emitStructSroaFromFlat(spec, flatStruct, baseSrc, flatBase, decl);
+            return true;
+        }
+        const wgFlat = valueExpr.kind === 'index' ? this.flatWorkgroupAccessInfo(valueExpr) : null;
+        if (wgFlat?.flat.kind === 'struct') {
+            const flatBase = `_sroa_${this.sroaCounter++}_base`;
+            this.line(`const ${flatBase} = ${this.flatWorkgroupBaseExpr(wgFlat)};`);
+            this.emitStructSroaFromFlat(spec, wgFlat.flat, `wg.${wgFlat.baseName}`, flatBase, decl);
+            return true;
+        }
+        const ctor = valueExpr.kind === 'call' && this.structs.has(valueExpr.callee);
+        if (ctor) {
+            this.emitStructSroaFromCtor(spec, valueExpr, decl);
+            return true;
+        }
+        const objTmp = `_sroa_${this.sroaCounter++}`;
+        this.line(`const ${objTmp} = ${this.expr(valueExpr)};`);
+        this.emitStructSroaFromObjectSource(spec, objTmp, decl);
+        return true;
+    }
+
+    arraySroaSpec(name, type) {
+        if (!type || type.kind !== 'array') return null;
+        const count = type.count;
+        if (!Number.isFinite(count) || count <= 0 || count > 8) return null;
+        const elem = type.of;
+        if (!elem) return null;
+        if (elem.kind !== 'vec' && elem.kind !== 'scalar') return null;
+        const safe = _safe(name);
+        const elements = [];
+        for (let i = 0; i < count; i++) {
+            const base = `${safe}_${i}`;
+            const item = { index: i, safe: base, type: elem };
+            if (elem.kind === 'vec') {
+                item.arity = elem.n;
+                item.comps = VEC_COMPS.slice(0, elem.n).map(c => `${base}_${c}`);
+            }
+            elements.push(item);
+        }
+        return { name, type, count, elem, elements };
     }
 
     structSroaForIdent(e) {
@@ -3968,12 +5313,55 @@ class Emitter {
         return this.structScalarized.get(s.name) ?? null;
     }
 
-    structSroaMemberInfo(e) {
-        if (!e || e.kind !== 'member' || e.value?.kind !== 'ident') return null;
-        const spec = this.structSroaForIdent(e.value);
+    arraySroaForIdent(e) {
+        if (!e || e.kind !== 'ident') return null;
+        if (e.resolvedLocalId != null && this.arrayScalarizedIds.has(e.resolvedLocalId)) {
+            return this.arrayScalarizedIds.get(e.resolvedLocalId);
+        }
+        return this.arrayScalarized.get(e.name) ?? null;
+    }
+
+    arraySroaForDecl(s) {
+        if (!s) return null;
+        if (s.resolvedLocalId != null && this.arrayScalarizedIds.has(s.resolvedLocalId)) {
+            return this.arrayScalarizedIds.get(s.resolvedLocalId);
+        }
+        return this.arrayScalarized.get(s.name) ?? null;
+    }
+
+    arraySroaIndexInfo(e) {
+        if (!e || e.kind !== 'index' || e.value?.kind !== 'ident') return null;
+        const spec = this.arraySroaForIdent(e.value);
         if (!spec) return null;
-        const field = spec.fields.find(f => f.name === e.name);
-        return field ? { spec, field } : null;
+        let idx;
+        try { idx = this.constExprInt(e.index); }
+        catch { return null; }
+        if (!Number.isFinite(idx) || idx < 0 || idx >= spec.count) return null;
+        return { spec, element: spec.elements[idx], index: idx };
+    }
+
+    structSroaMemberInfo(e) {
+        if (!e || e.kind !== 'member') return null;
+        const path = [];
+        let cur = e;
+        while (cur?.kind === 'member') {
+            path.unshift(cur.name);
+            cur = cur.value;
+        }
+        if (cur?.kind !== 'ident') return null;
+        const rootSpec = this.structSroaForIdent(cur);
+        if (!rootSpec) return null;
+        let spec = rootSpec;
+        for (let i = 0; i < path.length; i++) {
+            const field = spec.fields.find(f => f.name === path[i]);
+            if (!field) return null;
+            if (i === path.length - 1) {
+                return { spec: rootSpec, parentSpec: spec, field, path, root: cur };
+            }
+            if (!field.child) return null;
+            spec = field.child;
+        }
+        return null;
     }
 
     /** Pre-pass: walk a fn body's statement list, identify which vec-
@@ -4002,10 +5390,14 @@ class Emitter {
         this.scalarizedIds.clear();
         this.structScalarized.clear();
         this.structScalarizedIds.clear();
+        this.arrayScalarized.clear();
+        this.arrayScalarizedIds.clear();
         const candidate = new Map();   // name → arity (fallback for synthetic/no-id locals)
         const candidateIds = new Map(); // local id → { name, arity }
         const structCandidate = new Map();    // name → struct Type
         const structCandidateIds = new Map(); // local id → { name, type }
+        const arrayCandidate = new Map();    // name → array Type
+        const arrayCandidateIds = new Map(); // local id → { name, type }
         const seen      = new Set();   // names seen at least once
         const banned    = new Set();   // names disqualified
         const bannedIds = new Set();
@@ -4056,6 +5448,19 @@ class Emitter {
                 structCandidate.set(s.name, type);
             }
         };
+        const addArrayCandidate = (s, type) => {
+            if (!this.arraySroaSpec(s.name, type)) return;
+            if (s.resolvedLocalId != null) {
+                arrayCandidateIds.set(s.resolvedLocalId, { name: s.name, type });
+                return;
+            }
+            if (seen.has(s.name)) {
+                banned.add(s.name);
+            } else {
+                seen.add(s.name);
+                arrayCandidate.set(s.name, type);
+            }
+        };
 
         const visitStmt = (s) => {
             if (!s) return;
@@ -4070,6 +5475,7 @@ class Emitter {
                         }
                     } else if (t?.kind === 'vec') addCandidate(s, t.n);
                     else if (t?.kind === 'struct') addStructCandidate(s, t);
+                    else if (t?.kind === 'array') addArrayCandidate(s, t);
                     else if (s.resolvedLocalId == null) {
                         if (seen.has(s.name)) banned.add(s.name);
                         else seen.add(s.name);
@@ -4181,12 +5587,16 @@ class Emitter {
 
         for (const name of banned) candidate.delete(name);
         for (const name of banned) structCandidate.delete(name);
+        for (const name of banned) arrayCandidate.delete(name);
         for (const id of bannedIds) candidateIds.delete(id);
         for (const id of bannedIds) structCandidateIds.delete(id);
+        for (const id of bannedIds) arrayCandidateIds.delete(id);
         for (const [n, ar] of candidate) this.scalarized.set(n, ar);
         for (const [id, info] of candidateIds) this.scalarizedIds.set(id, info.arity);
         for (const [n, type] of structCandidate) this.structScalarized.set(n, this.structSroaSpec(n, type));
         for (const [id, info] of structCandidateIds) this.structScalarizedIds.set(id, this.structSroaSpec(info.name, info.type));
+        for (const [n, type] of arrayCandidate) this.arrayScalarized.set(n, this.arraySroaSpec(n, type));
+        for (const [id, info] of arrayCandidateIds) this.arrayScalarizedIds.set(id, this.arraySroaSpec(info.name, info.type));
     }
 
     /** Emit a scalarized let/const declaration. `decl` is the JS
@@ -4230,89 +5640,116 @@ class Emitter {
         }
     }
 
-    emitStructSroaLet(s, spec, decl) {
-        const valueExpr = s.value;
-        if (!valueExpr || !spec) return false;
-        const flatStruct = valueExpr.kind === 'index' ? this.flatTargetInfo(valueExpr) : null;
-        const isFlatStruct = flatStruct?.kind === 'struct';
-        const ctor = valueExpr.kind === 'call' && this.structs.has(valueExpr.callee)
-            ? this.structs.get(valueExpr.callee)
-            : null;
-        let objTmp = null;
-        let flatBase = null;
-        if (isFlatStruct) {
-            flatBase = `_sroa_${this.sroaCounter++}_base`;
-            this.line(`const ${flatBase} = ((${this.expr(valueExpr.index)}) * ${flatStruct.stride});`);
-        } else if (!ctor) {
-            objTmp = `_sroa_${this.sroaCounter++}`;
-            this.line(`const ${objTmp} = ${this.expr(valueExpr)};`);
+    arrayElementObject(element) {
+        if (element.type.kind === 'vec') {
+            const parts = VEC_COMPS.slice(0, element.arity)
+                .map((c, i) => `${c}:${element.comps[i]}`);
+            return `{${parts.join(', ')}}`;
         }
+        return element.safe;
+    }
 
-        const baseSrc = isFlatStruct ? this.bindingSource(valueExpr.value.name) : null;
-        spec.fields.forEach((field, i) => {
-            if (field.type.kind === 'scalar') {
-                let src;
-                if (isFlatStruct) {
-                    const finfo = flatStruct.fields.get(field.name);
-                    src = `${baseSrc}[${flatBase} + ${finfo.offset}]`;
-                } else if (ctor) {
-                    const arg = valueExpr.args[i];
-                    src = arg ? this.expr(arg) : (field.type.name === 'bool' ? 'false' : '0');
-                } else {
-                    src = `${objTmp}.${field.name}`;
-                }
-                this.line(`${decl} ${field.safe} = ${src};`);
-                return;
+    arrayObject(spec) {
+        return `[${spec.elements.map(el => this.arrayElementObject(el)).join(', ')}]`;
+    }
+
+    emitArrayElementWrite(element, valueExpr, decl = null) {
+        if (element.type.kind === 'scalar') {
+            const lhs = element.safe;
+            const rhs = valueExpr ? this.expr(valueExpr) : (element.type.name === 'bool' ? 'false' : '0');
+            this.line(`${decl ? decl + ' ' : ''}${lhs} = ${rhs};`);
+            return;
+        }
+        if (element.type.kind !== 'vec') return;
+        const comps = VEC_COMPS.slice(0, element.arity);
+        const compExprs = valueExpr && isComponentSafe(valueExpr)
+            ? comps.map(c => this.exprComp(valueExpr, c))
+            : null;
+        if (compExprs && compExprs.every(x => x != null)) {
+            for (let i = 0; i < element.arity; i++) {
+                this.line(`${decl ? decl + ' ' : ''}${element.comps[i]} = ${compExprs[i]};`);
             }
-            if (field.type.kind === 'vec') {
-                let tmp = null;
-                for (let k = 0; k < field.arity; k++) {
-                    const c = VEC_COMPS[k];
-                    let src = null;
-                    if (isFlatStruct) {
-                        const finfo = flatStruct.fields.get(field.name);
-                        src = `${baseSrc}[${flatBase} + ${finfo.offset + k}]`;
-                    } else if (ctor) {
-                        const arg = valueExpr.args[i];
-                        if (arg && isComponentSafe(arg)) src = this.exprComp(arg, c);
-                        if (!src && arg) {
-                            if (!tmp) {
-                                tmp = `_sroa_${this.sroaCounter++}`;
-                                this.line(`const ${tmp} = ${this.expr(arg)};`);
-                            }
-                            src = `${tmp}.${c}`;
-                        }
-                        if (!src) src = '0';
-                    } else {
-                        src = `${objTmp}.${field.name}.${c}`;
+            return;
+        }
+        if (!valueExpr) {
+            const z = element.type.of?.name === 'bool' ? 'false' : '0';
+            for (let i = 0; i < element.arity; i++) {
+                this.line(`${decl ? decl + ' ' : ''}${element.comps[i]} = ${z};`);
+            }
+            return;
+        }
+        const tmp = `_asroa_${this.sroaCounter++}`;
+        this.line(`const ${tmp} = ${this.expr(valueExpr)};`);
+        for (let i = 0; i < element.arity; i++) {
+            this.line(`${decl ? decl + ' ' : ''}${element.comps[i]} = ${tmp}.${comps[i]};`);
+        }
+    }
+
+    emitArraySroaFromValue(spec, valueExpr, decl = null) {
+        const srcSpec = valueExpr?.kind === 'ident' ? this.arraySroaForIdent(valueExpr) : null;
+        if (srcSpec && srcSpec.count === spec.count) {
+            for (let i = 0; i < spec.count; i++) {
+                const dst = spec.elements[i];
+                const src = srcSpec.elements[i];
+                if (dst.type.kind === 'scalar') {
+                    this.line(`${decl ? decl + ' ' : ''}${dst.safe} = ${src.safe};`);
+                } else if (dst.type.kind === 'vec') {
+                    for (let k = 0; k < dst.arity; k++) {
+                        this.line(`${decl ? decl + ' ' : ''}${dst.comps[k]} = ${src.comps[k]};`);
                     }
-                    this.line(`${decl} ${field.comps[k]} = ${src};`);
                 }
-                return;
             }
-            const src = objTmp ? `${objTmp}.${field.name}` : 'null';
-            this.line(`${decl} ${field.safe} = ${src};`);
-        });
+            return true;
+        }
+        if (valueExpr?.kind === 'call' && valueExpr.callee === 'array') {
+            for (let i = 0; i < spec.count; i++) {
+                this.emitArrayElementWrite(spec.elements[i], valueExpr.args[i], decl);
+            }
+            return true;
+        }
+        if (!valueExpr) {
+            for (const element of spec.elements) this.emitArrayElementWrite(element, null, decl);
+            return true;
+        }
+        const tmp = `_asroa_${this.sroaCounter++}`;
+        this.line(`const ${tmp} = ${this.expr(valueExpr)};`);
+        for (const element of spec.elements) {
+            if (element.type.kind === 'scalar') {
+                this.line(`${decl ? decl + ' ' : ''}${element.safe} = ${tmp}[${element.index}];`);
+            } else if (element.type.kind === 'vec') {
+                for (let k = 0; k < element.arity; k++) {
+                    const c = VEC_COMPS[k];
+                    this.line(`${decl ? decl + ' ' : ''}${element.comps[k]} = ${tmp}[${element.index}].${c};`);
+                }
+            }
+        }
         return true;
+    }
+
+    emitArraySroaLet(s, spec, decl) {
+        return this.emitArraySroaFromValue(spec, s.value, decl);
+    }
+
+    emitArraySroaVarDecl(s, spec) {
+        return this.emitArraySroaFromValue(spec, s.value, 'let');
+    }
+
+    emitStructSroaLet(s, spec, decl) {
+        if (!s.value || !spec) return false;
+        return this.emitStructSroaFromValue(spec, s.value, decl);
     }
 
     emitStructSroaVarDecl(s, spec) {
         if (s.value) return this.emitStructSroaLet(s, spec, 'let');
-        for (const field of spec.fields) {
-            if (field.type.kind === 'scalar') {
-                const z = field.type.name === 'bool' ? 'false' : '0';
-                this.line(`let ${field.safe} = ${z};`);
-            } else if (field.type.kind === 'vec') {
-                const z = field.type.of?.name === 'bool' ? 'false' : '0';
-                for (const comp of field.comps) this.line(`let ${comp} = ${z};`);
-            } else {
-                this.line(`let ${field.safe} = null;`);
-            }
-        }
+        this.emitStructSroaDefaults(spec, 'let');
         return true;
     }
 
     emitStructSroaFieldStore(field, valueExpr, compoundOp = null) {
+        if (field.child) {
+            if (compoundOp) return false;
+            return this.emitStructSroaFromValue(field.child, valueExpr, null);
+        }
         if (field.type.kind === 'scalar') {
             const op = compoundOp ? compoundOp.slice(0, -1) : null;
             if (op && INT_BIN.has(op)) {
@@ -4385,76 +5822,23 @@ class Emitter {
     }
 
     emitStructSroaWholeStore(spec, valueExpr) {
-        const ctor = valueExpr.kind === 'call' && this.structs.has(valueExpr.callee)
-            ? this.structs.get(valueExpr.callee)
-            : null;
-        const flatStruct = valueExpr.kind === 'index' ? this.flatTargetInfo(valueExpr) : null;
-        const isFlatStruct = flatStruct?.kind === 'struct';
-        let objTmp = null;
-        let flatBase = null;
-        if (isFlatStruct) {
-            flatBase = `_sroa_${this.sroaCounter++}_base`;
-            this.line(`const ${flatBase} = ((${this.expr(valueExpr.index)}) * ${flatStruct.stride});`);
-        } else if (!ctor) {
-            objTmp = `_sroa_${this.sroaCounter++}`;
-            this.line(`const ${objTmp} = ${this.expr(valueExpr)};`);
-        }
-        const baseSrc = isFlatStruct ? this.bindingSource(valueExpr.value.name) : null;
-        spec.fields.forEach((field, i) => {
-            if (field.type.kind === 'scalar') {
-                let src;
-                if (isFlatStruct) {
-                    const finfo = flatStruct.fields.get(field.name);
-                    src = `${baseSrc}[${flatBase} + ${finfo.offset}]`;
-                } else if (ctor) {
-                    const arg = valueExpr.args[i];
-                    src = arg ? this.expr(arg) : (field.type.name === 'bool' ? 'false' : '0');
-                } else {
-                    src = `${objTmp}.${field.name}`;
-                }
-                this.line(`${field.safe} = ${src};`);
-                return;
-            }
-            if (field.type.kind === 'vec') {
-                let tmp = null;
-                for (let k = 0; k < field.arity; k++) {
-                    const c = VEC_COMPS[k];
-                    let src = null;
-                    if (isFlatStruct) {
-                        const finfo = flatStruct.fields.get(field.name);
-                        src = `${baseSrc}[${flatBase} + ${finfo.offset + k}]`;
-                    } else if (ctor) {
-                        const arg = valueExpr.args[i];
-                        if (arg && isComponentSafe(arg)) src = this.exprComp(arg, c);
-                        if (!src && arg) {
-                            if (!tmp) {
-                                tmp = `_sroa_${this.sroaCounter++}`;
-                                this.line(`const ${tmp} = ${this.expr(arg)};`);
-                            }
-                            src = `${tmp}.${c}`;
-                        }
-                        if (!src) src = '0';
-                    } else {
-                        src = `${objTmp}.${field.name}.${c}`;
-                    }
-                    this.line(`${field.comps[k]} = ${src};`);
-                }
-            }
-        });
-        return true;
+        return this.emitStructSroaFromValue(spec, valueExpr, null);
     }
 
     emitFlatScalarStore(info, valueExpr, compoundOp = null) {
         const baseSrc = this.bindingSource(info.baseName);
-        const lhs = `${baseSrc}[_wbase + ${info.field.offset}]`;
+        const lhs = info.flat.layout === 'soa'
+            ? `${baseSrc}.${info.field.name}[_wbase]`
+            : `${baseSrc}[_wbase + ${info.field.offset}]`;
         const base = this.flatBaseExpr({
             flat: info.flat,
             index: info.index,
+            field: info.field,
             offset: info.field.offset,
         });
         this.line(`{`);
         this.open();
-        this.line(`const _wbase = ${base} - ${info.field.offset};`);
+        this.line(`const _wbase = ${info.flat.layout === 'soa' ? base : `${base} - ${info.field.offset}`};`);
         if (compoundOp) {
             const bin = compoundOp.slice(0, -1);
             if (INT_BIN.has(bin)) {
@@ -4548,6 +5932,96 @@ class Emitter {
         return true;
     }
 
+    emitFlatWorkgroupStructStore(target, valueExpr) {
+        const info = this.flatWorkgroupAccessInfo(target);
+        const flat = info?.flat;
+        if (flat?.kind !== 'struct') return false;
+        const baseSrc = `wg.${info.baseName}`;
+        const ctor = valueExpr.kind === 'call' && this.structs.has(valueExpr.callee)
+            ? this.structs.get(valueExpr.callee)
+            : null;
+        const sourceSroa = valueExpr.kind === 'ident' ? this.structSroaForIdent(valueExpr) : null;
+        const sourceWgFlat = valueExpr.kind === 'index' ? this.flatWorkgroupAccessInfo(valueExpr) : null;
+        const isSourceWgFlat = sourceWgFlat?.flat?.kind === 'struct';
+        const sourceFlat = valueExpr.kind === 'index' ? this.flatTargetInfo(valueExpr) : null;
+        const isSourceFlat = sourceFlat?.kind === 'struct';
+        let objTmp = null;
+        this.line(`{`);
+        this.open();
+        this.line(`const _wbase = ${this.flatWorkgroupBaseExpr(info)};`);
+        let rbase = null;
+        let rsrc = null;
+        let sourceFields = null;
+        if (isSourceWgFlat) {
+            rsrc = `wg.${sourceWgFlat.baseName}`;
+            rbase = `_rbase`;
+            sourceFields = sourceWgFlat.flat.fields;
+            this.line(`const ${rbase} = ${this.flatWorkgroupBaseExpr(sourceWgFlat)};`);
+        } else if (isSourceFlat) {
+            rsrc = this.bindingSource(valueExpr.value.name);
+            rbase = `_rbase`;
+            sourceFields = sourceFlat.fields;
+            this.line(`const ${rbase} = ((${this.expr(valueExpr.index)}) * ${sourceFlat.stride});`);
+        } else if (!ctor && !sourceSroa) {
+            objTmp = `_stmp`;
+            this.line(`const ${objTmp} = ${this.expr(valueExpr)};`);
+        }
+        let argIndex = 0;
+        for (const [fname, field] of flat.fields) {
+            if (field.kind === 'scalar') {
+                let src = null;
+                if (sourceSroa) {
+                    const sf = sourceSroa.fields.find(f => f.name === fname);
+                    src = sf?.safe ?? '0';
+                } else if (sourceFields) {
+                    const sf = sourceFields.get(fname);
+                    src = `${rsrc}[${rbase} + ${sf.offset}]`;
+                } else if (ctor) {
+                    const arg = valueExpr.args[argIndex];
+                    src = arg ? this.expr(arg) : (field.type.name === 'bool' ? 'false' : '0');
+                } else {
+                    src = `${objTmp}.${fname}`;
+                }
+                this.line(`${baseSrc}[_wbase + ${field.offset}] = ${src};`);
+            } else if (field.kind === 'vec') {
+                let arg = ctor ? valueExpr.args[argIndex] : null;
+                let tmp = null;
+                for (let k = 0; k < field.arity; k++) {
+                    const c = VEC_COMPS[k];
+                    let src = null;
+                    if (sourceSroa) {
+                        const sf = sourceSroa.fields.find(f => f.name === fname);
+                        src = sf?.comps?.[k] ?? '0';
+                    } else if (sourceFields) {
+                        const sf = sourceFields.get(fname);
+                        src = `${rsrc}[${rbase} + ${sf.offset + k}]`;
+                    } else if (ctor) {
+                        if (arg && isComponentSafe(arg)) src = this.exprComp(arg, c);
+                        if (!src && arg) {
+                            if (!tmp) {
+                                tmp = `_vtmp${argIndex}`;
+                                this.line(`const ${tmp} = ${this.expr(arg)};`);
+                            }
+                            src = `${tmp}.${c}`;
+                        }
+                        if (!src) src = '0';
+                    } else {
+                        src = `${objTmp}.${fname}.${c}`;
+                    }
+                    this.line(`${baseSrc}[_wbase + ${field.offset + k}] = ${src};`);
+                }
+            } else {
+                this.close();
+                this.line(`}`);
+                return false;
+            }
+            argIndex++;
+        }
+        this.close();
+        this.line(`}`);
+        return true;
+    }
+
     /** Heuristic: would lowering this expression component-wise duplicate
      *  expensive work? If so, prefer materializing into a tmp once and
      *  reading the components from there. */
@@ -4561,7 +6035,10 @@ class Emitter {
             // Flat-storage index reads ARE the materialized form (one
             // TypedArray index op per component) — no shared object to
             // dedupe — so the direct exprComp path is correct.
-            case 'index':  return this.flatVecTargetInfo(e) ? false : true;
+            case 'index': {
+                const wg = this.flatWorkgroupAccessInfo(e);
+                return (this.flatVecTargetInfo(e) || wg?.flat.kind === 'vec') ? false : true;
+            }
             case 'member': return this.flatVecAccessInfo(e) ? false : true;
             // Calls: side-effecting in general, materialize.
             case 'call': {
@@ -4608,9 +6085,12 @@ class Emitter {
         //   - flat-storage index read: component-safe per exprComp's flat
         //     fast path; write-through composes for whole-vec copies like
         //     `bindings.A[i] = bindings.B[j]` without materializing.
+        //   - fixed-array SROA index read: same shape, but fed by
+        //     scalarized array-return/local elements.
         const rhsIsScalarized = value.kind === 'ident' && this.scalarizedArityForIdent(value) != null;
         const rhsIsFlatRead   = !!this.flatVecAccessInfo(value);
-        if (!rhsIsScalarized && !rhsIsFlatRead && !isFreshVecExpr(value)) return false;
+        const rhsIsArraySroaRead = !!this.arraySroaIndexInfo(value);
+        if (!rhsIsScalarized && !rhsIsFlatRead && !rhsIsArraySroaRead && !isFreshVecExpr(value)) return false;
         if (!isComponentSafe(value)) return false;
         const n = t.n;
         const comps = VEC_COMPS.slice(0, n);
@@ -4624,14 +6104,13 @@ class Emitter {
         this.line(`{`);
         this.open();
         if (targetFlat) {
-            const baseSrc = this.bindingSource(targetFlat.baseName);
             const elemType = targetFlat.field?.type?.of ?? (targetFlat.flat.ctype ? { kind: 'scalar', name: targetFlat.flat.ctype } : null);
             this.line(`const _wbase = ${this.flatBaseExpr(targetFlat)};`);
             for (let i = 0; i < n; i++) {
                 this.line(`const _wt${i} = ${compExprs[i]};`);
             }
             for (let i = 0; i < n; i++) {
-                this.line(`${baseSrc}[_wbase + ${i}] = ${this.sanitizeScalarStore(`_wt${i}`, elemType, targetFlat.baseName)};`);
+                this.line(`${this.flatVecLvalue(targetFlat, comps[i])} = ${this.sanitizeScalarStore(`_wt${i}`, elemType, targetFlat.baseName)};`);
             }
         } else {
             const lhsStr = this.lvalue(target);
@@ -4656,6 +6135,110 @@ class Emitter {
                 for (let i = 0; i < n; i++) {
                     this.line(`${lhsStr}.${comps[i]} = ${this.sanitizeScalarStore(`_wt${i}`, elemType, rootName)};`);
                 }
+            }
+        }
+        this.close();
+        this.line(`}`);
+        return true;
+    }
+
+    swizzleStoreComponents(target) {
+        if (!target || target.kind !== 'member') return null;
+        const name = target.name;
+        if (name.length < 2 || name.length > 4) return null;
+        if (!(/^[xyzw]+$/.test(name) || /^[rgba]+$/.test(name))) return null;
+        if (target.value?.resolvedType?.kind !== 'vec') return null;
+        const comps = [...name].map(c => SWIZZLE_MAP[c]);
+        if (new Set(comps).size !== comps.length) {
+            const msg = `emit: duplicate component in swizzle assignment '${name}'`;
+            this.emitError('swizzle-store', msg, target.loc);
+            this.line(`rt.__unsupported(${JSON.stringify(msg)});`);
+            return [];
+        }
+        return comps;
+    }
+
+    tryEmitSwizzleStore(target, value, compoundOp = null) {
+        const targetComps = this.swizzleStoreComponents(target);
+        if (!targetComps) return false;
+        if (targetComps.length === 0) return true;
+        const rhsType = value?.resolvedType;
+        const scalarRhs = rhsType?.kind === 'scalar';
+        const elemType = target.value.resolvedType?.of ?? rhsType?.of ?? rhsType;
+        const op = compoundOp ? compoundOp.slice(0, -1) : null;
+        const rhsExprs = [];
+        if (rhsType?.kind === 'vec') {
+            for (const c of VEC_COMPS.slice(0, targetComps.length)) {
+                const expr = isComponentSafe(value) ? this.exprComp(value, c) : null;
+                rhsExprs.push(expr);
+            }
+        } else if (rhsType?.kind === 'scalar' && compoundOp) {
+            const scalar = isComponentSafe(value) ? this.expr(value) : null;
+            for (let i = 0; i < targetComps.length; i++) rhsExprs.push(scalar);
+        }
+        const directRhs = rhsExprs.length === targetComps.length && rhsExprs.every(x => x != null);
+
+        const emitAssign = (lhs, rhs, baseName = null) => {
+            if (compoundOp) {
+                const out = this.emitScalarBinExpr(op, lhs, rhs, elemType);
+                this.line(`${lhs} = ${this.sanitizeScalarStore(out, elemType, baseName)};`);
+            } else {
+                this.line(`${lhs} = ${this.sanitizeScalarStore(rhs, elemType, baseName)};`);
+            }
+        };
+
+        this.line(`{`);
+        this.open();
+        if (directRhs) {
+            for (let i = 0; i < targetComps.length; i++) this.line(`const _wt${i} = ${rhsExprs[i]};`);
+        } else {
+            this.line(`const _ftmp = ${this.expr(value)};`);
+        }
+
+        const scalarized = target.value.kind === 'ident' && this.scalarizedArityForIdent(target.value) != null;
+        const structMember = this.structSroaMemberInfo(target.value);
+        const arrayIdx = this.arraySroaIndexInfo(target.value);
+        const flat = this.flatVecAccessInfo(target.value);
+        const wgFlat = this.flatWorkgroupAccessInfo(target.value);
+
+        if (scalarized) {
+            const baseName = target.value.name;
+            for (let i = 0; i < targetComps.length; i++) {
+                const rhs = directRhs ? `_wt${i}` : (scalarRhs ? `_ftmp` : `_ftmp.${VEC_COMPS[i]}`);
+                emitAssign(`${_safe(baseName)}_${targetComps[i]}`, rhs);
+            }
+        } else if (structMember?.field.type.kind === 'vec') {
+            for (let i = 0; i < targetComps.length; i++) {
+                const rhs = directRhs ? `_wt${i}` : (scalarRhs ? `_ftmp` : `_ftmp.${VEC_COMPS[i]}`);
+                emitAssign(structMember.field.comps[COMP_IDX[targetComps[i]]], rhs);
+            }
+        } else if (arrayIdx?.element.type.kind === 'vec') {
+            for (let i = 0; i < targetComps.length; i++) {
+                const rhs = directRhs ? `_wt${i}` : (scalarRhs ? `_ftmp` : `_ftmp.${VEC_COMPS[i]}`);
+                emitAssign(arrayIdx.element.comps[COMP_IDX[targetComps[i]]], rhs);
+            }
+        } else if (flat) {
+            this.line(`const _wbase = ${this.flatBaseExpr(flat)};`);
+            for (let i = 0; i < targetComps.length; i++) {
+                const rhs = directRhs ? `_wt${i}` : (scalarRhs ? `_ftmp` : `_ftmp.${VEC_COMPS[i]}`);
+                emitAssign(this.flatVecLvalue(flat, targetComps[i]), rhs, flat.baseName);
+            }
+        } else if (wgFlat?.flat.kind === 'vec') {
+            const baseSrc = `wg.${wgFlat.baseName}`;
+            this.line(`const _wbase = ${this.flatWorkgroupBaseExpr(wgFlat)};`);
+            for (let i = 0; i < targetComps.length; i++) {
+                const rhs = directRhs ? `_wt${i}` : (scalarRhs ? `_ftmp` : `_ftmp.${VEC_COMPS[i]}`);
+                emitAssign(`${baseSrc}[_wbase + ${COMP_IDX[targetComps[i]]}]`, rhs);
+            }
+        } else {
+            const baseExpr = this.lvalue(target.value);
+            const obj = target.value.kind === 'ident' ? null : '_wlv';
+            if (obj) this.line(`const ${obj} = ${baseExpr};`);
+            const lhsBase = obj || baseExpr;
+            const rootName = this.storageRootName(target.value);
+            for (let i = 0; i < targetComps.length; i++) {
+                const rhs = directRhs ? `_wt${i}` : (scalarRhs ? `_ftmp` : `_ftmp.${VEC_COMPS[i]}`);
+                emitAssign(`${lhsBase}.${targetComps[i]}`, rhs, rootName);
             }
         }
         this.close();
@@ -4795,15 +6378,18 @@ class Emitter {
             case 'block':
                 this.line('{');
                 this.open();
-                this.localScopes.push(new Set());
+                this.pushScope();
                 for (const x of s.stmts) this.stmt(x, inEntry);
-                this.localScopes.pop();
+                this.popScope();
                 this.close();
                 this.line('}');
                 break;
 
             case 'let': {
                 this.declareLocal(s.name);
+                this.recordConstAlias(s.name, s.value);
+                const arraySpec = this.arraySroaForDecl(s);
+                if (arraySpec && this.emitArraySroaLet(s, arraySpec, 'const')) break;
                 const structSpec = this.structSroaForDecl(s);
                 if (structSpec && this.emitStructSroaLet(s, structSpec, 'const')) break;
                 const arity = this.scalarizedArityForDecl(s);
@@ -4815,6 +6401,8 @@ class Emitter {
             case 'var':
                 this.declareLocal(s.name);
                 {
+                    const arraySpec = this.arraySroaForDecl(s);
+                    if (arraySpec && this.emitArraySroaVarDecl(s, arraySpec)) break;
                     const structSpec = this.structSroaForDecl(s);
                     if (structSpec && this.emitStructSroaVarDecl(s, structSpec)) break;
                     const arity = this.scalarizedArityForDecl(s);
@@ -4831,6 +6419,9 @@ class Emitter {
 
             case 'const': {
                 this.declareLocal(s.name);
+                this.recordConstAlias(s.name, s.value);
+                const arraySpec = this.arraySroaForDecl(s);
+                if (arraySpec && this.emitArraySroaLet(s, arraySpec, 'const')) break;
                 const structSpec = this.structSroaForDecl(s);
                 if (structSpec && this.emitStructSroaLet(s, structSpec, 'const')) break;
                 const arity = this.scalarizedArityForDecl(s);
@@ -4850,7 +6441,9 @@ class Emitter {
                 if (s.target.kind === 'member') {
                     const sroa = this.structSroaMemberInfo(s.target);
                     if (sroa && this.emitStructSroaFieldStore(sroa.field, s.value, null)) break;
+                    if (this.tryEmitSwizzleStore(s.target, s.value)) break;
                 }
+                if (s.target.kind === 'index' && this.emitFlatWorkgroupStructStore(s.target, s.value)) break;
                 if (s.target.kind === 'index' && this.emitFlatStructStore(s.target, s.value)) break;
                 {
                     const flatScalar = this.flatScalarAccessInfo(s.target);
@@ -4875,14 +6468,13 @@ class Emitter {
                 const flatT = this.flatVecAccessInfo(s.target);
                 if (flatT && s.target.resolvedType?.kind === 'vec') {
                     const comps = VEC_COMPS.slice(0, flatT.arity);
-                    const baseSrc = this.bindingSource(flatT.baseName);
                     this.line(`{`);
                     this.open();
                     this.line(`const _ftmp = ${this.expr(s.value)};`);
                     this.line(`const _wbase = ${this.flatBaseExpr(flatT)};`);
                     for (let i = 0; i < flatT.arity; i++) {
                         const rhs = this.sanitizeScalarStore(`_ftmp.${comps[i]}`, flatT.flat.ctype ? { kind: 'scalar', name: flatT.flat.ctype } : flatT.field?.type?.of, flatT.baseName);
-                        this.line(`${baseSrc}[_wbase + ${i}] = ${rhs};`);
+                        this.line(`${this.flatVecLvalue(flatT, comps[i])} = ${rhs};`);
                     }
                     this.close();
                     this.line(`}`);
@@ -4895,6 +6487,7 @@ class Emitter {
 
             case 'compound': {
                 if (s.target.kind === 'member') {
+                    if (this.tryEmitSwizzleStore(s.target, s.value, s.op)) break;
                     const sroa = this.structSroaMemberInfo(s.target);
                     if (sroa && this.emitStructSroaFieldStore(sroa.field, s.value, s.op)) break;
                 }
@@ -4914,7 +6507,6 @@ class Emitter {
                     const compExprs = s.value.resolvedType?.kind === 'vec' && isComponentSafe(s.value)
                         ? comps.map(c => this.exprComp(s.value, c))
                         : null;
-                    const baseSrc = this.bindingSource(flatC.baseName);
                     const op = s.op.slice(0, -1);
                     this.line(`{`);
                     this.open();
@@ -4923,14 +6515,14 @@ class Emitter {
                     if (compExprs && compExprs.every(x => x != null)) {
                         for (let i = 0; i < flatC.arity; i++) this.line(`const _wt${i} = ${compExprs[i]};`);
                         for (let i = 0; i < flatC.arity; i++) {
-                            const lhs = `${baseSrc}[_wbase + ${i}]`;
+                            const lhs = this.flatVecLvalue(flatC, comps[i]);
                             const rhs = this.emitScalarBinExpr(op, lhs, `_wt${i}`, elemType);
                             this.line(`${lhs} = ${this.sanitizeScalarStore(rhs, elemType, flatC.baseName)};`);
                         }
                     } else {
                         this.line(`const _ftmp = ${this.expr(s.value)};`);
                         for (let i = 0; i < flatC.arity; i++) {
-                            const lhs = `${baseSrc}[_wbase + ${i}]`;
+                            const lhs = this.flatVecLvalue(flatC, comps[i]);
                             const rhs = this.emitScalarBinExpr(op, lhs, `_ftmp.${comps[i]}`, elemType);
                             this.line(`${lhs} = ${this.sanitizeScalarStore(rhs, elemType, flatC.baseName)};`);
                         }
@@ -4962,11 +6554,37 @@ class Emitter {
             }
 
             case 'if': {
+                const staticCond = this.staticEvalScalar(s.cond);
+                if (typeof staticCond === 'boolean') {
+                    this.staticBranchPrunes++;
+                    if (staticCond) {
+                        this.line(`{`);
+                        this.open();
+                        this.pushScope();
+                        for (const x of s.then.stmts) this.stmt(x, inEntry);
+                        this.popScope();
+                        this.close();
+                        this.line(`}`);
+                    } else if (s.else) {
+                        if (s.else.kind === 'if') {
+                            this.stmt(s.else, inEntry);
+                        } else {
+                            this.line(`{`);
+                            this.open();
+                            this.pushScope();
+                            for (const x of s.else.stmts) this.stmt(x, inEntry);
+                            this.popScope();
+                            this.close();
+                            this.line(`}`);
+                        }
+                    }
+                    break;
+                }
                 this.line(`if (${this.expr(s.cond)}) {`);
                 this.open();
-                this.localScopes.push(new Set());
+                this.pushScope();
                 for (const x of s.then.stmts) this.stmt(x, inEntry);
-                this.localScopes.pop();
+                this.popScope();
                 this.close();
                 if (s.else) {
                     if (s.else.kind === 'if') {
@@ -4978,9 +6596,9 @@ class Emitter {
                     } else {
                         this.line('} else {');
                         this.open();
-                        this.localScopes.push(new Set());
+                        this.pushScope();
                         for (const x of s.else.stmts) this.stmt(x, inEntry);
-                        this.localScopes.pop();
+                        this.popScope();
                         this.close();
                         this.line('}');
                     }
@@ -4991,7 +6609,7 @@ class Emitter {
             }
 
             case 'for': {
-                this.localScopes.push(new Set());
+                this.pushScope();
                 const initStr = s.init ? this.forStmtInline(s.init) : '';
                 const condStr = s.cond ? this.expr(s.cond) : '';
                 const updStr  = s.update ? this.forUpdateInline(s.update) : '';
@@ -5000,16 +6618,16 @@ class Emitter {
                 for (const x of s.body.stmts) this.stmt(x, inEntry);
                 this.close();
                 this.line('}');
-                this.localScopes.pop();
+                this.popScope();
                 break;
             }
 
             case 'while':
                 this.line(`while (${this.expr(s.cond)}) {`);
                 this.open();
-                this.localScopes.push(new Set());
+                this.pushScope();
                 for (const x of s.body.stmts) this.stmt(x, inEntry);
-                this.localScopes.pop();
+                this.popScope();
                 this.close();
                 this.line('}');
                 break;
@@ -5019,9 +6637,9 @@ class Emitter {
                 // continuing block ignored for now.
                 this.line('while (true) {');
                 this.open();
-                this.localScopes.push(new Set());
+                this.pushScope();
                 for (const x of s.body.stmts) this.stmt(x, inEntry);
-                this.localScopes.pop();
+                this.popScope();
                 this.close();
                 this.line('}');
                 break;
@@ -5040,9 +6658,9 @@ class Emitter {
                         this.line('{');
                     }
                     this.open();
-                    this.localScopes.push(new Set());
+                    this.pushScope();
                     for (const x of c.body.stmts) this.stmt(x, inEntry);
-                    this.localScopes.pop();
+                    this.popScope();
                     this.line('break;');
                     this.close();
                     this.line('}');
@@ -5058,6 +6676,12 @@ class Emitter {
                     // invocation" — break to the labeled invocation
                     // block (continuing the for-loop on the next line).
                     this.line(`break __invocation;`);
+                } else if (this.returnComponent && s.value) {
+                    const comp = this.returnComponent;
+                    const expr = isComponentSafe(s.value)
+                        ? this.exprComp(s.value, comp)
+                        : null;
+                    this.line(`return ${expr ?? `(${this.expr(s.value)}).${comp}`};`);
                 } else {
                     this.line(`return${s.value ? ' ' + this.expr(s.value) : ''};`);
                 }
@@ -5080,15 +6704,49 @@ class Emitter {
                     // scalarized fast paths for any read of the result name.
                     this.setScalarizedSynthetic(s.resultName, s.arity);
                     for (const c of comps) this.declareLocal(`${s.resultName}_${c}`);
+                } else if (s.arrayScalarized && s.resultType) {
+                    const spec = this.arraySroaSpec(s.resultName, this.sym.typeFromAst(s.resultType));
+                    if (spec) {
+                        for (const element of spec.elements) {
+                            if (element.type.kind === 'scalar') {
+                                this.line(`let ${element.safe};`);
+                                this.declareLocal(element.safe);
+                            } else if (element.type.kind === 'vec') {
+                                this.line(`let ${element.comps.join(', ')};`);
+                                for (const comp of element.comps) this.declareLocal(comp);
+                            }
+                        }
+                        this.setArrayScalarizedSynthetic(s.resultName, spec);
+                    } else {
+                        this.line(`let ${s.resultName};`);
+                        this.declareLocal(s.resultName);
+                    }
+                } else if (s.structScalarized && s.resultType) {
+                    const spec = this.structSroaSpec(s.resultName, this.sym.typeFromAst(s.resultType));
+                    if (spec) {
+                        this.emitStructSroaDecls(spec, 'let');
+                        this.setStructScalarizedSynthetic(s.resultName, spec);
+                        const declareLeaves = (sp) => {
+                            for (const field of sp.fields) {
+                                if (field.type.kind === 'scalar') this.declareLocal(field.safe);
+                                else if (field.type.kind === 'vec') for (const comp of field.comps) this.declareLocal(comp);
+                                else if (field.child) declareLeaves(field.child);
+                            }
+                        };
+                        declareLeaves(spec);
+                    } else {
+                        this.line(`let ${s.resultName};`);
+                        this.declareLocal(s.resultName);
+                    }
                 } else if (s.resultName) {
                     this.line(`let ${s.resultName};`);
                     this.declareLocal(s.resultName);
                 }
                 this.line(`${s.label}: {`);
                 this.open();
-                this.localScopes.push(new Set());
+                this.pushScope();
                 for (const x of s.body.stmts) this.stmt(x, inEntry);
-                this.localScopes.pop();
+                this.popScope();
                 this.close();
                 this.line(`}`);
                 break;
@@ -5132,6 +6790,14 @@ class Emitter {
                             this.line(`${s.resultName}_${comps[i]} = _ir_obj.${comps[i]};`);
                         }
                     }
+                } else if (s.arrayScalarized && s.resultType) {
+                    const spec = this.arraySroaSpec(s.resultName, this.sym.typeFromAst(s.resultType));
+                    if (spec) this.emitArraySroaFromValue(spec, s.value, null);
+                    else this.line(`${s.resultName} = ${this.expr(s.value)};`);
+                } else if (s.structScalarized && s.resultType) {
+                    const spec = this.structSroaSpec(s.resultName, this.sym.typeFromAst(s.resultType));
+                    if (spec) this.emitStructSroaFromValue(spec, s.value, null);
+                    else this.line(`${s.resultName} = ${this.expr(s.value)};`);
                 } else {
                     this.line(`${s.resultName} = ${this.expr(s.value)};`);
                 }
@@ -5193,9 +6859,9 @@ class Emitter {
         const i = this.out.length - 1;
         this.out[i] = this.out[i] + `if (${this.expr(node.cond)}) {`;
         this.open();
-        this.localScopes.push(new Set());
+        this.pushScope();
         for (const x of node.then.stmts) this.stmt(x, inEntry);
-        this.localScopes.pop();
+        this.popScope();
         this.close();
         if (node.else) {
             if (node.else.kind === 'if') {
@@ -5204,9 +6870,9 @@ class Emitter {
             } else {
                 this.line('} else {');
                 this.open();
-                this.localScopes.push(new Set());
+                this.pushScope();
                 for (const x of node.else.stmts) this.stmt(x, inEntry);
-                this.localScopes.pop();
+                this.popScope();
                 this.close();
                 this.line('}');
             }
@@ -5220,6 +6886,7 @@ class Emitter {
         switch (s.kind) {
             case 'let':
                 this.declareLocal(s.name);
+                this.recordConstAlias(s.name, s.value);
                 return `let ${_safe(s.name)} = ${this.expr(s.value)}`;
             case 'var':
                 this.declareLocal(s.name);
@@ -5251,6 +6918,16 @@ class Emitter {
     }
     forUpdateInline(s) { return this.forStmtInline(s); }
 
+    pushScope() {
+        this.localScopes.push(new Set());
+        this.constScopes.push(new Map());
+    }
+
+    popScope() {
+        this.localScopes.pop();
+        this.constScopes.pop();
+    }
+
     declareLocal(name) {
         const top = this.localScopes[this.localScopes.length - 1];
         if (top) top.add(name);
@@ -5261,6 +6938,92 @@ class Emitter {
             if (this.localScopes[i].has(name)) return true;
         }
         return false;
+    }
+
+    recordConstAlias(name, expr) {
+        const v = this.staticEvalScalar(expr);
+        const top = this.constScopes[this.constScopes.length - 1];
+        if (top && v != null) top.set(name, v);
+    }
+
+    lookupConstAlias(name) {
+        for (let i = this.constScopes.length - 1; i >= 0; i--) {
+            if (this.constScopes[i].has(name)) return this.constScopes[i].get(name);
+        }
+        return null;
+    }
+
+    staticEvalScalar(e) {
+        if (!e) return null;
+        switch (e.kind) {
+            case 'lit':
+                if (e.raw === 'true') return true;
+                if (e.raw === 'false') return false;
+                return _literalNumber(e);
+            case 'ident': {
+                const local = this.lookupConstAlias(e.name);
+                if (local != null) return local;
+                const c = this.constants.get(e.name);
+                return c ? this.staticEvalScalar(c.value) : null;
+            }
+            case 'member': {
+                if (e.value?.kind === 'ident' && this.bindings.has(e.value.name) && !this.isLocal(e.value.name)) {
+                    const specialized = this.opts.specializeUniforms?.[e.value.name];
+                    if (specialized && Object.prototype.hasOwnProperty.call(specialized, e.name)) {
+                        const v = specialized[e.name];
+                        return typeof v === 'number' || typeof v === 'boolean' ? v : null;
+                    }
+                }
+                return null;
+            }
+            case 'paren':
+                return this.staticEvalScalar(e.value);
+            case 'una': {
+                const v = this.staticEvalScalar(e.value);
+                if (v == null) return null;
+                if (e.op === '+') return +v;
+                if (e.op === '-') return -v;
+                if (e.op === '!') return !v;
+                return null;
+            }
+            case 'bin': {
+                const l = this.staticEvalScalar(e.lhs);
+                const r = this.staticEvalScalar(e.rhs);
+                if (l == null || r == null) return null;
+                switch (e.op) {
+                    case '+': return l + r;
+                    case '-': return l - r;
+                    case '*': return l * r;
+                    case '/': return l / r;
+                    case '%': return l % r;
+                    case '==': return l === r;
+                    case '!=': return l !== r;
+                    case '<': return l < r;
+                    case '<=': return l <= r;
+                    case '>': return l > r;
+                    case '>=': return l >= r;
+                    case '&&': return !!l && !!r;
+                    case '||': return !!l || !!r;
+                    case '&': return (l | 0) & (r | 0);
+                    case '|': return (l | 0) | (r | 0);
+                    case '^': return (l | 0) ^ (r | 0);
+                    case '<<': return (l | 0) << (r | 0);
+                    case '>>': return (l | 0) >> (r | 0);
+                }
+                return null;
+            }
+            case 'call': {
+                if (e.args.length !== 1 || !SCALAR_TYPE_IDENTS.has(e.callee)) return null;
+                const v = this.staticEvalScalar(e.args[0]);
+                if (v == null) return null;
+                if (e.callee === 'bool') return !!v;
+                if (e.callee === 'f32' || e.callee === 'f16') return +v;
+                if (e.callee === 'i32') return (+v) | 0;
+                if (e.callee === 'u32') return (+v) >>> 0;
+                return null;
+            }
+        }
+        return null;
     }
 
     // ── Expressions → JS strings ──────────────────────────────────
@@ -5298,19 +7061,15 @@ class Emitter {
         // path entirely.
         const structSpec = this.structSroaForIdent(e);
         if (structSpec) {
-            const parts = structSpec.fields.map(f => {
-                if (f.type.kind === 'vec') {
-                    return `${f.name}: rt.vec${f.arity}(${f.comps.join(', ')})`;
-                }
-                return `${f.name}: ${f.safe}`;
-            });
-            return `{ ${parts.join(', ')} }`;
+            return this.structSroaObject(structSpec);
         }
+        const arraySpec = this.arraySroaForIdent(e);
+        if (arraySpec) return this.arrayObject(arraySpec);
         const arity = this.scalarizedArityForIdent(e);
         if (arity != null) {
             const parts = VEC_COMPS.slice(0, arity)
-                .map(c => `${_safe(name)}_${c}`);
-            return `rt.vec${arity}(${parts.join(', ')})`;
+                .map(c => `${c}:${_safe(name)}_${c}`);
+            return `{${parts.join(', ')}}`;
         }
         // Locals, constants, and user fns are emitted as bare idents
         // (possibly escaped). Globals living on `bindings`/`wg`/`priv`
@@ -5355,6 +7114,44 @@ class Emitter {
         return this.wrapF32(`(${lhs} ${op} ${rhs})`, rt);
     }
 
+    emitScalarBinAlgebra(e) {
+        if (this.opts.noAlgebraicSimplify || this.opts.safeDivisions) return null;
+        const lt = e.lhs?.resolvedType;
+        const rt = e.rhs?.resolvedType;
+        if (lt?.kind !== 'scalar' || rt?.kind !== 'scalar') return null;
+        const lv = _literalNumber(e.lhs);
+        const rv = _literalNumber(e.rhs);
+        const lhs = () => this.expr(e.lhs);
+        const rhs = () => this.expr(e.rhs);
+        if (this.opts.strictF32 || this.opts.strictInts) return null;
+        if (lv != null && rv != null) {
+            switch (e.op) {
+                case '+': return _jsLiteral(lv + rv);
+                case '-': return _jsLiteral(lv - rv);
+                case '*': return _jsLiteral(lv * rv);
+                case '/': return _jsLiteral(lv / rv);
+                case '%': return _jsLiteral(lv - rv * Math.trunc(lv / rv));
+            }
+        }
+        switch (e.op) {
+            case '+':
+                if (rv === 0) return lhs();
+                if (lv === 0) return rhs();
+                break;
+            case '-':
+                if (rv === 0) return lhs();
+                break;
+            case '*':
+                if (rv === 1) return lhs();
+                if (lv === 1) return rhs();
+                break;
+            case '/':
+                if (rv === 1) return lhs();
+                break;
+        }
+        return null;
+    }
+
     emitScalarCompound(targetExpr, valueExpr, op, resultType) {
         const target = this.lvalue(targetExpr);
         const rhs = this.expr(valueExpr);
@@ -5369,6 +7166,8 @@ class Emitter {
 
             // Scalar ↔ scalar → pure inline. Zero allocation, no fn call.
             if (lt?.kind === 'scalar' && rt?.kind === 'scalar') {
+                const simplified = this.emitScalarBinAlgebra(e);
+                if (simplified != null) return simplified;
                 return this.emitScalarBinExpr(op, this.expr(e.lhs), this.expr(e.rhs), e.resolvedType ?? lt);
             }
 
@@ -5453,6 +7252,17 @@ class Emitter {
                 // Struct member typed as vec, or unknown — materialize.
                 return `(${this.expr(e)}).${c}`;
             }
+            case 'index': {
+                const info = this.arraySroaIndexInfo(e);
+                if (info?.element.type.kind === 'vec') {
+                    return info.element.comps[COMP_IDX[c]];
+                }
+                const wgFlat = this.flatWorkgroupAccessInfo(e);
+                if (wgFlat?.flat.kind === 'vec') return this.flatWorkgroupRead(wgFlat, c);
+                const flat = this.flatVecAccessInfo(e);
+                if (flat) return this.flatVecRead(flat, c);
+                return `(${this.expr(e)}).${c}`;
+            }
             case 'bin': {
                 if (!POLY_BIN.has(e.op)) return null;
                 const lt = e.lhs?.resolvedType;
@@ -5478,13 +7288,8 @@ class Emitter {
                 // vecN constructor: c-th arg, or splat from a single arg.
                 if (/^vec[234]$/.test(name) || /^vec[234][fuih]$/.test(name)) {
                     const idx = { x: 0, y: 1, z: 2, w: 3 }[c];
-                    if (e.args.length === 1) {
-                        const a0 = e.args[0];
-                        if (a0.resolvedType?.kind === 'vec') return this.exprComp(a0, c);
-                        return this.expr(a0);
-                    }
-                    if (idx < e.args.length) return this.expr(e.args[idx]);
-                    return null;
+                    const comps = this.vecConstructorComponents(e);
+                    return comps && idx < comps.length ? comps[idx] : null;
                 }
                 if (name === 'select' && e.resolvedType?.kind === 'vec') {
                     const f = this.exprComp(e.args[0], c);
@@ -5496,6 +7301,11 @@ class Emitter {
                         return `(${cond} ? ${t} : ${f})`;
                     }
                     return null;
+                }
+                if (POLY_FN.has(name) && SCALAR_INTRINSIC_JS[name] && e.resolvedType?.kind === 'vec') {
+                    const idx = { x: 0, y: 1, z: 2, w: 3 }[c];
+                    const comps = this.polyVectorIntrinsicComponents(e);
+                    return comps && idx < comps.length ? comps[idx] : null;
                 }
                 // Anything else: materialize (safe — call evaluated once
                 // per the outer materialization, then indexed N times,
@@ -5538,8 +7348,14 @@ class Emitter {
         if (this.scalarized.has(name)) {
             const n = this.scalarized.get(name);
             const parts = VEC_COMPS.slice(0, n)
-                .map(c => `${_safe(name)}_${c}`);
-            return `rt.vec${n}(${parts.join(', ')})`;
+                .map(c => `${c}:${_safe(name)}_${c}`);
+            return `{${parts.join(', ')}}`;
+        }
+        if (this.arrayScalarized.has(name)) {
+            return this.arrayObject(this.arrayScalarized.get(name));
+        }
+        if (this.structScalarized.has(name)) {
+            return this.structSroaObject(this.structScalarized.get(name));
         }
         if (this.isLocal(name))            return _safe(name);
         if (this.bindings.has(name))       return this.bindingSource(name);
@@ -5653,29 +7469,46 @@ class Emitter {
         const rest = e.args.slice(1).map(a => this.expr(a));
         const atomicType = e.args[0]?.resolvedType;
         const scalarName = atomicType?.kind === 'atomic' ? atomicType.of?.name : null;
-        const suffix = scalarName === 'u32' ? 'U32' : scalarName === 'i32' ? 'I32' : '';
+        const suffix = this.opts.strictInts
+            ? (scalarName === 'u32' ? 'U32' : scalarName === 'i32' ? 'I32' : '')
+            : '';
         const at = (base) => suffix ? `${base}${suffix}At` : `${base}At`;
+        const sanitize = (v) => {
+            if (this.opts.strictInts && scalarName === 'u32') return `((${v}) >>> 0)`;
+            if (this.opts.strictInts && scalarName === 'i32') return `((${v}) | 0)`;
+            return v;
+        };
+        const inline = {
+            atomicAdd:      (v) => `(((_r, _k, _v) => { const _o = _r[_k]; _r[_k] = ${sanitize('_o + _v')}; return _o; })(${ref}, ${key}, ${v}))`,
+            atomicSub:      (v) => `(((_r, _k, _v) => { const _o = _r[_k]; _r[_k] = ${sanitize('_o - _v')}; return _o; })(${ref}, ${key}, ${v}))`,
+            atomicMax:      (v) => `(((_r, _k, _v) => { const _o = _r[_k]; if (_v > _o) _r[_k] = ${sanitize('_v')}; return _o; })(${ref}, ${key}, ${v}))`,
+            atomicMin:      (v) => `(((_r, _k, _v) => { const _o = _r[_k]; if (_v < _o) _r[_k] = ${sanitize('_v')}; return _o; })(${ref}, ${key}, ${v}))`,
+            atomicAnd:      (v) => `(((_r, _k, _v) => { const _o = _r[_k]; _r[_k] = ${sanitize('_o & _v')}; return _o; })(${ref}, ${key}, ${v}))`,
+            atomicOr:       (v) => `(((_r, _k, _v) => { const _o = _r[_k]; _r[_k] = ${sanitize('_o | _v')}; return _o; })(${ref}, ${key}, ${v}))`,
+            atomicXor:      (v) => `(((_r, _k, _v) => { const _o = _r[_k]; _r[_k] = ${sanitize('_o ^ _v')}; return _o; })(${ref}, ${key}, ${v}))`,
+            atomicExchange: (v) => `(((_r, _k, _v) => { const _o = _r[_k]; _r[_k] = ${sanitize('_v')}; return _o; })(${ref}, ${key}, ${v}))`,
+        };
         switch (callee) {
             case 'atomicLoad':
                 return suffix ? `rt.atomicLoad${suffix}At(${ref}, ${key})` : `${ref}[${key}]`;
             case 'atomicStore':
-                return suffix ? `void rt.atomicStore${suffix}At(${ref}, ${key}, ${rest[0]})` : `void (${ref}[${key}] = ${rest[0]})`;
+                return suffix ? `void rt.atomicStore${suffix}At(${ref}, ${key}, ${rest[0]})` : `void (${ref}[${key}] = ${sanitize(rest[0])})`;
             case 'atomicAdd':
-                return `rt.${at('atomicAdd')}(${ref}, ${key}, ${rest[0]})`;
+                return suffix ? `rt.${at('atomicAdd')}(${ref}, ${key}, ${rest[0]})` : inline.atomicAdd(rest[0]);
             case 'atomicSub':
-                return `rt.${at('atomicSub')}(${ref}, ${key}, ${rest[0]})`;
+                return suffix ? `rt.${at('atomicSub')}(${ref}, ${key}, ${rest[0]})` : inline.atomicSub(rest[0]);
             case 'atomicMax':
-                return `rt.${at('atomicMax')}(${ref}, ${key}, ${rest[0]})`;
+                return suffix ? `rt.${at('atomicMax')}(${ref}, ${key}, ${rest[0]})` : inline.atomicMax(rest[0]);
             case 'atomicMin':
-                return `rt.${at('atomicMin')}(${ref}, ${key}, ${rest[0]})`;
+                return suffix ? `rt.${at('atomicMin')}(${ref}, ${key}, ${rest[0]})` : inline.atomicMin(rest[0]);
             case 'atomicAnd':
-                return `rt.${at('atomicAnd')}(${ref}, ${key}, ${rest[0]})`;
+                return suffix ? `rt.${at('atomicAnd')}(${ref}, ${key}, ${rest[0]})` : inline.atomicAnd(rest[0]);
             case 'atomicOr':
-                return `rt.${at('atomicOr')}(${ref}, ${key}, ${rest[0]})`;
+                return suffix ? `rt.${at('atomicOr')}(${ref}, ${key}, ${rest[0]})` : inline.atomicOr(rest[0]);
             case 'atomicXor':
-                return `rt.${at('atomicXor')}(${ref}, ${key}, ${rest[0]})`;
+                return suffix ? `rt.${at('atomicXor')}(${ref}, ${key}, ${rest[0]})` : inline.atomicXor(rest[0]);
             case 'atomicExchange':
-                return `rt.${at('atomicExchange')}(${ref}, ${key}, ${rest[0]})`;
+                return suffix ? `rt.${at('atomicExchange')}(${ref}, ${key}, ${rest[0]})` : inline.atomicExchange(rest[0]);
             case 'atomicCompareExchangeWeak':
                 return `rt.${at('atomicCompareExchangeWeak')}(${ref}, ${key}, ${rest[0]}, ${rest[1]})`;
         }
@@ -5717,9 +7550,78 @@ class Emitter {
         return `rt.bitcast(${args})`;
     }
 
+    emitScalarCast(callee, e) {
+        const arg = e.args[0] ? this.expr(e.args[0]) : '0';
+        const lit = _literalNumber(e.args[0]);
+        if (lit != null && !this.opts.strictF32) {
+            if (callee === 'f32' || callee === 'f16') return _jsLiteral(+lit);
+            if (callee === 'i32') return _jsLiteral(lit | 0);
+            if (callee === 'u32') return _jsLiteral(lit >>> 0);
+            if (callee === 'bool') return lit === 0 ? 'false' : 'true';
+        }
+        switch (callee) {
+            case 'f32':
+            case 'f16':
+                return this.opts.strictF32 ? `Math.fround(+(${arg}))` : `(+(${arg}))`;
+            case 'i32':
+                return `((${arg}) | 0)`;
+            case 'u32':
+                return `((${arg}) >>> 0)`;
+            case 'bool':
+                return `!!(${arg})`;
+            default:
+                return `rt.${callee}(${arg})`;
+        }
+    }
+
+    vecConstructorArity(e) {
+        if (e.resolvedType?.kind === 'vec') return e.resolvedType.n;
+        const m = /^vec([234])(?:[fuih])?$/.exec(e.callee);
+        return m ? Number(m[1]) : null;
+    }
+
+    vecConstructorComponents(e) {
+        const n = this.vecConstructorArity(e);
+        if (!n) return null;
+        const out = [];
+        if (e.args.length === 1 && e.args[0]?.resolvedType?.kind !== 'vec') {
+            const splat = this.expr(e.args[0]);
+            for (let i = 0; i < n; i++) out.push(splat);
+            return out;
+        }
+        for (const arg of e.args) {
+            const t = arg?.resolvedType;
+            if (t?.kind === 'vec') {
+                for (const c of VEC_COMPS.slice(0, t.n)) {
+                    const comp = this.exprComp(arg, c);
+                    if (comp == null) return null;
+                    out.push(comp);
+                }
+            } else {
+                out.push(this.expr(arg));
+            }
+            if (out.length >= n) break;
+        }
+        while (out.length < n) out.push('0');
+        return out.slice(0, n);
+    }
+
+    emitVectorConstructor(e) {
+        const comps = this.vecConstructorComponents(e);
+        if (!comps) return null;
+        const names = VEC_COMPS.slice(0, comps.length);
+        return `{${names.map((c, i) => `${c}:${comps[i]}`).join(', ')}}`;
+    }
+
     emitSelectCall(e, args) {
         const [falseExpr, trueExpr, condExpr] = e.args;
         if (!falseExpr || !trueExpr || !condExpr) return `rt.select(${args})`;
+        if (e.args.every(isComponentSafe)) {
+            const staticCond = this.staticEvalScalar(condExpr);
+            if (typeof staticCond === 'boolean') {
+                return this.expr(staticCond ? trueExpr : falseExpr);
+            }
+        }
         if (!e.args.every(isComponentSafe)) return `rt.select(${args})`;
         const rt = e.resolvedType;
         const ct = condExpr.resolvedType;
@@ -5738,6 +7640,28 @@ class Emitter {
             if (parts.every(p => p != null)) return `{${parts.join(', ')}}`;
         }
         return `rt.select(${args})`;
+    }
+
+    polyVectorIntrinsicComponents(e) {
+        const callee = e.callee;
+        if (!POLY_FN.has(callee) || !SCALAR_INTRINSIC_JS[callee]) return null;
+        const n = e.resolvedType?.kind === 'vec'
+            ? e.resolvedType.n
+            : e.args.find(a => a?.resolvedType?.kind === 'vec')?.resolvedType?.n;
+        if (!n) return null;
+        if (!e.args.every(isComponentSafe)) return null;
+        const types = e.args.map(a => a?.resolvedType);
+        if (!types.every(t => t?.kind === 'scalar' || (t?.kind === 'vec' && t.n === n))) {
+            return null;
+        }
+        const comps = VEC_COMPS.slice(0, n);
+        return comps.map(c => {
+            const cArgs = e.args.map((a, i) => types[i]?.kind === 'vec'
+                ? this.exprComp(a, c)
+                : this.expr(a));
+            if (cArgs.some(x => x == null)) return null;
+            return this.wrapF32(SCALAR_INTRINSIC_JS[callee](cArgs), e.resolvedType?.of);
+        });
     }
 
     emitSpecificMathCall(e, args) {
@@ -5797,6 +7721,41 @@ class Emitter {
                 return `{x:((${ay} * ${bz}) - (${az} * ${by})), y:((${az} * ${bx}) - (${ax} * ${bz})), z:((${ax} * ${by}) - (${ay} * ${bx}))}`;
             }
         }
+        if (callee === 'reflect' && safe && e.resolvedType?.kind === 'vec') {
+            const t0 = a[0]?.resolvedType;
+            if (t0?.kind === 'vec' && a[1]?.resolvedType?.kind === 'vec') {
+                const comps = compsOf(t0);
+                const iv = comps.map(c => this.exprComp(a[0], c));
+                const nv = comps.map(c => this.exprComp(a[1], c));
+                if (iv.every(x => x != null) && nv.every(x => x != null)) {
+                    const params = [...iv.map((_, i) => `_i${i}`), ...nv.map((_, i) => `_n${i}`)].join(', ');
+                    const vals = [...iv, ...nv].join(', ');
+                    const dot = comps.map((_, i) => `_n${i} * _i${i}`).join(' + ');
+                    const parts = comps.map((c, i) => `${c}:(_i${i} - 2 * _d * _n${i})`);
+                    return `((${params}) => { const _d = ${dot}; return {${parts.join(', ')}}; })(${vals})`;
+                }
+            }
+        }
+        if (callee === 'faceForward' && safe && e.resolvedType?.kind === 'vec') {
+            const t0 = a[0]?.resolvedType;
+            if (t0?.kind === 'vec' && a[1]?.resolvedType?.kind === 'vec' && a[2]?.resolvedType?.kind === 'vec') {
+                const comps = compsOf(t0);
+                const n = comps.map(c => this.exprComp(a[0], c));
+                const i = comps.map(c => this.exprComp(a[1], c));
+                const nr = comps.map(c => this.exprComp(a[2], c));
+                if (n.every(x => x != null) && i.every(x => x != null) && nr.every(x => x != null)) {
+                    const params = [
+                        ...n.map((_, idx) => `_n${idx}`),
+                        ...i.map((_, idx) => `_i${idx}`),
+                        ...nr.map((_, idx) => `_nr${idx}`),
+                    ].join(', ');
+                    const vals = [...n, ...i, ...nr].join(', ');
+                    const dot = comps.map((_, idx) => `_nr${idx} * _i${idx}`).join(' + ');
+                    const parts = comps.map((c, idx) => `${c}:(_flip ? _n${idx} : -_n${idx})`);
+                    return `((${params}) => { const _flip = (${dot}) < 0; return {${parts.join(', ')}}; })(${vals})`;
+                }
+            }
+        }
         if (SPECIFIC_FN.has(callee)) {
             if (callee === 'normalize' && this.opts.safeNormalize) {
                 const eps = Number.isFinite(this.opts.safeNormalizeEpsilon) ? this.opts.safeNormalizeEpsilon : 1e-30;
@@ -5814,15 +7773,15 @@ class Emitter {
         // Vec constructor: vec4<f32>(...), vec3f(...), vec2(...).
         // Match shape from typeArgs or shorthand suffix.
         if (e.typeArgs && (callee === 'vec2' || callee === 'vec3' || callee === 'vec4')) {
-            return `rt.${callee}(${args})`;
+            return this.emitVectorConstructor(e) ?? `rt.${callee}(${args})`;
         }
         if (callee.startsWith('vec') && /^vec[234][fuih]?$/.test(callee)) {
-            return `rt.${callee.slice(0, 4)}(${args})`;
+            return this.emitVectorConstructor(e) ?? `rt.${callee.slice(0, 4)}(${args})`;
         }
 
         // Scalar type casts: f32(x), i32(x), u32(x), bool(x).
         if (SCALAR_TYPE_IDENTS.has(callee)) {
-            return `rt.${callee}(${args})`;
+            return this.emitScalarCast(callee, e);
         }
 
         // bitcast<T>(x) → rt.bitcast_<T>_<from>(x). We don't track
@@ -5872,21 +7831,14 @@ class Emitter {
         if (POLY_FN.has(callee) && SCALAR_INTRINSIC_JS[callee]) {
             const types = e.args.map(a => a?.resolvedType);
             const allScalar  = types.length > 0 && types.every(t => t?.kind === 'scalar');
-            const firstVecN  = types[0]?.kind === 'vec' ? types[0].n : null;
-            const allVecSame = firstVecN != null
-                && types.every(t => t?.kind === 'vec' && t.n === firstVecN);
             if (allScalar) {
                 const argStrs = e.args.map(a => this.expr(a));
                 return this.wrapF32(SCALAR_INTRINSIC_JS[callee](argStrs), e.resolvedType);
             }
-            if (allVecSame && e.args.every(isComponentSafe)) {
-                const comps = VEC_COMPS.slice(0, firstVecN);
-                const parts = comps.map(c => {
-                    const cArgs = e.args.map(a => this.exprComp(a, c));
-                    if (cArgs.some(x => x == null)) return null;
-                    return `${c}:${this.wrapF32(SCALAR_INTRINSIC_JS[callee](cArgs), e.resolvedType?.of)}`;
-                });
-                if (parts.every(p => p != null)) return `{${parts.join(', ')}}`;
+            const vectorComps = this.polyVectorIntrinsicComponents(e);
+            if (vectorComps && vectorComps.every(p => p != null)) {
+                const comps = VEC_COMPS.slice(0, vectorComps.length);
+                return `{${comps.map((c, i) => `${c}:${vectorComps[i]}`).join(', ')}}`;
             }
             // Fall through to polymorphic.
         }
@@ -5924,6 +7876,10 @@ class Emitter {
         // mixing the two halves), treat as a swizzle.
         if (name.length >= 1 && name.length <= 4 &&
                 /^[xyzw]+$|^[rgba]+$/.test(name)) {
+            if (name.length === 1 && e.value?.kind === 'call') {
+                const direct = this.emitScalarReturnCloneCall(e.value, SWIZZLE_MAP[name]);
+                if (direct) return direct;
+            }
             // SROA fast path: scalarized vec ident → direct scalar read,
             // or rt.vecN over scalar locals for multi-char swizzles.
             // Without this, scalar uses of `v.x` would rematerialize
@@ -5935,13 +7891,42 @@ class Emitter {
                 if (comps.length === 1) {
                     return `${_safe(sname)}_${comps[0]}`;
                 }
-                const parts = comps.map(c => `${_safe(sname)}_${c}`);
-                return `rt.vec${comps.length}(${parts.join(', ')})`;
+                const parts = comps.map((c, i) => `${VEC_COMPS[i]}:${_safe(sname)}_${c}`);
+                return `{${parts.join(', ')}}`;
+            }
+            const structMember = this.structSroaMemberInfo(e.value);
+            if (structMember?.field.type.kind === 'vec') {
+                const comps = [...name].map(c => SWIZZLE_MAP[c]);
+                if (comps.length === 1) {
+                    return structMember.field.comps[COMP_IDX[comps[0]]];
+                }
+                const parts = comps.map((c, i) => `${VEC_COMPS[i]}:${structMember.field.comps[COMP_IDX[c]]}`);
+                return `{${parts.join(', ')}}`;
             }
             // Flat-storage fast path: bindings.X[i].c → direct TypedArray
             // read. The common consumer of `bindings.X[i]` is a per-
             // component access; lowering here skips both vec object
             // materialization and the .c property read.
+            const arrayIdx = this.arraySroaIndexInfo(e.value);
+            if (arrayIdx?.element.type.kind === 'vec') {
+                const comps = [...name].map(c => SWIZZLE_MAP[c]);
+                if (comps.length === 1) {
+                    return arrayIdx.element.comps[COMP_IDX[comps[0]]];
+                }
+                const parts = comps.map((c, i) => `${VEC_COMPS[i]}:${arrayIdx.element.comps[COMP_IDX[c]]}`);
+                return `{${parts.join(', ')}}`;
+            }
+            const wgVec = this.flatWorkgroupAccessInfo(e.value);
+            if (wgVec?.flat.kind === 'vec') {
+                const comps = [...name].map(c => SWIZZLE_MAP[c]);
+                if (comps.length === 1) {
+                    return this.flatWorkgroupRead(wgVec, comps[0]);
+                }
+                const baseSrc = `wg.${wgVec.baseName}`;
+                const base = this.flatWorkgroupBaseExpr(wgVec);
+                const parts = comps.map((c, i) => `${VEC_COMPS[i]}:${baseSrc}[_b + ${COMP_IDX[c]}]`);
+                return `((_b) => ({${parts.join(', ')}}))(${base})`;
+            }
             const flat = this.flatVecAccessInfo(e.value);
             if (flat) {
                 const comps = [...name].map(c => SWIZZLE_MAP[c]);
@@ -5951,8 +7936,10 @@ class Emitter {
                 // Multi-char swizzle on a flat read: build a fresh vec
                 // from N TypedArray reads. One alloc at exactly this
                 // site, vs. N otherwise.
-                const parts = comps.map(c => this.flatVecRead(flat, c));
-                return `rt.vec${comps.length}(${parts.join(', ')})`;
+                const baseSrc = this.bindingSource(flat.baseName);
+                const base = this.flatBaseExpr(flat);
+                const parts = comps.map((c, i) => `${VEC_COMPS[i]}:${baseSrc}[_b + ${COMP_IDX[c]}]`);
+                return `((_b) => ({${parts.join(', ')}}))(${base})`;
             }
             const target = this.expr(e.value);
             const comps = [...name].map(c => SWIZZLE_MAP[c]);
@@ -5962,36 +7949,60 @@ class Emitter {
             // a no-op since the value is already a variable read.
             if (e.value.kind === 'ident' || e.value.kind === 'member' ||
                     e.value.kind === 'index') {
-                const args = comps.map(c => `${target}.${c}`).join(', ');
-                return `rt.vec${comps.length}(${args})`;
+                const parts = comps.map((c, i) => `${VEC_COMPS[i]}:${target}.${c}`);
+                return `{${parts.join(', ')}}`;
             }
             // Fall through: wrap in IIFE to capture once.
-            const args = comps.map(c => `_v.${c}`).join(', ');
-            return `((_v) => rt.vec${comps.length}(${args}))(${target})`;
+            const parts = comps.map((c, i) => `${VEC_COMPS[i]}:_v.${c}`);
+            return `((_v) => ({${parts.join(', ')}}))(${target})`;
         }
         const sroa = this.structSroaMemberInfo(e);
         if (sroa) {
             const field = sroa.field;
             if (field.type.kind === 'vec') {
-                return `rt.vec${field.arity}(${field.comps.join(', ')})`;
+                const parts = VEC_COMPS.slice(0, field.arity)
+                    .map((c, i) => `${c}:${field.comps[i]}`);
+                return `{${parts.join(', ')}}`;
             }
+            if (field.child) return this.structSroaObject(field.child);
             return field.safe;
         }
         const flatScalar = this.flatScalarAccessInfo(e);
         if (flatScalar) {
-            const baseSrc = this.bindingSource(flatScalar.baseName);
-            return `${baseSrc}[((${this.expr(flatScalar.index)}) * ${flatScalar.flat.stride} + ${flatScalar.field.offset})]`;
+            return this.flatScalarRead(flatScalar);
         }
         const flatVec = this.flatVecAccessInfo(e);
         if (flatVec) {
-            const parts = VEC_COMPS.slice(0, flatVec.arity).map(c => this.flatVecRead(flatVec, c));
-            return `rt.vec${flatVec.arity}(${parts.join(', ')})`;
+            const base = this.flatBaseExpr(flatVec);
+            const parts = VEC_COMPS.slice(0, flatVec.arity)
+                .map(c => `${c}:${this.flatVecRead(flatVec, c, '_b')}`);
+            return `((_b) => ({${parts.join(', ')}}))(${base})`;
+        }
+        const wgField = this.flatWorkgroupStructMemberInfo(e);
+        if (wgField) {
+            const baseSrc = `wg.${wgField.baseName}`;
+            const base = this.flatWorkgroupBaseExpr(wgField);
+            const offset = wgField.field.offset;
+            if (wgField.field.kind === 'scalar') {
+                return `${baseSrc}[${base} + ${offset}]`;
+            }
+            if (wgField.field.kind === 'vec') {
+                const parts = VEC_COMPS.slice(0, wgField.field.arity)
+                    .map(c => `${c}:${baseSrc}[_b + ${offset + COMP_IDX[c]}]`);
+                return `((_b) => ({${parts.join(', ')}}))(${base})`;
+            }
         }
         // Ordinary struct field / vec component named `.x` etc.
         return `${this.expr(e.value)}.${name}`;
     }
 
     emitIndex(e) {
+        const arrayInfo = this.arraySroaIndexInfo(e);
+        if (arrayInfo) {
+            return this.arrayElementObject(arrayInfo.element);
+        }
+        const wgFlat = this.flatWorkgroupAccessInfo(e);
+        if (wgFlat) return this.flatWorkgroupRead(wgFlat);
         // Flat-storage fallback: a `bindings.X[i]` read at whole-vec
         // type that didn't get caught by emitMember / exprComp / SROA
         // upstream. This is the rare path — passing a storage element
@@ -6001,24 +8012,32 @@ class Emitter {
         const flat = this.flatVecTargetInfo(e);
         if (flat) {
             const info = { flat, baseName: e.value.name, index: e.index, offset: 0, arity: flat.arity };
-            const parts = VEC_COMPS.slice(0, flat.arity).map(c => this.flatVecRead(info, c));
-            return `rt.vec${flat.arity}(${parts.join(', ')})`;
+            const baseSrc = this.bindingSource(e.value.name);
+            const base = this.flatBaseExpr(info);
+            const parts = VEC_COMPS.slice(0, flat.arity)
+                .map(c => `${c}:${baseSrc}[_b + ${COMP_IDX[c]}]`);
+            return `((_b) => ({${parts.join(', ')}}))(${base})`;
         }
         const flatStruct = this.flatTargetInfo(e);
         if (flatStruct?.kind === 'struct') {
             const baseSrc = this.bindingSource(e.value.name);
-            const base = `((${this.expr(e.index)}) * ${flatStruct.stride})`;
+            const base = flatStruct.layout === 'soa'
+                ? `(${this.expr(e.index)})`
+                : `((${this.expr(e.index)}) * ${flatStruct.stride})`;
+            if (flatStruct.layout === 'soa') {
+                return this.flatStructObject(flatStruct, baseSrc, base);
+            }
             const parts = [];
             for (const [fname, field] of flatStruct.fields) {
                 if (field.kind === 'scalar') {
-                    parts.push(`${fname}: ${baseSrc}[${base} + ${field.offset}]`);
+                    parts.push(`${fname}: ${baseSrc}[_b + ${field.offset}]`);
                 } else if (field.kind === 'vec') {
                     const comps = VEC_COMPS.slice(0, field.arity)
-                        .map(c => `${baseSrc}[${base} + ${field.offset + COMP_IDX[c]}]`);
-                    parts.push(`${fname}: rt.vec${field.arity}(${comps.join(', ')})`);
+                        .map(c => `${c}:${baseSrc}[_b + ${field.offset + COMP_IDX[c]}]`);
+                    parts.push(`${fname}: {${comps.join(', ')}}`);
                 }
             }
-            return `{ ${parts.join(', ')} }`;
+            return `((_b) => ({ ${parts.join(', ')} }))(${base})`;
         }
         // Object mode: direct index access. For storage of vec types,
         // the caller passes an array of {x,y,z} objects.
@@ -6415,14 +8434,33 @@ export function wrapEntry(_threadFn, _workgroupSize) {
  * @param {boolean} [opts.noInline]      Skip the inline pass only. Used by
  *                                       smoke tests 8/10 to assert inlined
  *                                       and non-inlined outputs match.
+ * @param {object} [opts.inlineProfile]  Optional fn-name keyed hotness map.
+ *                                       Hot helpers use inlineHotBudget /
+ *                                       inlineHotCallLimit instead of the
+ *                                       conservative default limits.
+ * @param {string[]} [opts.inlineHotFns] Explicit hot helper allow-list.
  * @param {boolean} [opts.flatStorage]   Lower `array<vecN<f32|u32|i32>>`
  *                                       and supported `array<struct>`
  *                                       storage bindings to packed
  *                                       TypedArray index ops.
+ * @param {string[]} [opts.flatStorageBindings]
+ *                                       Optional allow-list of storage
+ *                                       bindings to flatten.
+ * @param {string[]} [opts.flatStorageExcept]
+ *                                       Optional deny-list of storage
+ *                                       bindings to leave object-mode.
+ * @param {boolean} [opts.flatWorkgroupMemory]
+ *                                       Flatten safe fixed-size workgroup
+ *                                       arrays into TypedArrays. Defaults
+ *                                       to true outside polymorphic mode.
  * @param {'compact'|'wgsl-storage'} [opts.flatStorageLayout]
  *                                       Default stride convention for
  *                                       flat `array<vecN>` storage.
- * @param {Object<string,{stride:number,fields?:Object<string,number>}>} [opts.storageLayout]
+ * @param {'aos'|'soa'} [opts.flatStructLayout]
+ *                                       Default flat `array<struct>`
+ *                                       layout. `soa` expects binding
+ *                                       objects keyed by top-level field.
+ * @param {Object<string,{stride?:number,mode?:'aos'|'soa',fields?:Object<string,number>,fieldStrides?:Object<string,number>}>} [opts.storageLayout]
  *                                       Per-binding stride/field-slot
  *                                       overrides for flat-storage mode.
  * @param {boolean} [opts.strictInts]    Wrap scalar i32/u32 arithmetic.
@@ -6434,13 +8472,24 @@ export function wrapEntry(_threadFn, _workgroupSize) {
  * @param {boolean} [opts.finiteWrites]  Sanitize selected storage writes.
  * @param {string[]} [opts.finiteWriteBindings]
  * @param {object} [opts.specializeUniforms]
+ * @param {object} [opts.specializeFunctionParams]
+ *                                       Opt-in constant helper params,
+ *                                       keyed by fn then param name.
+ * @param {boolean} [opts.scalarReturnClones]
+ *                                       Emit scalar clones for direct
+ *                                       component reads of non-inlined
+ *                                       vec-return helpers. Defaults true.
+ * @param {[number,number,number]} [opts.fixedWorkgroups]
+ *                                       Bake a known workgroup grid into
+ *                                       generated entry code and skip
+ *                                       per-dispatch workgroup destructuring.
  * @param {'gpu'|'stable'} [opts.reductionMode]
  * @param {boolean} [opts.noDCE]         Emit all helper fns/hoists.
  * @param {boolean} [opts.collectErrors] Collect non-fatal emit errors
  *                                       into `result.errors` instead of
  *                                       throwing on the first failure.
  *                                       Used by the build-time walker.
- * @returns {{ jsSource: string, body: string, entryPoints: string[], bindings: string[], metrics: object, errors: Array<{phase:string,kind:string,message:string,line:number,col:number}> }}
+ * @returns {{ jsSource: string, body: string, entryPoints: string[], bindings: string[], entryInfo: object, metrics: object, errors: Array<{phase:string,kind:string,message:string,line:number,col:number}> }}
  */
 export function transpileWGSL(source, opts = {}) {
     const tokens = tokenize(source);
@@ -6451,7 +8500,11 @@ export function transpileWGSL(source, opts = {}) {
         ? {}
         : {
             flatStorage: !!opts.flatStorage,
+            flatStorageBindings: opts.flatStorageBindings,
+            flatStorageExcept: opts.flatStorageExcept,
+            flatWorkgroupMemory: opts.flatWorkgroupMemory !== false,
             flatStorageLayout: opts.flatStorageLayout,
+            flatStructLayout: opts.flatStructLayout,
             storageLayout: opts.storageLayout,
             symbolTable: sym,
             strictInts: !!opts.strictInts,
@@ -6464,6 +8517,9 @@ export function transpileWGSL(source, opts = {}) {
             finiteWriteFallback: opts.finiteWriteFallback,
             finiteWriteBindings: opts.finiteWriteBindings,
             specializeUniforms: opts.specializeUniforms,
+            specializeFunctionParams: opts.specializeFunctionParams,
+            scalarReturnClones: opts.scalarReturnClones,
+            fixedWorkgroups: opts.fixedWorkgroups,
             reductionMode: opts.reductionMode,
             noDCE: !!opts.noDCE,
         };
@@ -6476,6 +8532,7 @@ export function transpileWGSL(source, opts = {}) {
         body: result.body,
         entryPoints: result.entryPoints,
         bindings: result.bindings,
+        entryInfo: result.entryInfo,
         metrics: result.metrics,
         errors: result.errors,
     };
@@ -6498,7 +8555,11 @@ export function transpileWGSL(source, opts = {}) {
  * @param {boolean} [opts.debug]         Log token / bindings counts to console.
  * @param {object}  [opts.runtime]       Override the default `rt` namespace
  *                                       (vec ctors, intrinsics, atomics).
- * @returns {{ entry: Object<string, Function>, bindings: string[], jsSource: string, metrics: object, errors: Array<{phase:string,kind:string,message:string,line:number,col:number}> }}
+ * @param {boolean} [opts.flatWorkgroupMemory]
+ *                                       Flatten safe fixed-size workgroup
+ *                                       arrays into TypedArrays. Defaults
+ *                                       to true outside polymorphic mode.
+ * @returns {{ entry: Object<string, Function>, bind: Function, bindings: string[], entryInfo: object, jsSource: string, metrics: object, errors: Array<{phase:string,kind:string,message:string,line:number,col:number}> }}
  */
 export function compileWGSL(source, opts = {}) {
     const rt     = opts.runtime || runtime;
@@ -6520,7 +8581,11 @@ export function compileWGSL(source, opts = {}) {
         ? {}
         : {
             flatStorage: !!opts.flatStorage,
+            flatStorageBindings: opts.flatStorageBindings,
+            flatStorageExcept: opts.flatStorageExcept,
+            flatWorkgroupMemory: opts.flatWorkgroupMemory !== false,
             flatStorageLayout: opts.flatStorageLayout,
+            flatStructLayout: opts.flatStructLayout,
             storageLayout: opts.storageLayout,
             symbolTable: sym,
             strictInts: !!opts.strictInts,
@@ -6532,10 +8597,13 @@ export function compileWGSL(source, opts = {}) {
             finiteWrites: !!opts.finiteWrites,
             finiteWriteFallback: opts.finiteWriteFallback,
             finiteWriteBindings: opts.finiteWriteBindings,
-            specializeUniforms: opts.specializeUniforms,
-            reductionMode: opts.reductionMode,
-            noDCE: !!opts.noDCE,
-        };
+        specializeUniforms: opts.specializeUniforms,
+        specializeFunctionParams: opts.specializeFunctionParams,
+        scalarReturnClones: opts.scalarReturnClones,
+        fixedWorkgroups: opts.fixedWorkgroups,
+        reductionMode: opts.reductionMode,
+        noDCE: !!opts.noDCE,
+    };
     // See transpileWGSL — collectErrors works in both modes.
     emitOpts.collectErrors = !!opts.collectErrors;
     const result = emit(ast, emitOpts);
@@ -6552,7 +8620,9 @@ export function compileWGSL(source, opts = {}) {
     }
     return {
         entry: mod.entry,
+        bind: mod.bind,
         bindings: mod.bindings,
+        entryInfo: mod.entryInfo,
         jsSource: result.jsSource,
         metrics: result.metrics,
         errors: result.errors,

@@ -19,3 +19,6 @@
 [submodule "pile"]
 	path = pile
 	url = https://github.com/a9lim/pile.git
+[submodule "plasma"]
+	path = plasma
+	url = https://github.com/a9lim/plasma.git

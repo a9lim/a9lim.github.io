@@ -14,7 +14,9 @@ Single source of truth: each sim's `.wgsl` shader files. The transpiler
 ingests WGSL source and produces a JS module whose entry functions, when
 called with `{ workgroups, bindings }`, execute the same compute kernel
 serially on CPU. Public API at the module level: `compileWGSL(source) →
-{ entry, bindings, jsSource, metrics }`.
+{ entry, bind, bindings, jsSource, metrics }`. `entry.main({ ... })`
+keeps the object-shaped compatibility API; `bind(bindings).main(workgroups,
+domain, origin)` is the prebound fast path for repeated dispatches.
 
 The motivating problem is `geon`, which currently maintains a hand-written
 CPU backend alongside its WebGPU one. Every new physics feature gets
@@ -39,6 +41,12 @@ node tests/wgsl-transpile/run.js --quiet  # only print failures
 # the emitted JS actually executes correctly against canned input.
 node tests/wgsl-transpile/smoke.js
 
+# Runtime helper smoke test. Generates a temporary artifact, dispatches
+# through shared-wgsl-runner.js, and checks origin, SharedArrayBuffer
+# row-sharding, batched pass sequences, reset/reduce/finalize
+# coalescing, and typed-array buffer-pool semantics.
+node tests/wgsl-transpile/runner-smoke.js
+
 # Validates the build-time .transpiled.js artifacts under transpiled/.
 # Checks headers are well-formed, source-hashes match live .wgsl, and
 # each artifact body is byte-identical to a fresh transpileWGSL() call
@@ -53,43 +61,59 @@ node tests/wgsl-transpile/build-smoke.js
 # bench detail table below for what each kernel measures.
 node tests/wgsl-transpile/bench.js                    # defaults
 BENCH_N=100000 BENCH_ITERS=20 node tests/wgsl-transpile/bench.js
+
+# Real-shader plasma CPU bench over current transpiled kernels.
+node tests/wgsl-transpile/plasma-bench.js
+PLASMA_BENCH_SIZES=64,128 PLASMA_BENCH_ITERS=10 node tests/wgsl-transpile/plasma-bench.js
+PLASMA_BENCH_SPECIALIZED=1 node tests/wgsl-transpile/plasma-bench.js
 ```
 
 run.js and smoke.js exit non-zero on any expected-phase failure. bench.js
 always exits 0 — it's a measurement tool, not a pass/fail check.
 `run.js`'s `EXPECTED` set at the top of the file controls which phases
-are enforced — adjust when bringing a new phase online.
+are enforced — adjust when bringing a new phase online. The corpus walk
+skips nested Git worktrees so scratch checkouts such as `plasma-<hash>/`
+do not change the authoritative shader counts.
 
-## Current status (last touched 2026-05-25)
+## Current status (last touched 2026-05-26)
 
 | Phase         | Coverage                                            | Notes |
 |---------------|-----------------------------------------------------|-------|
-| tokenize      | 69/69 shaders, 13.9k lines, 102k tokens             | Full WGSL token grammar |
-| parse         | 69/69 shaders → AST                                 | Recursive descent + Pratt for exprs |
-| resolve       | 100% decl sites (15697/15697), 90.3% Expr nodes     | Symbol table + expr resolver pass with scoped local IDs for safer SROA |
-| inline        | per-fn budget K=8 stmts / M=4 sites, AST-rewrite    | Lifts inlinable calls into pre-stmts; scalarized result vars compose with SROA so helper-shaped kernels approach monolithic perf. Handles nested helpers, optional `inlineOnly`/`inlineNever`, and simple function/private struct-pointer helpers |
-| emit          | 69/69 shaders → JS that parses cleanly              | Type-driven inline scalar/vec emit, scoped SROA for vec let/const/var locals, mutable struct SROA, entry-specific binding hoists, uniform specialization, write-through stores, flat `array<vecN>` and `array<struct>` TypedArray storage mode, typed atomics, strict/stability numeric options; rt.* fallback when types unresolved |
-| eval          | 69/69 shaders construct as live JS module           | `transpileWGSL()` returns source/metadata without runtime eval for build-time flows |
-| dispatch      | 50/50 smoke checks pass                             | Includes barrier-split atomic reduction plus init-phase optimization, resolver coverage, inline output parity, full-opt vs polymorphic output parity, nested-inline parity, flat vec/struct parity, strict ints/f32/shifts, typed atomics, safe divisions, finite writes, stable reductions, uniform specialization, 1D loop specialization, pointer inlining, build-time API, and corpus-derived shader execution |
-| **bench**     | **~26-110× cumulative speedup vs polymorphic baseline** across the four kernel shapes | Four kernels: FMA (arithmetic), Verlet (storage I/O), N-body (`var`-heavy), helper-heavy |
+| tokenize      | 75/75 shaders, 16.0k lines, 113.5k tokens           | Full WGSL token grammar |
+| parse         | 75/75 shaders → AST                                 | Recursive descent + Pratt for exprs |
+| resolve       | 100% decl sites (16836/16836), 90.9% Expr nodes (119035/130886) | Symbol table + expr resolver pass with scoped local IDs for safer SROA |
+| inline        | per-fn budget K=8 stmts / M=4 sites, profile-guided hot overrides | Lifts inlinable calls into pre-stmts; scalarized result vars compose with SROA so helper-shaped kernels approach monolithic perf. Handles nested helpers, optional `inlineOnly`/`inlineNever`, `inlineProfile`/`inlineHotFns`, fixed-array-return helpers, nested struct-return helpers, and simple function/private struct-pointer helpers |
+| emit          | 75/75 shaders → JS that parses cleanly              | Type-driven inline scalar/vec emit, scoped SROA for vec let/const/var locals, fixed `array<vecN,N>` return/local SROA, mutable nested struct SROA, entry-specific binding hoists, uniform specialization with const-alias branch pruning, opt-in helper-param specialization, static `select()` folding, write-through stores, flat `array<vecN>` and `array<struct>` TypedArray storage mode, flat fixed-size workgroup scalar/struct arrays, phase-local replay across barriers, 1D/2D loop specialization, typed atomics, strict/stability numeric options; rt.* fallback when types unresolved |
+| eval          | 75/75 shaders construct as live JS module           | `transpileWGSL()` returns source/metadata without runtime eval for build-time flows |
+| dispatch      | 118/118 smoke checks pass                           | Includes barrier-split atomic reduction plus init-phase optimization, synthetic reset/reduce/finalize sequence execution, resolver coverage, inline output parity, full-opt vs polymorphic output parity, nested-inline parity, flat vec/struct parity, SoA struct storage, selective flat storage, flat scalar/struct workgroup memory, fixed-array-return SROA, nested struct-return SROA, scalar-return clones, strict ints/f32/shifts, typed atomics, safe divisions, finite writes, stable reductions, uniform specialization, helper-param specialization, fixed-workgroup specialization, entry-bound guard clipping, actual inliner call-site counting, tiny scalar helper inlining, branchy-helper inlining policy, multi-component swizzle stores, post-barrier static branch pruning, invocation-label elision for no-return entries, row-major 2D dispatch, prebound dispatch, 1D/2D/domain/origin loop specialization, entryInfo metadata, pointer inlining, build-time API, generated-code fast-path budgets, and corpus-derived shader execution |
+| artifacts     | 84/84 plasma CPU artifacts validate                 | 18 generic compute artifacts plus x/y `SweepDir`, `view-field` mode, RK3 stage variants, `n256/n512/n1024` grid/ghost variants, LIC `noise_n=1024` variants, `eta_anom_alpha=0` variants, BC mode/grid variants, and combined view-mode/grid variants; headers pin source hash, transpiler hash, opts, metrics, variant, and fused sequence entries |
+| **bench**     | **~32-115× cumulative speedup vs polymorphic baseline** across the four kernel shapes | Four synthetic kernels plus real plasma shader bench (`plasma-bench.js`) |
 
 Bench detail (N=10k elements × 10 iters, post optimization/stability pass; single local run):
 
 | Kernel                          | Baseline | Inlined | Flat (TypedArray) | Cumulative speedup | Per-particle |
 |---------------------------------|----------|---------|-------------------|--------------------|--------------|
-| A: vec3 FMA loop                | ~7.08 ms/iter | ~0.07 ms/iter | ~0.06 ms/iter | **~110×** | — |
-| B: Verlet step (monolithic)     | ~2.54 ms/iter | ~0.09 ms/iter | ~0.07 ms/iter | **~38×** | ~7 ns |
-| C: N-body var accumulator       | ~13.37 ms/iter | ~0.23 ms/iter | ~0.26 ms/iter | **~51×** | ~26 ns |
-| D: helper-heavy spring step     | ~2.14 ms/iter | ~0.10 ms/iter | ~0.08 ms/iter | **~26×** | ~8 ns |
+| A: vec3 FMA loop                | ~7.09 ms/iter | ~0.08 ms/iter | ~0.06 ms/iter | **~115×** | — |
+| B: Verlet step (monolithic)     | ~1.82 ms/iter | ~0.07 ms/iter | ~0.05 ms/iter | **~38×** | ~5 ns |
+| C: N-body var accumulator       | ~9.87 ms/iter | ~0.24 ms/iter | ~0.25 ms/iter | **~39×** | ~25 ns |
+| D: helper-heavy spring step     | ~2.00 ms/iter | ~0.08 ms/iter | ~0.06 ms/iter | **~32×** | ~6 ns |
+
+Real plasma shader bench (defaults: 5 iters + 2 warmup):
+
+| Kernel | N=64 | N=128 | N=256 |
+|--------|------|-------|-------|
+| colormap | ~0.134 ms/iter | ~0.220 ms/iter | ~0.309 ms/iter |
+| lic-normalize | ~0.091 ms/iter | ~0.039 ms/iter | ~0.146 ms/iter |
+| compute-dt fused reset/reduce/finalize | ~0.554 ms/iter | ~1.211 ms/iter | ~3.065 ms/iter |
 
 Flat-storage delta over object-mode inlined (the just-landed lever):
 
 | Kernel | Flat vs object-mode | Notes |
 |--------|---------------------|-------|
-| A      | 1.12× | small win — A's output write is one of the few storage ops |
-| B      | **1.30×** | solid win — Verlet is storage-I/O dominant (3 reads + 2 writes per particle) |
-| C      | 0.89× | n-body is ALU-bound in its inner 8-step loop; storage is a small fraction and TypedArray indexing can lose |
-| D      | **1.17×** | helper-heavy plus storage-heavy, so flat writes/reads still matter |
+| A      | 1.10× | small win — A's output write is one of the few storage ops |
+| B      | **1.24×** | solid win — Verlet is storage-I/O dominant (3 reads + 2 writes per particle) |
+| C      | 0.92× | n-body is ALU-bound in its inner 8-step loop; storage is a small fraction and TypedArray indexing can lose |
+| D      | **1.26×** | helper-heavy plus storage-heavy, so flat writes/reads still matter |
 
 Variance 20-30% across runs from V8 warmup + GC. Kernel A's variance is
 biggest because the polymorphic baseline allocates heavily and is GC-
@@ -115,6 +139,65 @@ on top of the previous):
 7. Tier 2b: POLY_FN intrinsic component lowering in isComponentSafe — kernel D refined further, no regression elsewhere
 8. Tier 2c: SROA for `var` (mutable) vec locals — kernel C 3.5× → ~48×, kernel A 22.7× → ~75× (the var `acc = vec3(0)` was the other unscalarized var hiding in the bench), B/D unchanged
 9. Tier 3: flat TypedArray storage mode — kernel B 25× → 45× cumulative (1.76× over object-mode inlined), kernel D 27× → 35× cumulative (1.30×), kernels A/C unchanged within variance (storage-light)
+10. Fast-path pass: default scalar cast inlining, vector-constructor flattening, mixed vec/scalar intrinsic lowering, `reflect`/`faceForward` expansion, workgroup-memory reuse, and 2D/local-dimension loop specialization — plasma compute artifacts now carry zero `rtVec`, `rtPoly`, `rtAtomic`, and `rtNumeric` calls under the build-smoke budget.
+11. Fixed-array-return SROA: helpers returning `array<vecN, N>` can inline past the default budget and store result elements as scalar slots. Plasma's `apply-bcs` no longer emits `driven_cons()` or materializes its returned two-vec array.
+12. Nested struct SROA: struct-of-struct locals, member stores, nested member reads, and inlined struct-return helpers split down to scalar/vector leaves instead of carrying placeholder child objects.
+13. Build-time variant artifacts: `_build.mjs` can fan one WGSL entry into multiple `.transpiled.js` outputs with merged opts; plasma now gets static x/y sweep variants for `reconstruct-ppm` and `riemann-hlld`, static `view-field` mode variants, and static RK3 stage variants for the weighted update shaders.
+14. Reduction sequence fusion: artifacts with `reset/reduce/finalize` or `reset/main` expose synthetic sequence entries, and `shared-wgsl-runner.dispatchSequence()` coalesces matching job groups to the fused entry automatically.
+15. Flat workgroup memory: fixed-size numeric scalar/vec/struct workgroup arrays with full-index-chain use lower to one TypedArray per var. Plasma `reconstruct-ppm`'s 12x12 `MhdPrim` tile emits `Float32Array(1152)`, and conservation scratch arrays emit `Float32Array(448)`.
+16. Static branch pruning: const aliases derived from literals, module constants, and specialized uniform fields are tracked through scopes. If an `if` condition resolves at emit time, only the live arm is emitted and `staticBranchPrunes` records the removal. The plasma x/y sweep variants use this to drop dead `axis == 0` arms in hot entry code.
+17. Phase-local replay: pure top-level `let`/`const` declarations before a barrier are replayed into later phases when they depend only on builtins, uniform fields, module constants, or earlier replayable locals. This preserves WGSL lexical locals across the JS phase-split loops and lets specialized uniform aliases keep pruning post-barrier code.
+18. Helper-param specialization and static `select()` folding: build variants can declare `specializeFunctionParams: { fn: { param: literal } }`. The helper body keeps its normal ABI but emit treats that param as a const alias, so helper-local axis branches and `select(a, b, axis == k)` lower to straight-line code. The x/y plasma sweep artifacts use this to remove dynamic axis branches from non-inlined helpers without tripling artifact size.
+19. Invocation-label elision: entry phases are still block-scoped, but the named `__invocation` label only emits when that phase can hit an entry-level `return`/`discard`. Straight-line no-return kernels avoid the extra labeled statement in their hot loop.
+20. Actual call-site counting: the inline picker now counts every expression-position helper call, not just one "callee appeared in this body" hit. A helper called twice in one expression consumes two call-limit slots, so `inlineCallLimit` models actual duplicated code size.
+21. Row-major 2D origin-zero dispatch: the hot `Gz === 1 && Ox/Oy === 0` path uses nested y/x loops and a hoisted per-row base counter instead of linearizing then decoding each invocation with `Math.floor(__g / Gx)`.
+22. Prebound dispatch API: generated modules keep `entry.name({ ... })`
+    but also expose `bind(bindings).name(workgroups, domain, origin)`.
+    The runner and worker cache those bound maps per bindings object,
+    skipping repeated wrapper-object allocation and binding-map plumbing
+    across CPU fallback frames.
+23. Selective flat storage: `flatStorageBindings` and `flatStorageExcept`
+    let profile/build configs flatten only the storage bindings where
+    TypedArray layout actually wins.
+24. Per-shader profile opts: `_build.mjs` accepts `shaderOpts` layered
+    between directory defaults and named variants, so hot helpers like
+    `jz_mag_at` can be inlined for one shader without changing global
+    compile policy.
+25. Tiny scalar helper inlining: under the default policy, one-statement
+    scalar-return helpers get a higher call-site cap because duplicating
+    `return x + c` is cheaper than paying repeated helper-call overhead.
+    Explicit `inlineCallLimit` still takes precedence.
+26. Multi-component swizzle stores: assignments like `v.xy = v.yx` and
+    `out[i].rgb = out[j].bgr` lower to captured scalar component writes,
+    preserving rotate/self-alias semantics and avoiding invalid JS
+    swizzle lvalues.
+27. Branchy-helper policy: larger helpers containing control flow use a
+    smaller default inline budget unless `inlineProfile`/`inlineHotFns`
+    marks them hot, keeping unmeasured branchy code out of hot entries.
+28. Scalar-return clones: direct component reads of non-inlined vec
+    helpers (`helper(...).x`) route to generated scalar clones that
+    return the requested component, avoiding the helper's vec return
+    object on that path while preserving the normal helper ABI.
+29. Autotune cache: `plasma-bench.js` can run opt-in variant timing with
+    `PLASMA_BENCH_AUTOTUNE=1`, storing winners in a source/transpiler/
+    option-keyed warm cache so profile-shaped shader opts are chosen
+    from measurements instead of guesswork.
+30. Fixed-workgroup specialization: `fixedWorkgroups: [Wx, Wy, Wz]`
+    bakes the dispatch grid into generated entry code and skips the
+    per-dispatch `workgroups` destructuring path for size-specialized
+    CPU artifacts.
+31. SoA struct storage: flat `array<struct>` bindings can opt into
+    `mode: 'soa'` in `storageLayout`, reading and writing field arrays
+    like `particles.pos` / `particles.mass` instead of one AoS buffer.
+32. Entry-bound guard clipping: canonical leading guards such as
+    `if (gid.x >= n || gid.y >= n) { return; }` lower into clipped loop
+    limits for global-loop kernels. Padded workgroups skip the per-cell
+    branch and guard-only kernels also avoid the invocation label.
+33. Plasma constant variants: `_build.mjs` fans hot plasma kernels into
+    fixed-workgroup `n256/n512/n1024` artifacts that specialize
+    `grid_n`, `grid_n_total`, `ghost_w`, LIC `noise_n=1024`,
+    default `eta_anom_alpha=0`, BC mode/grid choices, and combined
+    view-mode/grid choices.
 
 The resolve phase's 9.9% Expr gap is structural, not bugs: ~5% is
 JS-injected consts (geon's `buildWGSLConstants()` prepends `EPSILON`,
@@ -176,14 +259,65 @@ The smoke suite covers:
 18. Uniform specialization and entry-specific binding hoists: specialized
     fields emit literals, unused bindings skip entry aliases, and 1D
     no-barrier kernels emit the fast `Gy === 1 && Gz === 1` path.
-19. Mutable struct SROA plus whole flat-struct stores from scalarized
+19. Static branch pruning for uniform-derived const aliases, including
+    branches whose condition is a local alias (`let axis = mode.axis`).
+20. Phase-local replay across top-level barriers: pre-barrier pure locals
+    survive into later phase loops, and replayed specialized locals can
+    prune post-barrier branches.
+21. Helper-param specialization plus static `select()` folding for
+    non-inlined helper bodies.
+22. Invocation-label elision for no-return entry phases, while preserving
+    labels for kernels with early returns.
+23. Mutable struct SROA plus whole flat-struct stores from scalarized
     locals.
-20. Simple `ptr<function, Struct>` helper inlining: pointer args remain
+24. Nested struct SROA plus inlined struct-return scalarization: nested
+    member writes and child-struct copies split into leaf slots.
+25. Simple `ptr<function, Struct>` helper inlining: pointer args remain
     aliases instead of being scalarized copies.
+26. Synthetic reduction sequence entries: `reset/reduce/finalize`
+    executes through the generated fused entry and matches explicit
+    dispatches.
+27. Flat workgroup arrays. The 12x12 scalar halo tile and a compact
+    `array<array<struct,2>,2>` fixture both allocate one `Float32Array`,
+    reset it in-place, and preserve post-barrier reads.
+28. Actual call-site counting for inlining caps: repeated helper calls in
+    one expression stay out of line when the cap is too low, and inline
+    when the cap exactly covers the repeated sites.
+29. Row-major 2D origin-zero dispatch: emitted code has the y/x loop
+    shape and no per-cell `Math.floor(__g / Gx)` decode.
+30. Prebound positional entry dispatch: `compileWGSL().bind(bindings)`
+    closes over the binding object and executes the generated internal
+    entry function directly.
+31. Selective flat storage: a mixed object/TypedArray kernel reads
+    object-mode `pos`/`vel` buffers while write-through lowering flattens
+    only the allow-listed `out` binding.
+32. Tiny scalar helper call-count bypass: a six-call scalar helper inlines
+    under defaults, while explicit low call-count caps remain enforced.
+33. Multi-component swizzle store propagation: local rotate stores and
+    flat storage partial writes execute correctly and emit component
+    writes rather than `.xy =`/`.rgb =` JS lvalues.
+34. Branchy-helper inlining policy: default compile keeps a larger
+    branchy helper out of line, while an explicit hot hint still inlines
+    the same helper.
+35. Scalar-return clone generation: non-inlined vec-return helpers read
+    through `.x/.y/.z/.w` emit scalar clone calls and return scalarized
+    leaves instead of materializing the whole return object.
+36. Fixed-workgroup dispatch specialization: generated code with
+    `fixedWorkgroups` uses baked `Wx/Wy/Wz` constants and still executes
+    the expected global invocation range when the runtime call passes a
+    dummy workgroup tuple.
+37. SoA flat `array<struct>` storage: the Particle fixture runs against
+    field-array bindings and matches object-mode output while generated
+    code addresses `_b_input.pos[...]` and `_b_output.vel[...]`
+    directly.
+38. Entry-bound guard clipping: a padded 2D dispatch executes only the
+    logical domain after the leading `gid >= bound` guard is hoisted into
+    loop limits, while non-clippable early returns still keep the
+    invocation label.
 
 ## Architecture (read before editing)
 
-`/shared-wgsl-transpile.js` is one ~4450-LOC ESM file with these sections
+`/shared-wgsl-transpile.js` is one ~7.7k-LOC ESM file with these sections
 (in source order):
 
 1. **Tokenizer** (`tokenize`) — flat Token[] of `{kind, value, line, col}`.
@@ -252,8 +386,9 @@ The smoke suite covers:
      get prefixed with `_` via `_safe()`; references resolve consistently.
      Member access (`bindings.in`) is fine in JS and isn't escaped.
    - WGSL swizzles (`.rgb`, `.xyz`, `.rgba`) detect by character set and
-     length; single-char `r/g/b/a` map to `x/y/z/w`; multi-char emit
-     `rt.vecN(...)` constructor calls.
+     length; single-char `r/g/b/a` map to `x/y/z/w`; multi-char reads
+     compose with `exprComp`, while multi-char assignment targets emit
+     direct component stores.
    - `discard` outside an entry block → plain `return` (fragment-only
      construct; not modeled CPU-side).
    - `&local` for struct/object locals emits the identifier directly —
@@ -276,7 +411,7 @@ The smoke suite covers:
    `transpileWGSL()` stops there and returns `{ jsSource, body,
    entryPoints, bindings, metrics }` for build-time artifact generation.
    `compileWGSL()` additionally evaluates the generated module and returns
-   the live `{ entry, bindings, jsSource, metrics }`. The eval path's
+   the live `{ entry, bind, bindings, jsSource, metrics }`. The eval path's
    JSDoc has a security note: it is intentional and only safe because the
    WGSL input is under your own control.
 
@@ -288,6 +423,16 @@ invocation triple-loop, so all invocations finish phase N before any
 start phase N+1. Workgroup-shared atomics (`var<workgroup> tile: atomic<u32>;`)
 live on a per-workgroup `wg` object that persists across phases. This is
 how `compute-dt`-style reductions execute correctly.
+
+WGSL locals declared before a barrier are lexically visible after the
+barrier, but the generated JS phases are separate loop bodies. The
+emitter therefore replays conservative pure top-level `let`/`const`
+decls into later phases: builtin/member reads, uniform fields, module
+constants, scalar casts, unary/binary expressions, and non-user intrinsic
+calls are allowed; indexing and user helper calls are not. Besides fixing
+post-barrier local visibility, this carries specialized uniform aliases
+forward so post-barrier `if (axis == 0u)` branches can be pruned in
+`reconstruct-ppm` variants.
 
 **Limitation**: barriers nested inside `if`/`for`/`while` aren't lifted
 out into phases. Doing so would require duplicating the surrounding
@@ -325,7 +470,8 @@ adapter shim once." Worth revisiting that decision when picking this up.
 Plasma's shaders use nested helpers (`fill_cell_ghost` calls 4 sub-fns;
 `sample_b_unit` calls `bx_at_cell`/`by_at_cell`; `ppm_limit_vec4` calls
 `ppm_limit_scalar`). The nested-inline rename fix landed alongside flat-
-storage (smoke test 10 guards it), so plasma's call shapes lower cleanly.
+storage (`testNestedInlinePreservesOutput` guards it), so plasma's call
+shapes lower cleanly.
 
 ### Geon integration (much later)
 
@@ -430,8 +576,10 @@ to rt.* dispatch preserves correctness on every shader.
 
 AST-level pass between `resolveModule` and `emit` that splices small
 helper bodies into their call sites. Defaults: `inlineBudget` = 8
-top-level stmts per fn, `inlineCallLimit` = 4 static call sites across
-the module. Recursive fns (self- or mutual-) excluded; fns with ptr
+top-level stmts per fn, `inlineCallLimit` = 4 expression-position call
+sites across the module. Repeated calls inside the same expression count
+separately, so the cap models actual code duplication rather than just
+"helper appears in this body". Recursive fns (self- or mutual-) excluded; fns with ptr
 params or `&` uses excluded; entry points (`@compute`) are inlining
 targets, not inlinees.
 
@@ -445,8 +593,9 @@ Mechanism:
   the arg expression is scalarized).
 - Helper body is alpha-renamed with the same `_inl_N_` prefix and
   wrapped in `_inl_N: { ... }`. `return v;` rewrites into a synthetic
-  `inline_return_set` stmt (per-component stores for vec results, plain
-  whole-object assign for scalar/mat) followed by `break _inl_N`.
+  `inline_return_set` stmt (per-component stores for vec results,
+  per-leaf stores for fixed arrays and structs, plain whole-object assign
+  for scalar/mat) followed by `break _inl_N`.
 - Vec-returning helpers get a **scalarized result var**: instead of one
   mutable JS let holding a `{x,y,z}` object, the labeled-stmt emit
   declares per-component lets (`_inl_N_result_x`, `_inl_N_result_y`,
@@ -454,6 +603,10 @@ Mechanism:
   read of `_inl_N_result` routes through the existing SROA fast paths.
   Net effect: **zero vec allocations** on the inlining return path,
   even across conditional-return helpers like `clamp_speed`.
+- Fixed `array<vecN, N>` and named struct return values get the same
+  treatment: the labeled-stmt emit declares scalar slots for every
+  result element/leaf, and `inline_return_set` writes into those slots
+  directly. Nested struct fields recursively split into leaves.
 - `isComponentSafe` was relaxed to permit POLY_FN intrinsics
   (`max`/`sqrt`/`sin`/etc.) — these are pure and lower to `Math.*`
   templates, so triplicating them across vec component lowerings is
@@ -464,7 +617,7 @@ from 2.91× to ~26× speedup vs polymorphic, sitting within ~1.2× of
 the equivalent monolithic kernel B. Other kernels unchanged within
 variance.
 
-Smoke test 8 (`testInlinePreservesOutput`) is the correctness gate:
+`testInlinePreservesOutput` is the correctness gate:
 inlined and `{ noInline: true }` modes must produce bit-identical
 output on a multi-helper kernel that exercises both clamp_speed's
 return paths.
@@ -505,7 +658,7 @@ this before write-through can run.
 Result: kernel C goes from 3.5× to ~48× speedup vs polymorphic (~14×
 faster wall-time). Kernel A also picked up a bonus 3× because its
 `var acc = vec3(0); ... acc = acc + ...` accumulator was the other
-unscalarized var hiding in the bench. Smoke test 9 gates correctness
+unscalarized var hiding in the bench. `testVarSroaPreservesOutput` gates correctness
 end-to-end against the polymorphic baseline.
 
 ### Tier 3: Flat TypedArray storage mode
@@ -518,8 +671,17 @@ vec arity, while `flatStorageLayout: 'wgsl-storage'` uses storage-buffer
 padding (`vec3` stride 4). Struct arrays use computed WGSL
 storage-layout offsets. Override per binding via
 `opts.storageLayout[name].stride` and field slots via
-`opts.storageLayout[name].fields`. Object-mode stays the default —
-backward-compatible with the existing smoke and bench harness.
+`opts.storageLayout[name].fields`. Struct arrays may opt into a
+field-array layout with `opts.storageLayout[name].mode = 'soa'` (or
+global `flatStructLayout: 'soa'`): the binding value is then an object
+whose top-level scalar/vec fields are TypedArrays, e.g.
+`particles.pos`, `particles.mass`, `particles.vel`. Profile/build
+configs can also set
+`flatStorageBindings: ['out']` as an allow-list or
+`flatStorageExcept: ['scratch']` as a deny-list, so mixed object/TypedArray
+dispatches can keep only the proven-win buffers flat. Object-mode stays
+the default — backward-compatible with the existing smoke and bench
+harness.
 
 Emit lowers every storage touch directly to TypedArray index ops:
 - Read components: `bindings.X[i].c` → `bindings.X[(i)*stride + compIdx]`
@@ -540,6 +702,10 @@ Emit lowers every storage touch directly to TypedArray index ops:
   bindings and mutable `var` structs get field/component SROA, so
   `let p = particles[i]; p.pos.x` and `var p = particles[i]; p.pos += v`
   stay scalar.
+- SoA `array<struct>`: `particles[i].pos.x` lowers to
+  `particles.pos[i * posStride + 0]`, while scalar fields lower to
+  `particles.mass[i]`. This keeps the existing object-shaped binding
+  name but lets CPU fallback choose SoA for field-hot kernels.
 
 Defensive paths cover the cases where write-through can't fire:
 - Assign with non-component-safe RHS (e.g., non-inlined fn call
@@ -565,9 +731,9 @@ Result: kernel B (Verlet, storage-I/O dominant) is ~1.31× faster than
 object-mode inlined on the current bench run; kernel D picks up the same
 ~1.31×. Kernel C is ALU-bound and remains a wash.
 Kernels A and C are storage-light enough to register as wash (within
-variance). Smoke test 11 is the parity gate: identical kernel compiled
+variance). `testFlatStorageMode` is the parity gate: identical kernel compiled
 twice (object mode, flat mode), fed equivalent inputs, outputs match
-within float epsilon.
+within float epsilon; it also covers a selective-flat mixed layout.
 
 The polymorphic-baseline path skips `flatStorage` automatically
 (`opts.polymorphic` forces object-mode), so the bench's `polymorphic:
@@ -604,8 +770,15 @@ undefined global calls when type info is missing.
 
 Generated metadata includes a `metrics` object (`bytes`, `lines`, rt.*
 call counts, `Math.fround` count, IIFE count, optimized workgroup
-reduction init count). It is intentionally simple: good enough for
-regressions and before/after profiles without running a browser profiler.
+reduction init count, flat workgroup array count/slots, static branch
+prune count). Build artifacts
+copy this into a `wgsl-metrics` header, and `build-smoke.js` checks both
+freshness and perf budgets
+(`rtVec === 0`, `rtPoly === 0`, `rtAtomic === 0`, `rtNumeric === 0` for
+current plasma compute artifacts, plus fixed flat-workgroup slot budgets
+for `reconstruct-ppm` and conservation reductions).
+That keeps helper-call regressions visible before anyone opens a browser
+profiler.
 
 ### DCE and hoisting
 
@@ -614,19 +787,57 @@ points after inlining. Entry bodies hoist only the bindings used by that
 entry and only the uniform struct fields actually read; specialized
 uniform fields emit literals and skip field aliases. Builtin component
 declarations are similarly dead-component-eliminated: `gid.x` doesn't
-force `gid_y`/`gid_z`. No-barrier kernels emit a global-loop path with a
-1D fast branch (`Gy === 1 && Gz === 1`) before falling back to the full
-3D loop. Non-inlined helpers keep the same object ABI externally but
+force `gid_y`/`gid_z`. No-barrier kernels emit a global-loop path with
+1D and 2D fast branches before falling back to the full 3D loop. These
+entries accept optional `domain: [x, y, z]` dispatch metadata so a CPU
+fallback can iterate the true problem size instead of padded
+`workgroups * workgroup_size`. Barrier-split kernels drop dead local-loop
+dimensions (`Lz === 1`, etc.) at emit time. The same no-barrier path
+also accepts `origin: [x, y, z]`, which offsets
+`global_invocation_id` while iterating only the local shard. That gives
+row-sharded Worker dispatches a way to preserve full-domain indexing
+without adding offset math to the default zero-origin hot path.
+When a build or bench config knows the dispatch grid in advance,
+`fixedWorkgroups: [Wx, Wy, Wz]` bakes those constants into the entry and
+omits `const [Wx, Wy, Wz] = workgroups;`, which is useful for named
+resolution/grid variants without changing the compatibility wrapper.
+Non-inlined helpers keep the same object ABI externally but
 scalar-hoist vec params at function entry so the body can use `p_x`
-style fast paths.
+style fast paths. Inlined helpers returning fixed `array<vecN, N>`
+use the same idea for array elements (`result_0_x`, `result_1_x`, ...)
+so callers like `pair[0]` can feed flat stores without materializing a
+JS array.
+
+Static branch pruning runs off a parallel const-alias scope. Aliases are
+recorded for `let`/`const` values that can be evaluated from literals,
+module constants, builtin-derived scalars, or specialized uniform fields.
+When an `if` condition is statically true/false, emit keeps only the live
+block, preserves normal scoping around it, and increments
+`staticBranchPrunes`. Sweep-specialized plasma artifacts now use this for
+`reconstruct-ppm.x/y` and `riemann-hlld.x/y`.
+
+`specializeFunctionParams` extends the same const-alias machinery into
+non-inlined helper bodies. It is deliberately opt-in: a build variant can
+declare that `pack_flux.axis` or `fast_mag_speed.axis` is fixed for that
+artifact, while the helper signature and call sites remain unchanged.
+Static `select(a, b, cond)` folding uses `staticEvalScalar(cond)` when
+all args are component-safe, so helper code such as
+`select(P.by, P.bx, axis == 0u)` becomes a direct field read.
+
+Entry phases keep an inner block for local scoping, but the named
+`__invocation` label now emits only when that phase may need to lower an
+entry-level `return` or `discard` into `break __invocation;`. Kernels
+without early exits avoid the labeled-statement overhead entirely, while
+early-return kernels still get the same control-flow semantics.
 
 ### Build-time artifact writer (B2)
 
 `_build.mjs` now runs the transpiler over every configured shader
 directory (currently just `plasma/src/gpu/shaders/`) and writes a
-`.transpiled.js` artifact for each entry-point shader at
-`transpiled/<source-relative-path>.transpiled.js`. Helpers in the
-same dir (no `@compute`/`@vertex`/`@fragment` annotation) are
+`.transpiled.js` artifact for each compute-entry shader at
+`transpiled/<source-relative-path>.transpiled.js`. Vertex/fragment
+render shaders are skipped instead of shipped as CPU artifacts. Helpers
+in the same dir (no `@compute`/`@vertex`/`@fragment` annotation) are
 prepended to the unit before transpile, matching the assembly pattern
 `pipelines.js` uses before `createShaderModule`.
 
@@ -634,22 +845,61 @@ Output goes under `transpiled/` (parent-tracked) rather than next to
 the source: plasma is a submodule that isn't yet initialized in the
 parent's tree (`.gitmodules` declares it but submodule wiring is
 pending), so artifacts written inside `plasma/` couldn't be tracked
-by the parent repo. The mirrored layout keeps a clean 1:1 source-to-
+by the parent repo. The mirrored layout keeps a clean source-to-
 artifact mapping and scales to other sims without needing each to
-configure its own .gitmodules state.
+    configure its own .gitmodules state; hot shaders may add named variant
+    suffixes such as `.x.transpiled.js`, `.rho.transpiled.js`, or
+    `.s1.transpiled.js`.
 
 Each artifact carries a sha256 source-hash header; re-runs skip
-unchanged shaders by hash comparison. Pass `--force-wgsl` to override.
+unchanged shaders by source, transpiler, and option-hash comparison
+so `specializeUniforms`, `specializeFunctionParams`, and storage-layout
+changes cannot leave stale artifacts behind. Pass `--force-wgsl` to
+override.
 Errors aggregate at end of build and set `process.exitCode = 1`. With
-A1's `collectErrors` mode set, all 16 plasma shaders' emit-phase
-issues would surface in one run (currently zero).
+A1's `collectErrors` mode set, all 33 plasma CPU artifacts' emit-phase
+issues surface in one run (currently zero).
 
 Artifacts are committed (Cloudflare Workers serves them as static
 assets from `/transpiled/...`), so plasma's CPU fallback can
 `import()` the artifact directly with no runtime eval, no parser/
-emitter in the browser bundle. The trade-off is ~16 generated files
-in the repo that churn with shader edits; moving to a CI deploy-time
-gen step is an easy future change if the churn becomes a problem.
+emitter in the browser bundle. The trade-off is generated files in the
+repo that churn with shader edits; moving to a CI deploy-time gen step
+is an easy future change if the churn becomes a problem.
+
+The x/y sweep artifacts also specialize the helper params whose `axis`
+argument is the same sweep direction (`fast_mag_speed`, `permute_prim`,
+`pack_flux`, etc.). `build-smoke.js` verifies those headers and rejects
+specialized sweep artifacts that still contain dynamic `axis == ...`
+branches.
+
+The `view-field` artifacts specialize `U_uniforms.view_mode`, while the
+weighted update artifacts specialize the immutable RK3 stage uniform
+(`stage_params.a0/a1/dt_w`). `build-smoke.js` verifies that the generated
+variant bodies no longer contain dynamic reads of those fields. Generic
+artifacts can also carry per-shader `shaderOpts` such as `inlineHotFns`;
+those headers are checked so profile-shaped build policy cannot silently
+fall off.
+
+For main-thread isolation, `/shared-wgsl-worker.js` is a generic ESM
+worker runner for these artifacts. Send `{ moduleUrl, entry, workgroups,
+domain, origin, bindings }`; it imports/caches the generated module, dispatches
+the entry through cached prebound functions when available, and posts mutated bindings back. Use `transferBack` paths
+like `['colored.buffer']` when a CPU fallback transfers TypedArrays into
+the worker and wants their buffers returned without a copy.
+
+`/shared-wgsl-runner.js` is the main-thread helper on top of that Worker.
+It lazy-loads artifacts, reads `entryInfo`, falls back to main-thread
+dispatch when Workers are unavailable, shards only entries marked
+`globalLoop: true`, and includes `WGSLBufferPool` for reusing
+per-resolution TypedArray/SAB buffers across CPU fallback frames. On both
+main-thread and worker paths it caches `mod.bind(bindings)` by module and
+bindings object so repeated frames use positional entry dispatch.
+Use `dispatchSequence([...])` for CPU-only pass groups that should
+share one Worker roundtrip while still using separate generated
+artifacts. Matching `reset/reduce/finalize` and `reset/main` groups
+automatically coalesce to synthetic fused entries when the artifact
+exposes them.
 
 Adding a new sim: append to `WGSL_SHADER_DIRS` at the top of the
 transpile section in `_build.mjs`. Geon is deferred until plasma
@@ -682,7 +932,7 @@ carryover, `q.x` in the inlined body would emit literally and miss
 the SROA fast path. `_paramIsMutatedInBody` walks lvalue roots
 (`p.x`, `p[i]`, `(p).field`) defensively even though WGSL spec
 forbids writing through value params — the parser accepts those
-forms, so elision stays safe under any input. Smoke test 21 guards
+forms, so elision stays safe under any input. `testArgBindingElision` guards
 the four cases: plain-ident-elides, non-ident-arg-doesn't,
 member-write-disqualifies, output parity vs noInline baseline.
 
@@ -703,11 +953,49 @@ The fix adds three cases to `_cloneStmtRenamed`: `labeled` recurses
 into its body and registers the renamed `resultName` (plus per-component
 names when scalarized) in the nameMap so downstream reads see the
 right binding; `inline_return_set` renames its `resultName`, `label`,
-and value; `break_label` renames its `label`. Smoke test 10 is the
+and value; `break_label` renames its `label`. `testNestedInlinePreservesOutput` is the
 regression gate: full-opt vs polymorphic vs `noInline` three-way parity
 on a kernel where `spring_force` calls `safe_normalize` and
 `clamp_speed` is also nested, exercising both legs of `inline_return_set`
 (scalarized vec write, early-return path).
+
+### Profiling generated artifacts
+
+Use the static metric headers first. For current plasma compute artifacts,
+`node tests/wgsl-transpile/build-smoke.js` is the budget gate: `rtVec`,
+`rtPoly`, `rtAtomic`, and `rtNumeric` must stay at zero, and large jumps
+in `bytes`, `lines`, or `iife` should be explained before shipping. If a shader gets
+slower while those counters stay flat, run `plasma-bench.js` with the
+smallest reproducing `PLASMA_BENCH_SIZES` value, then profile the emitted
+artifact in Chrome DevTools or Node's CPU profiler.
+
+For compile-option sweeps, set `PLASMA_BENCH_AUTOTUNE=1`. The harness
+benchmarks known `compute-dt` variants, writes
+`tests/wgsl-transpile/.plasma-bench-cache.json` keyed by shader source,
+transpiler hash, problem size, warmup/iteration count, and variant opts,
+then reuses cache hits on later runs. Override the cache location with
+`PLASMA_BENCH_CACHE=/tmp/wgsl-cache.json` when you want throwaway tuning
+data.
+
+What to look for in profiles:
+
+- Hot `Array.from` frames mean a workgroup var failed the flat-memory
+  safety check or regressed to nested allocation; expected hot workgroup
+  arrays emit one `Float32Array` per var and reset it in-place.
+- Hot `rt.*` frames mean a type-resolution or component-lowering fast path
+  regressed. Check the artifact header's `rtVec`, `rtPoly`, `rtAtomic`,
+  and `rtNumeric` counts before reading the whole generated file.
+- Hot anonymous arrow/IIFE frames are usually base-expression CSE or
+  normalize/reflect helpers. If they dominate, prefer hoisting a base index
+  or scalar denominator once in the emitter over adding another runtime
+  helper call.
+- For browser fallback work, load artifacts with dynamic `import()` from
+  `/transpiled/...` in `/shared-wgsl-worker.js`. Avoid calling
+  `compileWGSL()` on page load: parser/resolve/emit cost and `new Function`
+  are intentionally build-time concerns now.
+- For row-sharded dispatch, split the 2D domain into `{ domain, origin }`
+  jobs so each Worker shard sees the same `global_invocation_id` values
+  it would have seen in the full dispatch.
 
 ## Coordination notes for fresh instances
 

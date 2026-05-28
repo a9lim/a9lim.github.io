@@ -293,6 +293,7 @@ const SIMS_SSR = `
 <div class="project-card fade-in visible"><a href="/scripture"><h3>Scripture</h3><p>Sacred text reader with sixteen works from multiple traditions, full-text search, concordance, and text-to-speech.</p><span class="tag">reader</span><span class="tag">text</span><span class="tag">religion</span></a></div>
 <div class="project-card fade-in visible"><a href="/miasma"><h3>Miasma</h3><p>Stochastic spatial epidemic simulator with multi-strain evolution, hex-grid topology toggle, and intervention painting.</p><span class="tag">epidemiology</span><span class="tag">cellular automaton</span><span class="tag">canvas</span></a></div>
 <div class="project-card fade-in visible"><a href="/pile"><h3>Pile</h3><p>Nuclear reactor simulator with three reactor types, axial point-kinetics neutronics, and a coupled plant-systems model.</p><span class="tag">physics</span><span class="tag">nuclear</span><span class="tag">canvas</span></a></div>
+<div class="project-card fade-in visible"><a href="/plasma"><h3>Plasma</h3><p>2D resistive magnetohydrodynamics simulator with HLLD Riemann solver, PPM reconstruction, and constrained transport.</p><span class="tag">physics</span><span class="tag">webgpu</span><span class="tag">mhd</span><span class="tag">canvas</span></a></div>
 `;
 
 const PROJECTS_SSR = `
@@ -1133,6 +1134,7 @@ export default {
             { position: 5, name: 'Scripture — Sacred Text Reader', url: 'https://a9l.im/scripture/' },
             { position: 6, name: 'Miasma — Stochastic Spatial Epidemic Simulator', url: 'https://a9l.im/miasma' },
             { position: 7, name: 'Pile — Nuclear Reactor Simulator', url: 'https://a9l.im/pile' },
+            { position: 8, name: 'Plasma — 2D Resistive MHD Simulator', url: 'https://a9l.im/plasma' },
           ].map(p => ({ '@type': 'ListItem', ...p }));
           meta.jsonLd = JSON.stringify({
             '@context': 'https://schema.org',

@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Recursive:CASL,MONO,wght@0,0,300..700;0,1,300..700&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    width: 1200px;
+    height: 630px;
+    overflow: hidden;
+    background: #F4F5F8;
+    display: flex;
+    align-items: center;
+    font-family: 'Recursive', sans-serif;
+    font-variation-settings: 'MONO' 0, 'CASL' 0;
+    position: relative;
+  }
+  .flair {
+    width: 400px;
+    height: 630px;
+    flex-shrink: 0;
+    position: relative;
+  }
+  .flair canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 560px;
+    height: 630px;
+  }
+  /* Soft fade-out that lets the spillover content show through */
+  .flair::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 360px;
+    width: 200px;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(244, 245, 248, 0.7));
+    pointer-events: none;
+  }
+  .text-side {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 0 60px;
+    position: relative;
+    z-index: 1;
+  }
+  .project-name {
+    font-family: 'Recursive', sans-serif;
+    font-variation-settings: 'MONO' 0, 'CASL' 0;
+    font-weight: 700;
+    font-size: 132px;
+    color: #010203;
+    letter-spacing: -3px;
+    line-height: 1;
+  }
+  .site-brand {
+    font-family: 'Recursive', monospace;
+    font-variation-settings: 'MONO' 1, 'CASL' 0;
+    font-size: 22px;
+    color: #1E1F23;
+    margin-top: 32px;
+    letter-spacing: 0.5px;
+  }
+</style>
+</head>
+<body>
+  <div class="flair">
+    <canvas id="flair" width="1120" height="1260"></canvas>
+  </div>
+  <div class="text-side">
+    <div class="project-name">Plasma</div>
+    <div class="site-brand">AGPL-3.0</div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('flair');
+    const ctx = canvas.getContext('2d');
+    const W = canvas.width, H = canvas.height;
+
+    // Right-align flair content to mirror text-side symmetry.
+    const SHIFT_X = 100;
+    ctx.save();
+    ctx.translate(SHIFT_X, 0);
+
+    // Palette
+    const ACCENT   = '#e11107';            // brand red — current sheet
+    const FIELD    = 'rgba(12, 13, 18, 0.55)';     // field lines dark
+    const FIELD_SOFT = 'rgba(12, 13, 18, 0.22)';
+    const DOT      = 'rgba(12, 13, 18, 0.18)';
+    const SHEET_G  = 'rgba(225, 17, 7, 0.18)';     // current-sheet glow
+
+    // Sheet geometry: horizontal current band across the canvas at y0,
+    // with magnetic islands sitting on it. This is the Harris reconnection
+    // topology — field lines reverse polarity across the sheet, with
+    // closed loops (plasmoids) punctuating the unstable equilibrium.
+    const y0 = 620;       // sheet centerline
+    const sheetA = 22;    // sheet half-thickness
+    const W_ACTIVE = 900; // active drawing width before the right fade
+    const X_LEFT = 30, X_RIGHT = X_LEFT + W_ACTIVE;
+
+    // Background dot grid — site NERV register
+    const STEP = 40;
+    ctx.fillStyle = DOT;
+    for (let y = 20; y < H; y += STEP) {
+      for (let x = X_LEFT; x < X_RIGHT + 80; x += STEP) {
+        ctx.beginPath();
+        ctx.arc(x, y, 1.5, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    // Current sheet — horizontal red band with soft falloff
+    const sheetGrad = ctx.createLinearGradient(0, y0 - sheetA * 4, 0, y0 + sheetA * 4);
+    sheetGrad.addColorStop(0, 'rgba(225, 17, 7, 0)');
+    sheetGrad.addColorStop(0.5, 'rgba(225, 17, 7, 0.45)');
+    sheetGrad.addColorStop(1, 'rgba(225, 17, 7, 0)');
+    ctx.fillStyle = sheetGrad;
+    ctx.fillRect(X_LEFT, y0 - sheetA * 4, W_ACTIVE, sheetA * 8);
+
+    // Bright accent core of the sheet
+    ctx.fillStyle = ACCENT;
+    ctx.fillRect(X_LEFT, y0 - 2, W_ACTIVE, 4);
+
+    // Open field lines — anti-parallel reversal across the sheet.
+    // Above (y < y0): field points right. Below: field points left.
+    // Sample arched flow lines that approach and reverse near the sheet.
+    function drawFieldLine(yShift, alpha, lineWidth) {
+      ctx.strokeStyle = `rgba(12, 13, 18, ${alpha})`;
+      ctx.lineWidth = lineWidth;
+      ctx.beginPath();
+      const N = 60;
+      for (let i = 0; i <= N; i++) {
+        const t = i / N;
+        const x = X_LEFT + t * W_ACTIVE;
+        // Sinusoidal sag toward the sheet — amplitude grows near center
+        const env = Math.sin(t * Math.PI);          // 0..1..0
+        const sag = env * 70 * Math.sign(yShift);   // pull toward sheet
+        const y = y0 + yShift - sag;
+        if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+    }
+
+    // Field lines above (positive Bx region)
+    drawFieldLine(-180, 0.40, 2.5);
+    drawFieldLine(-300, 0.32, 2.0);
+    drawFieldLine(-420, 0.24, 1.8);
+    drawFieldLine(-540, 0.18, 1.6);
+
+    // Field lines below (negative Bx region — sag is downward via Math.sign)
+    drawFieldLine(180, 0.40, 2.5);
+    drawFieldLine(300, 0.32, 2.0);
+    drawFieldLine(420, 0.24, 1.8);
+    drawFieldLine(540, 0.18, 1.6);
+
+    // Magnetic islands (plasmoids) — closed loops sitting on the sheet.
+    // The classic tearing-mode signature.
+    function drawIsland(cx, cy, rx, ry, alpha) {
+      ctx.strokeStyle = `rgba(12, 13, 18, ${alpha})`;
+      ctx.lineWidth = 2.2;
+      // Outer ring
+      ctx.beginPath();
+      ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2);
+      ctx.stroke();
+      // Inner ring
+      ctx.beginPath();
+      ctx.ellipse(cx, cy, rx * 0.55, ry * 0.55, 0, 0, Math.PI * 2);
+      ctx.stroke();
+      // O-point
+      ctx.fillStyle = ACCENT;
+      ctx.beginPath();
+      ctx.arc(cx, cy, 5, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    drawIsland(X_LEFT + W_ACTIVE * 0.18, y0, 80, 50, 0.50);
+    drawIsland(X_LEFT + W_ACTIVE * 0.45, y0, 110, 65, 0.55);
+    drawIsland(X_LEFT + W_ACTIVE * 0.78, y0, 90, 55, 0.50);
+
+    // X-points between islands — reconnection sites marked by small accent crosses.
+    function drawXPoint(cx, cy) {
+      ctx.strokeStyle = ACCENT;
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(cx - 14, cy - 14);
+      ctx.lineTo(cx + 14, cy + 14);
+      ctx.moveTo(cx - 14, cy + 14);
+      ctx.lineTo(cx + 14, cy - 14);
+      ctx.stroke();
+    }
+    drawXPoint(X_LEFT + W_ACTIVE * 0.31, y0);
+    drawXPoint(X_LEFT + W_ACTIVE * 0.62, y0);
+
+    ctx.restore();
+
+    // --- Top and bottom fades (full canvas width, drawn after restore) ---
+    const fadeTop = ctx.createLinearGradient(0, 0, 0, 140);
+    fadeTop.addColorStop(0, 'rgba(244, 245, 248, 1)');
+    fadeTop.addColorStop(1, 'rgba(244, 245, 248, 0)');
+    ctx.fillStyle = fadeTop;
+    ctx.fillRect(0, 0, W, 140);
+
+    const fadeBot = ctx.createLinearGradient(0, H - 160, 0, H);
+    fadeBot.addColorStop(0, 'rgba(244, 245, 248, 0)');
+    fadeBot.addColorStop(1, 'rgba(244, 245, 248, 1)');
+    ctx.fillStyle = fadeBot;
+    ctx.fillRect(0, H - 160, W, 160);
+  </script>
+</body>
+</html>

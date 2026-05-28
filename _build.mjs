@@ -236,6 +236,7 @@ const IMAGE_MAP = {
   '/scripture/': ['scripture/og-image.webp'],
   '/miasma':    ['miasma/og-image.webp'],
   '/pile':      ['pile/og-image.webp'],
+  '/plasma':    ['plasma/og-image.webp'],
 };
 
 function add(path, lastmod, images, changefreq, priority, imageCaption) {
@@ -251,6 +252,7 @@ const IMAGE_CAPTIONS = {
   '/scripture/': 'Scripture — sacred text reader with sixteen works from multiple traditions',
   '/miasma': 'Miasma — stochastic spatial epidemic simulator with multi-strain evolution and intervention painting',
   '/pile': 'Pile — semi-realistic nuclear reactor simulator with PWR, RBMK, and molten-salt reactor types',
+  '/plasma': 'Plasma — 2D resistive magnetohydrodynamics simulator with HLLD, PPM, and constrained transport',
 };
 
 // 1. Static routes
@@ -267,6 +269,7 @@ const staticRoutes = [
   { path: '/scripture/', file: 'scripture/index.html', changefreq: 'monthly', priority: 0.9 },
   { path: '/miasma',    file: 'miasma/index.html',    changefreq: 'monthly', priority: 0.9 },
   { path: '/pile',      file: 'pile/index.html',      changefreq: 'monthly', priority: 0.9 },
+  { path: '/plasma',    file: 'plasma/index.html',    changefreq: 'monthly', priority: 0.9 },
 ];
 
 for (const r of staticRoutes) {
@@ -471,6 +474,7 @@ const aboutFiles = [
   { heading: 'Scripture', path: 'scripture/about.md' },
   { heading: 'Miasma', path: 'miasma/about.md' },
   { heading: 'Pile', path: 'pile/about.md' },
+  { heading: 'Plasma', path: 'plasma/about.md' },
 ];
 
 const llmsParts = [
@@ -557,7 +561,7 @@ const homeData = {
   lastDeploy,
   commits,
   stats: {
-    sims: 7,
+    sims: 8,
     posts: posts.length,
     scriptureWorks: workIds.length,
     scriptureChapters: countScriptureChapters(),
@@ -598,12 +602,180 @@ if (resumeBuild.status !== 0) {
 // 54 shaders are deferred until plasma integration (B3) shakes out the
 // adapter shape — see tests/wgsl-transpile/README.md.
 
+const SWEEP_AXIS_HELPERS = [
+  'fast_mag_speed',
+  'mhd_flux',
+  'normal_velocity_mhd',
+  'permute_prim',
+  'pack_prim_pair_from_vec7',
+  'unpack_edge_prim',
+  'prim_to_axis_state',
+  'pack_flux',
+  'hll_flux_mhd',
+];
+
+const RK3_STAGE_WEIGHTS = [
+  { name: 's1', a0: 1.0,     a1: 0.0,     dt_w: 1.0 },
+  { name: 's2', a0: 3.0/4.0, a1: 1.0/4.0, dt_w: 1.0/4.0 },
+  { name: 's3', a0: 1.0/3.0, a1: 2.0/3.0, dt_w: 2.0/3.0 },
+];
+
+const VIEW_FIELD_MODES = [
+  { name: 'rho',      mode: 0 },
+  { name: 'pressure', mode: 1 },
+  { name: 'speed',    mode: 2 },
+  { name: 'bmag',     mode: 3 },
+  { name: 'jz',       mode: 4 },
+];
+
+const PLASMA_WORKGROUP = 8;
+const PLASMA_GHOST = 2;
+const PLASMA_NOISE_N = 1024;
+const PLASMA_GRID_VARIANTS = [256, 512, 1024];
+const PLASMA_BC_MODES = [
+  { name: 'periodic',   mode: 0 },
+  { name: 'outflow',    mode: 1 },
+  { name: 'reflecting', mode: 2 },
+  { name: 'driven',     mode: 3 },
+];
+
+function sweepVariantOpts(axis) {
+  return {
+    specializeUniforms: { sweep: { sweep_dir: axis } },
+    specializeFunctionParams: Object.fromEntries(
+      SWEEP_AXIS_HELPERS.map(name => [name, { axis }]),
+    ),
+  };
+}
+
+function stageVariantOpts({ a0, a1, dt_w }) {
+  return {
+    specializeUniforms: { stage_params: { a0, a1, dt_w } },
+  };
+}
+
+function viewFieldVariantOpts(mode) {
+  return {
+    specializeUniforms: { U_uniforms: { view_mode: mode } },
+  };
+}
+
+function plasmaGridUniforms(n, extra = {}) {
+  return {
+    grid_n: n,
+    grid_n_total: n + 2 * PLASMA_GHOST,
+    ghost_w: PLASMA_GHOST,
+    ...extra,
+  };
+}
+
+function plasmaFixedWorkgroups(width, height = width) {
+  return [
+    Math.ceil(width / PLASMA_WORKGROUP),
+    Math.ceil(height / PLASMA_WORKGROUP),
+    1,
+  ];
+}
+
+function gridVariantOpts(n, extraUniforms = {}, width = n, height = width) {
+  return {
+    specializeUniforms: { U_uniforms: plasmaGridUniforms(n, extraUniforms) },
+    fixedWorkgroups: plasmaFixedWorkgroups(width, height),
+  };
+}
+
+function gridVariants(widthFn = n => n, heightFn = widthFn, extraUniforms = {}) {
+  return PLASMA_GRID_VARIANTS.map(n => ({
+    name: `n${n}`,
+    opts: gridVariantOpts(n, extraUniforms, widthFn(n), heightFn(n)),
+  }));
+}
+
+function etaZeroGridVariants(widthFn = n => n, heightFn = widthFn) {
+  return PLASMA_GRID_VARIANTS.map(n => ({
+    name: `n${n}.eta0`,
+    opts: gridVariantOpts(n, { eta_anom_alpha: 0 }, widthFn(n), heightFn(n)),
+  }));
+}
+
+function bcModeGridVariants() {
+  return PLASMA_GRID_VARIANTS.flatMap(n => PLASMA_BC_MODES.map(({ name, mode }) => ({
+    name: `n${n}.bc-${name}`,
+    opts: mergeWGslOpts(
+      gridVariantOpts(n, {}, n + 2 * PLASMA_GHOST + 1),
+      { specializeUniforms: { bc: {
+        mode_n: mode,
+        mode_s: mode,
+        mode_e: mode,
+        mode_w: mode,
+      } } },
+    ),
+  })));
+}
+
 const WGSL_SHADER_DIRS = [
   {
     dir: 'plasma/src/gpu/shaders',
     opts: {
       flatStorage: true,        // array<vecN<f32>> storage bindings flow as Float32Array
       collectErrors: true,      // aggregate all failures into one report
+    },
+    shaderOpts: {
+      // Profile-shaped per-shader defaults. These helpers sit in hot
+      // per-cell paths and are cheap enough to duplicate after profiling,
+      // while larger branchy helpers still need explicit opt-in.
+      'compute-dt.wgsl':  { inlineHotFns: ['jz_mag_at'] },
+      'view-field.wgsl':  { inlineHotFns: ['bx_at', 'by_at'] },
+      'lic-advect.wgsl':  { inlineHotFns: ['sample_noise', 'bx_at_cell', 'by_at_cell', 'sample_b_unit'] },
+    },
+    variants: {
+      // CPU fallback can choose the static x/y sweep artifacts instead
+      // of reading the tiny SweepDir uniform inside the hot loop.
+      'reconstruct-ppm.wgsl': [
+        { name: 'x', opts: sweepVariantOpts(0) },
+        { name: 'y', opts: sweepVariantOpts(1) },
+      ],
+      'riemann-hlld.wgsl': [
+        { name: 'x', opts: sweepVariantOpts(0) },
+        { name: 'y', opts: sweepVariantOpts(1) },
+      ],
+      // Grid/ghost/noise/eta fields are effectively constants for a
+      // running plasma instance. Keep generic artifacts for dynamic use,
+      // but fan out the hot CPU fallback paths for the three UI-supported
+      // resolutions so uniform reads, padding guards, and workgroup
+      // destructuring can fold away.
+      'colormap.wgsl': gridVariants(),
+      'compute-emf.wgsl': gridVariants(n => n + 1),
+      'energy-floor.wgsl': gridVariants(),
+      'lic-advect.wgsl': gridVariants(n => n, n => n, { noise_n: PLASMA_NOISE_N }),
+      'lic-normalize.wgsl': gridVariants(),
+      'compute-dt.wgsl': etaZeroGridVariants(),
+      'apply-bcs.wgsl': bcModeGridVariants(),
+      'apply-resistivity-init.wgsl': etaZeroGridVariants(n => n + 3),
+      'apply-resistivity-prev.wgsl': etaZeroGridVariants(n => n + 3),
+      // Render fallback can pick the current scalar-field mode without
+      // carrying the `view_mode` branch through every interior cell.
+      'view-field.wgsl': [
+        ...VIEW_FIELD_MODES.map(v => ({
+          name: v.name,
+          opts: viewFieldVariantOpts(v.mode),
+        })),
+        ...VIEW_FIELD_MODES.flatMap(v => PLASMA_GRID_VARIANTS.map(n => ({
+          name: `${v.name}.n${n}`,
+          opts: mergeWGslOpts(viewFieldVariantOpts(v.mode), gridVariantOpts(n)),
+        }))),
+      ],
+      // Stage params are immutable RK3 uniform buffers. Prebake the
+      // three common SSP stages so CPU fallback can avoid per-cell
+      // uniform field aliases and fold the stage-1 zero coefficient.
+      'update-conserved-weighted.wgsl': RK3_STAGE_WEIGHTS.map(v => ({
+        name: v.name,
+        opts: stageVariantOpts(v),
+      })),
+      'update-b-weighted.wgsl': RK3_STAGE_WEIGHTS.map(v => ({
+        name: v.name,
+        opts: stageVariantOpts(v),
+      })),
     },
   },
 ];
@@ -614,15 +786,56 @@ function sha256Hex(s) {
   return createHash('sha256').update(s).digest('hex');
 }
 
-function hasEntryPointWGSL(src) {
+const WGSL_TRANSPILER_SHA = sha256Hex(readFileSync(join(ROOT, 'shared-wgsl-transpile.js'), 'utf8'));
+
+function hasComputeEntryPointWGSL(src) {
   // Quick textual check — same intent as run.js's hasEntryPoint(ast)
   // but avoids re-parsing here. False positives are harmless (a comment
   // mentioning @compute would just transpile the helper as an entry,
   // which transpileWGSL handles fine).
+  return /@compute\b/.test(src);
+}
+
+function hasAnyEntryPointWGSL(src) {
   return /@(compute|vertex|fragment)\b/.test(src);
 }
 
-function transpileOneDir({ dir, opts }) {
+function mergeWGslOpts(base, extra = {}) {
+  const out = { ...base };
+  for (const [key, value] of Object.entries(extra)) {
+    if (key === 'specializeUniforms') {
+      const merged = { ...(out.specializeUniforms || {}) };
+      for (const [binding, fields] of Object.entries(value || {})) {
+        merged[binding] = { ...(merged[binding] || {}), ...(fields || {}) };
+      }
+      out.specializeUniforms = merged;
+    } else if (value && typeof value === 'object' && !Array.isArray(value)) {
+      out[key] = { ...(out[key] || {}), ...value };
+    } else {
+      out[key] = value;
+    }
+  }
+  return out;
+}
+
+function artifactPathFor(srcRel, variantName = null) {
+  const suffix = variantName ? `.${variantName}` : '';
+  return join(ROOT, 'transpiled', srcRel).replace(/\.wgsl$/, `${suffix}.transpiled.js`);
+}
+
+function artifactJobsFor(rec, baseOpts, shaderOpts = {}, variants = {}) {
+  const perShaderOpts = mergeWGslOpts(baseOpts, shaderOpts[rec.f] || {});
+  const jobs = [{ name: null, opts: perShaderOpts }];
+  for (const variant of (variants[rec.f] || [])) {
+    jobs.push({
+      name: variant.name,
+      opts: mergeWGslOpts(perShaderOpts, variant.opts || {}),
+    });
+  }
+  return jobs;
+}
+
+function transpileOneDir({ dir, opts, shaderOpts = {}, variants }) {
   const dirAbs = join(ROOT, dir);
   if (!existsSync(dirAbs)) {
     console.log(`wgsl-transpile: skipping ${dir} (not present)`);
@@ -634,13 +847,19 @@ function transpileOneDir({ dir, opts }) {
   const records = files.map(f => {
     const abs = join(dirAbs, f);
     const src = readFileSync(abs, 'utf8');
-    return { f, abs, src, isEntry: hasEntryPointWGSL(src) };
+    return {
+      f,
+      abs,
+      src,
+      isEntry: hasComputeEntryPointWGSL(src),
+      isHelper: !hasAnyEntryPointWGSL(src),
+    };
   });
-  const helpers = records.filter(r => !r.isEntry);
+  const helpers = records.filter(r => r.isHelper);
   const helperSrc = helpers.map(h => h.src).join('\n');
   const helperHash = sha256Hex(helperSrc);
 
-  let written = 0, skipped = 0;
+  let entries = 0, written = 0, skipped = 0;
   const allErrors = [];
 
   for (const rec of records) {
@@ -648,65 +867,76 @@ function transpileOneDir({ dir, opts }) {
     // Mirror the source path under transpiled/ so the parent repo
     // tracks artifacts even when the source lives in a submodule.
     const srcRel = relative(ROOT, rec.abs);
-    const outPath = join(ROOT, 'transpiled', srcRel).replace(/\.wgsl$/, '.transpiled.js');
-    mkdirSync(dirname(outPath), { recursive: true });
     const unitSrc = helpers.length ? helperSrc + '\n' + rec.src : rec.src;
     const unitHash = sha256Hex(unitSrc);
 
-    // Skip if existing artifact's source-hash header matches.
-    if (!WGSL_FORCE && existsSync(outPath)) {
-      try {
-        const existing = readFileSync(outPath, 'utf8');
-        const m = existing.match(/^\/\/ wgsl-transpile sha256: ([0-9a-f]+)/m);
-        if (m && m[1] === unitHash) {
-          skipped++;
-          continue;
-        }
-      } catch { /* fall through to regen */ }
-    }
+    for (const job of artifactJobsFor(rec, opts, shaderOpts, variants)) {
+      entries++;
+      const outPath = artifactPathFor(srcRel, job.name);
+      mkdirSync(dirname(outPath), { recursive: true });
+      const headerOpts = JSON.stringify(job.opts);
 
-    let result;
-    try {
-      result = transpileWGSL(unitSrc, opts);
-    } catch (err) {
-      // Hard failure (parser/tokenizer/resolver) — still want to keep
-      // building other shaders. Collect and report at the end.
-      allErrors.push({
-        file: relative(ROOT, rec.abs),
-        phase: 'fatal',
-        message: err && err.message || String(err),
-      });
-      continue;
-    }
-    if (result.errors && result.errors.length) {
-      for (const e of result.errors) {
-        allErrors.push({ file: relative(ROOT, rec.abs), ...e });
+      // Skip if the existing artifact matches source, transpiler, and opts.
+      if (!WGSL_FORCE && existsSync(outPath)) {
+        try {
+          const existing = readFileSync(outPath, 'utf8');
+          const m = existing.match(/^\/\/ wgsl-transpile sha256: ([0-9a-f]+)/m);
+          const tm = existing.match(/^\/\/ wgsl-transpiler-sha256: ([0-9a-f]+)/m);
+          const om = existing.match(/^\/\/ wgsl-opts: (.+)$/m);
+          if (m && m[1] === unitHash &&
+              tm && tm[1] === WGSL_TRANSPILER_SHA &&
+              om && om[1] === headerOpts) {
+            skipped++;
+            continue;
+          }
+        } catch { /* fall through to regen */ }
       }
-    }
 
-    // Opts are encoded in the header so build-smoke.js can reproduce
-    // the transpile call from the artifact alone — keeps the test
-    // data-driven instead of needing to duplicate WGSL_SHADER_DIRS.
-    const headerOpts = JSON.stringify(opts);
-    const header = [
-      '// Auto-generated from WGSL by _build.mjs — DO NOT EDIT.',
-      `// source: ${relative(ROOT, rec.abs)}`,
-      `// helpers-sha256: ${helperHash}`,
-      `// wgsl-transpile sha256: ${unitHash}`,
-      `// wgsl-opts: ${headerOpts}`,
-      `// generated: ${new Date().toISOString()}`,
-      '',
-    ].join('\n');
-    // Strip the transpiler's own banner since we're prepending our own.
-    const body = result.jsSource.replace(
-      /^\/\/ Auto-generated from WGSL[^\n]*\n\/\/ DO NOT EDIT[^\n]*\n\n/,
-      ''
-    );
-    writeFileSync(outPath, header + body);
-    written++;
+      let result;
+      try {
+        result = transpileWGSL(unitSrc, job.opts);
+      } catch (err) {
+        // Hard failure (parser/tokenizer/resolver) — still want to keep
+        // building other shaders. Collect and report at the end.
+        allErrors.push({
+          file: relative(ROOT, rec.abs) + (job.name ? `#${job.name}` : ''),
+          phase: 'fatal',
+          message: err && err.message || String(err),
+        });
+        continue;
+      }
+      if (result.errors && result.errors.length) {
+        for (const e of result.errors) {
+          allErrors.push({ file: relative(ROOT, rec.abs) + (job.name ? `#${job.name}` : ''), ...e });
+        }
+      }
+
+      // Opts are encoded in the header so build-smoke.js can reproduce
+      // the transpile call from the artifact alone — keeps the test
+      // data-driven instead of needing to duplicate WGSL_SHADER_DIRS.
+      const header = [
+        '// Auto-generated from WGSL by _build.mjs — DO NOT EDIT.',
+        `// source: ${relative(ROOT, rec.abs)}`,
+        job.name ? `// wgsl-variant: ${job.name}` : null,
+        `// helpers-sha256: ${helperHash}`,
+        `// wgsl-transpile sha256: ${unitHash}`,
+        `// wgsl-transpiler-sha256: ${WGSL_TRANSPILER_SHA}`,
+        `// wgsl-opts: ${headerOpts}`,
+        `// wgsl-metrics: ${JSON.stringify(result.metrics)}`,
+        `// generated: ${new Date().toISOString()}`,
+        '',
+      ].filter(x => x != null).join('\n');
+      // Strip the transpiler's own banner since we're prepending our own.
+      const body = result.jsSource.replace(
+        /^\/\/ Auto-generated from WGSL[^\n]*\n\/\/ DO NOT EDIT[^\n]*\n\n/,
+        ''
+      );
+      writeFileSync(outPath, header + body);
+      written++;
+    }
   }
 
-  return { entries: records.filter(r => r.isEntry).length, written, skipped, errors: allErrors };
+  return { entries, written, skipped, errors: allErrors };
 }
 
 console.log('');

@@ -15,6 +15,10 @@
 /geon/*
   Cross-Origin-Embedder-Policy: credentialless
 
+# Cross-origin isolation for plasma (enables SharedArrayBuffer / high-res timers for WebGPU)
+/plasma/*
+  Cross-Origin-Embedder-Policy: credentialless
+
 # HTML — no-cache with stale-while-revalidate (static pages only;
 # Worker-served SPA routes set their own cache headers)
 /*.html
@@ -54,7 +58,7 @@
   Link: </main.js>; rel=modulepreload
   Link: </fonts/recursive-variable.woff2>; rel=preload; as=font; crossorigin
 # Subapp Early Hints — shared resources + project-specific CSS and module entry
-# /geon/* omitted: COEP: credentialless invalidates 103 preloads (fetched pre-policy)
+# /geon/* and /plasma/* omitted: COEP: credentialless invalidates 103 preloads (fetched pre-policy)
 # /scripture/* omitted: Worker SSR delay causes preloads to expire before HTML arrives
 /geon/*
   Link: <https://cdn.jsdelivr.net>; rel=preconnect; crossorigin
@@ -144,6 +148,15 @@
   Cache-Control: public, max-age=86400, stale-while-revalidate=604800
   Cloudflare-CDN-Cache-Control: public, max-age=31536000, immutable
 /pile/*.css
+  Cache-Control: public, max-age=86400, stale-while-revalidate=604800
+  Cloudflare-CDN-Cache-Control: public, max-age=31536000, immutable
+/plasma/*.js
+  Cache-Control: public, max-age=86400, stale-while-revalidate=604800
+  Cloudflare-CDN-Cache-Control: public, max-age=31536000, immutable
+/plasma/*.css
+  Cache-Control: public, max-age=86400, stale-while-revalidate=604800
+  Cloudflare-CDN-Cache-Control: public, max-age=31536000, immutable
+/plasma/*.wgsl
   Cache-Control: public, max-age=86400, stale-while-revalidate=604800
   Cloudflare-CDN-Cache-Control: public, max-age=31536000, immutable
 /scripture/*.js

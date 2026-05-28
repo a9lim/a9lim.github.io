@@ -1,11 +1,16 @@
 {
-  "generatedAt": "2026-05-25T23:39:34.869Z",
+  "generatedAt": "2026-05-28T05:46:21.889Z",
   "lastDeploy": {
-    "hash": "3552260",
-    "iso": "2026-05-25T16:33:40-07:00",
-    "subject": "wgsl-transpile: build-time artifact writer + plasma shader pre-transpile"
+    "hash": "c0aae5e",
+    "iso": "2026-05-25T16:42:04-07:00",
+    "subject": "wgsl-transpile: build-smoke.js + opts in artifact header"
   },
   "commits": [
+    {
+      "hash": "c0aae5e",
+      "iso": "2026-05-25T16:42:04-07:00",
+      "subject": "wgsl-transpile: build-smoke.js + opts in artifact header"
+    },
     {
       "hash": "3552260",
       "iso": "2026-05-25T16:33:40-07:00",
@@ -30,18 +35,13 @@
       "hash": "5c0cc23",
       "iso": "2026-05-25T15:09:48-07:00",
       "subject": "Optimize WGSL transpiler hot paths"
-    },
-    {
-      "hash": "05b8b86",
-      "iso": "2026-05-25T13:30:50-07:00",
-      "subject": "wgsl-transpile: refresh README — restructure, add Resolver+Inline sections, update LOC"
     }
   ],
   "stats": {
-    "sims": 7,
+    "sims": 8,
     "posts": 1,
     "scriptureWorks": 16,
     "scriptureChapters": 2724,
-    "sourceLines": 31518
+    "sourceLines": 42988
   }
 }

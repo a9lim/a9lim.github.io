@@ -1,15 +1,60 @@
 // Auto-generated from WGSL by _build.mjs — DO NOT EDIT.
 // source: plasma/src/gpu/shaders/reconstruct-ppm.wgsl
-// helpers-sha256: b91e2ee1e6d4fdceaccac2b8f5db37fbde9a5d2b76ef88f1977bbfcf6e6e2833
-// wgsl-transpile sha256: 2a9b5771497aa43da49ae518b291b9b56a10a9b405b7f6a826176e19a395e3c2
+// helpers-sha256: eefe8364e4418fe1122eaec2c334fc5ddb0dee0d50920de592e31eb98cc89805
+// wgsl-transpile sha256: 9d13d45074f02e1ca7c3de621c09c78ea7f24634e8ff8ec28e844ca2cd7d77be
+// wgsl-transpiler-sha256: ac640ff2e57bd5c92b7bae5ed9f847914e51684c046fab990cf544842ad38716
 // wgsl-opts: {"flatStorage":true,"collectErrors":true}
-// generated: 2026-05-25T23:39:36.675Z
+// wgsl-metrics: {"bytes":79432,"lines":1368,"rtVec":0,"rtPoly":0,"rtAtomic":0,"rtNumeric":0,"fround":0,"hypot":0,"iife":22,"workgroupReductionInits":0,"flatWorkgroupArrays":1,"flatWorkgroupSlots":1152,"staticBranchPrunes":0}
+// generated: 2026-05-27T17:41:05.213Z
 export default function _wgsl_module(rt) {
+    const FLAG_COOLING = (1 << 0);
+    const FLAG_GRAVITY_EXT = (1 << 1);
+    const FLAG_GRAVITY_SELF = (1 << 2);
+    const FLAG_CONDUCTION = (1 << 3);
+    const FLAG_HALL = (1 << 4);
+    const FLAG_POSITIVITY = (1 << 5);
+    const FLAG_EMF_UPWIND = (1 << 6);
+    const FLAG_AMBIPOLAR = (1 << 7);
+    const FLAG_BIERMANN = (1 << 8);
+    const FLAG_VISCOSITY = (1 << 9);
+    const FLAG_GEOMETRY = (1 << 10);
+    const FLAG_SPONGE = (1 << 11);
+    const FLAG_HEATING = (1 << 12);
+    const FLAG_RADIATION = (1 << 13);
+    const FLAG_ELECTRON_INERTIA = (1 << 14);
     const BC_PERIODIC = 0;
     const BC_OUTFLOW = 1;
     const BC_REFLECTING = 2;
     const BC_DRIVEN = 3;
+    const EDGE_N_BC = 0;
+    const EDGE_S_BC = 1;
+    const EDGE_E_BC = 2;
+    const EDGE_W_BC = 3;
     const DENSITY_FLOOR = 1.0e-6;
+    const DUAL_ENERGY_FRACTION = 1.0e-3;
+
+    function pressure_from_dual_energy(U0, U1, bx_c, by_c, gamma, p_floor) {
+        const U0_x = U0.x;
+        const U0_y = U0.y;
+        const U0_z = U0.z;
+        const U0_w = U0.w;
+        const U1_x = U1.x;
+        const U1_y = U1.y;
+        const U1_z = U1.z;
+        const U1_w = U1.w;
+        const rho = ((U0_x) < (DENSITY_FLOOR) ? (DENSITY_FLOOR) : (U0_x));
+        const vx = (U0_y / rho);
+        const vy = (U0_z / rho);
+        const vz = (U0_w / rho);
+        const ke = ((0.5 * rho) * ((((vx * vx) + (vy * vy)) + (vz * vz))));
+        const mb = (0.5 * ((((bx_c * bx_c) + (by_c * by_c)) + (U1_y * U1_y))));
+        const eth_total = ((U1_x - ke) - mb);
+        const eth_floor = (p_floor / (((gamma - 1.0)) < (1.0e-6) ? (1.0e-6) : ((gamma - 1.0))));
+        const total_ok = ((eth_total > ((eth_floor) < ((DUAL_ENERGY_FRACTION * ((Math.abs(U1_x)) < (eth_floor) ? (eth_floor) : (Math.abs(U1_x))))) ? ((DUAL_ENERGY_FRACTION * ((Math.abs(U1_x)) < (eth_floor) ? (eth_floor) : (Math.abs(U1_x))))) : (eth_floor))) && (eth_total == eth_total));
+        const dual_eth = ((U1_z) < (eth_floor) ? (eth_floor) : (U1_z));
+        const eth = (total_ok ? eth_total : dual_eth);
+        return (((((gamma - 1.0)) * eth)) < (p_floor) ? (p_floor) : ((((gamma - 1.0)) * eth)));
+    }
 
     function cons_to_prim_mhd(U0, U1, bx_c, by_c, gamma, p_floor) {
         const U0_x = U0.x;
@@ -35,10 +80,62 @@ export default function _wgsl_module(rt) {
         P_bx = bx_c;
         P_by = by_c;
         P_bz = U1_y;
-        const ke = ((0.5 * P_rho) * ((((P_vx * P_vx) + (P_vy * P_vy)) + (P_vz * P_vz))));
-        const mb = (0.5 * ((((P_bx * P_bx) + (P_by * P_by)) + (P_bz * P_bz))));
-        P_p = (((((gamma - 1.0)) * (((U1_x - ke) - mb)))) < (p_floor) ? (p_floor) : ((((gamma - 1.0)) * (((U1_x - ke) - mb)))));
+        P_p = pressure_from_dual_energy({x:U0_x, y:U0_y, z:U0_z, w:U0_w}, {x:U1_x, y:U1_y, z:U1_z, w:U1_w}, bx_c, by_c, gamma, p_floor);
         return { rho: P_rho, vx: P_vx, vy: P_vy, vz: P_vz, p: P_p, bx: P_bx, by: P_by, bz: P_bz };
+    }
+
+    function cell_primitive_cache(ix, iy, n_total, gamma, p_floor) {
+        let _inl_6_result;
+        _inl_6: {
+            _inl_6_result = ((iy * n_total) + ix);
+            break _inl_6;
+        }
+        const idx = _inl_6_result;
+        let _inl_7_result;
+        _inl_7: {
+            let _inl_7__inl_0_result;
+            _inl_7__inl_0: {
+                _inl_7__inl_0_result = ((iy * ((n_total + 1))) + ix);
+                break _inl_7__inl_0;
+            }
+            _inl_7_result = _inl_7__inl_0_result;
+            break _inl_7;
+        }
+        let _inl_8_result;
+        _inl_8: {
+            const _inl_8__inl_1_ix = (ix + 1);
+            let _inl_8__inl_1_result;
+            _inl_8__inl_1: {
+                _inl_8__inl_1_result = ((iy * ((n_total + 1))) + _inl_8__inl_1_ix);
+                break _inl_8__inl_1;
+            }
+            _inl_8_result = _inl_8__inl_1_result;
+            break _inl_8;
+        }
+        const bx = (0.5 * ((bindings.Bx_face[_inl_7_result] + bindings.Bx_face[_inl_8_result])));
+        let _inl_9_result;
+        _inl_9: {
+            let _inl_9__inl_2_result;
+            _inl_9__inl_2: {
+                _inl_9__inl_2_result = ((iy * n_total) + ix);
+                break _inl_9__inl_2;
+            }
+            _inl_9_result = _inl_9__inl_2_result;
+            break _inl_9;
+        }
+        let _inl_10_result;
+        _inl_10: {
+            const _inl_10__inl_3_iy = (iy + 1);
+            let _inl_10__inl_3_result;
+            _inl_10__inl_3: {
+                _inl_10__inl_3_result = ((_inl_10__inl_3_iy * n_total) + ix);
+                break _inl_10__inl_3;
+            }
+            _inl_10_result = _inl_10__inl_3_result;
+            break _inl_10;
+        }
+        const by = (0.5 * ((bindings.By_face[_inl_9_result] + bindings.By_face[_inl_10_result])));
+        return cons_to_prim_mhd(((_b) => ({x:bindings.U0_in[_b + 0], y:bindings.U0_in[_b + 1], z:bindings.U0_in[_b + 2], w:bindings.U0_in[_b + 3]}))(((idx) * 4 + 0)), ((_b) => ({x:bindings.U1_in[_b + 0], y:bindings.U1_in[_b + 1], z:bindings.U1_in[_b + 2], w:bindings.U1_in[_b + 3]}))(((idx) * 4 + 0)), bx, by, gamma, p_floor);
     }
 
     function permute_prim(P, axis) {
@@ -68,6 +165,65 @@ export default function _wgsl_module(rt) {
             R_bn = P.by;
         }
         return { rho: R_rho, vn: R_vn, vt1: R_vt1, vt2: R_vt2, bt1: R_bt1, bt2: R_bt2, p: R_p, bn: R_bn };
+    }
+
+    function vec7_of(P) {
+        return { rho: P.rho, vn: P.vn, vt1: P.vt1, vt2: P.vt2, bt1: P.bt1, bt2: P.bt2, p: P.p };
+    }
+
+    function pack_prim_pair_from_vec7(w, bn, axis) {
+        let R_p0_x = 0;
+        let R_p0_y = 0;
+        let R_p0_z = 0;
+        let R_p0_w = 0;
+        let R_p1_x = 0;
+        let R_p1_y = 0;
+        let R_p1_z = 0;
+        let R_p1_w = 0;
+        if ((axis == 0)) {
+            {
+                const _wt0 = w.rho;
+                const _wt1 = w.vn;
+                const _wt2 = w.vt1;
+                const _wt3 = w.vt2;
+                R_p0_x = _wt0;
+                R_p0_y = _wt1;
+                R_p0_z = _wt2;
+                R_p0_w = _wt3;
+            }
+            {
+                const _wt0 = w.p;
+                const _wt1 = w.bt1;
+                const _wt2 = w.bt2;
+                const _wt3 = 0.0;
+                R_p1_x = _wt0;
+                R_p1_y = _wt1;
+                R_p1_z = _wt2;
+                R_p1_w = _wt3;
+            }
+        } else {
+            {
+                const _wt0 = w.rho;
+                const _wt1 = w.vt2;
+                const _wt2 = w.vn;
+                const _wt3 = w.vt1;
+                R_p0_x = _wt0;
+                R_p0_y = _wt1;
+                R_p0_z = _wt2;
+                R_p0_w = _wt3;
+            }
+            {
+                const _wt0 = w.p;
+                const _wt1 = w.bt2;
+                const _wt2 = w.bt1;
+                const _wt3 = 0.0;
+                R_p1_x = _wt0;
+                R_p1_y = _wt1;
+                R_p1_z = _wt2;
+                R_p1_w = _wt3;
+            }
+        }
+        return { p0: {x:R_p0_x, y:R_p0_y, z:R_p0_z, w:R_p0_w}, p1: {x:R_p1_x, y:R_p1_y, z:R_p1_z, w:R_p1_w} };
     }
 
     function mhd_eigensystem(w, bn, gamma) {
@@ -191,7 +347,7 @@ export default function _wgsl_module(rt) {
         let dL = dL_in;
         let dR = dR_in;
         if (((dL * dR) <= 0.0)) {
-            return rt.vec2(0.0, 0.0);
+            return {x:0.0, y:0.0};
         }
         const dq = (dL + dR);
         const q6 = (3.0 * ((dL - dR)));
@@ -202,7 +358,7 @@ export default function _wgsl_module(rt) {
         } else if ((test < (-dq2))) {
             dR = (2.0 * dL);
         }
-        return rt.vec2(dL, dR);
+        return {x:dL, y:dR};
     }
 
     function ppm_limit_char(aL, aR) {
@@ -227,73 +383,133 @@ export default function _wgsl_module(rt) {
         const _sroa_6 = ppm_limit_delta(aL.fR, aR.fR);
         const r6_x = _sroa_6.x;
         const r6_y = _sroa_6.y;
-        let out_L = null;
-        let out_R = null;
-        out_L = { fL: r0_x, aL: r1_x, sL: r2_x, e: r3_x, sR: r4_x, aR: r5_x, fR: r6_x };
-        out_R = { fL: r0_y, aL: r1_y, sL: r2_y, e: r3_y, sR: r4_y, aR: r5_y, fR: r6_y };
-        return { L: out_L, R: out_R };
+        let out_L_fL = 0;
+        let out_L_aL = 0;
+        let out_L_sL = 0;
+        let out_L_e = 0;
+        let out_L_sR = 0;
+        let out_L_aR = 0;
+        let out_L_fR = 0;
+        let out_R_fL = 0;
+        let out_R_aL = 0;
+        let out_R_sL = 0;
+        let out_R_e = 0;
+        let out_R_sR = 0;
+        let out_R_aR = 0;
+        let out_R_fR = 0;
+        out_L_fL = r0_x;
+        out_L_aL = r1_x;
+        out_L_sL = r2_x;
+        out_L_e = r3_x;
+        out_L_sR = r4_x;
+        out_L_aR = r5_x;
+        out_L_fR = r6_x;
+        out_R_fL = r0_y;
+        out_R_aL = r1_y;
+        out_R_sL = r2_y;
+        out_R_e = r3_y;
+        out_R_sR = r4_y;
+        out_R_aR = r5_y;
+        out_R_fR = r6_y;
+        return { L: { fL: out_L_fL, aL: out_L_aL, sL: out_L_sL, e: out_L_e, sR: out_L_sR, aR: out_L_aR, fR: out_L_fR }, R: { fL: out_R_fL, aL: out_R_aL, sL: out_R_sL, e: out_R_e, sR: out_R_sR, aR: out_R_aR, fR: out_R_fR } };
     }
 
-    function primitive_safety_net(w_left_raw, w_right_raw, w_c, w_m1, w_p1) {
-        let L_rho = 0;
-        let L_vn = 0;
-        let L_vt1 = 0;
-        let L_vt2 = 0;
-        let L_bt1 = 0;
-        let L_bt2 = 0;
-        let L_p = 0;
-        L_rho = rt.clampScalar(w_left_raw.rho, ((w_m1.rho) < (w_c.rho) ? (w_m1.rho) : (w_c.rho)), ((w_c.rho) < (w_m1.rho) ? (w_m1.rho) : (w_c.rho)));
-        L_vn = rt.clampScalar(w_left_raw.vn, ((w_m1.vn) < (w_c.vn) ? (w_m1.vn) : (w_c.vn)), ((w_c.vn) < (w_m1.vn) ? (w_m1.vn) : (w_c.vn)));
-        L_vt1 = rt.clampScalar(w_left_raw.vt1, ((w_m1.vt1) < (w_c.vt1) ? (w_m1.vt1) : (w_c.vt1)), ((w_c.vt1) < (w_m1.vt1) ? (w_m1.vt1) : (w_c.vt1)));
-        L_vt2 = rt.clampScalar(w_left_raw.vt2, ((w_m1.vt2) < (w_c.vt2) ? (w_m1.vt2) : (w_c.vt2)), ((w_c.vt2) < (w_m1.vt2) ? (w_m1.vt2) : (w_c.vt2)));
-        L_bt1 = rt.clampScalar(w_left_raw.bt1, ((w_m1.bt1) < (w_c.bt1) ? (w_m1.bt1) : (w_c.bt1)), ((w_c.bt1) < (w_m1.bt1) ? (w_m1.bt1) : (w_c.bt1)));
-        L_bt2 = rt.clampScalar(w_left_raw.bt2, ((w_m1.bt2) < (w_c.bt2) ? (w_m1.bt2) : (w_c.bt2)), ((w_c.bt2) < (w_m1.bt2) ? (w_m1.bt2) : (w_c.bt2)));
-        L_p = rt.clampScalar(w_left_raw.p, ((w_m1.p) < (w_c.p) ? (w_m1.p) : (w_c.p)), ((w_c.p) < (w_m1.p) ? (w_m1.p) : (w_c.p)));
-        let R_rho = 0;
-        let R_vn = 0;
-        let R_vt1 = 0;
-        let R_vt2 = 0;
-        let R_bt1 = 0;
-        let R_bt2 = 0;
-        let R_p = 0;
-        R_rho = rt.clampScalar(w_right_raw.rho, ((w_p1.rho) < (w_c.rho) ? (w_p1.rho) : (w_c.rho)), ((w_c.rho) < (w_p1.rho) ? (w_p1.rho) : (w_c.rho)));
-        R_vn = rt.clampScalar(w_right_raw.vn, ((w_p1.vn) < (w_c.vn) ? (w_p1.vn) : (w_c.vn)), ((w_c.vn) < (w_p1.vn) ? (w_p1.vn) : (w_c.vn)));
-        R_vt1 = rt.clampScalar(w_right_raw.vt1, ((w_p1.vt1) < (w_c.vt1) ? (w_p1.vt1) : (w_c.vt1)), ((w_c.vt1) < (w_p1.vt1) ? (w_p1.vt1) : (w_c.vt1)));
-        R_vt2 = rt.clampScalar(w_right_raw.vt2, ((w_p1.vt2) < (w_c.vt2) ? (w_p1.vt2) : (w_c.vt2)), ((w_c.vt2) < (w_p1.vt2) ? (w_p1.vt2) : (w_c.vt2)));
-        R_bt1 = rt.clampScalar(w_right_raw.bt1, ((w_p1.bt1) < (w_c.bt1) ? (w_p1.bt1) : (w_c.bt1)), ((w_c.bt1) < (w_p1.bt1) ? (w_p1.bt1) : (w_c.bt1)));
-        R_bt2 = rt.clampScalar(w_right_raw.bt2, ((w_p1.bt2) < (w_c.bt2) ? (w_p1.bt2) : (w_c.bt2)), ((w_c.bt2) < (w_p1.bt2) ? (w_p1.bt2) : (w_c.bt2)));
-        R_p = rt.clampScalar(w_right_raw.p, ((w_p1.p) < (w_c.p) ? (w_p1.p) : (w_c.p)), ((w_c.p) < (w_p1.p) ? (w_p1.p) : (w_c.p)));
-        const _sroa_7 = ppm_limit_delta((w_c.rho - L_rho), (R_rho - w_c.rho));
-        const r_rho_x = _sroa_7.x;
-        const r_rho_y = _sroa_7.y;
-        const _sroa_8 = ppm_limit_delta((w_c.vn - L_vn), (R_vn - w_c.vn));
-        const r_vn_x = _sroa_8.x;
-        const r_vn_y = _sroa_8.y;
-        const _sroa_9 = ppm_limit_delta((w_c.vt1 - L_vt1), (R_vt1 - w_c.vt1));
-        const r_vt1_x = _sroa_9.x;
-        const r_vt1_y = _sroa_9.y;
-        const _sroa_10 = ppm_limit_delta((w_c.vt2 - L_vt2), (R_vt2 - w_c.vt2));
-        const r_vt2_x = _sroa_10.x;
-        const r_vt2_y = _sroa_10.y;
-        const _sroa_11 = ppm_limit_delta((w_c.bt1 - L_bt1), (R_bt1 - w_c.bt1));
-        const r_bt1_x = _sroa_11.x;
-        const r_bt1_y = _sroa_11.y;
-        const _sroa_12 = ppm_limit_delta((w_c.bt2 - L_bt2), (R_bt2 - w_c.bt2));
-        const r_bt2_x = _sroa_12.x;
-        const r_bt2_y = _sroa_12.y;
-        const _sroa_13 = ppm_limit_delta((w_c.p - L_p), (R_p - w_c.p));
-        const r_p_x = _sroa_13.x;
-        const r_p_y = _sroa_13.y;
-        let out_L = null;
-        let out_R = null;
-        out_L = { rho: (w_c.rho - r_rho_x), vn: (w_c.vn - r_vn_x), vt1: (w_c.vt1 - r_vt1_x), vt2: (w_c.vt2 - r_vt2_x), bt1: (w_c.bt1 - r_bt1_x), bt2: (w_c.bt2 - r_bt2_x), p: (w_c.p - r_p_x) };
-        out_R = { rho: (w_c.rho + r_rho_y), vn: (w_c.vn + r_vn_y), vt1: (w_c.vt1 + r_vt1_y), vt2: (w_c.vt2 + r_vt2_y), bt1: (w_c.bt1 + r_bt1_y), bt2: (w_c.bt2 + r_bt2_y), p: (w_c.p + r_p_y) };
-        return { L: out_L, R: out_R };
+    function ppm4_limit_component(w_L_raw, w_R_raw, w_L_char, w_R_char, w_m2, w_m1, w_c, w_p1, w_p2) {
+        const d2c = ((w_m1 - (2.0 * w_c)) + w_p1);
+        const d2L = ((w_m2 - (2.0 * w_m1)) + w_c);
+        const d2R = ((w_c - (2.0 * w_p1)) + w_p2);
+        const d2f = (6.0 * (((w_L_raw - (2.0 * w_c)) + w_R_raw)));
+        const cell_bracket = (((w_p1 - w_c)) * ((w_c - w_m1)));
+        const face_bracket = (((w_R_raw - w_c)) * ((w_c - w_L_raw)));
+        const is_extremum = (((cell_bracket <= 0.0)) || ((face_bracket <= 0.0)));
+        const L_clamp = (((_x, _lo, _hi) => { const _mx = _x < _lo ? _lo : _x; return _hi < _mx ? _hi : _mx; })(w_L_char, ((w_m1) < (w_c) ? (w_m1) : (w_c)), ((w_c) < (w_m1) ? (w_m1) : (w_c))));
+        const R_clamp = (((_x, _lo, _hi) => { const _mx = _x < _lo ? _lo : _x; return _hi < _mx ? _hi : _mx; })(w_R_char, ((w_p1) < (w_c) ? (w_p1) : (w_c)), ((w_c) < (w_p1) ? (w_p1) : (w_c))));
+        const _sroa_7 = ppm_limit_delta((w_c - L_clamp), (R_clamp - w_c));
+        const r_cw_x = _sroa_7.x;
+        const r_cw_y = _sroa_7.y;
+        const L_cw = (w_c - r_cw_x);
+        const R_cw = (w_c + r_cw_y);
+        if ((!is_extremum)) {
+            return {x:L_cw, y:R_cw};
+        }
+        const s_c = Math.sign(d2c);
+        const s_L = Math.sign(d2L);
+        const s_R = Math.sign(d2R);
+        const s_f = Math.sign(d2f);
+        const signs_agree = (((((s_c == s_f)) && ((s_L == s_f))) && ((s_R == s_f))) && ((s_f != 0.0)));
+        const C = 1.25;
+        let d2_lim = 0.0;
+        if (signs_agree) {
+            const bound = (((C * ((((Math.abs(d2R)) < (Math.abs(d2L)) ? (Math.abs(d2R)) : (Math.abs(d2L)))) < (Math.abs(d2c)) ? (((Math.abs(d2R)) < (Math.abs(d2L)) ? (Math.abs(d2R)) : (Math.abs(d2L)))) : (Math.abs(d2c))))) < (Math.abs(d2f)) ? ((C * ((((Math.abs(d2R)) < (Math.abs(d2L)) ? (Math.abs(d2R)) : (Math.abs(d2L)))) < (Math.abs(d2c)) ? (((Math.abs(d2R)) < (Math.abs(d2L)) ? (Math.abs(d2R)) : (Math.abs(d2L)))) : (Math.abs(d2c))))) : (Math.abs(d2f)));
+            d2_lim = (s_f * bound);
+        }
+        if ((Math.abs(d2f) <= 1.0e-30)) {
+            return {x:L_cw, y:R_cw};
+        }
+        const scale = (d2_lim / d2f);
+        const L_ppm4 = (w_c + (((w_L_raw - w_c)) * scale));
+        const R_ppm4 = (w_c + (((w_R_raw - w_c)) * scale));
+        return {x:L_ppm4, y:R_ppm4};
+    }
+
+    function primitive_safety_net_ppm4(w_left_raw, w_right_raw, w_left_char, w_right_char, w_c, w_m2, w_m1, w_p1, w_p2) {
+        const _sroa_8 = ppm4_limit_component(w_left_raw.rho, w_right_raw.rho, w_left_char.rho, w_right_char.rho, w_m2.rho, w_m1.rho, w_c.rho, w_p1.rho, w_p2.rho);
+        const r_rho_x = _sroa_8.x;
+        const r_rho_y = _sroa_8.y;
+        const _sroa_9 = ppm4_limit_component(w_left_raw.vn, w_right_raw.vn, w_left_char.vn, w_right_char.vn, w_m2.vn, w_m1.vn, w_c.vn, w_p1.vn, w_p2.vn);
+        const r_vn_x = _sroa_9.x;
+        const r_vn_y = _sroa_9.y;
+        const _sroa_10 = ppm4_limit_component(w_left_raw.vt1, w_right_raw.vt1, w_left_char.vt1, w_right_char.vt1, w_m2.vt1, w_m1.vt1, w_c.vt1, w_p1.vt1, w_p2.vt1);
+        const r_vt1_x = _sroa_10.x;
+        const r_vt1_y = _sroa_10.y;
+        const _sroa_11 = ppm4_limit_component(w_left_raw.vt2, w_right_raw.vt2, w_left_char.vt2, w_right_char.vt2, w_m2.vt2, w_m1.vt2, w_c.vt2, w_p1.vt2, w_p2.vt2);
+        const r_vt2_x = _sroa_11.x;
+        const r_vt2_y = _sroa_11.y;
+        const _sroa_12 = ppm4_limit_component(w_left_raw.bt1, w_right_raw.bt1, w_left_char.bt1, w_right_char.bt1, w_m2.bt1, w_m1.bt1, w_c.bt1, w_p1.bt1, w_p2.bt1);
+        const r_bt1_x = _sroa_12.x;
+        const r_bt1_y = _sroa_12.y;
+        const _sroa_13 = ppm4_limit_component(w_left_raw.bt2, w_right_raw.bt2, w_left_char.bt2, w_right_char.bt2, w_m2.bt2, w_m1.bt2, w_c.bt2, w_p1.bt2, w_p2.bt2);
+        const r_bt2_x = _sroa_13.x;
+        const r_bt2_y = _sroa_13.y;
+        const _sroa_14 = ppm4_limit_component(w_left_raw.p, w_right_raw.p, w_left_char.p, w_right_char.p, w_m2.p, w_m1.p, w_c.p, w_p1.p, w_p2.p);
+        const r_p_x = _sroa_14.x;
+        const r_p_y = _sroa_14.y;
+        let out_L_rho = 0;
+        let out_L_vn = 0;
+        let out_L_vt1 = 0;
+        let out_L_vt2 = 0;
+        let out_L_bt1 = 0;
+        let out_L_bt2 = 0;
+        let out_L_p = 0;
+        let out_R_rho = 0;
+        let out_R_vn = 0;
+        let out_R_vt1 = 0;
+        let out_R_vt2 = 0;
+        let out_R_bt1 = 0;
+        let out_R_bt2 = 0;
+        let out_R_p = 0;
+        out_L_rho = r_rho_x;
+        out_L_vn = r_vn_x;
+        out_L_vt1 = r_vt1_x;
+        out_L_vt2 = r_vt2_x;
+        out_L_bt1 = r_bt1_x;
+        out_L_bt2 = r_bt2_x;
+        out_L_p = r_p_x;
+        out_R_rho = r_rho_y;
+        out_R_vn = r_vn_y;
+        out_R_vt1 = r_vt1_y;
+        out_R_vt2 = r_vt2_y;
+        out_R_bt1 = r_bt1_y;
+        out_R_bt2 = r_bt2_y;
+        out_R_p = r_p_y;
+        return { L: { rho: out_L_rho, vn: out_L_vn, vt1: out_L_vt1, vt2: out_L_vt2, bt1: out_L_bt1, bt2: out_L_bt2, p: out_L_p }, R: { rho: out_R_rho, vn: out_R_vn, vt1: out_R_vt1, vt2: out_R_vt2, bt1: out_R_bt1, bt2: out_R_bt2, p: out_R_p } };
     }
 
     const entry = Object.create(null);
+    const entryInfo = Object.create(null);
 
-    entry["main"] = function ({ workgroups, bindings }) {
+    entryInfo["main"] = {"workgroupSize":[8,8,1],"phases":2,"globalLoop":false,"workgroupMemory":true,"flatWorkgroupArrays":1,"optimizedWorkgroupReductionInits":0};
+    function __entry_0_main(workgroups, bindings, domain, origin) {
         const [Wx, Wy, Wz] = workgroups;
         const Lx = 8, Ly = 8, Lz = 1;
         const _b_U_uniforms = bindings.U_uniforms;
@@ -302,10 +518,6 @@ export default function _wgsl_module(rt) {
         const _u_U_uniforms_grid_n_total = _b_U_uniforms.grid_n_total;
         const _u_U_uniforms_ghost_w = _b_U_uniforms.ghost_w;
         const _u_U_uniforms_pressure_floor = _b_U_uniforms.pressure_floor;
-        const _b_U0_in = bindings.U0_in;
-        const _b_U1_in = bindings.U1_in;
-        const _b_Bx_face = bindings.Bx_face;
-        const _b_By_face = bindings.By_face;
         const _b_edge_l_0 = bindings.edge_l_0;
         const _b_edge_l_1 = bindings.edge_l_1;
         const _b_edge_r_0 = bindings.edge_r_0;
@@ -313,1327 +525,853 @@ export default function _wgsl_module(rt) {
         const _b_sweep = bindings.sweep;
         const _u_sweep_sweep_dir = _b_sweep.sweep_dir;
         const wg = Object.create(null);
+        wg.tile = new Float32Array(1152);
         for (let wgz = 0; wgz < Wz; wgz++)
         for (let wgy = 0; wgy < Wy; wgy++)
         for (let wgx = 0; wgx < Wx; wgx++) {
-            wg.tile = Array.from({ length: 12 }, () => Array.from({ length: 12 }, () => ({ rho: 0, vx: 0, vy: 0, vz: 0, p: 0, bx: 0, by: 0, bz: 0 })));
+            wg.tile.fill(0);
             // Phase 0
-            for (let lz = 0; lz < Lz; lz++)
-            for (let ly = 0; ly < Ly; ly++)
-            for (let lx = 0; lx < Lx; lx++) {
-                const gid_x = wgx*Lx + lx;
-                const gid_y = wgy*Ly + ly;
-                const lid_x = lx;
-                const lid_y = ly;
-                __invocation: {
-                    const n_interior = _u_U_uniforms_grid_n;
-                    const n_total = _u_U_uniforms_grid_n_total;
-                    const ghost = _u_U_uniforms_ghost_w;
-                    const extent = (n_interior + 2);
-                    const in_extent = (((gid_x < extent)) && ((gid_y < extent)));
-                    const axis = _u_sweep_sweep_dir;
-                    const g = _u_U_uniforms_gamma;
-                    const pf = _u_U_uniforms_pressure_floor;
-                    const nt_max = (rt.i32(n_total) - 1);
-                    const gx = ((rt.i32(gid_x) + rt.i32(ghost)) - 1);
-                    const gy = ((rt.i32(gid_y) + rt.i32(ghost)) - 1);
-                    const lx = rt.i32(lid_x);
-                    const ly = rt.i32(lid_y);
-                    const cx = rt.u32(rt.clampScalar(gx, 0, nt_max));
-                    const cy = rt.u32(rt.clampScalar(gy, 0, nt_max));
-                    let _inl_9_result;
-                    _inl_9: {
-                        let _inl_9__inl_4_result;
-                        _inl_9__inl_4: {
-                            _inl_9__inl_4_result = ((cy * n_total) + cx);
-                            break _inl_9__inl_4;
+            {
+                const lz = 0;
+                for (let ly = 0; ly < Ly; ly++) {
+                    for (let lx = 0; lx < Lx; lx++) {
+                        const gid_x = wgx*Lx + lx;
+                        const gid_y = wgy*Ly + ly;
+                        const lid_x = lx;
+                        const lid_y = ly;
+                        {
+                            const n_interior = _u_U_uniforms_grid_n;
+                            const n_total = _u_U_uniforms_grid_n_total;
+                            const ghost = _u_U_uniforms_ghost_w;
+                            const extent = (n_interior + 2);
+                            const in_extent = (((gid_x < extent)) && ((gid_y < extent)));
+                            const axis = _u_sweep_sweep_dir;
+                            const g = _u_U_uniforms_gamma;
+                            const pf = _u_U_uniforms_pressure_floor;
+                            const nt_max = (((n_total) | 0) - 1);
+                            const gx = ((((gid_x) | 0) + ((ghost) | 0)) - 1);
+                            const gy = ((((gid_y) | 0) + ((ghost) | 0)) - 1);
+                            const lx = ((lid_x) | 0);
+                            const ly = ((lid_y) | 0);
+                            const cx = (((((_x, _lo, _hi) => { const _mx = _x < _lo ? _lo : _x; return _hi < _mx ? _hi : _mx; })(gx, 0, nt_max))) >>> 0);
+                            const cy = (((((_x, _lo, _hi) => { const _mx = _x < _lo ? _lo : _x; return _hi < _mx ? _hi : _mx; })(gy, 0, nt_max))) >>> 0);
+                            {
+                                const _wbase = ((((ly + 2)) * 96) + (((lx + 2)) * 8));
+                                const _stmp = cell_primitive_cache(cx, cy, n_total, g, pf);
+                                wg.tile[_wbase + 0] = _stmp.rho;
+                                wg.tile[_wbase + 1] = _stmp.vx;
+                                wg.tile[_wbase + 2] = _stmp.vy;
+                                wg.tile[_wbase + 3] = _stmp.vz;
+                                wg.tile[_wbase + 4] = _stmp.p;
+                                wg.tile[_wbase + 5] = _stmp.bx;
+                                wg.tile[_wbase + 6] = _stmp.by;
+                                wg.tile[_wbase + 7] = _stmp.bz;
+                            }
+                            if ((lid_x < 2)) {
+                                const sx = (((((_x, _lo, _hi) => { const _mx = _x < _lo ? _lo : _x; return _hi < _mx ? _hi : _mx; })((gx - 2), 0, nt_max))) >>> 0);
+                                const sy = (((((_x, _lo, _hi) => { const _mx = _x < _lo ? _lo : _x; return _hi < _mx ? _hi : _mx; })(gy, 0, nt_max))) >>> 0);
+                                {
+                                    const _wbase = ((((ly + 2)) * 96) + ((lx) * 8));
+                                    const _stmp = cell_primitive_cache(sx, sy, n_total, g, pf);
+                                    wg.tile[_wbase + 0] = _stmp.rho;
+                                    wg.tile[_wbase + 1] = _stmp.vx;
+                                    wg.tile[_wbase + 2] = _stmp.vy;
+                                    wg.tile[_wbase + 3] = _stmp.vz;
+                                    wg.tile[_wbase + 4] = _stmp.p;
+                                    wg.tile[_wbase + 5] = _stmp.bx;
+                                    wg.tile[_wbase + 6] = _stmp.by;
+                                    wg.tile[_wbase + 7] = _stmp.bz;
+                                }
+                            }
+                            if ((lid_x >= 6)) {
+                                const sx = (((((_x, _lo, _hi) => { const _mx = _x < _lo ? _lo : _x; return _hi < _mx ? _hi : _mx; })((gx + 2), 0, nt_max))) >>> 0);
+                                const sy = (((((_x, _lo, _hi) => { const _mx = _x < _lo ? _lo : _x; return _hi < _mx ? _hi : _mx; })(gy, 0, nt_max))) >>> 0);
+                                {
+                                    const _wbase = ((((ly + 2)) * 96) + (((lx + 4)) * 8));
+                                    const _stmp = cell_primitive_cache(sx, sy, n_total, g, pf);
+                                    wg.tile[_wbase + 0] = _stmp.rho;
+                                    wg.tile[_wbase + 1] = _stmp.vx;
+                                    wg.tile[_wbase + 2] = _stmp.vy;
+                                    wg.tile[_wbase + 3] = _stmp.vz;
+                                    wg.tile[_wbase + 4] = _stmp.p;
+                                    wg.tile[_wbase + 5] = _stmp.bx;
+                                    wg.tile[_wbase + 6] = _stmp.by;
+                                    wg.tile[_wbase + 7] = _stmp.bz;
+                                }
+                            }
+                            if ((lid_y < 2)) {
+                                const sx = (((((_x, _lo, _hi) => { const _mx = _x < _lo ? _lo : _x; return _hi < _mx ? _hi : _mx; })(gx, 0, nt_max))) >>> 0);
+                                const sy = (((((_x, _lo, _hi) => { const _mx = _x < _lo ? _lo : _x; return _hi < _mx ? _hi : _mx; })((gy - 2), 0, nt_max))) >>> 0);
+                                {
+                                    const _wbase = (((ly) * 96) + (((lx + 2)) * 8));
+                                    const _stmp = cell_primitive_cache(sx, sy, n_total, g, pf);
+                                    wg.tile[_wbase + 0] = _stmp.rho;
+                                    wg.tile[_wbase + 1] = _stmp.vx;
+                                    wg.tile[_wbase + 2] = _stmp.vy;
+                                    wg.tile[_wbase + 3] = _stmp.vz;
+                                    wg.tile[_wbase + 4] = _stmp.p;
+                                    wg.tile[_wbase + 5] = _stmp.bx;
+                                    wg.tile[_wbase + 6] = _stmp.by;
+                                    wg.tile[_wbase + 7] = _stmp.bz;
+                                }
+                            }
+                            if ((lid_y >= 6)) {
+                                const sx = (((((_x, _lo, _hi) => { const _mx = _x < _lo ? _lo : _x; return _hi < _mx ? _hi : _mx; })(gx, 0, nt_max))) >>> 0);
+                                const sy = (((((_x, _lo, _hi) => { const _mx = _x < _lo ? _lo : _x; return _hi < _mx ? _hi : _mx; })((gy + 2), 0, nt_max))) >>> 0);
+                                {
+                                    const _wbase = ((((ly + 4)) * 96) + (((lx + 2)) * 8));
+                                    const _stmp = cell_primitive_cache(sx, sy, n_total, g, pf);
+                                    wg.tile[_wbase + 0] = _stmp.rho;
+                                    wg.tile[_wbase + 1] = _stmp.vx;
+                                    wg.tile[_wbase + 2] = _stmp.vy;
+                                    wg.tile[_wbase + 3] = _stmp.vz;
+                                    wg.tile[_wbase + 4] = _stmp.p;
+                                    wg.tile[_wbase + 5] = _stmp.bx;
+                                    wg.tile[_wbase + 6] = _stmp.by;
+                                    wg.tile[_wbase + 7] = _stmp.bz;
+                                }
+                            }
+                            if (((lid_x < 2) && (lid_y < 2))) {
+                                const sx = (((((_x, _lo, _hi) => { const _mx = _x < _lo ? _lo : _x; return _hi < _mx ? _hi : _mx; })((gx - 2), 0, nt_max))) >>> 0);
+                                const sy = (((((_x, _lo, _hi) => { const _mx = _x < _lo ? _lo : _x; return _hi < _mx ? _hi : _mx; })((gy - 2), 0, nt_max))) >>> 0);
+                                {
+                                    const _wbase = (((ly) * 96) + ((lx) * 8));
+                                    const _stmp = cell_primitive_cache(sx, sy, n_total, g, pf);
+                                    wg.tile[_wbase + 0] = _stmp.rho;
+                                    wg.tile[_wbase + 1] = _stmp.vx;
+                                    wg.tile[_wbase + 2] = _stmp.vy;
+                                    wg.tile[_wbase + 3] = _stmp.vz;
+                                    wg.tile[_wbase + 4] = _stmp.p;
+                                    wg.tile[_wbase + 5] = _stmp.bx;
+                                    wg.tile[_wbase + 6] = _stmp.by;
+                                    wg.tile[_wbase + 7] = _stmp.bz;
+                                }
+                            }
+                            if (((lid_x >= 6) && (lid_y < 2))) {
+                                const sx = (((((_x, _lo, _hi) => { const _mx = _x < _lo ? _lo : _x; return _hi < _mx ? _hi : _mx; })((gx + 2), 0, nt_max))) >>> 0);
+                                const sy = (((((_x, _lo, _hi) => { const _mx = _x < _lo ? _lo : _x; return _hi < _mx ? _hi : _mx; })((gy - 2), 0, nt_max))) >>> 0);
+                                {
+                                    const _wbase = (((ly) * 96) + (((lx + 4)) * 8));
+                                    const _stmp = cell_primitive_cache(sx, sy, n_total, g, pf);
+                                    wg.tile[_wbase + 0] = _stmp.rho;
+                                    wg.tile[_wbase + 1] = _stmp.vx;
+                                    wg.tile[_wbase + 2] = _stmp.vy;
+                                    wg.tile[_wbase + 3] = _stmp.vz;
+                                    wg.tile[_wbase + 4] = _stmp.p;
+                                    wg.tile[_wbase + 5] = _stmp.bx;
+                                    wg.tile[_wbase + 6] = _stmp.by;
+                                    wg.tile[_wbase + 7] = _stmp.bz;
+                                }
+                            }
+                            if (((lid_x < 2) && (lid_y >= 6))) {
+                                const sx = (((((_x, _lo, _hi) => { const _mx = _x < _lo ? _lo : _x; return _hi < _mx ? _hi : _mx; })((gx - 2), 0, nt_max))) >>> 0);
+                                const sy = (((((_x, _lo, _hi) => { const _mx = _x < _lo ? _lo : _x; return _hi < _mx ? _hi : _mx; })((gy + 2), 0, nt_max))) >>> 0);
+                                {
+                                    const _wbase = ((((ly + 4)) * 96) + ((lx) * 8));
+                                    const _stmp = cell_primitive_cache(sx, sy, n_total, g, pf);
+                                    wg.tile[_wbase + 0] = _stmp.rho;
+                                    wg.tile[_wbase + 1] = _stmp.vx;
+                                    wg.tile[_wbase + 2] = _stmp.vy;
+                                    wg.tile[_wbase + 3] = _stmp.vz;
+                                    wg.tile[_wbase + 4] = _stmp.p;
+                                    wg.tile[_wbase + 5] = _stmp.bx;
+                                    wg.tile[_wbase + 6] = _stmp.by;
+                                    wg.tile[_wbase + 7] = _stmp.bz;
+                                }
+                            }
+                            if (((lid_x >= 6) && (lid_y >= 6))) {
+                                const sx = (((((_x, _lo, _hi) => { const _mx = _x < _lo ? _lo : _x; return _hi < _mx ? _hi : _mx; })((gx + 2), 0, nt_max))) >>> 0);
+                                const sy = (((((_x, _lo, _hi) => { const _mx = _x < _lo ? _lo : _x; return _hi < _mx ? _hi : _mx; })((gy + 2), 0, nt_max))) >>> 0);
+                                {
+                                    const _wbase = ((((ly + 4)) * 96) + (((lx + 4)) * 8));
+                                    const _stmp = cell_primitive_cache(sx, sy, n_total, g, pf);
+                                    wg.tile[_wbase + 0] = _stmp.rho;
+                                    wg.tile[_wbase + 1] = _stmp.vx;
+                                    wg.tile[_wbase + 2] = _stmp.vy;
+                                    wg.tile[_wbase + 3] = _stmp.vz;
+                                    wg.tile[_wbase + 4] = _stmp.p;
+                                    wg.tile[_wbase + 5] = _stmp.bx;
+                                    wg.tile[_wbase + 6] = _stmp.by;
+                                    wg.tile[_wbase + 7] = _stmp.bz;
+                                }
+                            }
                         }
-                        const _inl_9_idx = _inl_9__inl_4_result;
-                        let _inl_9__inl_5_result;
-                        _inl_9__inl_5: {
-                            let _inl_9__inl_5__inl_0_result;
-                            _inl_9__inl_5__inl_0: {
-                                _inl_9__inl_5__inl_0_result = ((cy * ((n_total + 1))) + cx);
-                                break _inl_9__inl_5__inl_0;
-                            }
-                            _inl_9__inl_5_result = _inl_9__inl_5__inl_0_result;
-                            break _inl_9__inl_5;
-                        }
-                        let _inl_9__inl_6_result;
-                        _inl_9__inl_6: {
-                            const _inl_9__inl_6__inl_1_ix = (cx + 1);
-                            let _inl_9__inl_6__inl_1_result;
-                            _inl_9__inl_6__inl_1: {
-                                _inl_9__inl_6__inl_1_result = ((cy * ((n_total + 1))) + _inl_9__inl_6__inl_1_ix);
-                                break _inl_9__inl_6__inl_1;
-                            }
-                            _inl_9__inl_6_result = _inl_9__inl_6__inl_1_result;
-                            break _inl_9__inl_6;
-                        }
-                        const _inl_9_bx = (0.5 * ((_b_Bx_face[_inl_9__inl_5_result] + _b_Bx_face[_inl_9__inl_6_result])));
-                        let _inl_9__inl_7_result;
-                        _inl_9__inl_7: {
-                            let _inl_9__inl_7__inl_2_result;
-                            _inl_9__inl_7__inl_2: {
-                                _inl_9__inl_7__inl_2_result = ((cy * n_total) + cx);
-                                break _inl_9__inl_7__inl_2;
-                            }
-                            _inl_9__inl_7_result = _inl_9__inl_7__inl_2_result;
-                            break _inl_9__inl_7;
-                        }
-                        let _inl_9__inl_8_result;
-                        _inl_9__inl_8: {
-                            const _inl_9__inl_8__inl_3_iy = (cy + 1);
-                            let _inl_9__inl_8__inl_3_result;
-                            _inl_9__inl_8__inl_3: {
-                                _inl_9__inl_8__inl_3_result = ((_inl_9__inl_8__inl_3_iy * n_total) + cx);
-                                break _inl_9__inl_8__inl_3;
-                            }
-                            _inl_9__inl_8_result = _inl_9__inl_8__inl_3_result;
-                            break _inl_9__inl_8;
-                        }
-                        const _inl_9_by = (0.5 * ((_b_By_face[_inl_9__inl_7_result] + _b_By_face[_inl_9__inl_8_result])));
-                        _inl_9_result = cons_to_prim_mhd(rt.vec4(_b_U0_in[((_inl_9_idx) * 4 + 0) + 0], _b_U0_in[((_inl_9_idx) * 4 + 0) + 1], _b_U0_in[((_inl_9_idx) * 4 + 0) + 2], _b_U0_in[((_inl_9_idx) * 4 + 0) + 3]), rt.vec4(_b_U1_in[((_inl_9_idx) * 4 + 0) + 0], _b_U1_in[((_inl_9_idx) * 4 + 0) + 1], _b_U1_in[((_inl_9_idx) * 4 + 0) + 2], _b_U1_in[((_inl_9_idx) * 4 + 0) + 3]), _inl_9_bx, _inl_9_by, g, pf);
-                        break _inl_9;
-                    }
-                    wg.tile[(ly + 2)][(lx + 2)] = _inl_9_result;
-                    if ((lid_x < 2)) {
-                        const sx = rt.u32(rt.clampScalar((gx - 2), 0, nt_max));
-                        const sy = rt.u32(rt.clampScalar(gy, 0, nt_max));
-                        let _inl_10_result;
-                        _inl_10: {
-                            let _inl_10__inl_4_result;
-                            _inl_10__inl_4: {
-                                _inl_10__inl_4_result = ((sy * n_total) + sx);
-                                break _inl_10__inl_4;
-                            }
-                            const _inl_10_idx = _inl_10__inl_4_result;
-                            let _inl_10__inl_5_result;
-                            _inl_10__inl_5: {
-                                let _inl_10__inl_5__inl_0_result;
-                                _inl_10__inl_5__inl_0: {
-                                    _inl_10__inl_5__inl_0_result = ((sy * ((n_total + 1))) + sx);
-                                    break _inl_10__inl_5__inl_0;
-                                }
-                                _inl_10__inl_5_result = _inl_10__inl_5__inl_0_result;
-                                break _inl_10__inl_5;
-                            }
-                            let _inl_10__inl_6_result;
-                            _inl_10__inl_6: {
-                                const _inl_10__inl_6__inl_1_ix = (sx + 1);
-                                let _inl_10__inl_6__inl_1_result;
-                                _inl_10__inl_6__inl_1: {
-                                    _inl_10__inl_6__inl_1_result = ((sy * ((n_total + 1))) + _inl_10__inl_6__inl_1_ix);
-                                    break _inl_10__inl_6__inl_1;
-                                }
-                                _inl_10__inl_6_result = _inl_10__inl_6__inl_1_result;
-                                break _inl_10__inl_6;
-                            }
-                            const _inl_10_bx = (0.5 * ((_b_Bx_face[_inl_10__inl_5_result] + _b_Bx_face[_inl_10__inl_6_result])));
-                            let _inl_10__inl_7_result;
-                            _inl_10__inl_7: {
-                                let _inl_10__inl_7__inl_2_result;
-                                _inl_10__inl_7__inl_2: {
-                                    _inl_10__inl_7__inl_2_result = ((sy * n_total) + sx);
-                                    break _inl_10__inl_7__inl_2;
-                                }
-                                _inl_10__inl_7_result = _inl_10__inl_7__inl_2_result;
-                                break _inl_10__inl_7;
-                            }
-                            let _inl_10__inl_8_result;
-                            _inl_10__inl_8: {
-                                const _inl_10__inl_8__inl_3_iy = (sy + 1);
-                                let _inl_10__inl_8__inl_3_result;
-                                _inl_10__inl_8__inl_3: {
-                                    _inl_10__inl_8__inl_3_result = ((_inl_10__inl_8__inl_3_iy * n_total) + sx);
-                                    break _inl_10__inl_8__inl_3;
-                                }
-                                _inl_10__inl_8_result = _inl_10__inl_8__inl_3_result;
-                                break _inl_10__inl_8;
-                            }
-                            const _inl_10_by = (0.5 * ((_b_By_face[_inl_10__inl_7_result] + _b_By_face[_inl_10__inl_8_result])));
-                            _inl_10_result = cons_to_prim_mhd(rt.vec4(_b_U0_in[((_inl_10_idx) * 4 + 0) + 0], _b_U0_in[((_inl_10_idx) * 4 + 0) + 1], _b_U0_in[((_inl_10_idx) * 4 + 0) + 2], _b_U0_in[((_inl_10_idx) * 4 + 0) + 3]), rt.vec4(_b_U1_in[((_inl_10_idx) * 4 + 0) + 0], _b_U1_in[((_inl_10_idx) * 4 + 0) + 1], _b_U1_in[((_inl_10_idx) * 4 + 0) + 2], _b_U1_in[((_inl_10_idx) * 4 + 0) + 3]), _inl_10_bx, _inl_10_by, g, pf);
-                            break _inl_10;
-                        }
-                        wg.tile[(ly + 2)][lx] = _inl_10_result;
-                    }
-                    if ((lid_x >= 6)) {
-                        const sx = rt.u32(rt.clampScalar((gx + 2), 0, nt_max));
-                        const sy = rt.u32(rt.clampScalar(gy, 0, nt_max));
-                        let _inl_11_result;
-                        _inl_11: {
-                            let _inl_11__inl_4_result;
-                            _inl_11__inl_4: {
-                                _inl_11__inl_4_result = ((sy * n_total) + sx);
-                                break _inl_11__inl_4;
-                            }
-                            const _inl_11_idx = _inl_11__inl_4_result;
-                            let _inl_11__inl_5_result;
-                            _inl_11__inl_5: {
-                                let _inl_11__inl_5__inl_0_result;
-                                _inl_11__inl_5__inl_0: {
-                                    _inl_11__inl_5__inl_0_result = ((sy * ((n_total + 1))) + sx);
-                                    break _inl_11__inl_5__inl_0;
-                                }
-                                _inl_11__inl_5_result = _inl_11__inl_5__inl_0_result;
-                                break _inl_11__inl_5;
-                            }
-                            let _inl_11__inl_6_result;
-                            _inl_11__inl_6: {
-                                const _inl_11__inl_6__inl_1_ix = (sx + 1);
-                                let _inl_11__inl_6__inl_1_result;
-                                _inl_11__inl_6__inl_1: {
-                                    _inl_11__inl_6__inl_1_result = ((sy * ((n_total + 1))) + _inl_11__inl_6__inl_1_ix);
-                                    break _inl_11__inl_6__inl_1;
-                                }
-                                _inl_11__inl_6_result = _inl_11__inl_6__inl_1_result;
-                                break _inl_11__inl_6;
-                            }
-                            const _inl_11_bx = (0.5 * ((_b_Bx_face[_inl_11__inl_5_result] + _b_Bx_face[_inl_11__inl_6_result])));
-                            let _inl_11__inl_7_result;
-                            _inl_11__inl_7: {
-                                let _inl_11__inl_7__inl_2_result;
-                                _inl_11__inl_7__inl_2: {
-                                    _inl_11__inl_7__inl_2_result = ((sy * n_total) + sx);
-                                    break _inl_11__inl_7__inl_2;
-                                }
-                                _inl_11__inl_7_result = _inl_11__inl_7__inl_2_result;
-                                break _inl_11__inl_7;
-                            }
-                            let _inl_11__inl_8_result;
-                            _inl_11__inl_8: {
-                                const _inl_11__inl_8__inl_3_iy = (sy + 1);
-                                let _inl_11__inl_8__inl_3_result;
-                                _inl_11__inl_8__inl_3: {
-                                    _inl_11__inl_8__inl_3_result = ((_inl_11__inl_8__inl_3_iy * n_total) + sx);
-                                    break _inl_11__inl_8__inl_3;
-                                }
-                                _inl_11__inl_8_result = _inl_11__inl_8__inl_3_result;
-                                break _inl_11__inl_8;
-                            }
-                            const _inl_11_by = (0.5 * ((_b_By_face[_inl_11__inl_7_result] + _b_By_face[_inl_11__inl_8_result])));
-                            _inl_11_result = cons_to_prim_mhd(rt.vec4(_b_U0_in[((_inl_11_idx) * 4 + 0) + 0], _b_U0_in[((_inl_11_idx) * 4 + 0) + 1], _b_U0_in[((_inl_11_idx) * 4 + 0) + 2], _b_U0_in[((_inl_11_idx) * 4 + 0) + 3]), rt.vec4(_b_U1_in[((_inl_11_idx) * 4 + 0) + 0], _b_U1_in[((_inl_11_idx) * 4 + 0) + 1], _b_U1_in[((_inl_11_idx) * 4 + 0) + 2], _b_U1_in[((_inl_11_idx) * 4 + 0) + 3]), _inl_11_bx, _inl_11_by, g, pf);
-                            break _inl_11;
-                        }
-                        wg.tile[(ly + 2)][(lx + 4)] = _inl_11_result;
-                    }
-                    if ((lid_y < 2)) {
-                        const sx = rt.u32(rt.clampScalar(gx, 0, nt_max));
-                        const sy = rt.u32(rt.clampScalar((gy - 2), 0, nt_max));
-                        let _inl_12_result;
-                        _inl_12: {
-                            let _inl_12__inl_4_result;
-                            _inl_12__inl_4: {
-                                _inl_12__inl_4_result = ((sy * n_total) + sx);
-                                break _inl_12__inl_4;
-                            }
-                            const _inl_12_idx = _inl_12__inl_4_result;
-                            let _inl_12__inl_5_result;
-                            _inl_12__inl_5: {
-                                let _inl_12__inl_5__inl_0_result;
-                                _inl_12__inl_5__inl_0: {
-                                    _inl_12__inl_5__inl_0_result = ((sy * ((n_total + 1))) + sx);
-                                    break _inl_12__inl_5__inl_0;
-                                }
-                                _inl_12__inl_5_result = _inl_12__inl_5__inl_0_result;
-                                break _inl_12__inl_5;
-                            }
-                            let _inl_12__inl_6_result;
-                            _inl_12__inl_6: {
-                                const _inl_12__inl_6__inl_1_ix = (sx + 1);
-                                let _inl_12__inl_6__inl_1_result;
-                                _inl_12__inl_6__inl_1: {
-                                    _inl_12__inl_6__inl_1_result = ((sy * ((n_total + 1))) + _inl_12__inl_6__inl_1_ix);
-                                    break _inl_12__inl_6__inl_1;
-                                }
-                                _inl_12__inl_6_result = _inl_12__inl_6__inl_1_result;
-                                break _inl_12__inl_6;
-                            }
-                            const _inl_12_bx = (0.5 * ((_b_Bx_face[_inl_12__inl_5_result] + _b_Bx_face[_inl_12__inl_6_result])));
-                            let _inl_12__inl_7_result;
-                            _inl_12__inl_7: {
-                                let _inl_12__inl_7__inl_2_result;
-                                _inl_12__inl_7__inl_2: {
-                                    _inl_12__inl_7__inl_2_result = ((sy * n_total) + sx);
-                                    break _inl_12__inl_7__inl_2;
-                                }
-                                _inl_12__inl_7_result = _inl_12__inl_7__inl_2_result;
-                                break _inl_12__inl_7;
-                            }
-                            let _inl_12__inl_8_result;
-                            _inl_12__inl_8: {
-                                const _inl_12__inl_8__inl_3_iy = (sy + 1);
-                                let _inl_12__inl_8__inl_3_result;
-                                _inl_12__inl_8__inl_3: {
-                                    _inl_12__inl_8__inl_3_result = ((_inl_12__inl_8__inl_3_iy * n_total) + sx);
-                                    break _inl_12__inl_8__inl_3;
-                                }
-                                _inl_12__inl_8_result = _inl_12__inl_8__inl_3_result;
-                                break _inl_12__inl_8;
-                            }
-                            const _inl_12_by = (0.5 * ((_b_By_face[_inl_12__inl_7_result] + _b_By_face[_inl_12__inl_8_result])));
-                            _inl_12_result = cons_to_prim_mhd(rt.vec4(_b_U0_in[((_inl_12_idx) * 4 + 0) + 0], _b_U0_in[((_inl_12_idx) * 4 + 0) + 1], _b_U0_in[((_inl_12_idx) * 4 + 0) + 2], _b_U0_in[((_inl_12_idx) * 4 + 0) + 3]), rt.vec4(_b_U1_in[((_inl_12_idx) * 4 + 0) + 0], _b_U1_in[((_inl_12_idx) * 4 + 0) + 1], _b_U1_in[((_inl_12_idx) * 4 + 0) + 2], _b_U1_in[((_inl_12_idx) * 4 + 0) + 3]), _inl_12_bx, _inl_12_by, g, pf);
-                            break _inl_12;
-                        }
-                        wg.tile[ly][(lx + 2)] = _inl_12_result;
-                    }
-                    if ((lid_y >= 6)) {
-                        const sx = rt.u32(rt.clampScalar(gx, 0, nt_max));
-                        const sy = rt.u32(rt.clampScalar((gy + 2), 0, nt_max));
-                        let _inl_13_result;
-                        _inl_13: {
-                            let _inl_13__inl_4_result;
-                            _inl_13__inl_4: {
-                                _inl_13__inl_4_result = ((sy * n_total) + sx);
-                                break _inl_13__inl_4;
-                            }
-                            const _inl_13_idx = _inl_13__inl_4_result;
-                            let _inl_13__inl_5_result;
-                            _inl_13__inl_5: {
-                                let _inl_13__inl_5__inl_0_result;
-                                _inl_13__inl_5__inl_0: {
-                                    _inl_13__inl_5__inl_0_result = ((sy * ((n_total + 1))) + sx);
-                                    break _inl_13__inl_5__inl_0;
-                                }
-                                _inl_13__inl_5_result = _inl_13__inl_5__inl_0_result;
-                                break _inl_13__inl_5;
-                            }
-                            let _inl_13__inl_6_result;
-                            _inl_13__inl_6: {
-                                const _inl_13__inl_6__inl_1_ix = (sx + 1);
-                                let _inl_13__inl_6__inl_1_result;
-                                _inl_13__inl_6__inl_1: {
-                                    _inl_13__inl_6__inl_1_result = ((sy * ((n_total + 1))) + _inl_13__inl_6__inl_1_ix);
-                                    break _inl_13__inl_6__inl_1;
-                                }
-                                _inl_13__inl_6_result = _inl_13__inl_6__inl_1_result;
-                                break _inl_13__inl_6;
-                            }
-                            const _inl_13_bx = (0.5 * ((_b_Bx_face[_inl_13__inl_5_result] + _b_Bx_face[_inl_13__inl_6_result])));
-                            let _inl_13__inl_7_result;
-                            _inl_13__inl_7: {
-                                let _inl_13__inl_7__inl_2_result;
-                                _inl_13__inl_7__inl_2: {
-                                    _inl_13__inl_7__inl_2_result = ((sy * n_total) + sx);
-                                    break _inl_13__inl_7__inl_2;
-                                }
-                                _inl_13__inl_7_result = _inl_13__inl_7__inl_2_result;
-                                break _inl_13__inl_7;
-                            }
-                            let _inl_13__inl_8_result;
-                            _inl_13__inl_8: {
-                                const _inl_13__inl_8__inl_3_iy = (sy + 1);
-                                let _inl_13__inl_8__inl_3_result;
-                                _inl_13__inl_8__inl_3: {
-                                    _inl_13__inl_8__inl_3_result = ((_inl_13__inl_8__inl_3_iy * n_total) + sx);
-                                    break _inl_13__inl_8__inl_3;
-                                }
-                                _inl_13__inl_8_result = _inl_13__inl_8__inl_3_result;
-                                break _inl_13__inl_8;
-                            }
-                            const _inl_13_by = (0.5 * ((_b_By_face[_inl_13__inl_7_result] + _b_By_face[_inl_13__inl_8_result])));
-                            _inl_13_result = cons_to_prim_mhd(rt.vec4(_b_U0_in[((_inl_13_idx) * 4 + 0) + 0], _b_U0_in[((_inl_13_idx) * 4 + 0) + 1], _b_U0_in[((_inl_13_idx) * 4 + 0) + 2], _b_U0_in[((_inl_13_idx) * 4 + 0) + 3]), rt.vec4(_b_U1_in[((_inl_13_idx) * 4 + 0) + 0], _b_U1_in[((_inl_13_idx) * 4 + 0) + 1], _b_U1_in[((_inl_13_idx) * 4 + 0) + 2], _b_U1_in[((_inl_13_idx) * 4 + 0) + 3]), _inl_13_bx, _inl_13_by, g, pf);
-                            break _inl_13;
-                        }
-                        wg.tile[(ly + 4)][(lx + 2)] = _inl_13_result;
-                    }
-                    if (((lid_x < 2) && (lid_y < 2))) {
-                        const sx = rt.u32(rt.clampScalar((gx - 2), 0, nt_max));
-                        const sy = rt.u32(rt.clampScalar((gy - 2), 0, nt_max));
-                        let _inl_14_result;
-                        _inl_14: {
-                            let _inl_14__inl_4_result;
-                            _inl_14__inl_4: {
-                                _inl_14__inl_4_result = ((sy * n_total) + sx);
-                                break _inl_14__inl_4;
-                            }
-                            const _inl_14_idx = _inl_14__inl_4_result;
-                            let _inl_14__inl_5_result;
-                            _inl_14__inl_5: {
-                                let _inl_14__inl_5__inl_0_result;
-                                _inl_14__inl_5__inl_0: {
-                                    _inl_14__inl_5__inl_0_result = ((sy * ((n_total + 1))) + sx);
-                                    break _inl_14__inl_5__inl_0;
-                                }
-                                _inl_14__inl_5_result = _inl_14__inl_5__inl_0_result;
-                                break _inl_14__inl_5;
-                            }
-                            let _inl_14__inl_6_result;
-                            _inl_14__inl_6: {
-                                const _inl_14__inl_6__inl_1_ix = (sx + 1);
-                                let _inl_14__inl_6__inl_1_result;
-                                _inl_14__inl_6__inl_1: {
-                                    _inl_14__inl_6__inl_1_result = ((sy * ((n_total + 1))) + _inl_14__inl_6__inl_1_ix);
-                                    break _inl_14__inl_6__inl_1;
-                                }
-                                _inl_14__inl_6_result = _inl_14__inl_6__inl_1_result;
-                                break _inl_14__inl_6;
-                            }
-                            const _inl_14_bx = (0.5 * ((_b_Bx_face[_inl_14__inl_5_result] + _b_Bx_face[_inl_14__inl_6_result])));
-                            let _inl_14__inl_7_result;
-                            _inl_14__inl_7: {
-                                let _inl_14__inl_7__inl_2_result;
-                                _inl_14__inl_7__inl_2: {
-                                    _inl_14__inl_7__inl_2_result = ((sy * n_total) + sx);
-                                    break _inl_14__inl_7__inl_2;
-                                }
-                                _inl_14__inl_7_result = _inl_14__inl_7__inl_2_result;
-                                break _inl_14__inl_7;
-                            }
-                            let _inl_14__inl_8_result;
-                            _inl_14__inl_8: {
-                                const _inl_14__inl_8__inl_3_iy = (sy + 1);
-                                let _inl_14__inl_8__inl_3_result;
-                                _inl_14__inl_8__inl_3: {
-                                    _inl_14__inl_8__inl_3_result = ((_inl_14__inl_8__inl_3_iy * n_total) + sx);
-                                    break _inl_14__inl_8__inl_3;
-                                }
-                                _inl_14__inl_8_result = _inl_14__inl_8__inl_3_result;
-                                break _inl_14__inl_8;
-                            }
-                            const _inl_14_by = (0.5 * ((_b_By_face[_inl_14__inl_7_result] + _b_By_face[_inl_14__inl_8_result])));
-                            _inl_14_result = cons_to_prim_mhd(rt.vec4(_b_U0_in[((_inl_14_idx) * 4 + 0) + 0], _b_U0_in[((_inl_14_idx) * 4 + 0) + 1], _b_U0_in[((_inl_14_idx) * 4 + 0) + 2], _b_U0_in[((_inl_14_idx) * 4 + 0) + 3]), rt.vec4(_b_U1_in[((_inl_14_idx) * 4 + 0) + 0], _b_U1_in[((_inl_14_idx) * 4 + 0) + 1], _b_U1_in[((_inl_14_idx) * 4 + 0) + 2], _b_U1_in[((_inl_14_idx) * 4 + 0) + 3]), _inl_14_bx, _inl_14_by, g, pf);
-                            break _inl_14;
-                        }
-                        wg.tile[ly][lx] = _inl_14_result;
-                    }
-                    if (((lid_x >= 6) && (lid_y < 2))) {
-                        const sx = rt.u32(rt.clampScalar((gx + 2), 0, nt_max));
-                        const sy = rt.u32(rt.clampScalar((gy - 2), 0, nt_max));
-                        let _inl_15_result;
-                        _inl_15: {
-                            let _inl_15__inl_4_result;
-                            _inl_15__inl_4: {
-                                _inl_15__inl_4_result = ((sy * n_total) + sx);
-                                break _inl_15__inl_4;
-                            }
-                            const _inl_15_idx = _inl_15__inl_4_result;
-                            let _inl_15__inl_5_result;
-                            _inl_15__inl_5: {
-                                let _inl_15__inl_5__inl_0_result;
-                                _inl_15__inl_5__inl_0: {
-                                    _inl_15__inl_5__inl_0_result = ((sy * ((n_total + 1))) + sx);
-                                    break _inl_15__inl_5__inl_0;
-                                }
-                                _inl_15__inl_5_result = _inl_15__inl_5__inl_0_result;
-                                break _inl_15__inl_5;
-                            }
-                            let _inl_15__inl_6_result;
-                            _inl_15__inl_6: {
-                                const _inl_15__inl_6__inl_1_ix = (sx + 1);
-                                let _inl_15__inl_6__inl_1_result;
-                                _inl_15__inl_6__inl_1: {
-                                    _inl_15__inl_6__inl_1_result = ((sy * ((n_total + 1))) + _inl_15__inl_6__inl_1_ix);
-                                    break _inl_15__inl_6__inl_1;
-                                }
-                                _inl_15__inl_6_result = _inl_15__inl_6__inl_1_result;
-                                break _inl_15__inl_6;
-                            }
-                            const _inl_15_bx = (0.5 * ((_b_Bx_face[_inl_15__inl_5_result] + _b_Bx_face[_inl_15__inl_6_result])));
-                            let _inl_15__inl_7_result;
-                            _inl_15__inl_7: {
-                                let _inl_15__inl_7__inl_2_result;
-                                _inl_15__inl_7__inl_2: {
-                                    _inl_15__inl_7__inl_2_result = ((sy * n_total) + sx);
-                                    break _inl_15__inl_7__inl_2;
-                                }
-                                _inl_15__inl_7_result = _inl_15__inl_7__inl_2_result;
-                                break _inl_15__inl_7;
-                            }
-                            let _inl_15__inl_8_result;
-                            _inl_15__inl_8: {
-                                const _inl_15__inl_8__inl_3_iy = (sy + 1);
-                                let _inl_15__inl_8__inl_3_result;
-                                _inl_15__inl_8__inl_3: {
-                                    _inl_15__inl_8__inl_3_result = ((_inl_15__inl_8__inl_3_iy * n_total) + sx);
-                                    break _inl_15__inl_8__inl_3;
-                                }
-                                _inl_15__inl_8_result = _inl_15__inl_8__inl_3_result;
-                                break _inl_15__inl_8;
-                            }
-                            const _inl_15_by = (0.5 * ((_b_By_face[_inl_15__inl_7_result] + _b_By_face[_inl_15__inl_8_result])));
-                            _inl_15_result = cons_to_prim_mhd(rt.vec4(_b_U0_in[((_inl_15_idx) * 4 + 0) + 0], _b_U0_in[((_inl_15_idx) * 4 + 0) + 1], _b_U0_in[((_inl_15_idx) * 4 + 0) + 2], _b_U0_in[((_inl_15_idx) * 4 + 0) + 3]), rt.vec4(_b_U1_in[((_inl_15_idx) * 4 + 0) + 0], _b_U1_in[((_inl_15_idx) * 4 + 0) + 1], _b_U1_in[((_inl_15_idx) * 4 + 0) + 2], _b_U1_in[((_inl_15_idx) * 4 + 0) + 3]), _inl_15_bx, _inl_15_by, g, pf);
-                            break _inl_15;
-                        }
-                        wg.tile[ly][(lx + 4)] = _inl_15_result;
-                    }
-                    if (((lid_x < 2) && (lid_y >= 6))) {
-                        const sx = rt.u32(rt.clampScalar((gx - 2), 0, nt_max));
-                        const sy = rt.u32(rt.clampScalar((gy + 2), 0, nt_max));
-                        let _inl_16_result;
-                        _inl_16: {
-                            let _inl_16__inl_4_result;
-                            _inl_16__inl_4: {
-                                _inl_16__inl_4_result = ((sy * n_total) + sx);
-                                break _inl_16__inl_4;
-                            }
-                            const _inl_16_idx = _inl_16__inl_4_result;
-                            let _inl_16__inl_5_result;
-                            _inl_16__inl_5: {
-                                let _inl_16__inl_5__inl_0_result;
-                                _inl_16__inl_5__inl_0: {
-                                    _inl_16__inl_5__inl_0_result = ((sy * ((n_total + 1))) + sx);
-                                    break _inl_16__inl_5__inl_0;
-                                }
-                                _inl_16__inl_5_result = _inl_16__inl_5__inl_0_result;
-                                break _inl_16__inl_5;
-                            }
-                            let _inl_16__inl_6_result;
-                            _inl_16__inl_6: {
-                                const _inl_16__inl_6__inl_1_ix = (sx + 1);
-                                let _inl_16__inl_6__inl_1_result;
-                                _inl_16__inl_6__inl_1: {
-                                    _inl_16__inl_6__inl_1_result = ((sy * ((n_total + 1))) + _inl_16__inl_6__inl_1_ix);
-                                    break _inl_16__inl_6__inl_1;
-                                }
-                                _inl_16__inl_6_result = _inl_16__inl_6__inl_1_result;
-                                break _inl_16__inl_6;
-                            }
-                            const _inl_16_bx = (0.5 * ((_b_Bx_face[_inl_16__inl_5_result] + _b_Bx_face[_inl_16__inl_6_result])));
-                            let _inl_16__inl_7_result;
-                            _inl_16__inl_7: {
-                                let _inl_16__inl_7__inl_2_result;
-                                _inl_16__inl_7__inl_2: {
-                                    _inl_16__inl_7__inl_2_result = ((sy * n_total) + sx);
-                                    break _inl_16__inl_7__inl_2;
-                                }
-                                _inl_16__inl_7_result = _inl_16__inl_7__inl_2_result;
-                                break _inl_16__inl_7;
-                            }
-                            let _inl_16__inl_8_result;
-                            _inl_16__inl_8: {
-                                const _inl_16__inl_8__inl_3_iy = (sy + 1);
-                                let _inl_16__inl_8__inl_3_result;
-                                _inl_16__inl_8__inl_3: {
-                                    _inl_16__inl_8__inl_3_result = ((_inl_16__inl_8__inl_3_iy * n_total) + sx);
-                                    break _inl_16__inl_8__inl_3;
-                                }
-                                _inl_16__inl_8_result = _inl_16__inl_8__inl_3_result;
-                                break _inl_16__inl_8;
-                            }
-                            const _inl_16_by = (0.5 * ((_b_By_face[_inl_16__inl_7_result] + _b_By_face[_inl_16__inl_8_result])));
-                            _inl_16_result = cons_to_prim_mhd(rt.vec4(_b_U0_in[((_inl_16_idx) * 4 + 0) + 0], _b_U0_in[((_inl_16_idx) * 4 + 0) + 1], _b_U0_in[((_inl_16_idx) * 4 + 0) + 2], _b_U0_in[((_inl_16_idx) * 4 + 0) + 3]), rt.vec4(_b_U1_in[((_inl_16_idx) * 4 + 0) + 0], _b_U1_in[((_inl_16_idx) * 4 + 0) + 1], _b_U1_in[((_inl_16_idx) * 4 + 0) + 2], _b_U1_in[((_inl_16_idx) * 4 + 0) + 3]), _inl_16_bx, _inl_16_by, g, pf);
-                            break _inl_16;
-                        }
-                        wg.tile[(ly + 4)][lx] = _inl_16_result;
-                    }
-                    if (((lid_x >= 6) && (lid_y >= 6))) {
-                        const sx = rt.u32(rt.clampScalar((gx + 2), 0, nt_max));
-                        const sy = rt.u32(rt.clampScalar((gy + 2), 0, nt_max));
-                        let _inl_17_result;
-                        _inl_17: {
-                            let _inl_17__inl_4_result;
-                            _inl_17__inl_4: {
-                                _inl_17__inl_4_result = ((sy * n_total) + sx);
-                                break _inl_17__inl_4;
-                            }
-                            const _inl_17_idx = _inl_17__inl_4_result;
-                            let _inl_17__inl_5_result;
-                            _inl_17__inl_5: {
-                                let _inl_17__inl_5__inl_0_result;
-                                _inl_17__inl_5__inl_0: {
-                                    _inl_17__inl_5__inl_0_result = ((sy * ((n_total + 1))) + sx);
-                                    break _inl_17__inl_5__inl_0;
-                                }
-                                _inl_17__inl_5_result = _inl_17__inl_5__inl_0_result;
-                                break _inl_17__inl_5;
-                            }
-                            let _inl_17__inl_6_result;
-                            _inl_17__inl_6: {
-                                const _inl_17__inl_6__inl_1_ix = (sx + 1);
-                                let _inl_17__inl_6__inl_1_result;
-                                _inl_17__inl_6__inl_1: {
-                                    _inl_17__inl_6__inl_1_result = ((sy * ((n_total + 1))) + _inl_17__inl_6__inl_1_ix);
-                                    break _inl_17__inl_6__inl_1;
-                                }
-                                _inl_17__inl_6_result = _inl_17__inl_6__inl_1_result;
-                                break _inl_17__inl_6;
-                            }
-                            const _inl_17_bx = (0.5 * ((_b_Bx_face[_inl_17__inl_5_result] + _b_Bx_face[_inl_17__inl_6_result])));
-                            let _inl_17__inl_7_result;
-                            _inl_17__inl_7: {
-                                let _inl_17__inl_7__inl_2_result;
-                                _inl_17__inl_7__inl_2: {
-                                    _inl_17__inl_7__inl_2_result = ((sy * n_total) + sx);
-                                    break _inl_17__inl_7__inl_2;
-                                }
-                                _inl_17__inl_7_result = _inl_17__inl_7__inl_2_result;
-                                break _inl_17__inl_7;
-                            }
-                            let _inl_17__inl_8_result;
-                            _inl_17__inl_8: {
-                                const _inl_17__inl_8__inl_3_iy = (sy + 1);
-                                let _inl_17__inl_8__inl_3_result;
-                                _inl_17__inl_8__inl_3: {
-                                    _inl_17__inl_8__inl_3_result = ((_inl_17__inl_8__inl_3_iy * n_total) + sx);
-                                    break _inl_17__inl_8__inl_3;
-                                }
-                                _inl_17__inl_8_result = _inl_17__inl_8__inl_3_result;
-                                break _inl_17__inl_8;
-                            }
-                            const _inl_17_by = (0.5 * ((_b_By_face[_inl_17__inl_7_result] + _b_By_face[_inl_17__inl_8_result])));
-                            _inl_17_result = cons_to_prim_mhd(rt.vec4(_b_U0_in[((_inl_17_idx) * 4 + 0) + 0], _b_U0_in[((_inl_17_idx) * 4 + 0) + 1], _b_U0_in[((_inl_17_idx) * 4 + 0) + 2], _b_U0_in[((_inl_17_idx) * 4 + 0) + 3]), rt.vec4(_b_U1_in[((_inl_17_idx) * 4 + 0) + 0], _b_U1_in[((_inl_17_idx) * 4 + 0) + 1], _b_U1_in[((_inl_17_idx) * 4 + 0) + 2], _b_U1_in[((_inl_17_idx) * 4 + 0) + 3]), _inl_17_bx, _inl_17_by, g, pf);
-                            break _inl_17;
-                        }
-                        wg.tile[(ly + 4)][(lx + 4)] = _inl_17_result;
                     }
                 }
             }
             // Phase 1
-            for (let lz = 0; lz < Lz; lz++)
-            for (let ly = 0; ly < Ly; ly++)
-            for (let lx = 0; lx < Lx; lx++) {
-                const gid_x = wgx*Lx + lx;
-                const gid_y = wgy*Ly + ly;
-                const lid_x = lx;
-                const lid_y = ly;
-                __invocation: {
-                    if ((!in_extent)) {
-                        break __invocation;
-                    }
-                    const ix = rt.u32(gx);
-                    const iy = rt.u32(gy);
-                    let _inl_18_result;
-                    _inl_18: {
-                        _inl_18_result = ((iy * n_total) + ix);
-                        break _inl_18;
-                    }
-                    const idx = _inl_18_result;
-                    let stencil_ok = true;
-                    if ((axis == 0)) {
-                        stencil_ok = (((ix >= 2)) && (((ix + 2) < n_total)));
-                    } else {
-                        stencil_ok = (((iy >= 2)) && (((iy + 2) < n_total)));
-                    }
-                    const _sroa_14 = wg.tile[(ly + 2)][(lx + 2)];
-                    const tc_rho = _sroa_14.rho;
-                    const tc_vx = _sroa_14.vx;
-                    const tc_vy = _sroa_14.vy;
-                    const tc_vz = _sroa_14.vz;
-                    const tc_p = _sroa_14.p;
-                    const tc_bx = _sroa_14.bx;
-                    const tc_by = _sroa_14.by;
-                    const tc_bz = _sroa_14.bz;
-                    if ((!stencil_ok)) {
-                        const _sroa_15 = permute_prim({ rho: tc_rho, vx: tc_vx, vy: tc_vy, vz: tc_vz, p: tc_p, bx: tc_bx, by: tc_by, bz: tc_bz }, axis);
-                        const pcL_rho = _sroa_15.rho;
-                        const pcL_vn = _sroa_15.vn;
-                        const pcL_vt1 = _sroa_15.vt1;
-                        const pcL_vt2 = _sroa_15.vt2;
-                        const pcL_bt1 = _sroa_15.bt1;
-                        const pcL_bt2 = _sroa_15.bt2;
-                        const pcL_p = _sroa_15.p;
-                        const pcL_bn = _sroa_15.bn;
-                        let _inl_19_result;
-                        _inl_19: {
-                            _inl_19_result = { rho: pcL_rho, vn: pcL_vn, vt1: pcL_vt1, vt2: pcL_vt2, bt1: pcL_bt1, bt2: pcL_bt2, p: pcL_p };
-                            break _inl_19;
-                        }
-                        const _inl_20_bn = pcL_bn;
-                        let _inl_20_result;
-                        _inl_20: {
-                            let _inl_33_R_p0_x = 0;
-                            let _inl_33_R_p0_y = 0;
-                            let _inl_33_R_p0_z = 0;
-                            let _inl_33_R_p0_w = 0;
-                            let _inl_33_R_p1_x = 0;
-                            let _inl_33_R_p1_y = 0;
-                            let _inl_33_R_p1_z = 0;
-                            let _inl_33_R_p1_w = 0;
+            {
+                const lz = 0;
+                for (let ly = 0; ly < Ly; ly++) {
+                    for (let lx = 0; lx < Lx; lx++) {
+                        const gid_x = wgx*Lx + lx;
+                        const gid_y = wgy*Ly + ly;
+                        const lid_x = lx;
+                        const lid_y = ly;
+                        __invocation: {
+                            const n_interior = _u_U_uniforms_grid_n;
+                            const n_total = _u_U_uniforms_grid_n_total;
+                            const ghost = _u_U_uniforms_ghost_w;
+                            const extent = (n_interior + 2);
+                            const in_extent = (((gid_x < extent)) && ((gid_y < extent)));
+                            const axis = _u_sweep_sweep_dir;
+                            const g = _u_U_uniforms_gamma;
+                            const pf = _u_U_uniforms_pressure_floor;
+                            const nt_max = (((n_total) | 0) - 1);
+                            const gx = ((((gid_x) | 0) + ((ghost) | 0)) - 1);
+                            const gy = ((((gid_y) | 0) + ((ghost) | 0)) - 1);
+                            const lx = ((lid_x) | 0);
+                            const ly = ((lid_y) | 0);
+                            const cx = (((((_x, _lo, _hi) => { const _mx = _x < _lo ? _lo : _x; return _hi < _mx ? _hi : _mx; })(gx, 0, nt_max))) >>> 0);
+                            const cy = (((((_x, _lo, _hi) => { const _mx = _x < _lo ? _lo : _x; return _hi < _mx ? _hi : _mx; })(gy, 0, nt_max))) >>> 0);
+                            if ((!in_extent)) {
+                                break __invocation;
+                            }
+                            const ix = ((gx) >>> 0);
+                            const iy = ((gy) >>> 0);
+                            let _inl_11_result;
+                            _inl_11: {
+                                _inl_11_result = ((iy * n_total) + ix);
+                                break _inl_11;
+                            }
+                            const idx = _inl_11_result;
+                            let stencil_ok = true;
                             if ((axis == 0)) {
-                                {
-                                    const _wt0 = _inl_19_result.rho;
-                                    const _wt1 = _inl_19_result.vn;
-                                    const _wt2 = _inl_19_result.vt1;
-                                    const _wt3 = _inl_19_result.vt2;
-                                    _inl_33_R_p0_x = _wt0;
-                                    _inl_33_R_p0_y = _wt1;
-                                    _inl_33_R_p0_z = _wt2;
-                                    _inl_33_R_p0_w = _wt3;
-                                }
-                                {
-                                    const _wt0 = _inl_19_result.p;
-                                    const _wt1 = _inl_19_result.bt1;
-                                    const _wt2 = _inl_19_result.bt2;
-                                    const _wt3 = 0.0;
-                                    _inl_33_R_p1_x = _wt0;
-                                    _inl_33_R_p1_y = _wt1;
-                                    _inl_33_R_p1_z = _wt2;
-                                    _inl_33_R_p1_w = _wt3;
-                                }
+                                stencil_ok = (((ix >= 2)) && (((ix + 2) < n_total)));
                             } else {
+                                stencil_ok = (((iy >= 2)) && (((iy + 2) < n_total)));
+                            }
+                            const _sroa_15_base = ((((ly + 2)) * 96) + (((lx + 2)) * 8));
+                            const tc_rho = wg.tile[_sroa_15_base + 0];
+                            const tc_vx = wg.tile[_sroa_15_base + 1];
+                            const tc_vy = wg.tile[_sroa_15_base + 2];
+                            const tc_vz = wg.tile[_sroa_15_base + 3];
+                            const tc_p = wg.tile[_sroa_15_base + 4];
+                            const tc_bx = wg.tile[_sroa_15_base + 5];
+                            const tc_by = wg.tile[_sroa_15_base + 6];
+                            const tc_bz = wg.tile[_sroa_15_base + 7];
+                            if ((!stencil_ok)) {
+                                const _sroa_16 = permute_prim({ rho: tc_rho, vx: tc_vx, vy: tc_vy, vz: tc_vz, p: tc_p, bx: tc_bx, by: tc_by, bz: tc_bz }, axis);
+                                const pcL_rho = _sroa_16.rho;
+                                const pcL_vn = _sroa_16.vn;
+                                const pcL_vt1 = _sroa_16.vt1;
+                                const pcL_vt2 = _sroa_16.vt2;
+                                const pcL_bt1 = _sroa_16.bt1;
+                                const pcL_bt2 = _sroa_16.bt2;
+                                const pcL_p = _sroa_16.p;
+                                const pcL_bn = _sroa_16.bn;
+                                const _sroa_17 = pack_prim_pair_from_vec7(vec7_of({ rho: pcL_rho, vn: pcL_vn, vt1: pcL_vt1, vt2: pcL_vt2, bt1: pcL_bt1, bt2: pcL_bt2, p: pcL_p, bn: pcL_bn }), pcL_bn, axis);
+                                const pp_p0_x = _sroa_17.p0.x;
+                                const pp_p0_y = _sroa_17.p0.y;
+                                const pp_p0_z = _sroa_17.p0.z;
+                                const pp_p0_w = _sroa_17.p0.w;
+                                const pp_p1_x = _sroa_17.p1.x;
+                                const pp_p1_y = _sroa_17.p1.y;
+                                const pp_p1_z = _sroa_17.p1.z;
+                                const pp_p1_w = _sroa_17.p1.w;
+                                const _sroa_18 = {x:pp_p0_x, y:pp_p0_y, z:pp_p0_z, w:pp_p0_w};
+                                let l0_x = _sroa_18.x;
+                                let l0_y = _sroa_18.y;
+                                let l0_z = _sroa_18.z;
+                                let l0_w = _sroa_18.w;
+                                const _sroa_19 = {x:pp_p0_x, y:pp_p0_y, z:pp_p0_z, w:pp_p0_w};
+                                let r0_x = _sroa_19.x;
+                                let r0_y = _sroa_19.y;
+                                let r0_z = _sroa_19.z;
+                                let r0_w = _sroa_19.w;
+                                const _sroa_20 = {x:pp_p1_x, y:pp_p1_y, z:pp_p1_z, w:pp_p1_w};
+                                let l1_x = _sroa_20.x;
+                                let l1_y = _sroa_20.y;
+                                let l1_z = _sroa_20.z;
+                                let l1_w = _sroa_20.w;
+                                const _sroa_21 = {x:pp_p1_x, y:pp_p1_y, z:pp_p1_z, w:pp_p1_w};
+                                let r1_x = _sroa_21.x;
+                                let r1_y = _sroa_21.y;
+                                let r1_z = _sroa_21.z;
+                                let r1_w = _sroa_21.w;
+                                l0_x = ((l0_x) < (DENSITY_FLOOR) ? (DENSITY_FLOOR) : (l0_x));
+                                r0_x = ((r0_x) < (DENSITY_FLOOR) ? (DENSITY_FLOOR) : (r0_x));
+                                l1_x = ((l1_x) < (pf) ? (pf) : (l1_x));
+                                r1_x = ((r1_x) < (pf) ? (pf) : (r1_x));
                                 {
-                                    const _wt0 = _inl_19_result.rho;
-                                    const _wt1 = _inl_19_result.vt2;
-                                    const _wt2 = _inl_19_result.vn;
-                                    const _wt3 = _inl_19_result.vt1;
-                                    _inl_33_R_p0_x = _wt0;
-                                    _inl_33_R_p0_y = _wt1;
-                                    _inl_33_R_p0_z = _wt2;
-                                    _inl_33_R_p0_w = _wt3;
+                                    const _wbase = ((idx) * 4 + 0);
+                                    const _wt0 = l0_x;
+                                    const _wt1 = l0_y;
+                                    const _wt2 = l0_z;
+                                    const _wt3 = l0_w;
+                                    _b_edge_l_0[_wbase + 0] = _wt0;
+                                    _b_edge_l_0[_wbase + 1] = _wt1;
+                                    _b_edge_l_0[_wbase + 2] = _wt2;
+                                    _b_edge_l_0[_wbase + 3] = _wt3;
                                 }
                                 {
-                                    const _wt0 = _inl_19_result.p;
-                                    const _wt1 = _inl_19_result.bt2;
-                                    const _wt2 = _inl_19_result.bt1;
-                                    const _wt3 = 0.0;
-                                    _inl_33_R_p1_x = _wt0;
-                                    _inl_33_R_p1_y = _wt1;
-                                    _inl_33_R_p1_z = _wt2;
-                                    _inl_33_R_p1_w = _wt3;
+                                    const _wbase = ((idx) * 4 + 0);
+                                    const _wt0 = l1_x;
+                                    const _wt1 = l1_y;
+                                    const _wt2 = l1_z;
+                                    const _wt3 = l1_w;
+                                    _b_edge_l_1[_wbase + 0] = _wt0;
+                                    _b_edge_l_1[_wbase + 1] = _wt1;
+                                    _b_edge_l_1[_wbase + 2] = _wt2;
+                                    _b_edge_l_1[_wbase + 3] = _wt3;
                                 }
+                                {
+                                    const _wbase = ((idx) * 4 + 0);
+                                    const _wt0 = r0_x;
+                                    const _wt1 = r0_y;
+                                    const _wt2 = r0_z;
+                                    const _wt3 = r0_w;
+                                    _b_edge_r_0[_wbase + 0] = _wt0;
+                                    _b_edge_r_0[_wbase + 1] = _wt1;
+                                    _b_edge_r_0[_wbase + 2] = _wt2;
+                                    _b_edge_r_0[_wbase + 3] = _wt3;
+                                }
+                                {
+                                    const _wbase = ((idx) * 4 + 0);
+                                    const _wt0 = r1_x;
+                                    const _wt1 = r1_y;
+                                    const _wt2 = r1_z;
+                                    const _wt3 = r1_w;
+                                    _b_edge_r_1[_wbase + 0] = _wt0;
+                                    _b_edge_r_1[_wbase + 1] = _wt1;
+                                    _b_edge_r_1[_wbase + 2] = _wt2;
+                                    _b_edge_r_1[_wbase + 3] = _wt3;
+                                }
+                                break __invocation;
                             }
-                            _inl_20_result = { p0: rt.vec4(_inl_33_R_p0_x, _inl_33_R_p0_y, _inl_33_R_p0_z, _inl_33_R_p0_w), p1: rt.vec4(_inl_33_R_p1_x, _inl_33_R_p1_y, _inl_33_R_p1_z, _inl_33_R_p1_w) };
-                            break _inl_20;
-                        }
-                        const _sroa_16 = _inl_20_result;
-                        const pp_p0_x = _sroa_16.p0.x;
-                        const pp_p0_y = _sroa_16.p0.y;
-                        const pp_p0_z = _sroa_16.p0.z;
-                        const pp_p0_w = _sroa_16.p0.w;
-                        const pp_p1_x = _sroa_16.p1.x;
-                        const pp_p1_y = _sroa_16.p1.y;
-                        const pp_p1_z = _sroa_16.p1.z;
-                        const pp_p1_w = _sroa_16.p1.w;
-                        const _sroa_17 = rt.vec4(pp_p0_x, pp_p0_y, pp_p0_z, pp_p0_w);
-                        let l0_x = _sroa_17.x;
-                        let l0_y = _sroa_17.y;
-                        let l0_z = _sroa_17.z;
-                        let l0_w = _sroa_17.w;
-                        const _sroa_18 = rt.vec4(pp_p0_x, pp_p0_y, pp_p0_z, pp_p0_w);
-                        let r0_x = _sroa_18.x;
-                        let r0_y = _sroa_18.y;
-                        let r0_z = _sroa_18.z;
-                        let r0_w = _sroa_18.w;
-                        const _sroa_19 = rt.vec4(pp_p1_x, pp_p1_y, pp_p1_z, pp_p1_w);
-                        let l1_x = _sroa_19.x;
-                        let l1_y = _sroa_19.y;
-                        let l1_z = _sroa_19.z;
-                        let l1_w = _sroa_19.w;
-                        const _sroa_20 = rt.vec4(pp_p1_x, pp_p1_y, pp_p1_z, pp_p1_w);
-                        let r1_x = _sroa_20.x;
-                        let r1_y = _sroa_20.y;
-                        let r1_z = _sroa_20.z;
-                        let r1_w = _sroa_20.w;
-                        l0_x = ((l0_x) < (DENSITY_FLOOR) ? (DENSITY_FLOOR) : (l0_x));
-                        r0_x = ((r0_x) < (DENSITY_FLOOR) ? (DENSITY_FLOOR) : (r0_x));
-                        l1_x = ((l1_x) < (pf) ? (pf) : (l1_x));
-                        r1_x = ((r1_x) < (pf) ? (pf) : (r1_x));
-                        {
-                            const _wbase = ((idx) * 4 + 0);
-                            const _wt0 = l0_x;
-                            const _wt1 = l0_y;
-                            const _wt2 = l0_z;
-                            const _wt3 = l0_w;
-                            _b_edge_l_0[_wbase + 0] = _wt0;
-                            _b_edge_l_0[_wbase + 1] = _wt1;
-                            _b_edge_l_0[_wbase + 2] = _wt2;
-                            _b_edge_l_0[_wbase + 3] = _wt3;
-                        }
-                        {
-                            const _wbase = ((idx) * 4 + 0);
-                            const _wt0 = l1_x;
-                            const _wt1 = l1_y;
-                            const _wt2 = l1_z;
-                            const _wt3 = l1_w;
-                            _b_edge_l_1[_wbase + 0] = _wt0;
-                            _b_edge_l_1[_wbase + 1] = _wt1;
-                            _b_edge_l_1[_wbase + 2] = _wt2;
-                            _b_edge_l_1[_wbase + 3] = _wt3;
-                        }
-                        {
-                            const _wbase = ((idx) * 4 + 0);
-                            const _wt0 = r0_x;
-                            const _wt1 = r0_y;
-                            const _wt2 = r0_z;
-                            const _wt3 = r0_w;
-                            _b_edge_r_0[_wbase + 0] = _wt0;
-                            _b_edge_r_0[_wbase + 1] = _wt1;
-                            _b_edge_r_0[_wbase + 2] = _wt2;
-                            _b_edge_r_0[_wbase + 3] = _wt3;
-                        }
-                        {
-                            const _wbase = ((idx) * 4 + 0);
-                            const _wt0 = r1_x;
-                            const _wt1 = r1_y;
-                            const _wt2 = r1_z;
-                            const _wt3 = r1_w;
-                            _b_edge_r_1[_wbase + 0] = _wt0;
-                            _b_edge_r_1[_wbase + 1] = _wt1;
-                            _b_edge_r_1[_wbase + 2] = _wt2;
-                            _b_edge_r_1[_wbase + 3] = _wt3;
-                        }
-                        break __invocation;
-                    }
-                    let tm2_rho = 0;
-                    let tm2_vx = 0;
-                    let tm2_vy = 0;
-                    let tm2_vz = 0;
-                    let tm2_p = 0;
-                    let tm2_bx = 0;
-                    let tm2_by = 0;
-                    let tm2_bz = 0;
-                    let tm1_rho = 0;
-                    let tm1_vx = 0;
-                    let tm1_vy = 0;
-                    let tm1_vz = 0;
-                    let tm1_p = 0;
-                    let tm1_bx = 0;
-                    let tm1_by = 0;
-                    let tm1_bz = 0;
-                    let tp1_rho = 0;
-                    let tp1_vx = 0;
-                    let tp1_vy = 0;
-                    let tp1_vz = 0;
-                    let tp1_p = 0;
-                    let tp1_bx = 0;
-                    let tp1_by = 0;
-                    let tp1_bz = 0;
-                    let tp2_rho = 0;
-                    let tp2_vx = 0;
-                    let tp2_vy = 0;
-                    let tp2_vz = 0;
-                    let tp2_p = 0;
-                    let tp2_bx = 0;
-                    let tp2_by = 0;
-                    let tp2_bz = 0;
-                    if ((axis == 0)) {
-                        const _sroa_21 = wg.tile[(ly + 2)][lx];
-                        tm2_rho = _sroa_21.rho;
-                        tm2_vx = _sroa_21.vx;
-                        tm2_vy = _sroa_21.vy;
-                        tm2_vz = _sroa_21.vz;
-                        tm2_p = _sroa_21.p;
-                        tm2_bx = _sroa_21.bx;
-                        tm2_by = _sroa_21.by;
-                        tm2_bz = _sroa_21.bz;
-                        const _sroa_22 = wg.tile[(ly + 2)][(lx + 1)];
-                        tm1_rho = _sroa_22.rho;
-                        tm1_vx = _sroa_22.vx;
-                        tm1_vy = _sroa_22.vy;
-                        tm1_vz = _sroa_22.vz;
-                        tm1_p = _sroa_22.p;
-                        tm1_bx = _sroa_22.bx;
-                        tm1_by = _sroa_22.by;
-                        tm1_bz = _sroa_22.bz;
-                        const _sroa_23 = wg.tile[(ly + 2)][(lx + 3)];
-                        tp1_rho = _sroa_23.rho;
-                        tp1_vx = _sroa_23.vx;
-                        tp1_vy = _sroa_23.vy;
-                        tp1_vz = _sroa_23.vz;
-                        tp1_p = _sroa_23.p;
-                        tp1_bx = _sroa_23.bx;
-                        tp1_by = _sroa_23.by;
-                        tp1_bz = _sroa_23.bz;
-                        const _sroa_24 = wg.tile[(ly + 2)][(lx + 4)];
-                        tp2_rho = _sroa_24.rho;
-                        tp2_vx = _sroa_24.vx;
-                        tp2_vy = _sroa_24.vy;
-                        tp2_vz = _sroa_24.vz;
-                        tp2_p = _sroa_24.p;
-                        tp2_bx = _sroa_24.bx;
-                        tp2_by = _sroa_24.by;
-                        tp2_bz = _sroa_24.bz;
-                    } else {
-                        const _sroa_25 = wg.tile[ly][(lx + 2)];
-                        tm2_rho = _sroa_25.rho;
-                        tm2_vx = _sroa_25.vx;
-                        tm2_vy = _sroa_25.vy;
-                        tm2_vz = _sroa_25.vz;
-                        tm2_p = _sroa_25.p;
-                        tm2_bx = _sroa_25.bx;
-                        tm2_by = _sroa_25.by;
-                        tm2_bz = _sroa_25.bz;
-                        const _sroa_26 = wg.tile[(ly + 1)][(lx + 2)];
-                        tm1_rho = _sroa_26.rho;
-                        tm1_vx = _sroa_26.vx;
-                        tm1_vy = _sroa_26.vy;
-                        tm1_vz = _sroa_26.vz;
-                        tm1_p = _sroa_26.p;
-                        tm1_bx = _sroa_26.bx;
-                        tm1_by = _sroa_26.by;
-                        tm1_bz = _sroa_26.bz;
-                        const _sroa_27 = wg.tile[(ly + 3)][(lx + 2)];
-                        tp1_rho = _sroa_27.rho;
-                        tp1_vx = _sroa_27.vx;
-                        tp1_vy = _sroa_27.vy;
-                        tp1_vz = _sroa_27.vz;
-                        tp1_p = _sroa_27.p;
-                        tp1_bx = _sroa_27.bx;
-                        tp1_by = _sroa_27.by;
-                        tp1_bz = _sroa_27.bz;
-                        const _sroa_28 = wg.tile[(ly + 4)][(lx + 2)];
-                        tp2_rho = _sroa_28.rho;
-                        tp2_vx = _sroa_28.vx;
-                        tp2_vy = _sroa_28.vy;
-                        tp2_vz = _sroa_28.vz;
-                        tp2_p = _sroa_28.p;
-                        tp2_bx = _sroa_28.bx;
-                        tp2_by = _sroa_28.by;
-                        tp2_bz = _sroa_28.bz;
-                    }
-                    const _sroa_29 = permute_prim({ rho: tc_rho, vx: tc_vx, vy: tc_vy, vz: tc_vz, p: tc_p, bx: tc_bx, by: tc_by, bz: tc_bz }, axis);
-                    const perm_c_rho = _sroa_29.rho;
-                    const perm_c_vn = _sroa_29.vn;
-                    const perm_c_vt1 = _sroa_29.vt1;
-                    const perm_c_vt2 = _sroa_29.vt2;
-                    const perm_c_bt1 = _sroa_29.bt1;
-                    const perm_c_bt2 = _sroa_29.bt2;
-                    const perm_c_p = _sroa_29.p;
-                    const perm_c_bn = _sroa_29.bn;
-                    const _sroa_30 = permute_prim({ rho: tm2_rho, vx: tm2_vx, vy: tm2_vy, vz: tm2_vz, p: tm2_p, bx: tm2_bx, by: tm2_by, bz: tm2_bz }, axis);
-                    const perm_m2_rho = _sroa_30.rho;
-                    const perm_m2_vn = _sroa_30.vn;
-                    const perm_m2_vt1 = _sroa_30.vt1;
-                    const perm_m2_vt2 = _sroa_30.vt2;
-                    const perm_m2_bt1 = _sroa_30.bt1;
-                    const perm_m2_bt2 = _sroa_30.bt2;
-                    const perm_m2_p = _sroa_30.p;
-                    const perm_m2_bn = _sroa_30.bn;
-                    const _sroa_31 = permute_prim({ rho: tm1_rho, vx: tm1_vx, vy: tm1_vy, vz: tm1_vz, p: tm1_p, bx: tm1_bx, by: tm1_by, bz: tm1_bz }, axis);
-                    const perm_m1_rho = _sroa_31.rho;
-                    const perm_m1_vn = _sroa_31.vn;
-                    const perm_m1_vt1 = _sroa_31.vt1;
-                    const perm_m1_vt2 = _sroa_31.vt2;
-                    const perm_m1_bt1 = _sroa_31.bt1;
-                    const perm_m1_bt2 = _sroa_31.bt2;
-                    const perm_m1_p = _sroa_31.p;
-                    const perm_m1_bn = _sroa_31.bn;
-                    const _sroa_32 = permute_prim({ rho: tp1_rho, vx: tp1_vx, vy: tp1_vy, vz: tp1_vz, p: tp1_p, bx: tp1_bx, by: tp1_by, bz: tp1_bz }, axis);
-                    const perm_p1_rho = _sroa_32.rho;
-                    const perm_p1_vn = _sroa_32.vn;
-                    const perm_p1_vt1 = _sroa_32.vt1;
-                    const perm_p1_vt2 = _sroa_32.vt2;
-                    const perm_p1_bt1 = _sroa_32.bt1;
-                    const perm_p1_bt2 = _sroa_32.bt2;
-                    const perm_p1_p = _sroa_32.p;
-                    const perm_p1_bn = _sroa_32.bn;
-                    const _sroa_33 = permute_prim({ rho: tp2_rho, vx: tp2_vx, vy: tp2_vy, vz: tp2_vz, p: tp2_p, bx: tp2_bx, by: tp2_by, bz: tp2_bz }, axis);
-                    const perm_p2_rho = _sroa_33.rho;
-                    const perm_p2_vn = _sroa_33.vn;
-                    const perm_p2_vt1 = _sroa_33.vt1;
-                    const perm_p2_vt2 = _sroa_33.vt2;
-                    const perm_p2_bt1 = _sroa_33.bt1;
-                    const perm_p2_bt2 = _sroa_33.bt2;
-                    const perm_p2_p = _sroa_33.p;
-                    const perm_p2_bn = _sroa_33.bn;
-                    let _inl_21_result;
-                    _inl_21: {
-                        _inl_21_result = { rho: perm_c_rho, vn: perm_c_vn, vt1: perm_c_vt1, vt2: perm_c_vt2, bt1: perm_c_bt1, bt2: perm_c_bt2, p: perm_c_p };
-                        break _inl_21;
-                    }
-                    const _sroa_34 = _inl_21_result;
-                    const w_c_rho = _sroa_34.rho;
-                    const w_c_vn = _sroa_34.vn;
-                    const w_c_vt1 = _sroa_34.vt1;
-                    const w_c_vt2 = _sroa_34.vt2;
-                    const w_c_bt1 = _sroa_34.bt1;
-                    const w_c_bt2 = _sroa_34.bt2;
-                    const w_c_p = _sroa_34.p;
-                    let _inl_22_result;
-                    _inl_22: {
-                        _inl_22_result = { rho: perm_m2_rho, vn: perm_m2_vn, vt1: perm_m2_vt1, vt2: perm_m2_vt2, bt1: perm_m2_bt1, bt2: perm_m2_bt2, p: perm_m2_p };
-                        break _inl_22;
-                    }
-                    const _sroa_35 = _inl_22_result;
-                    const w_m2_rho = _sroa_35.rho;
-                    const w_m2_vn = _sroa_35.vn;
-                    const w_m2_vt1 = _sroa_35.vt1;
-                    const w_m2_vt2 = _sroa_35.vt2;
-                    const w_m2_bt1 = _sroa_35.bt1;
-                    const w_m2_bt2 = _sroa_35.bt2;
-                    const w_m2_p = _sroa_35.p;
-                    let _inl_23_result;
-                    _inl_23: {
-                        _inl_23_result = { rho: perm_m1_rho, vn: perm_m1_vn, vt1: perm_m1_vt1, vt2: perm_m1_vt2, bt1: perm_m1_bt1, bt2: perm_m1_bt2, p: perm_m1_p };
-                        break _inl_23;
-                    }
-                    const _sroa_36 = _inl_23_result;
-                    const w_m1_rho = _sroa_36.rho;
-                    const w_m1_vn = _sroa_36.vn;
-                    const w_m1_vt1 = _sroa_36.vt1;
-                    const w_m1_vt2 = _sroa_36.vt2;
-                    const w_m1_bt1 = _sroa_36.bt1;
-                    const w_m1_bt2 = _sroa_36.bt2;
-                    const w_m1_p = _sroa_36.p;
-                    let _inl_24_result;
-                    _inl_24: {
-                        _inl_24_result = { rho: perm_p1_rho, vn: perm_p1_vn, vt1: perm_p1_vt1, vt2: perm_p1_vt2, bt1: perm_p1_bt1, bt2: perm_p1_bt2, p: perm_p1_p };
-                        break _inl_24;
-                    }
-                    const _sroa_37 = _inl_24_result;
-                    const w_p1_rho = _sroa_37.rho;
-                    const w_p1_vn = _sroa_37.vn;
-                    const w_p1_vt1 = _sroa_37.vt1;
-                    const w_p1_vt2 = _sroa_37.vt2;
-                    const w_p1_bt1 = _sroa_37.bt1;
-                    const w_p1_bt2 = _sroa_37.bt2;
-                    const w_p1_p = _sroa_37.p;
-                    let _inl_25_result;
-                    _inl_25: {
-                        _inl_25_result = { rho: perm_p2_rho, vn: perm_p2_vn, vt1: perm_p2_vt1, vt2: perm_p2_vt2, bt1: perm_p2_bt1, bt2: perm_p2_bt2, p: perm_p2_p };
-                        break _inl_25;
-                    }
-                    const _sroa_38 = _inl_25_result;
-                    const w_p2_rho = _sroa_38.rho;
-                    const w_p2_vn = _sroa_38.vn;
-                    const w_p2_vt1 = _sroa_38.vt1;
-                    const w_p2_vt2 = _sroa_38.vt2;
-                    const w_p2_bt1 = _sroa_38.bt1;
-                    const w_p2_bt2 = _sroa_38.bt2;
-                    const w_p2_p = _sroa_38.p;
-                    const bn_c = perm_c_bn;
-                    const c7 = (7.0 / 12.0);
-                    const c1 = (1.0 / 12.0);
-                    let _inl_26_result;
-                    _inl_26: {
-                        _inl_26_result = { rho: ((c7 * ((w_m1_rho + w_c_rho))) - (c1 * ((w_m2_rho + w_p1_rho)))), vn: ((c7 * ((w_m1_vn + w_c_vn))) - (c1 * ((w_m2_vn + w_p1_vn)))), vt1: ((c7 * ((w_m1_vt1 + w_c_vt1))) - (c1 * ((w_m2_vt1 + w_p1_vt1)))), vt2: ((c7 * ((w_m1_vt2 + w_c_vt2))) - (c1 * ((w_m2_vt2 + w_p1_vt2)))), bt1: ((c7 * ((w_m1_bt1 + w_c_bt1))) - (c1 * ((w_m2_bt1 + w_p1_bt1)))), bt2: ((c7 * ((w_m1_bt2 + w_c_bt2))) - (c1 * ((w_m2_bt2 + w_p1_bt2)))), p: ((c7 * ((w_m1_p + w_c_p))) - (c1 * ((w_m2_p + w_p1_p)))) };
-                        break _inl_26;
-                    }
-                    const _sroa_39 = _inl_26_result;
-                    const qL_raw_rho = _sroa_39.rho;
-                    const qL_raw_vn = _sroa_39.vn;
-                    const qL_raw_vt1 = _sroa_39.vt1;
-                    const qL_raw_vt2 = _sroa_39.vt2;
-                    const qL_raw_bt1 = _sroa_39.bt1;
-                    const qL_raw_bt2 = _sroa_39.bt2;
-                    const qL_raw_p = _sroa_39.p;
-                    let _inl_27_result;
-                    _inl_27: {
-                        _inl_27_result = { rho: ((c7 * ((w_c_rho + w_p1_rho))) - (c1 * ((w_m1_rho + w_p2_rho)))), vn: ((c7 * ((w_c_vn + w_p1_vn))) - (c1 * ((w_m1_vn + w_p2_vn)))), vt1: ((c7 * ((w_c_vt1 + w_p1_vt1))) - (c1 * ((w_m1_vt1 + w_p2_vt1)))), vt2: ((c7 * ((w_c_vt2 + w_p1_vt2))) - (c1 * ((w_m1_vt2 + w_p2_vt2)))), bt1: ((c7 * ((w_c_bt1 + w_p1_bt1))) - (c1 * ((w_m1_bt1 + w_p2_bt1)))), bt2: ((c7 * ((w_c_bt2 + w_p1_bt2))) - (c1 * ((w_m1_bt2 + w_p2_bt2)))), p: ((c7 * ((w_c_p + w_p1_p))) - (c1 * ((w_m1_p + w_p2_p)))) };
-                        break _inl_27;
-                    }
-                    const _sroa_40 = _inl_27_result;
-                    const qR_raw_rho = _sroa_40.rho;
-                    const qR_raw_vn = _sroa_40.vn;
-                    const qR_raw_vt1 = _sroa_40.vt1;
-                    const qR_raw_vt2 = _sroa_40.vt2;
-                    const qR_raw_bt1 = _sroa_40.bt1;
-                    const qR_raw_bt2 = _sroa_40.bt2;
-                    const qR_raw_p = _sroa_40.p;
-                    let _inl_28_result;
-                    _inl_28: {
-                        _inl_28_result = { rho: (w_c_rho - qL_raw_rho), vn: (w_c_vn - qL_raw_vn), vt1: (w_c_vt1 - qL_raw_vt1), vt2: (w_c_vt2 - qL_raw_vt2), bt1: (w_c_bt1 - qL_raw_bt1), bt2: (w_c_bt2 - qL_raw_bt2), p: (w_c_p - qL_raw_p) };
-                        break _inl_28;
-                    }
-                    const _sroa_41 = _inl_28_result;
-                    const dL_prim_rho = _sroa_41.rho;
-                    const dL_prim_vn = _sroa_41.vn;
-                    const dL_prim_vt1 = _sroa_41.vt1;
-                    const dL_prim_vt2 = _sroa_41.vt2;
-                    const dL_prim_bt1 = _sroa_41.bt1;
-                    const dL_prim_bt2 = _sroa_41.bt2;
-                    const dL_prim_p = _sroa_41.p;
-                    let _inl_29_result;
-                    _inl_29: {
-                        _inl_29_result = { rho: (qR_raw_rho - w_c_rho), vn: (qR_raw_vn - w_c_vn), vt1: (qR_raw_vt1 - w_c_vt1), vt2: (qR_raw_vt2 - w_c_vt2), bt1: (qR_raw_bt1 - w_c_bt1), bt2: (qR_raw_bt2 - w_c_bt2), p: (qR_raw_p - w_c_p) };
-                        break _inl_29;
-                    }
-                    const _sroa_42 = _inl_29_result;
-                    const dR_prim_rho = _sroa_42.rho;
-                    const dR_prim_vn = _sroa_42.vn;
-                    const dR_prim_vt1 = _sroa_42.vt1;
-                    const dR_prim_vt2 = _sroa_42.vt2;
-                    const dR_prim_bt1 = _sroa_42.bt1;
-                    const dR_prim_bt2 = _sroa_42.bt2;
-                    const dR_prim_p = _sroa_42.p;
-                    const _sroa_43 = mhd_eigensystem({ rho: w_c_rho, vn: w_c_vn, vt1: w_c_vt1, vt2: w_c_vt2, bt1: w_c_bt1, bt2: w_c_bt2, p: w_c_p }, bn_c, g);
-                    const eig_asq = _sroa_43.asq;
-                    const eig_a = _sroa_43.a;
-                    const eig_cfsq = _sroa_43.cfsq;
-                    const eig_cf = _sroa_43.cf;
-                    const eig_cssq = _sroa_43.cssq;
-                    const eig_cs = _sroa_43.cs;
-                    const eig_alpha_f = _sroa_43.alpha_f;
-                    const eig_alpha_s = _sroa_43.alpha_s;
-                    const eig_bet1 = _sroa_43.bet1;
-                    const eig_bet2 = _sroa_43.bet2;
-                    const eig_sgn_bn = _sroa_43.sgn_bn;
-                    const eig_sqrtd = _sroa_43.sqrtd;
-                    const eig_isqrtd = _sroa_43.isqrtd;
-                    const eig_inv_rho = _sroa_43.inv_rho;
-                    const _sroa_44 = project_to_char({ rho: dL_prim_rho, vn: dL_prim_vn, vt1: dL_prim_vt1, vt2: dL_prim_vt2, bt1: dL_prim_bt1, bt2: dL_prim_bt2, p: dL_prim_p }, { asq: eig_asq, a: eig_a, cfsq: eig_cfsq, cf: eig_cf, cssq: eig_cssq, cs: eig_cs, alpha_f: eig_alpha_f, alpha_s: eig_alpha_s, bet1: eig_bet1, bet2: eig_bet2, sgn_bn: eig_sgn_bn, sqrtd: eig_sqrtd, isqrtd: eig_isqrtd, inv_rho: eig_inv_rho });
-                    const aL_fL = _sroa_44.fL;
-                    const aL_aL = _sroa_44.aL;
-                    const aL_sL = _sroa_44.sL;
-                    const aL_e = _sroa_44.e;
-                    const aL_sR = _sroa_44.sR;
-                    const aL_aR = _sroa_44.aR;
-                    const aL_fR = _sroa_44.fR;
-                    const _sroa_45 = project_to_char({ rho: dR_prim_rho, vn: dR_prim_vn, vt1: dR_prim_vt1, vt2: dR_prim_vt2, bt1: dR_prim_bt1, bt2: dR_prim_bt2, p: dR_prim_p }, { asq: eig_asq, a: eig_a, cfsq: eig_cfsq, cf: eig_cf, cssq: eig_cssq, cs: eig_cs, alpha_f: eig_alpha_f, alpha_s: eig_alpha_s, bet1: eig_bet1, bet2: eig_bet2, sgn_bn: eig_sgn_bn, sqrtd: eig_sqrtd, isqrtd: eig_isqrtd, inv_rho: eig_inv_rho });
-                    const aR_fL = _sroa_45.fL;
-                    const aR_aL = _sroa_45.aL;
-                    const aR_sL = _sroa_45.sL;
-                    const aR_e = _sroa_45.e;
-                    const aR_sR = _sroa_45.sR;
-                    const aR_aR = _sroa_45.aR;
-                    const aR_fR = _sroa_45.fR;
-                    const _sroa_46 = ppm_limit_char({ fL: aL_fL, aL: aL_aL, sL: aL_sL, e: aL_e, sR: aL_sR, aR: aL_aR, fR: aL_fR }, { fL: aR_fL, aL: aR_aL, sL: aR_sL, e: aR_e, sR: aR_sR, aR: aR_aR, fR: aR_fR });
-                    const lim_L = _sroa_46.L;
-                    const lim_R = _sroa_46.R;
-                    const _sroa_47 = project_from_char(lim_L, { asq: eig_asq, a: eig_a, cfsq: eig_cfsq, cf: eig_cf, cssq: eig_cssq, cs: eig_cs, alpha_f: eig_alpha_f, alpha_s: eig_alpha_s, bet1: eig_bet1, bet2: eig_bet2, sgn_bn: eig_sgn_bn, sqrtd: eig_sqrtd, isqrtd: eig_isqrtd, inv_rho: eig_inv_rho });
-                    const dL_lim_rho = _sroa_47.rho;
-                    const dL_lim_vn = _sroa_47.vn;
-                    const dL_lim_vt1 = _sroa_47.vt1;
-                    const dL_lim_vt2 = _sroa_47.vt2;
-                    const dL_lim_bt1 = _sroa_47.bt1;
-                    const dL_lim_bt2 = _sroa_47.bt2;
-                    const dL_lim_p = _sroa_47.p;
-                    const _sroa_48 = project_from_char(lim_R, { asq: eig_asq, a: eig_a, cfsq: eig_cfsq, cf: eig_cf, cssq: eig_cssq, cs: eig_cs, alpha_f: eig_alpha_f, alpha_s: eig_alpha_s, bet1: eig_bet1, bet2: eig_bet2, sgn_bn: eig_sgn_bn, sqrtd: eig_sqrtd, isqrtd: eig_isqrtd, inv_rho: eig_inv_rho });
-                    const dR_lim_rho = _sroa_48.rho;
-                    const dR_lim_vn = _sroa_48.vn;
-                    const dR_lim_vt1 = _sroa_48.vt1;
-                    const dR_lim_vt2 = _sroa_48.vt2;
-                    const dR_lim_bt1 = _sroa_48.bt1;
-                    const dR_lim_bt2 = _sroa_48.bt2;
-                    const dR_lim_p = _sroa_48.p;
-                    let _inl_30_result;
-                    _inl_30: {
-                        _inl_30_result = { rho: (w_c_rho - dL_lim_rho), vn: (w_c_vn - dL_lim_vn), vt1: (w_c_vt1 - dL_lim_vt1), vt2: (w_c_vt2 - dL_lim_vt2), bt1: (w_c_bt1 - dL_lim_bt1), bt2: (w_c_bt2 - dL_lim_bt2), p: (w_c_p - dL_lim_p) };
-                        break _inl_30;
-                    }
-                    const _sroa_49 = _inl_30_result;
-                    const w_left_raw_rho = _sroa_49.rho;
-                    const w_left_raw_vn = _sroa_49.vn;
-                    const w_left_raw_vt1 = _sroa_49.vt1;
-                    const w_left_raw_vt2 = _sroa_49.vt2;
-                    const w_left_raw_bt1 = _sroa_49.bt1;
-                    const w_left_raw_bt2 = _sroa_49.bt2;
-                    const w_left_raw_p = _sroa_49.p;
-                    let _inl_31_result;
-                    _inl_31: {
-                        _inl_31_result = { rho: (w_c_rho + dR_lim_rho), vn: (w_c_vn + dR_lim_vn), vt1: (w_c_vt1 + dR_lim_vt1), vt2: (w_c_vt2 + dR_lim_vt2), bt1: (w_c_bt1 + dR_lim_bt1), bt2: (w_c_bt2 + dR_lim_bt2), p: (w_c_p + dR_lim_p) };
-                        break _inl_31;
-                    }
-                    const _sroa_50 = _inl_31_result;
-                    const w_right_raw_rho = _sroa_50.rho;
-                    const w_right_raw_vn = _sroa_50.vn;
-                    const w_right_raw_vt1 = _sroa_50.vt1;
-                    const w_right_raw_vt2 = _sroa_50.vt2;
-                    const w_right_raw_bt1 = _sroa_50.bt1;
-                    const w_right_raw_bt2 = _sroa_50.bt2;
-                    const w_right_raw_p = _sroa_50.p;
-                    const _sroa_51 = primitive_safety_net({ rho: w_left_raw_rho, vn: w_left_raw_vn, vt1: w_left_raw_vt1, vt2: w_left_raw_vt2, bt1: w_left_raw_bt1, bt2: w_left_raw_bt2, p: w_left_raw_p }, { rho: w_right_raw_rho, vn: w_right_raw_vn, vt1: w_right_raw_vt1, vt2: w_right_raw_vt2, bt1: w_right_raw_bt1, bt2: w_right_raw_bt2, p: w_right_raw_p }, { rho: w_c_rho, vn: w_c_vn, vt1: w_c_vt1, vt2: w_c_vt2, bt1: w_c_bt1, bt2: w_c_bt2, p: w_c_p }, { rho: w_m1_rho, vn: w_m1_vn, vt1: w_m1_vt1, vt2: w_m1_vt2, bt1: w_m1_bt1, bt2: w_m1_bt2, p: w_m1_p }, { rho: w_p1_rho, vn: w_p1_vn, vt1: w_p1_vt1, vt2: w_p1_vt2, bt1: w_p1_bt1, bt2: w_p1_bt2, p: w_p1_p });
-                    const safe_L = _sroa_51.L;
-                    const safe_R = _sroa_51.R;
-                    const _sroa_52 = safe_L;
-                    const w_left_rho = _sroa_52.rho;
-                    const w_left_vn = _sroa_52.vn;
-                    const w_left_vt1 = _sroa_52.vt1;
-                    const w_left_vt2 = _sroa_52.vt2;
-                    const w_left_bt1 = _sroa_52.bt1;
-                    const w_left_bt2 = _sroa_52.bt2;
-                    const w_left_p = _sroa_52.p;
-                    const _sroa_53 = safe_R;
-                    const w_right_rho = _sroa_53.rho;
-                    const w_right_vn = _sroa_53.vn;
-                    const w_right_vt1 = _sroa_53.vt1;
-                    const w_right_vt2 = _sroa_53.vt2;
-                    const w_right_bt1 = _sroa_53.bt1;
-                    const w_right_bt2 = _sroa_53.bt2;
-                    const w_right_p = _sroa_53.p;
-                    let _inl_32_result;
-                    _inl_32: {
-                        let _inl_33_R_p0_x = 0;
-                        let _inl_33_R_p0_y = 0;
-                        let _inl_33_R_p0_z = 0;
-                        let _inl_33_R_p0_w = 0;
-                        let _inl_33_R_p1_x = 0;
-                        let _inl_33_R_p1_y = 0;
-                        let _inl_33_R_p1_z = 0;
-                        let _inl_33_R_p1_w = 0;
-                        if ((axis == 0)) {
-                            {
-                                const _wt0 = w_left_rho;
-                                const _wt1 = w_left_vn;
-                                const _wt2 = w_left_vt1;
-                                const _wt3 = w_left_vt2;
-                                _inl_33_R_p0_x = _wt0;
-                                _inl_33_R_p0_y = _wt1;
-                                _inl_33_R_p0_z = _wt2;
-                                _inl_33_R_p0_w = _wt3;
+                            let tm2_rho = 0;
+                            let tm2_vx = 0;
+                            let tm2_vy = 0;
+                            let tm2_vz = 0;
+                            let tm2_p = 0;
+                            let tm2_bx = 0;
+                            let tm2_by = 0;
+                            let tm2_bz = 0;
+                            let tm1_rho = 0;
+                            let tm1_vx = 0;
+                            let tm1_vy = 0;
+                            let tm1_vz = 0;
+                            let tm1_p = 0;
+                            let tm1_bx = 0;
+                            let tm1_by = 0;
+                            let tm1_bz = 0;
+                            let tp1_rho = 0;
+                            let tp1_vx = 0;
+                            let tp1_vy = 0;
+                            let tp1_vz = 0;
+                            let tp1_p = 0;
+                            let tp1_bx = 0;
+                            let tp1_by = 0;
+                            let tp1_bz = 0;
+                            let tp2_rho = 0;
+                            let tp2_vx = 0;
+                            let tp2_vy = 0;
+                            let tp2_vz = 0;
+                            let tp2_p = 0;
+                            let tp2_bx = 0;
+                            let tp2_by = 0;
+                            let tp2_bz = 0;
+                            if ((axis == 0)) {
+                                const _sroa_22_base = ((((ly + 2)) * 96) + ((lx) * 8));
+                                tm2_rho = wg.tile[_sroa_22_base + 0];
+                                tm2_vx = wg.tile[_sroa_22_base + 1];
+                                tm2_vy = wg.tile[_sroa_22_base + 2];
+                                tm2_vz = wg.tile[_sroa_22_base + 3];
+                                tm2_p = wg.tile[_sroa_22_base + 4];
+                                tm2_bx = wg.tile[_sroa_22_base + 5];
+                                tm2_by = wg.tile[_sroa_22_base + 6];
+                                tm2_bz = wg.tile[_sroa_22_base + 7];
+                                const _sroa_23_base = ((((ly + 2)) * 96) + (((lx + 1)) * 8));
+                                tm1_rho = wg.tile[_sroa_23_base + 0];
+                                tm1_vx = wg.tile[_sroa_23_base + 1];
+                                tm1_vy = wg.tile[_sroa_23_base + 2];
+                                tm1_vz = wg.tile[_sroa_23_base + 3];
+                                tm1_p = wg.tile[_sroa_23_base + 4];
+                                tm1_bx = wg.tile[_sroa_23_base + 5];
+                                tm1_by = wg.tile[_sroa_23_base + 6];
+                                tm1_bz = wg.tile[_sroa_23_base + 7];
+                                const _sroa_24_base = ((((ly + 2)) * 96) + (((lx + 3)) * 8));
+                                tp1_rho = wg.tile[_sroa_24_base + 0];
+                                tp1_vx = wg.tile[_sroa_24_base + 1];
+                                tp1_vy = wg.tile[_sroa_24_base + 2];
+                                tp1_vz = wg.tile[_sroa_24_base + 3];
+                                tp1_p = wg.tile[_sroa_24_base + 4];
+                                tp1_bx = wg.tile[_sroa_24_base + 5];
+                                tp1_by = wg.tile[_sroa_24_base + 6];
+                                tp1_bz = wg.tile[_sroa_24_base + 7];
+                                const _sroa_25_base = ((((ly + 2)) * 96) + (((lx + 4)) * 8));
+                                tp2_rho = wg.tile[_sroa_25_base + 0];
+                                tp2_vx = wg.tile[_sroa_25_base + 1];
+                                tp2_vy = wg.tile[_sroa_25_base + 2];
+                                tp2_vz = wg.tile[_sroa_25_base + 3];
+                                tp2_p = wg.tile[_sroa_25_base + 4];
+                                tp2_bx = wg.tile[_sroa_25_base + 5];
+                                tp2_by = wg.tile[_sroa_25_base + 6];
+                                tp2_bz = wg.tile[_sroa_25_base + 7];
+                            } else {
+                                const _sroa_26_base = (((ly) * 96) + (((lx + 2)) * 8));
+                                tm2_rho = wg.tile[_sroa_26_base + 0];
+                                tm2_vx = wg.tile[_sroa_26_base + 1];
+                                tm2_vy = wg.tile[_sroa_26_base + 2];
+                                tm2_vz = wg.tile[_sroa_26_base + 3];
+                                tm2_p = wg.tile[_sroa_26_base + 4];
+                                tm2_bx = wg.tile[_sroa_26_base + 5];
+                                tm2_by = wg.tile[_sroa_26_base + 6];
+                                tm2_bz = wg.tile[_sroa_26_base + 7];
+                                const _sroa_27_base = ((((ly + 1)) * 96) + (((lx + 2)) * 8));
+                                tm1_rho = wg.tile[_sroa_27_base + 0];
+                                tm1_vx = wg.tile[_sroa_27_base + 1];
+                                tm1_vy = wg.tile[_sroa_27_base + 2];
+                                tm1_vz = wg.tile[_sroa_27_base + 3];
+                                tm1_p = wg.tile[_sroa_27_base + 4];
+                                tm1_bx = wg.tile[_sroa_27_base + 5];
+                                tm1_by = wg.tile[_sroa_27_base + 6];
+                                tm1_bz = wg.tile[_sroa_27_base + 7];
+                                const _sroa_28_base = ((((ly + 3)) * 96) + (((lx + 2)) * 8));
+                                tp1_rho = wg.tile[_sroa_28_base + 0];
+                                tp1_vx = wg.tile[_sroa_28_base + 1];
+                                tp1_vy = wg.tile[_sroa_28_base + 2];
+                                tp1_vz = wg.tile[_sroa_28_base + 3];
+                                tp1_p = wg.tile[_sroa_28_base + 4];
+                                tp1_bx = wg.tile[_sroa_28_base + 5];
+                                tp1_by = wg.tile[_sroa_28_base + 6];
+                                tp1_bz = wg.tile[_sroa_28_base + 7];
+                                const _sroa_29_base = ((((ly + 4)) * 96) + (((lx + 2)) * 8));
+                                tp2_rho = wg.tile[_sroa_29_base + 0];
+                                tp2_vx = wg.tile[_sroa_29_base + 1];
+                                tp2_vy = wg.tile[_sroa_29_base + 2];
+                                tp2_vz = wg.tile[_sroa_29_base + 3];
+                                tp2_p = wg.tile[_sroa_29_base + 4];
+                                tp2_bx = wg.tile[_sroa_29_base + 5];
+                                tp2_by = wg.tile[_sroa_29_base + 6];
+                                tp2_bz = wg.tile[_sroa_29_base + 7];
                             }
-                            {
-                                const _wt0 = w_left_p;
-                                const _wt1 = w_left_bt1;
-                                const _wt2 = w_left_bt2;
-                                const _wt3 = 0.0;
-                                _inl_33_R_p1_x = _wt0;
-                                _inl_33_R_p1_y = _wt1;
-                                _inl_33_R_p1_z = _wt2;
-                                _inl_33_R_p1_w = _wt3;
+                            const _sroa_30 = permute_prim({ rho: tc_rho, vx: tc_vx, vy: tc_vy, vz: tc_vz, p: tc_p, bx: tc_bx, by: tc_by, bz: tc_bz }, axis);
+                            const perm_c_rho = _sroa_30.rho;
+                            const perm_c_vn = _sroa_30.vn;
+                            const perm_c_vt1 = _sroa_30.vt1;
+                            const perm_c_vt2 = _sroa_30.vt2;
+                            const perm_c_bt1 = _sroa_30.bt1;
+                            const perm_c_bt2 = _sroa_30.bt2;
+                            const perm_c_p = _sroa_30.p;
+                            const perm_c_bn = _sroa_30.bn;
+                            const _sroa_31 = permute_prim({ rho: tm2_rho, vx: tm2_vx, vy: tm2_vy, vz: tm2_vz, p: tm2_p, bx: tm2_bx, by: tm2_by, bz: tm2_bz }, axis);
+                            const perm_m2_rho = _sroa_31.rho;
+                            const perm_m2_vn = _sroa_31.vn;
+                            const perm_m2_vt1 = _sroa_31.vt1;
+                            const perm_m2_vt2 = _sroa_31.vt2;
+                            const perm_m2_bt1 = _sroa_31.bt1;
+                            const perm_m2_bt2 = _sroa_31.bt2;
+                            const perm_m2_p = _sroa_31.p;
+                            const perm_m2_bn = _sroa_31.bn;
+                            const _sroa_32 = permute_prim({ rho: tm1_rho, vx: tm1_vx, vy: tm1_vy, vz: tm1_vz, p: tm1_p, bx: tm1_bx, by: tm1_by, bz: tm1_bz }, axis);
+                            const perm_m1_rho = _sroa_32.rho;
+                            const perm_m1_vn = _sroa_32.vn;
+                            const perm_m1_vt1 = _sroa_32.vt1;
+                            const perm_m1_vt2 = _sroa_32.vt2;
+                            const perm_m1_bt1 = _sroa_32.bt1;
+                            const perm_m1_bt2 = _sroa_32.bt2;
+                            const perm_m1_p = _sroa_32.p;
+                            const perm_m1_bn = _sroa_32.bn;
+                            const _sroa_33 = permute_prim({ rho: tp1_rho, vx: tp1_vx, vy: tp1_vy, vz: tp1_vz, p: tp1_p, bx: tp1_bx, by: tp1_by, bz: tp1_bz }, axis);
+                            const perm_p1_rho = _sroa_33.rho;
+                            const perm_p1_vn = _sroa_33.vn;
+                            const perm_p1_vt1 = _sroa_33.vt1;
+                            const perm_p1_vt2 = _sroa_33.vt2;
+                            const perm_p1_bt1 = _sroa_33.bt1;
+                            const perm_p1_bt2 = _sroa_33.bt2;
+                            const perm_p1_p = _sroa_33.p;
+                            const perm_p1_bn = _sroa_33.bn;
+                            const _sroa_34 = permute_prim({ rho: tp2_rho, vx: tp2_vx, vy: tp2_vy, vz: tp2_vz, p: tp2_p, bx: tp2_bx, by: tp2_by, bz: tp2_bz }, axis);
+                            const perm_p2_rho = _sroa_34.rho;
+                            const perm_p2_vn = _sroa_34.vn;
+                            const perm_p2_vt1 = _sroa_34.vt1;
+                            const perm_p2_vt2 = _sroa_34.vt2;
+                            const perm_p2_bt1 = _sroa_34.bt1;
+                            const perm_p2_bt2 = _sroa_34.bt2;
+                            const perm_p2_p = _sroa_34.p;
+                            const perm_p2_bn = _sroa_34.bn;
+                            const _sroa_35 = vec7_of({ rho: perm_c_rho, vn: perm_c_vn, vt1: perm_c_vt1, vt2: perm_c_vt2, bt1: perm_c_bt1, bt2: perm_c_bt2, p: perm_c_p, bn: perm_c_bn });
+                            const w_c_rho = _sroa_35.rho;
+                            const w_c_vn = _sroa_35.vn;
+                            const w_c_vt1 = _sroa_35.vt1;
+                            const w_c_vt2 = _sroa_35.vt2;
+                            const w_c_bt1 = _sroa_35.bt1;
+                            const w_c_bt2 = _sroa_35.bt2;
+                            const w_c_p = _sroa_35.p;
+                            const _sroa_36 = vec7_of({ rho: perm_m2_rho, vn: perm_m2_vn, vt1: perm_m2_vt1, vt2: perm_m2_vt2, bt1: perm_m2_bt1, bt2: perm_m2_bt2, p: perm_m2_p, bn: perm_m2_bn });
+                            const w_m2_rho = _sroa_36.rho;
+                            const w_m2_vn = _sroa_36.vn;
+                            const w_m2_vt1 = _sroa_36.vt1;
+                            const w_m2_vt2 = _sroa_36.vt2;
+                            const w_m2_bt1 = _sroa_36.bt1;
+                            const w_m2_bt2 = _sroa_36.bt2;
+                            const w_m2_p = _sroa_36.p;
+                            const _sroa_37 = vec7_of({ rho: perm_m1_rho, vn: perm_m1_vn, vt1: perm_m1_vt1, vt2: perm_m1_vt2, bt1: perm_m1_bt1, bt2: perm_m1_bt2, p: perm_m1_p, bn: perm_m1_bn });
+                            const w_m1_rho = _sroa_37.rho;
+                            const w_m1_vn = _sroa_37.vn;
+                            const w_m1_vt1 = _sroa_37.vt1;
+                            const w_m1_vt2 = _sroa_37.vt2;
+                            const w_m1_bt1 = _sroa_37.bt1;
+                            const w_m1_bt2 = _sroa_37.bt2;
+                            const w_m1_p = _sroa_37.p;
+                            const _sroa_38 = vec7_of({ rho: perm_p1_rho, vn: perm_p1_vn, vt1: perm_p1_vt1, vt2: perm_p1_vt2, bt1: perm_p1_bt1, bt2: perm_p1_bt2, p: perm_p1_p, bn: perm_p1_bn });
+                            const w_p1_rho = _sroa_38.rho;
+                            const w_p1_vn = _sroa_38.vn;
+                            const w_p1_vt1 = _sroa_38.vt1;
+                            const w_p1_vt2 = _sroa_38.vt2;
+                            const w_p1_bt1 = _sroa_38.bt1;
+                            const w_p1_bt2 = _sroa_38.bt2;
+                            const w_p1_p = _sroa_38.p;
+                            const _sroa_39 = vec7_of({ rho: perm_p2_rho, vn: perm_p2_vn, vt1: perm_p2_vt1, vt2: perm_p2_vt2, bt1: perm_p2_bt1, bt2: perm_p2_bt2, p: perm_p2_p, bn: perm_p2_bn });
+                            const w_p2_rho = _sroa_39.rho;
+                            const w_p2_vn = _sroa_39.vn;
+                            const w_p2_vt1 = _sroa_39.vt1;
+                            const w_p2_vt2 = _sroa_39.vt2;
+                            const w_p2_bt1 = _sroa_39.bt1;
+                            const w_p2_bt2 = _sroa_39.bt2;
+                            const w_p2_p = _sroa_39.p;
+                            const bn_c = perm_c_bn;
+                            const c7 = 0.5833333333333334;
+                            const c1 = 0.08333333333333333;
+                            let _inl_12_result_rho;
+                            let _inl_12_result_vn;
+                            let _inl_12_result_vt1;
+                            let _inl_12_result_vt2;
+                            let _inl_12_result_bt1;
+                            let _inl_12_result_bt2;
+                            let _inl_12_result_p;
+                            _inl_12: {
+                                _inl_12_result_rho = ((c7 * ((w_m1_rho + w_c_rho))) - (c1 * ((w_m2_rho + w_p1_rho))));
+                                _inl_12_result_vn = ((c7 * ((w_m1_vn + w_c_vn))) - (c1 * ((w_m2_vn + w_p1_vn))));
+                                _inl_12_result_vt1 = ((c7 * ((w_m1_vt1 + w_c_vt1))) - (c1 * ((w_m2_vt1 + w_p1_vt1))));
+                                _inl_12_result_vt2 = ((c7 * ((w_m1_vt2 + w_c_vt2))) - (c1 * ((w_m2_vt2 + w_p1_vt2))));
+                                _inl_12_result_bt1 = ((c7 * ((w_m1_bt1 + w_c_bt1))) - (c1 * ((w_m2_bt1 + w_p1_bt1))));
+                                _inl_12_result_bt2 = ((c7 * ((w_m1_bt2 + w_c_bt2))) - (c1 * ((w_m2_bt2 + w_p1_bt2))));
+                                _inl_12_result_p = ((c7 * ((w_m1_p + w_c_p))) - (c1 * ((w_m2_p + w_p1_p))));
+                                break _inl_12;
                             }
-                        } else {
-                            {
-                                const _wt0 = w_left_rho;
-                                const _wt1 = w_left_vt2;
-                                const _wt2 = w_left_vn;
-                                const _wt3 = w_left_vt1;
-                                _inl_33_R_p0_x = _wt0;
-                                _inl_33_R_p0_y = _wt1;
-                                _inl_33_R_p0_z = _wt2;
-                                _inl_33_R_p0_w = _wt3;
+                            const qL_raw_rho = _inl_12_result_rho;
+                            const qL_raw_vn = _inl_12_result_vn;
+                            const qL_raw_vt1 = _inl_12_result_vt1;
+                            const qL_raw_vt2 = _inl_12_result_vt2;
+                            const qL_raw_bt1 = _inl_12_result_bt1;
+                            const qL_raw_bt2 = _inl_12_result_bt2;
+                            const qL_raw_p = _inl_12_result_p;
+                            let _inl_13_result_rho;
+                            let _inl_13_result_vn;
+                            let _inl_13_result_vt1;
+                            let _inl_13_result_vt2;
+                            let _inl_13_result_bt1;
+                            let _inl_13_result_bt2;
+                            let _inl_13_result_p;
+                            _inl_13: {
+                                _inl_13_result_rho = ((c7 * ((w_c_rho + w_p1_rho))) - (c1 * ((w_m1_rho + w_p2_rho))));
+                                _inl_13_result_vn = ((c7 * ((w_c_vn + w_p1_vn))) - (c1 * ((w_m1_vn + w_p2_vn))));
+                                _inl_13_result_vt1 = ((c7 * ((w_c_vt1 + w_p1_vt1))) - (c1 * ((w_m1_vt1 + w_p2_vt1))));
+                                _inl_13_result_vt2 = ((c7 * ((w_c_vt2 + w_p1_vt2))) - (c1 * ((w_m1_vt2 + w_p2_vt2))));
+                                _inl_13_result_bt1 = ((c7 * ((w_c_bt1 + w_p1_bt1))) - (c1 * ((w_m1_bt1 + w_p2_bt1))));
+                                _inl_13_result_bt2 = ((c7 * ((w_c_bt2 + w_p1_bt2))) - (c1 * ((w_m1_bt2 + w_p2_bt2))));
+                                _inl_13_result_p = ((c7 * ((w_c_p + w_p1_p))) - (c1 * ((w_m1_p + w_p2_p))));
+                                break _inl_13;
                             }
-                            {
-                                const _wt0 = w_left_p;
-                                const _wt1 = w_left_bt2;
-                                const _wt2 = w_left_bt1;
-                                const _wt3 = 0.0;
-                                _inl_33_R_p1_x = _wt0;
-                                _inl_33_R_p1_y = _wt1;
-                                _inl_33_R_p1_z = _wt2;
-                                _inl_33_R_p1_w = _wt3;
+                            const qR_raw_rho = _inl_13_result_rho;
+                            const qR_raw_vn = _inl_13_result_vn;
+                            const qR_raw_vt1 = _inl_13_result_vt1;
+                            const qR_raw_vt2 = _inl_13_result_vt2;
+                            const qR_raw_bt1 = _inl_13_result_bt1;
+                            const qR_raw_bt2 = _inl_13_result_bt2;
+                            const qR_raw_p = _inl_13_result_p;
+                            let _inl_14_result_rho;
+                            let _inl_14_result_vn;
+                            let _inl_14_result_vt1;
+                            let _inl_14_result_vt2;
+                            let _inl_14_result_bt1;
+                            let _inl_14_result_bt2;
+                            let _inl_14_result_p;
+                            _inl_14: {
+                                _inl_14_result_rho = (w_c_rho - qL_raw_rho);
+                                _inl_14_result_vn = (w_c_vn - qL_raw_vn);
+                                _inl_14_result_vt1 = (w_c_vt1 - qL_raw_vt1);
+                                _inl_14_result_vt2 = (w_c_vt2 - qL_raw_vt2);
+                                _inl_14_result_bt1 = (w_c_bt1 - qL_raw_bt1);
+                                _inl_14_result_bt2 = (w_c_bt2 - qL_raw_bt2);
+                                _inl_14_result_p = (w_c_p - qL_raw_p);
+                                break _inl_14;
                             }
-                        }
-                        _inl_32_result = { p0: rt.vec4(_inl_33_R_p0_x, _inl_33_R_p0_y, _inl_33_R_p0_z, _inl_33_R_p0_w), p1: rt.vec4(_inl_33_R_p1_x, _inl_33_R_p1_y, _inl_33_R_p1_z, _inl_33_R_p1_w) };
-                        break _inl_32;
-                    }
-                    const _sroa_54 = _inl_32_result;
-                    const pp_L_p0_x = _sroa_54.p0.x;
-                    const pp_L_p0_y = _sroa_54.p0.y;
-                    const pp_L_p0_z = _sroa_54.p0.z;
-                    const pp_L_p0_w = _sroa_54.p0.w;
-                    const pp_L_p1_x = _sroa_54.p1.x;
-                    const pp_L_p1_y = _sroa_54.p1.y;
-                    const pp_L_p1_z = _sroa_54.p1.z;
-                    const pp_L_p1_w = _sroa_54.p1.w;
-                    let _inl_33_result;
-                    _inl_33: {
-                        let _inl_33_R_p0_x = 0;
-                        let _inl_33_R_p0_y = 0;
-                        let _inl_33_R_p0_z = 0;
-                        let _inl_33_R_p0_w = 0;
-                        let _inl_33_R_p1_x = 0;
-                        let _inl_33_R_p1_y = 0;
-                        let _inl_33_R_p1_z = 0;
-                        let _inl_33_R_p1_w = 0;
-                        if ((axis == 0)) {
+                            const dL_prim_rho = _inl_14_result_rho;
+                            const dL_prim_vn = _inl_14_result_vn;
+                            const dL_prim_vt1 = _inl_14_result_vt1;
+                            const dL_prim_vt2 = _inl_14_result_vt2;
+                            const dL_prim_bt1 = _inl_14_result_bt1;
+                            const dL_prim_bt2 = _inl_14_result_bt2;
+                            const dL_prim_p = _inl_14_result_p;
+                            let _inl_15_result_rho;
+                            let _inl_15_result_vn;
+                            let _inl_15_result_vt1;
+                            let _inl_15_result_vt2;
+                            let _inl_15_result_bt1;
+                            let _inl_15_result_bt2;
+                            let _inl_15_result_p;
+                            _inl_15: {
+                                _inl_15_result_rho = (qR_raw_rho - w_c_rho);
+                                _inl_15_result_vn = (qR_raw_vn - w_c_vn);
+                                _inl_15_result_vt1 = (qR_raw_vt1 - w_c_vt1);
+                                _inl_15_result_vt2 = (qR_raw_vt2 - w_c_vt2);
+                                _inl_15_result_bt1 = (qR_raw_bt1 - w_c_bt1);
+                                _inl_15_result_bt2 = (qR_raw_bt2 - w_c_bt2);
+                                _inl_15_result_p = (qR_raw_p - w_c_p);
+                                break _inl_15;
+                            }
+                            const dR_prim_rho = _inl_15_result_rho;
+                            const dR_prim_vn = _inl_15_result_vn;
+                            const dR_prim_vt1 = _inl_15_result_vt1;
+                            const dR_prim_vt2 = _inl_15_result_vt2;
+                            const dR_prim_bt1 = _inl_15_result_bt1;
+                            const dR_prim_bt2 = _inl_15_result_bt2;
+                            const dR_prim_p = _inl_15_result_p;
+                            const _sroa_40 = mhd_eigensystem({ rho: w_c_rho, vn: w_c_vn, vt1: w_c_vt1, vt2: w_c_vt2, bt1: w_c_bt1, bt2: w_c_bt2, p: w_c_p }, bn_c, g);
+                            const eig_asq = _sroa_40.asq;
+                            const eig_a = _sroa_40.a;
+                            const eig_cfsq = _sroa_40.cfsq;
+                            const eig_cf = _sroa_40.cf;
+                            const eig_cssq = _sroa_40.cssq;
+                            const eig_cs = _sroa_40.cs;
+                            const eig_alpha_f = _sroa_40.alpha_f;
+                            const eig_alpha_s = _sroa_40.alpha_s;
+                            const eig_bet1 = _sroa_40.bet1;
+                            const eig_bet2 = _sroa_40.bet2;
+                            const eig_sgn_bn = _sroa_40.sgn_bn;
+                            const eig_sqrtd = _sroa_40.sqrtd;
+                            const eig_isqrtd = _sroa_40.isqrtd;
+                            const eig_inv_rho = _sroa_40.inv_rho;
+                            const _sroa_41 = project_to_char({ rho: dL_prim_rho, vn: dL_prim_vn, vt1: dL_prim_vt1, vt2: dL_prim_vt2, bt1: dL_prim_bt1, bt2: dL_prim_bt2, p: dL_prim_p }, { asq: eig_asq, a: eig_a, cfsq: eig_cfsq, cf: eig_cf, cssq: eig_cssq, cs: eig_cs, alpha_f: eig_alpha_f, alpha_s: eig_alpha_s, bet1: eig_bet1, bet2: eig_bet2, sgn_bn: eig_sgn_bn, sqrtd: eig_sqrtd, isqrtd: eig_isqrtd, inv_rho: eig_inv_rho });
+                            const aL_fL = _sroa_41.fL;
+                            const aL_aL = _sroa_41.aL;
+                            const aL_sL = _sroa_41.sL;
+                            const aL_e = _sroa_41.e;
+                            const aL_sR = _sroa_41.sR;
+                            const aL_aR = _sroa_41.aR;
+                            const aL_fR = _sroa_41.fR;
+                            const _sroa_42 = project_to_char({ rho: dR_prim_rho, vn: dR_prim_vn, vt1: dR_prim_vt1, vt2: dR_prim_vt2, bt1: dR_prim_bt1, bt2: dR_prim_bt2, p: dR_prim_p }, { asq: eig_asq, a: eig_a, cfsq: eig_cfsq, cf: eig_cf, cssq: eig_cssq, cs: eig_cs, alpha_f: eig_alpha_f, alpha_s: eig_alpha_s, bet1: eig_bet1, bet2: eig_bet2, sgn_bn: eig_sgn_bn, sqrtd: eig_sqrtd, isqrtd: eig_isqrtd, inv_rho: eig_inv_rho });
+                            const aR_fL = _sroa_42.fL;
+                            const aR_aL = _sroa_42.aL;
+                            const aR_sL = _sroa_42.sL;
+                            const aR_e = _sroa_42.e;
+                            const aR_sR = _sroa_42.sR;
+                            const aR_aR = _sroa_42.aR;
+                            const aR_fR = _sroa_42.fR;
+                            const _sroa_43 = ppm_limit_char({ fL: aL_fL, aL: aL_aL, sL: aL_sL, e: aL_e, sR: aL_sR, aR: aL_aR, fR: aL_fR }, { fL: aR_fL, aL: aR_aL, sL: aR_sL, e: aR_e, sR: aR_sR, aR: aR_aR, fR: aR_fR });
+                            const lim_L_fL = _sroa_43.L.fL;
+                            const lim_L_aL = _sroa_43.L.aL;
+                            const lim_L_sL = _sroa_43.L.sL;
+                            const lim_L_e = _sroa_43.L.e;
+                            const lim_L_sR = _sroa_43.L.sR;
+                            const lim_L_aR = _sroa_43.L.aR;
+                            const lim_L_fR = _sroa_43.L.fR;
+                            const lim_R_fL = _sroa_43.R.fL;
+                            const lim_R_aL = _sroa_43.R.aL;
+                            const lim_R_sL = _sroa_43.R.sL;
+                            const lim_R_e = _sroa_43.R.e;
+                            const lim_R_sR = _sroa_43.R.sR;
+                            const lim_R_aR = _sroa_43.R.aR;
+                            const lim_R_fR = _sroa_43.R.fR;
+                            const _sroa_44 = project_from_char({ fL: lim_L_fL, aL: lim_L_aL, sL: lim_L_sL, e: lim_L_e, sR: lim_L_sR, aR: lim_L_aR, fR: lim_L_fR }, { asq: eig_asq, a: eig_a, cfsq: eig_cfsq, cf: eig_cf, cssq: eig_cssq, cs: eig_cs, alpha_f: eig_alpha_f, alpha_s: eig_alpha_s, bet1: eig_bet1, bet2: eig_bet2, sgn_bn: eig_sgn_bn, sqrtd: eig_sqrtd, isqrtd: eig_isqrtd, inv_rho: eig_inv_rho });
+                            const dL_lim_rho = _sroa_44.rho;
+                            const dL_lim_vn = _sroa_44.vn;
+                            const dL_lim_vt1 = _sroa_44.vt1;
+                            const dL_lim_vt2 = _sroa_44.vt2;
+                            const dL_lim_bt1 = _sroa_44.bt1;
+                            const dL_lim_bt2 = _sroa_44.bt2;
+                            const dL_lim_p = _sroa_44.p;
+                            const _sroa_45 = project_from_char({ fL: lim_R_fL, aL: lim_R_aL, sL: lim_R_sL, e: lim_R_e, sR: lim_R_sR, aR: lim_R_aR, fR: lim_R_fR }, { asq: eig_asq, a: eig_a, cfsq: eig_cfsq, cf: eig_cf, cssq: eig_cssq, cs: eig_cs, alpha_f: eig_alpha_f, alpha_s: eig_alpha_s, bet1: eig_bet1, bet2: eig_bet2, sgn_bn: eig_sgn_bn, sqrtd: eig_sqrtd, isqrtd: eig_isqrtd, inv_rho: eig_inv_rho });
+                            const dR_lim_rho = _sroa_45.rho;
+                            const dR_lim_vn = _sroa_45.vn;
+                            const dR_lim_vt1 = _sroa_45.vt1;
+                            const dR_lim_vt2 = _sroa_45.vt2;
+                            const dR_lim_bt1 = _sroa_45.bt1;
+                            const dR_lim_bt2 = _sroa_45.bt2;
+                            const dR_lim_p = _sroa_45.p;
+                            let _inl_16_result_rho;
+                            let _inl_16_result_vn;
+                            let _inl_16_result_vt1;
+                            let _inl_16_result_vt2;
+                            let _inl_16_result_bt1;
+                            let _inl_16_result_bt2;
+                            let _inl_16_result_p;
+                            _inl_16: {
+                                _inl_16_result_rho = (w_c_rho - dL_lim_rho);
+                                _inl_16_result_vn = (w_c_vn - dL_lim_vn);
+                                _inl_16_result_vt1 = (w_c_vt1 - dL_lim_vt1);
+                                _inl_16_result_vt2 = (w_c_vt2 - dL_lim_vt2);
+                                _inl_16_result_bt1 = (w_c_bt1 - dL_lim_bt1);
+                                _inl_16_result_bt2 = (w_c_bt2 - dL_lim_bt2);
+                                _inl_16_result_p = (w_c_p - dL_lim_p);
+                                break _inl_16;
+                            }
+                            const w_left_raw_rho = _inl_16_result_rho;
+                            const w_left_raw_vn = _inl_16_result_vn;
+                            const w_left_raw_vt1 = _inl_16_result_vt1;
+                            const w_left_raw_vt2 = _inl_16_result_vt2;
+                            const w_left_raw_bt1 = _inl_16_result_bt1;
+                            const w_left_raw_bt2 = _inl_16_result_bt2;
+                            const w_left_raw_p = _inl_16_result_p;
+                            let _inl_17_result_rho;
+                            let _inl_17_result_vn;
+                            let _inl_17_result_vt1;
+                            let _inl_17_result_vt2;
+                            let _inl_17_result_bt1;
+                            let _inl_17_result_bt2;
+                            let _inl_17_result_p;
+                            _inl_17: {
+                                _inl_17_result_rho = (w_c_rho + dR_lim_rho);
+                                _inl_17_result_vn = (w_c_vn + dR_lim_vn);
+                                _inl_17_result_vt1 = (w_c_vt1 + dR_lim_vt1);
+                                _inl_17_result_vt2 = (w_c_vt2 + dR_lim_vt2);
+                                _inl_17_result_bt1 = (w_c_bt1 + dR_lim_bt1);
+                                _inl_17_result_bt2 = (w_c_bt2 + dR_lim_bt2);
+                                _inl_17_result_p = (w_c_p + dR_lim_p);
+                                break _inl_17;
+                            }
+                            const w_right_raw_rho = _inl_17_result_rho;
+                            const w_right_raw_vn = _inl_17_result_vn;
+                            const w_right_raw_vt1 = _inl_17_result_vt1;
+                            const w_right_raw_vt2 = _inl_17_result_vt2;
+                            const w_right_raw_bt1 = _inl_17_result_bt1;
+                            const w_right_raw_bt2 = _inl_17_result_bt2;
+                            const w_right_raw_p = _inl_17_result_p;
+                            const _sroa_46 = primitive_safety_net_ppm4({ rho: qL_raw_rho, vn: qL_raw_vn, vt1: qL_raw_vt1, vt2: qL_raw_vt2, bt1: qL_raw_bt1, bt2: qL_raw_bt2, p: qL_raw_p }, { rho: qR_raw_rho, vn: qR_raw_vn, vt1: qR_raw_vt1, vt2: qR_raw_vt2, bt1: qR_raw_bt1, bt2: qR_raw_bt2, p: qR_raw_p }, { rho: w_left_raw_rho, vn: w_left_raw_vn, vt1: w_left_raw_vt1, vt2: w_left_raw_vt2, bt1: w_left_raw_bt1, bt2: w_left_raw_bt2, p: w_left_raw_p }, { rho: w_right_raw_rho, vn: w_right_raw_vn, vt1: w_right_raw_vt1, vt2: w_right_raw_vt2, bt1: w_right_raw_bt1, bt2: w_right_raw_bt2, p: w_right_raw_p }, { rho: w_c_rho, vn: w_c_vn, vt1: w_c_vt1, vt2: w_c_vt2, bt1: w_c_bt1, bt2: w_c_bt2, p: w_c_p }, { rho: w_m2_rho, vn: w_m2_vn, vt1: w_m2_vt1, vt2: w_m2_vt2, bt1: w_m2_bt1, bt2: w_m2_bt2, p: w_m2_p }, { rho: w_m1_rho, vn: w_m1_vn, vt1: w_m1_vt1, vt2: w_m1_vt2, bt1: w_m1_bt1, bt2: w_m1_bt2, p: w_m1_p }, { rho: w_p1_rho, vn: w_p1_vn, vt1: w_p1_vt1, vt2: w_p1_vt2, bt1: w_p1_bt1, bt2: w_p1_bt2, p: w_p1_p }, { rho: w_p2_rho, vn: w_p2_vn, vt1: w_p2_vt1, vt2: w_p2_vt2, bt1: w_p2_bt1, bt2: w_p2_bt2, p: w_p2_p });
+                            const safe_L_rho = _sroa_46.L.rho;
+                            const safe_L_vn = _sroa_46.L.vn;
+                            const safe_L_vt1 = _sroa_46.L.vt1;
+                            const safe_L_vt2 = _sroa_46.L.vt2;
+                            const safe_L_bt1 = _sroa_46.L.bt1;
+                            const safe_L_bt2 = _sroa_46.L.bt2;
+                            const safe_L_p = _sroa_46.L.p;
+                            const safe_R_rho = _sroa_46.R.rho;
+                            const safe_R_vn = _sroa_46.R.vn;
+                            const safe_R_vt1 = _sroa_46.R.vt1;
+                            const safe_R_vt2 = _sroa_46.R.vt2;
+                            const safe_R_bt1 = _sroa_46.R.bt1;
+                            const safe_R_bt2 = _sroa_46.R.bt2;
+                            const safe_R_p = _sroa_46.R.p;
+                            const w_left_rho = safe_L_rho;
+                            const w_left_vn = safe_L_vn;
+                            const w_left_vt1 = safe_L_vt1;
+                            const w_left_vt2 = safe_L_vt2;
+                            const w_left_bt1 = safe_L_bt1;
+                            const w_left_bt2 = safe_L_bt2;
+                            const w_left_p = safe_L_p;
+                            const w_right_rho = safe_R_rho;
+                            const w_right_vn = safe_R_vn;
+                            const w_right_vt1 = safe_R_vt1;
+                            const w_right_vt2 = safe_R_vt2;
+                            const w_right_bt1 = safe_R_bt1;
+                            const w_right_bt2 = safe_R_bt2;
+                            const w_right_p = safe_R_p;
+                            const _sroa_47 = pack_prim_pair_from_vec7({ rho: w_left_rho, vn: w_left_vn, vt1: w_left_vt1, vt2: w_left_vt2, bt1: w_left_bt1, bt2: w_left_bt2, p: w_left_p }, bn_c, axis);
+                            const pp_L_p0_x = _sroa_47.p0.x;
+                            const pp_L_p0_y = _sroa_47.p0.y;
+                            const pp_L_p0_z = _sroa_47.p0.z;
+                            const pp_L_p0_w = _sroa_47.p0.w;
+                            const pp_L_p1_x = _sroa_47.p1.x;
+                            const pp_L_p1_y = _sroa_47.p1.y;
+                            const pp_L_p1_z = _sroa_47.p1.z;
+                            const pp_L_p1_w = _sroa_47.p1.w;
+                            const _sroa_48 = pack_prim_pair_from_vec7({ rho: w_right_rho, vn: w_right_vn, vt1: w_right_vt1, vt2: w_right_vt2, bt1: w_right_bt1, bt2: w_right_bt2, p: w_right_p }, bn_c, axis);
+                            const pp_R_p0_x = _sroa_48.p0.x;
+                            const pp_R_p0_y = _sroa_48.p0.y;
+                            const pp_R_p0_z = _sroa_48.p0.z;
+                            const pp_R_p0_w = _sroa_48.p0.w;
+                            const pp_R_p1_x = _sroa_48.p1.x;
+                            const pp_R_p1_y = _sroa_48.p1.y;
+                            const pp_R_p1_z = _sroa_48.p1.z;
+                            const pp_R_p1_w = _sroa_48.p1.w;
+                            const _sroa_49 = {x:pp_L_p0_x, y:pp_L_p0_y, z:pp_L_p0_z, w:pp_L_p0_w};
+                            let l0_x = _sroa_49.x;
+                            let l0_y = _sroa_49.y;
+                            let l0_z = _sroa_49.z;
+                            let l0_w = _sroa_49.w;
+                            const _sroa_50 = {x:pp_R_p0_x, y:pp_R_p0_y, z:pp_R_p0_z, w:pp_R_p0_w};
+                            let r0_x = _sroa_50.x;
+                            let r0_y = _sroa_50.y;
+                            let r0_z = _sroa_50.z;
+                            let r0_w = _sroa_50.w;
+                            const _sroa_51 = {x:pp_L_p1_x, y:pp_L_p1_y, z:pp_L_p1_z, w:pp_L_p1_w};
+                            let l1_x = _sroa_51.x;
+                            let l1_y = _sroa_51.y;
+                            let l1_z = _sroa_51.z;
+                            let l1_w = _sroa_51.w;
+                            const _sroa_52 = {x:pp_R_p1_x, y:pp_R_p1_y, z:pp_R_p1_z, w:pp_R_p1_w};
+                            let r1_x = _sroa_52.x;
+                            let r1_y = _sroa_52.y;
+                            let r1_z = _sroa_52.z;
+                            let r1_w = _sroa_52.w;
+                            l0_x = ((l0_x) < (DENSITY_FLOOR) ? (DENSITY_FLOOR) : (l0_x));
+                            r0_x = ((r0_x) < (DENSITY_FLOOR) ? (DENSITY_FLOOR) : (r0_x));
+                            l1_x = ((l1_x) < (pf) ? (pf) : (l1_x));
+                            r1_x = ((r1_x) < (pf) ? (pf) : (r1_x));
                             {
-                                const _wt0 = w_right_rho;
-                                const _wt1 = w_right_vn;
-                                const _wt2 = w_right_vt1;
-                                const _wt3 = w_right_vt2;
-                                _inl_33_R_p0_x = _wt0;
-                                _inl_33_R_p0_y = _wt1;
-                                _inl_33_R_p0_z = _wt2;
-                                _inl_33_R_p0_w = _wt3;
+                                const _wbase = ((idx) * 4 + 0);
+                                const _wt0 = l0_x;
+                                const _wt1 = l0_y;
+                                const _wt2 = l0_z;
+                                const _wt3 = l0_w;
+                                _b_edge_l_0[_wbase + 0] = _wt0;
+                                _b_edge_l_0[_wbase + 1] = _wt1;
+                                _b_edge_l_0[_wbase + 2] = _wt2;
+                                _b_edge_l_0[_wbase + 3] = _wt3;
                             }
                             {
-                                const _wt0 = w_right_p;
-                                const _wt1 = w_right_bt1;
-                                const _wt2 = w_right_bt2;
-                                const _wt3 = 0.0;
-                                _inl_33_R_p1_x = _wt0;
-                                _inl_33_R_p1_y = _wt1;
-                                _inl_33_R_p1_z = _wt2;
-                                _inl_33_R_p1_w = _wt3;
-                            }
-                        } else {
-                            {
-                                const _wt0 = w_right_rho;
-                                const _wt1 = w_right_vt2;
-                                const _wt2 = w_right_vn;
-                                const _wt3 = w_right_vt1;
-                                _inl_33_R_p0_x = _wt0;
-                                _inl_33_R_p0_y = _wt1;
-                                _inl_33_R_p0_z = _wt2;
-                                _inl_33_R_p0_w = _wt3;
+                                const _wbase = ((idx) * 4 + 0);
+                                const _wt0 = l1_x;
+                                const _wt1 = l1_y;
+                                const _wt2 = l1_z;
+                                const _wt3 = l1_w;
+                                _b_edge_l_1[_wbase + 0] = _wt0;
+                                _b_edge_l_1[_wbase + 1] = _wt1;
+                                _b_edge_l_1[_wbase + 2] = _wt2;
+                                _b_edge_l_1[_wbase + 3] = _wt3;
                             }
                             {
-                                const _wt0 = w_right_p;
-                                const _wt1 = w_right_bt2;
-                                const _wt2 = w_right_bt1;
-                                const _wt3 = 0.0;
-                                _inl_33_R_p1_x = _wt0;
-                                _inl_33_R_p1_y = _wt1;
-                                _inl_33_R_p1_z = _wt2;
-                                _inl_33_R_p1_w = _wt3;
+                                const _wbase = ((idx) * 4 + 0);
+                                const _wt0 = r0_x;
+                                const _wt1 = r0_y;
+                                const _wt2 = r0_z;
+                                const _wt3 = r0_w;
+                                _b_edge_r_0[_wbase + 0] = _wt0;
+                                _b_edge_r_0[_wbase + 1] = _wt1;
+                                _b_edge_r_0[_wbase + 2] = _wt2;
+                                _b_edge_r_0[_wbase + 3] = _wt3;
+                            }
+                            {
+                                const _wbase = ((idx) * 4 + 0);
+                                const _wt0 = r1_x;
+                                const _wt1 = r1_y;
+                                const _wt2 = r1_z;
+                                const _wt3 = r1_w;
+                                _b_edge_r_1[_wbase + 0] = _wt0;
+                                _b_edge_r_1[_wbase + 1] = _wt1;
+                                _b_edge_r_1[_wbase + 2] = _wt2;
+                                _b_edge_r_1[_wbase + 3] = _wt3;
                             }
                         }
-                        _inl_33_result = { p0: rt.vec4(_inl_33_R_p0_x, _inl_33_R_p0_y, _inl_33_R_p0_z, _inl_33_R_p0_w), p1: rt.vec4(_inl_33_R_p1_x, _inl_33_R_p1_y, _inl_33_R_p1_z, _inl_33_R_p1_w) };
-                        break _inl_33;
-                    }
-                    const _sroa_55 = _inl_33_result;
-                    const pp_R_p0_x = _sroa_55.p0.x;
-                    const pp_R_p0_y = _sroa_55.p0.y;
-                    const pp_R_p0_z = _sroa_55.p0.z;
-                    const pp_R_p0_w = _sroa_55.p0.w;
-                    const pp_R_p1_x = _sroa_55.p1.x;
-                    const pp_R_p1_y = _sroa_55.p1.y;
-                    const pp_R_p1_z = _sroa_55.p1.z;
-                    const pp_R_p1_w = _sroa_55.p1.w;
-                    const _sroa_56 = rt.vec4(pp_L_p0_x, pp_L_p0_y, pp_L_p0_z, pp_L_p0_w);
-                    let l0_x = _sroa_56.x;
-                    let l0_y = _sroa_56.y;
-                    let l0_z = _sroa_56.z;
-                    let l0_w = _sroa_56.w;
-                    const _sroa_57 = rt.vec4(pp_R_p0_x, pp_R_p0_y, pp_R_p0_z, pp_R_p0_w);
-                    let r0_x = _sroa_57.x;
-                    let r0_y = _sroa_57.y;
-                    let r0_z = _sroa_57.z;
-                    let r0_w = _sroa_57.w;
-                    const _sroa_58 = rt.vec4(pp_L_p1_x, pp_L_p1_y, pp_L_p1_z, pp_L_p1_w);
-                    let l1_x = _sroa_58.x;
-                    let l1_y = _sroa_58.y;
-                    let l1_z = _sroa_58.z;
-                    let l1_w = _sroa_58.w;
-                    const _sroa_59 = rt.vec4(pp_R_p1_x, pp_R_p1_y, pp_R_p1_z, pp_R_p1_w);
-                    let r1_x = _sroa_59.x;
-                    let r1_y = _sroa_59.y;
-                    let r1_z = _sroa_59.z;
-                    let r1_w = _sroa_59.w;
-                    l0_x = ((l0_x) < (DENSITY_FLOOR) ? (DENSITY_FLOOR) : (l0_x));
-                    r0_x = ((r0_x) < (DENSITY_FLOOR) ? (DENSITY_FLOOR) : (r0_x));
-                    l1_x = ((l1_x) < (pf) ? (pf) : (l1_x));
-                    r1_x = ((r1_x) < (pf) ? (pf) : (r1_x));
-                    {
-                        const _wbase = ((idx) * 4 + 0);
-                        const _wt0 = l0_x;
-                        const _wt1 = l0_y;
-                        const _wt2 = l0_z;
-                        const _wt3 = l0_w;
-                        _b_edge_l_0[_wbase + 0] = _wt0;
-                        _b_edge_l_0[_wbase + 1] = _wt1;
-                        _b_edge_l_0[_wbase + 2] = _wt2;
-                        _b_edge_l_0[_wbase + 3] = _wt3;
-                    }
-                    {
-                        const _wbase = ((idx) * 4 + 0);
-                        const _wt0 = l1_x;
-                        const _wt1 = l1_y;
-                        const _wt2 = l1_z;
-                        const _wt3 = l1_w;
-                        _b_edge_l_1[_wbase + 0] = _wt0;
-                        _b_edge_l_1[_wbase + 1] = _wt1;
-                        _b_edge_l_1[_wbase + 2] = _wt2;
-                        _b_edge_l_1[_wbase + 3] = _wt3;
-                    }
-                    {
-                        const _wbase = ((idx) * 4 + 0);
-                        const _wt0 = r0_x;
-                        const _wt1 = r0_y;
-                        const _wt2 = r0_z;
-                        const _wt3 = r0_w;
-                        _b_edge_r_0[_wbase + 0] = _wt0;
-                        _b_edge_r_0[_wbase + 1] = _wt1;
-                        _b_edge_r_0[_wbase + 2] = _wt2;
-                        _b_edge_r_0[_wbase + 3] = _wt3;
-                    }
-                    {
-                        const _wbase = ((idx) * 4 + 0);
-                        const _wt0 = r1_x;
-                        const _wt1 = r1_y;
-                        const _wt2 = r1_z;
-                        const _wt3 = r1_w;
-                        _b_edge_r_1[_wbase + 0] = _wt0;
-                        _b_edge_r_1[_wbase + 1] = _wt1;
-                        _b_edge_r_1[_wbase + 2] = _wt2;
-                        _b_edge_r_1[_wbase + 3] = _wt3;
                     }
                 }
             }
         }
+    }
+    entry["main"] = function ({ workgroups, bindings, domain, origin }) {
+        return __entry_0_main(workgroups, bindings, domain, origin);
     };
 
-    return { entry, bindings: ["U_uniforms","U0_in","U1_in","Bx_face","By_face","edge_l_0","edge_l_1","edge_r_0","edge_r_1","sweep"] };
+    const bind = function (bindings) {
+        const bound = Object.create(null);
+        bound["main"] = function (workgroups, domain, origin) {
+            return __entry_0_main(workgroups, bindings, domain, origin);
+        };
+        return bound;
+    };
+
+    return { entry, bind, bindings: ["U_uniforms","U0_in","U1_in","Bx_face","By_face","edge_l_0","edge_l_1","edge_r_0","edge_r_1","sweep"], entryInfo };
 }

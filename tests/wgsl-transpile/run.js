@@ -14,7 +14,7 @@
    Exit code 0 if all expected stages pass; 1 if any regression.
    ─────────────────────────────────────────────────────────────────── */
 
-import { readdir, readFile } from 'node:fs/promises';
+import { readdir, readFile, stat } from 'node:fs/promises';
 import { join, relative, dirname }    from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -50,6 +50,17 @@ async function findShaders(root) {
     /** @type {string[]} */
     const out = [];
     async function walk(dir) {
+        if (dir !== root) {
+            try {
+                const gitPath = join(dir, '.git');
+                const gitStat = await stat(gitPath);
+                if (gitStat.isDirectory()) return;
+                if (gitStat.isFile()) {
+                    const gitRef = await readFile(gitPath, 'utf8');
+                    if (/[\/\\]worktrees[\/\\]/.test(gitRef)) return;
+                }
+            } catch { /* not a nested git repo */ }
+        }
         let entries;
         try { entries = await readdir(dir, { withFileTypes: true }); }
         catch { return; }
