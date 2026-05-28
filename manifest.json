@@ -34,6 +34,7 @@
     {"name": "Blog", "url": "/blog", "description": "Read articles"},
     {"name": "Scripture", "url": "/scripture", "description": "Sacred text reader"},
     {"name": "Miasma", "url": "/miasma", "description": "Stochastic spatial epidemic simulator on a hex grid"},
+    {"name": "Pile", "url": "/pile", "description": "Nuclear reactor simulator with PWR, RBMK, and MSR types"},
     {"name": "Plasma", "url": "/plasma", "description": "2D resistive magnetohydrodynamics simulator"}
   ],
   "screenshots": [
