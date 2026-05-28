@@ -114,7 +114,7 @@ function makeAsteroid(tier, x, y) {
 }
 
 // ─── Relativistic helpers ────────────────────────────────────────────
-const clamp = (x, lo, hi) => Math.max(lo, Math.min(hi, x));
+// clamp() is the shared-utils global (loaded before this script in index.html).
 
 function pToV(px, py) {
   const p2 = px * px + py * py;
@@ -354,13 +354,8 @@ const ctx    = canvas.getContext('2d');
 let DPR = 1, W = 0, H = 0;
 
 function resize() {
-  DPR = window.devicePixelRatio || 1;
-  const r = canvas.getBoundingClientRect();
-  W = Math.max(1, Math.floor(r.width));
-  H = Math.max(1, Math.floor(r.height));
-  canvas.width  = W * DPR;
-  canvas.height = H * DPR;
-  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  const r = resizeCanvasDPR(canvas, ctx);
+  W = r.width; H = r.height; DPR = r.dpr;
 }
 
 function cssVar(name) {

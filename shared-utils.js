@@ -57,6 +57,38 @@ function lerp(a, b, t) {
 }
 
 /**
+ * Mulberry32 — fast 32-bit seeded PRNG. Returns a generator yielding
+ * floats in [0, 1) on each call, deterministic from `seed`. Canonical
+ * form shared by gerry (deterministic map generation) and miasma
+ * (seeded runs); `1|a`/`a|1` and the XOR ordering are interchangeable,
+ * so this matches both prior in-sim implementations bit-for-bit.
+ * @param {number} seed  32-bit integer seed
+ * @returns {() => number} Generator yielding floats in [0, 1)
+ */
+function mulberry32(seed) {
+    let a = seed | 0;
+    return function() {
+        a = (a + 0x6D2B79F5) | 0;
+        let t = Math.imul(a ^ (a >>> 15), a | 1);
+        t = (t + Math.imul(t ^ (t >>> 7), t | 61)) ^ t;
+        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+}
+
+/**
+ * Box-Muller transform: one standard-normal sample N(0, 1) from a
+ * uniform generator. Clamps u1 away from 0 to avoid log(0) = -Infinity.
+ * @param {() => number} [rng=Math.random]  Uniform [0, 1) generator
+ * @returns {number} Standard normal sample
+ */
+function gaussian(rng) {
+    rng = rng || Math.random;
+    let u1 = rng();
+    if (u1 < 1e-12) u1 = 1e-12;
+    return Math.sqrt(-2 * Math.log(u1)) * Math.cos(2 * Math.PI * rng());
+}
+
+/**
  * Return an easing function for a CSS cubic-bezier(x1, y1, x2, y2).
  * Inverts the x(u) Bezier to find the parameter u for a given time t,
  * then evaluates y(u). Uses Newton-Raphson iteration (up to 8 steps)
