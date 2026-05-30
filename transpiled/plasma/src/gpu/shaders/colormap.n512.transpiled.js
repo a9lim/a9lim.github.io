@@ -1,12 +1,12 @@
 // Auto-generated from WGSL by _build.mjs — DO NOT EDIT.
 // source: plasma/src/gpu/shaders/colormap.wgsl
 // wgsl-variant: n512
-// helpers-sha256: eefe8364e4418fe1122eaec2c334fc5ddb0dee0d50920de592e31eb98cc89805
-// wgsl-transpile sha256: e85de45ced534d0f7ac209c2334cd1f9730fcd0c6f1cae5d32ca6d151eacca54
-// wgsl-transpiler-sha256: ac640ff2e57bd5c92b7bae5ed9f847914e51684c046fab990cf544842ad38716
+// helpers-sha256: 8c943a8b7cf30e7437759a9bdb9e53a56f237ffd05d70eb845b914f6b4e2b846
+// wgsl-transpile sha256: 42ae315d89c6f2b67b11d60fcc5cae375190d1c0f21c8e39ce9dd491cf7c2447
+// wgsl-transpiler-sha256: d470123cbc6f7ec463bb1b3d6f64125e4819e92c84ce8bb0c08470cb4cdd8758
 // wgsl-opts: {"flatStorage":true,"collectErrors":true,"specializeUniforms":{"U_uniforms":{"grid_n":512,"grid_n_total":516,"ghost_w":2}},"fixedWorkgroups":[64,64,1]}
 // wgsl-metrics: {"bytes":14997,"lines":292,"rtVec":0,"rtPoly":0,"rtAtomic":0,"rtNumeric":0,"fround":0,"hypot":0,"iife":4,"workgroupReductionInits":0,"flatWorkgroupArrays":0,"flatWorkgroupSlots":0,"staticBranchPrunes":0}
-// generated: 2026-05-27T17:41:05.179Z
+// generated: 2026-05-30T21:32:08.714Z
 export default function _wgsl_module(rt) {
     const FLAG_COOLING = (1 << 0);
     const FLAG_GRAVITY_EXT = (1 << 1);

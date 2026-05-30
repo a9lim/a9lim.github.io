@@ -1,11 +1,26 @@
 {
-  "generatedAt": "2026-05-28T20:26:30.542Z",
+  "generatedAt": "2026-05-30T21:33:37.213Z",
   "lastDeploy": {
-    "hash": "0734b5d",
-    "iso": "2026-05-27T22:53:41-07:00",
-    "subject": "Add plasma submodule (v1.0) + transpiler variants infrastructure"
+    "hash": "2390384",
+    "iso": "2026-05-28T22:46:21-07:00",
+    "subject": "pile: bump to RBMK/MSR plant-systems parity + bespoke shapes (8f97c84)"
   },
   "commits": [
+    {
+      "hash": "2390384",
+      "iso": "2026-05-28T22:46:21-07:00",
+      "subject": "pile: bump to RBMK/MSR plant-systems parity + bespoke shapes (8f97c84)"
+    },
+    {
+      "hash": "061be4b",
+      "iso": "2026-05-28T16:23:20-07:00",
+      "subject": "shared-utils: add mulberry32 + gaussian; cross-sim shared-code adoptions"
+    },
+    {
+      "hash": "0284a71",
+      "iso": "2026-05-28T13:43:12-07:00",
+      "subject": "Wire new sims into homepage metadata + bump submodule pointers"
+    },
     {
       "hash": "0734b5d",
       "iso": "2026-05-27T22:53:41-07:00",
@@ -20,21 +35,6 @@
       "hash": "3552260",
       "iso": "2026-05-25T16:33:40-07:00",
       "subject": "wgsl-transpile: build-time artifact writer + plasma shader pre-transpile"
-    },
-    {
-      "hash": "5051bd8",
-      "iso": "2026-05-25T16:27:48-07:00",
-      "subject": "build: rename _build.js → _build.mjs (ESM conversion)"
-    },
-    {
-      "hash": "0c0b871",
-      "iso": "2026-05-25T16:24:19-07:00",
-      "subject": "wgsl-transpile: phase A polish — collectErrors + arg-binding elision"
-    },
-    {
-      "hash": "98ceeaf",
-      "iso": "2026-05-25T15:47:42-07:00",
-      "subject": "wgsl-transpile: optimize emit and stability modes"
     }
   ],
   "stats": {
@@ -42,6 +42,6 @@
     "posts": 1,
     "scriptureWorks": 16,
     "scriptureChapters": 2724,
-    "sourceLines": 125844
+    "sourceLines": 126525
   }
 }

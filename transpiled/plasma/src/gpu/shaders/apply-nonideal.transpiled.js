@@ -1,11 +1,11 @@
 // Auto-generated from WGSL by _build.mjs — DO NOT EDIT.
 // source: plasma/src/gpu/shaders/apply-nonideal.wgsl
-// helpers-sha256: eefe8364e4418fe1122eaec2c334fc5ddb0dee0d50920de592e31eb98cc89805
-// wgsl-transpile sha256: a81f48971426c77e17caf27d1620b8b7b7aac407eb84bb39dcfbdf223a983c51
-// wgsl-transpiler-sha256: ac640ff2e57bd5c92b7bae5ed9f847914e51684c046fab990cf544842ad38716
+// helpers-sha256: 8c943a8b7cf30e7437759a9bdb9e53a56f237ffd05d70eb845b914f6b4e2b846
+// wgsl-transpile sha256: 7275d7b59ea56c1eb8aa910ea33314140c45113a531285aa471e4f7937b99362
+// wgsl-transpiler-sha256: d470123cbc6f7ec463bb1b3d6f64125e4819e92c84ce8bb0c08470cb4cdd8758
 // wgsl-opts: {"flatStorage":true,"collectErrors":true}
 // wgsl-metrics: {"bytes":65892,"lines":1272,"rtVec":0,"rtPoly":0,"rtAtomic":0,"rtNumeric":0,"fround":0,"hypot":0,"iife":5,"workgroupReductionInits":0,"flatWorkgroupArrays":0,"flatWorkgroupSlots":0,"staticBranchPrunes":0}
-// generated: 2026-05-27T17:41:05.153Z
+// generated: 2026-05-30T21:32:08.688Z
 export default function _wgsl_module(rt) {
     const FLAG_COOLING = (1 << 0);
     const FLAG_GRAVITY_EXT = (1 << 1);

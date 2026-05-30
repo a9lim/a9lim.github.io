@@ -1,11 +1,11 @@
 // Auto-generated from WGSL by _build.mjs — DO NOT EDIT.
 // source: plasma/src/gpu/shaders/solve-poisson-mg.wgsl
-// helpers-sha256: eefe8364e4418fe1122eaec2c334fc5ddb0dee0d50920de592e31eb98cc89805
-// wgsl-transpile sha256: 5a75e69ca11b5353e9d7aac3de4af7f23f64ccacf864c8638397c99d107f4597
-// wgsl-transpiler-sha256: ac640ff2e57bd5c92b7bae5ed9f847914e51684c046fab990cf544842ad38716
+// helpers-sha256: 8c943a8b7cf30e7437759a9bdb9e53a56f237ffd05d70eb845b914f6b4e2b846
+// wgsl-transpile sha256: 5cc27adcf0cd240cf232f767711191b7e0bc72ab89f2e1728def20c1902f2e06
+// wgsl-transpiler-sha256: d470123cbc6f7ec463bb1b3d6f64125e4819e92c84ce8bb0c08470cb4cdd8758
 // wgsl-opts: {"flatStorage":true,"collectErrors":true}
 // wgsl-metrics: {"bytes":54037,"lines":1032,"rtVec":0,"rtPoly":0,"rtAtomic":0,"rtNumeric":0,"fround":0,"hypot":0,"iife":12,"workgroupReductionInits":0,"flatWorkgroupArrays":0,"flatWorkgroupSlots":0,"staticBranchPrunes":0}
-// generated: 2026-05-27T17:41:05.239Z
+// generated: 2026-05-30T21:32:08.779Z
 export default function _wgsl_module(rt) {
     const FLAG_COOLING = (1 << 0);
     const FLAG_GRAVITY_EXT = (1 << 1);

@@ -1,12 +1,12 @@
 // Auto-generated from WGSL by _build.mjs — DO NOT EDIT.
 // source: plasma/src/gpu/shaders/apply-bcs.wgsl
 // wgsl-variant: n512.bc-outflow
-// helpers-sha256: eefe8364e4418fe1122eaec2c334fc5ddb0dee0d50920de592e31eb98cc89805
-// wgsl-transpile sha256: 3e8d4df0c17e3fa4fcce5155ad0a5e070406b38e8acbbd96232e5950c670c028
-// wgsl-transpiler-sha256: ac640ff2e57bd5c92b7bae5ed9f847914e51684c046fab990cf544842ad38716
+// helpers-sha256: 8c943a8b7cf30e7437759a9bdb9e53a56f237ffd05d70eb845b914f6b4e2b846
+// wgsl-transpile sha256: 230de984bab2919a266d4665fa952917c792a317fb8d017fdc44e57caec37644
+// wgsl-transpiler-sha256: d470123cbc6f7ec463bb1b3d6f64125e4819e92c84ce8bb0c08470cb4cdd8758
 // wgsl-opts: {"flatStorage":true,"collectErrors":true,"specializeUniforms":{"U_uniforms":{"grid_n":512,"grid_n_total":516,"ghost_w":2},"bc":{"mode_n":1,"mode_s":1,"mode_e":1,"mode_w":1}},"fixedWorkgroups":[65,65,1]}
-// wgsl-metrics: {"bytes":62349,"lines":1507,"rtVec":0,"rtPoly":0,"rtAtomic":0,"rtNumeric":0,"fround":0,"hypot":0,"iife":0,"workgroupReductionInits":0,"flatWorkgroupArrays":0,"flatWorkgroupSlots":0,"staticBranchPrunes":0}
-// generated: 2026-05-27T17:41:05.121Z
+// wgsl-metrics: {"bytes":62428,"lines":1508,"rtVec":0,"rtPoly":0,"rtAtomic":0,"rtNumeric":0,"fround":0,"hypot":0,"iife":0,"workgroupReductionInits":0,"flatWorkgroupArrays":0,"flatWorkgroupSlots":0,"staticBranchPrunes":0}
+// generated: 2026-05-30T21:32:08.655Z
 export default function _wgsl_module(rt) {
     const FLAG_COOLING = (1 << 0);
     const FLAG_GRAVITY_EXT = (1 << 1);
@@ -52,7 +52,8 @@ export default function _wgsl_module(rt) {
         const eth_total = ((U1_x - ke) - mb);
         const eth_floor = (p_floor / (((gamma - 1.0)) < (1.0e-6) ? (1.0e-6) : ((gamma - 1.0))));
         const total_ok = ((eth_total > ((eth_floor) < ((DUAL_ENERGY_FRACTION * ((Math.abs(U1_x)) < (eth_floor) ? (eth_floor) : (Math.abs(U1_x))))) ? ((DUAL_ENERGY_FRACTION * ((Math.abs(U1_x)) < (eth_floor) ? (eth_floor) : (Math.abs(U1_x))))) : (eth_floor))) && (eth_total == eth_total));
-        const dual_eth = ((U1_z) < (eth_floor) ? (eth_floor) : (U1_z));
+        const dual_eth_in = ((U1_z == U1_z) ? U1_z : eth_floor);
+        const dual_eth = ((dual_eth_in) < (eth_floor) ? (eth_floor) : (dual_eth_in));
         const eth = (total_ok ? eth_total : dual_eth);
         return (((((gamma - 1.0)) * eth)) < (p_floor) ? (p_floor) : ((((gamma - 1.0)) * eth)));
     }
@@ -298,8 +299,8 @@ export default function _wgsl_module(rt) {
         const nf = (0.5 / ((S.asq) < (1.0e-30) ? (1.0e-30) : (S.asq)));
         const qf = (((nf * S.cf) * S.alpha_f) * S.sgn_bn);
         const qs = (((nf * S.cs) * S.alpha_s) * S.sgn_bn);
-        const af_prime = ((0.5 * S.alpha_f) / ((S.w * S.sqrtd)));
-        const as_prime = ((0.5 * S.alpha_s) / ((S.w * S.sqrtd)));
+        const af_prime = ((0.5 * S.alpha_f) / ((S.a * S.sqrtd)));
+        const as_prime = ((0.5 * S.alpha_s) / ((S.a * S.sqrtd)));
         const bt_term_v = ((S.bet1 * dW.vt1) + (S.bet2 * dW.vt2));
         const bt_term_b = ((S.bet1 * dW.bt1) + (S.bet2 * dW.bt2));
         let C_fL = 0;
@@ -322,8 +323,8 @@ export default function _wgsl_module(rt) {
     function project_from_char_bc(C, S) {
         const qf = ((S.cf * S.alpha_f) * S.sgn_bn);
         const qs = ((S.cs * S.alpha_s) * S.sgn_bn);
-        const af = ((S.w * S.alpha_f) * S.sqrtd);
-        const as_ = ((S.w * S.alpha_s) * S.sqrtd);
+        const af = ((S.a * S.alpha_f) * S.sqrtd);
+        const as_ = ((S.a * S.alpha_s) * S.sqrtd);
         const rho = (1.0 / ((S.inv_rho) < (1.0e-30) ? (1.0e-30) : (S.inv_rho)));
         const af_sum = (S.alpha_f * ((C.fL + C.fR)));
         const as_sum = (S.alpha_s * ((C.sL + C.sR)));

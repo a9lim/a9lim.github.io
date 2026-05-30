@@ -1,11 +1,11 @@
 // Auto-generated from WGSL by _build.mjs — DO NOT EDIT.
 // source: plasma/src/gpu/shaders/apply-radiation.wgsl
-// helpers-sha256: eefe8364e4418fe1122eaec2c334fc5ddb0dee0d50920de592e31eb98cc89805
-// wgsl-transpile sha256: 68a61effc4e9663318fe5e1612286ecb30d8ac2c664808eab062620b166d971f
-// wgsl-transpiler-sha256: ac640ff2e57bd5c92b7bae5ed9f847914e51684c046fab990cf544842ad38716
+// helpers-sha256: 8c943a8b7cf30e7437759a9bdb9e53a56f237ffd05d70eb845b914f6b4e2b846
+// wgsl-transpile sha256: dec609fbbf80ab0291f3a54f4e18ed903126244903f9968dfa1ac009f6bbaf36
+// wgsl-transpiler-sha256: d470123cbc6f7ec463bb1b3d6f64125e4819e92c84ce8bb0c08470cb4cdd8758
 // wgsl-opts: {"flatStorage":true,"collectErrors":true}
-// wgsl-metrics: {"bytes":174554,"lines":2473,"rtVec":0,"rtPoly":0,"rtAtomic":0,"rtNumeric":0,"fround":0,"hypot":0,"iife":10,"workgroupReductionInits":0,"flatWorkgroupArrays":0,"flatWorkgroupSlots":0,"staticBranchPrunes":0}
-// generated: 2026-05-27T17:41:05.160Z
+// wgsl-metrics: {"bytes":174865,"lines":2478,"rtVec":0,"rtPoly":0,"rtAtomic":0,"rtNumeric":0,"fround":0,"hypot":0,"iife":10,"workgroupReductionInits":0,"flatWorkgroupArrays":0,"flatWorkgroupSlots":0,"staticBranchPrunes":0}
+// generated: 2026-05-30T21:32:08.696Z
 export default function _wgsl_module(rt) {
     const FLAG_COOLING = (1 << 0);
     const FLAG_GRAVITY_EXT = (1 << 1);
@@ -55,7 +55,8 @@ export default function _wgsl_module(rt) {
         const eth_total = ((U1_x - ke) - mb);
         const eth_floor = (p_floor / (((gamma - 1.0)) < (1.0e-6) ? (1.0e-6) : ((gamma - 1.0))));
         const total_ok = ((eth_total > ((eth_floor) < ((DUAL_ENERGY_FRACTION * ((Math.abs(U1_x)) < (eth_floor) ? (eth_floor) : (Math.abs(U1_x))))) ? ((DUAL_ENERGY_FRACTION * ((Math.abs(U1_x)) < (eth_floor) ? (eth_floor) : (Math.abs(U1_x))))) : (eth_floor))) && (eth_total == eth_total));
-        const dual_eth = ((U1_z) < (eth_floor) ? (eth_floor) : (U1_z));
+        const dual_eth_in = ((U1_z == U1_z) ? U1_z : eth_floor);
+        const dual_eth = ((dual_eth_in) < (eth_floor) ? (eth_floor) : (dual_eth_in));
         const eth = (total_ok ? eth_total : dual_eth);
         return (((((gamma - 1.0)) * eth)) < (p_floor) ? (p_floor) : ((((gamma - 1.0)) * eth)));
     }
@@ -778,12 +779,13 @@ export default function _wgsl_module(rt) {
                             break _inl_48;
                         }
                         const kappa_abs = _inl_48_result;
-                        const exchange = (((_u_U_uniforms_radiation_c * kappa_abs) * rho) * ((er_lte - er_c)));
                         const dt = ((_u_dt_buf_dt) < (0.0) ? (0.0) : (_u_dt_buf_dt));
+                        const a = ((_u_U_uniforms_radiation_c * kappa_abs) * rho);
+                        const exch_dEr = (((er_lte - er_c)) * ((1.0 - Math.exp(((-a) * dt)))));
                         {
                             const _wbase = ((c) * 4 + 0);
-                            const _wt0 = ((((-div_flux) + exchange)) * dt);
-                            const _wt1 = ((-exchange) * dt);
+                            const _wt0 = (((-div_flux) * dt) + exch_dEr);
+                            const _wt1 = (-exch_dEr);
                             const _wt2 = 0.0;
                             const _wt3 = 0.0;
                             _b_radiation_dE[_wbase + 0] = _wt0;
@@ -1125,12 +1127,13 @@ export default function _wgsl_module(rt) {
                                 break _inl_48;
                             }
                             const kappa_abs = _inl_48_result;
-                            const exchange = (((_u_U_uniforms_radiation_c * kappa_abs) * rho) * ((er_lte - er_c)));
                             const dt = ((_u_dt_buf_dt) < (0.0) ? (0.0) : (_u_dt_buf_dt));
+                            const a = ((_u_U_uniforms_radiation_c * kappa_abs) * rho);
+                            const exch_dEr = (((er_lte - er_c)) * ((1.0 - Math.exp(((-a) * dt)))));
                             {
                                 const _wbase = ((c) * 4 + 0);
-                                const _wt0 = ((((-div_flux) + exchange)) * dt);
-                                const _wt1 = ((-exchange) * dt);
+                                const _wt0 = (((-div_flux) * dt) + exch_dEr);
+                                const _wt1 = (-exch_dEr);
                                 const _wt2 = 0.0;
                                 const _wt3 = 0.0;
                                 _b_radiation_dE[_wbase + 0] = _wt0;
@@ -1471,12 +1474,13 @@ export default function _wgsl_module(rt) {
                             break _inl_48;
                         }
                         const kappa_abs = _inl_48_result;
-                        const exchange = (((_u_U_uniforms_radiation_c * kappa_abs) * rho) * ((er_lte - er_c)));
                         const dt = ((_u_dt_buf_dt) < (0.0) ? (0.0) : (_u_dt_buf_dt));
+                        const a = ((_u_U_uniforms_radiation_c * kappa_abs) * rho);
+                        const exch_dEr = (((er_lte - er_c)) * ((1.0 - Math.exp(((-a) * dt)))));
                         {
                             const _wbase = ((c) * 4 + 0);
-                            const _wt0 = ((((-div_flux) + exchange)) * dt);
-                            const _wt1 = ((-exchange) * dt);
+                            const _wt0 = (((-div_flux) * dt) + exch_dEr);
+                            const _wt1 = (-exch_dEr);
                             const _wt2 = 0.0;
                             const _wt3 = 0.0;
                             _b_radiation_dE[_wbase + 0] = _wt0;
@@ -1818,12 +1822,13 @@ export default function _wgsl_module(rt) {
                         break _inl_48;
                     }
                     const kappa_abs = _inl_48_result;
-                    const exchange = (((_u_U_uniforms_radiation_c * kappa_abs) * rho) * ((er_lte - er_c)));
                     const dt = ((_u_dt_buf_dt) < (0.0) ? (0.0) : (_u_dt_buf_dt));
+                    const a = ((_u_U_uniforms_radiation_c * kappa_abs) * rho);
+                    const exch_dEr = (((er_lte - er_c)) * ((1.0 - Math.exp(((-a) * dt)))));
                     {
                         const _wbase = ((c) * 4 + 0);
-                        const _wt0 = ((((-div_flux) + exchange)) * dt);
-                        const _wt1 = ((-exchange) * dt);
+                        const _wt0 = (((-div_flux) * dt) + exch_dEr);
+                        const _wt1 = (-exch_dEr);
                         const _wt2 = 0.0;
                         const _wt3 = 0.0;
                         _b_radiation_dE[_wbase + 0] = _wt0;

@@ -1,11 +1,11 @@
 // Auto-generated from WGSL by _build.mjs — DO NOT EDIT.
 // source: plasma/src/gpu/shaders/apply-conduction.wgsl
-// helpers-sha256: eefe8364e4418fe1122eaec2c334fc5ddb0dee0d50920de592e31eb98cc89805
-// wgsl-transpile sha256: abb7107e52d638218fe6c21b1cdf70a0bb3044aee977e065161b86c48acc0902
-// wgsl-transpiler-sha256: ac640ff2e57bd5c92b7bae5ed9f847914e51684c046fab990cf544842ad38716
+// helpers-sha256: 8c943a8b7cf30e7437759a9bdb9e53a56f237ffd05d70eb845b914f6b4e2b846
+// wgsl-transpile sha256: 3549b99594e3added5712854dcc9679091bb8efc462078a7aa37098459f73090
+// wgsl-transpiler-sha256: d470123cbc6f7ec463bb1b3d6f64125e4819e92c84ce8bb0c08470cb4cdd8758
 // wgsl-opts: {"flatStorage":true,"collectErrors":true}
-// wgsl-metrics: {"bytes":59156,"lines":1095,"rtVec":0,"rtPoly":0,"rtAtomic":0,"rtNumeric":0,"fround":0,"hypot":0,"iife":2,"workgroupReductionInits":0,"flatWorkgroupArrays":0,"flatWorkgroupSlots":0,"staticBranchPrunes":0}
-// generated: 2026-05-27T17:41:05.142Z
+// wgsl-metrics: {"bytes":61131,"lines":1109,"rtVec":0,"rtPoly":0,"rtAtomic":0,"rtNumeric":0,"fround":0,"hypot":0,"iife":6,"workgroupReductionInits":0,"flatWorkgroupArrays":0,"flatWorkgroupSlots":0,"staticBranchPrunes":0}
+// generated: 2026-05-30T21:32:08.676Z
 export default function _wgsl_module(rt) {
     const FLAG_COOLING = (1 << 0);
     const FLAG_GRAVITY_EXT = (1 << 1);
@@ -36,6 +36,7 @@ export default function _wgsl_module(rt) {
     const MICRO_TRANSPORT_COUNT = 24;
     const INV_LN10_COND = 0.4342944819032518;
     const TRANSPORT_SCALE_MAX_COND = 1.0e5;
+    const FE_DE_CAP_FRAC = 1.0;
 
     function pressure_from_dual_energy(U0, U1, bx_c, by_c, gamma, p_floor) {
         const U0_x = U0.x;
@@ -55,7 +56,8 @@ export default function _wgsl_module(rt) {
         const eth_total = ((U1_x - ke) - mb);
         const eth_floor = (p_floor / (((gamma - 1.0)) < (1.0e-6) ? (1.0e-6) : ((gamma - 1.0))));
         const total_ok = ((eth_total > ((eth_floor) < ((DUAL_ENERGY_FRACTION * ((Math.abs(U1_x)) < (eth_floor) ? (eth_floor) : (Math.abs(U1_x))))) ? ((DUAL_ENERGY_FRACTION * ((Math.abs(U1_x)) < (eth_floor) ? (eth_floor) : (Math.abs(U1_x))))) : (eth_floor))) && (eth_total == eth_total));
-        const dual_eth = ((U1_z) < (eth_floor) ? (eth_floor) : (U1_z));
+        const dual_eth_in = ((U1_z == U1_z) ? U1_z : eth_floor);
+        const dual_eth = ((dual_eth_in) < (eth_floor) ? (eth_floor) : (dual_eth_in));
         const eth = (total_ok ? eth_total : dual_eth);
         return (((((gamma - 1.0)) * eth)) < (p_floor) ? (p_floor) : ((((gamma - 1.0)) * eth)));
     }
@@ -657,7 +659,6 @@ export default function _wgsl_module(rt) {
                     const u1_y = _b_U1[_sroa_5_base + 1];
                     const u1_z = _b_U1[_sroa_5_base + 2];
                     const u1_w = _b_U1[_sroa_5_base + 3];
-                    const E = (u1_x + _b_dE_cond[c]);
                     const rho = ((u0_x) < (DENSITY_FLOOR) ? (DENSITY_FLOOR) : (u0_x));
                     let _inl_32_result;
                     _inl_32: {
@@ -695,6 +696,10 @@ export default function _wgsl_module(rt) {
                     const by_c = _inl_33_result;
                     const ke = ((0.5 * ((((u0_y * u0_y) + (u0_z * u0_z)) + (u0_w * u0_w)))) / rho);
                     const mb = (0.5 * ((((bx_c * bx_c) + (by_c * by_c)) + (u1_y * u1_y))));
+                    const eint_floor = (_u_U_uniforms_pressure_floor / (((_u_U_uniforms_gamma - 1.0)) < (1.0e-30) ? (1.0e-30) : ((_u_U_uniforms_gamma - 1.0))));
+                    const eint = ((((u1_x - ke) - mb)) < (eint_floor) ? (eint_floor) : (((u1_x - ke) - mb)));
+                    const dE_lim = (((_x, _lo, _hi) => { const _mx = _x < _lo ? _lo : _x; return _hi < _mx ? _hi : _mx; })(_b_dE_cond[c], ((-FE_DE_CAP_FRAC) * eint), (FE_DE_CAP_FRAC * eint)));
+                    const E = (u1_x + dE_lim);
                     const p = (((((_u_U_uniforms_gamma - 1.0)) * (((E - ke) - mb)))) < (_u_U_uniforms_pressure_floor) ? (_u_U_uniforms_pressure_floor) : ((((_u_U_uniforms_gamma - 1.0)) * (((E - ke) - mb)))));
                     const _inl_34_bz = u1_y;
                     const _inl_34_gamma = _u_U_uniforms_gamma;
@@ -774,7 +779,6 @@ export default function _wgsl_module(rt) {
                             const u1_y = _b_U1[_sroa_7_base + 1];
                             const u1_z = _b_U1[_sroa_7_base + 2];
                             const u1_w = _b_U1[_sroa_7_base + 3];
-                            const E = (u1_x + _b_dE_cond[c]);
                             const rho = ((u0_x) < (DENSITY_FLOOR) ? (DENSITY_FLOOR) : (u0_x));
                             let _inl_32_result;
                             _inl_32: {
@@ -812,6 +816,10 @@ export default function _wgsl_module(rt) {
                             const by_c = _inl_33_result;
                             const ke = ((0.5 * ((((u0_y * u0_y) + (u0_z * u0_z)) + (u0_w * u0_w)))) / rho);
                             const mb = (0.5 * ((((bx_c * bx_c) + (by_c * by_c)) + (u1_y * u1_y))));
+                            const eint_floor = (_u_U_uniforms_pressure_floor / (((_u_U_uniforms_gamma - 1.0)) < (1.0e-30) ? (1.0e-30) : ((_u_U_uniforms_gamma - 1.0))));
+                            const eint = ((((u1_x - ke) - mb)) < (eint_floor) ? (eint_floor) : (((u1_x - ke) - mb)));
+                            const dE_lim = (((_x, _lo, _hi) => { const _mx = _x < _lo ? _lo : _x; return _hi < _mx ? _hi : _mx; })(_b_dE_cond[c], ((-FE_DE_CAP_FRAC) * eint), (FE_DE_CAP_FRAC * eint)));
+                            const E = (u1_x + dE_lim);
                             const p = (((((_u_U_uniforms_gamma - 1.0)) * (((E - ke) - mb)))) < (_u_U_uniforms_pressure_floor) ? (_u_U_uniforms_pressure_floor) : ((((_u_U_uniforms_gamma - 1.0)) * (((E - ke) - mb)))));
                             const _inl_34_bz = u1_y;
                             const _inl_34_gamma = _u_U_uniforms_gamma;
@@ -891,7 +899,6 @@ export default function _wgsl_module(rt) {
                         const u1_y = _b_U1[_sroa_9_base + 1];
                         const u1_z = _b_U1[_sroa_9_base + 2];
                         const u1_w = _b_U1[_sroa_9_base + 3];
-                        const E = (u1_x + _b_dE_cond[c]);
                         const rho = ((u0_x) < (DENSITY_FLOOR) ? (DENSITY_FLOOR) : (u0_x));
                         let _inl_32_result;
                         _inl_32: {
@@ -929,6 +936,10 @@ export default function _wgsl_module(rt) {
                         const by_c = _inl_33_result;
                         const ke = ((0.5 * ((((u0_y * u0_y) + (u0_z * u0_z)) + (u0_w * u0_w)))) / rho);
                         const mb = (0.5 * ((((bx_c * bx_c) + (by_c * by_c)) + (u1_y * u1_y))));
+                        const eint_floor = (_u_U_uniforms_pressure_floor / (((_u_U_uniforms_gamma - 1.0)) < (1.0e-30) ? (1.0e-30) : ((_u_U_uniforms_gamma - 1.0))));
+                        const eint = ((((u1_x - ke) - mb)) < (eint_floor) ? (eint_floor) : (((u1_x - ke) - mb)));
+                        const dE_lim = (((_x, _lo, _hi) => { const _mx = _x < _lo ? _lo : _x; return _hi < _mx ? _hi : _mx; })(_b_dE_cond[c], ((-FE_DE_CAP_FRAC) * eint), (FE_DE_CAP_FRAC * eint)));
+                        const E = (u1_x + dE_lim);
                         const p = (((((_u_U_uniforms_gamma - 1.0)) * (((E - ke) - mb)))) < (_u_U_uniforms_pressure_floor) ? (_u_U_uniforms_pressure_floor) : ((((_u_U_uniforms_gamma - 1.0)) * (((E - ke) - mb)))));
                         const _inl_34_bz = u1_y;
                         const _inl_34_gamma = _u_U_uniforms_gamma;
@@ -1009,7 +1020,6 @@ export default function _wgsl_module(rt) {
                     const u1_y = _b_U1[_sroa_11_base + 1];
                     const u1_z = _b_U1[_sroa_11_base + 2];
                     const u1_w = _b_U1[_sroa_11_base + 3];
-                    const E = (u1_x + _b_dE_cond[c]);
                     const rho = ((u0_x) < (DENSITY_FLOOR) ? (DENSITY_FLOOR) : (u0_x));
                     let _inl_32_result;
                     _inl_32: {
@@ -1047,6 +1057,10 @@ export default function _wgsl_module(rt) {
                     const by_c = _inl_33_result;
                     const ke = ((0.5 * ((((u0_y * u0_y) + (u0_z * u0_z)) + (u0_w * u0_w)))) / rho);
                     const mb = (0.5 * ((((bx_c * bx_c) + (by_c * by_c)) + (u1_y * u1_y))));
+                    const eint_floor = (_u_U_uniforms_pressure_floor / (((_u_U_uniforms_gamma - 1.0)) < (1.0e-30) ? (1.0e-30) : ((_u_U_uniforms_gamma - 1.0))));
+                    const eint = ((((u1_x - ke) - mb)) < (eint_floor) ? (eint_floor) : (((u1_x - ke) - mb)));
+                    const dE_lim = (((_x, _lo, _hi) => { const _mx = _x < _lo ? _lo : _x; return _hi < _mx ? _hi : _mx; })(_b_dE_cond[c], ((-FE_DE_CAP_FRAC) * eint), (FE_DE_CAP_FRAC * eint)));
+                    const E = (u1_x + dE_lim);
                     const p = (((((_u_U_uniforms_gamma - 1.0)) * (((E - ke) - mb)))) < (_u_U_uniforms_pressure_floor) ? (_u_U_uniforms_pressure_floor) : ((((_u_U_uniforms_gamma - 1.0)) * (((E - ke) - mb)))));
                     const _inl_34_bz = u1_y;
                     const _inl_34_gamma = _u_U_uniforms_gamma;

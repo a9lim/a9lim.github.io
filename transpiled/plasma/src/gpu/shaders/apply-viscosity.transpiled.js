@@ -1,11 +1,11 @@
 // Auto-generated from WGSL by _build.mjs — DO NOT EDIT.
 // source: plasma/src/gpu/shaders/apply-viscosity.wgsl
-// helpers-sha256: eefe8364e4418fe1122eaec2c334fc5ddb0dee0d50920de592e31eb98cc89805
-// wgsl-transpile sha256: cdec27205b00286bc53295c7e11f2b9b899094b994b5e3344e20fd984fda157a
-// wgsl-transpiler-sha256: ac640ff2e57bd5c92b7bae5ed9f847914e51684c046fab990cf544842ad38716
+// helpers-sha256: 8c943a8b7cf30e7437759a9bdb9e53a56f237ffd05d70eb845b914f6b4e2b846
+// wgsl-transpile sha256: 6863d63c5e84c5a20a6c7436e8639ab038ed0353ac3b695b80859665e718b1e4
+// wgsl-transpiler-sha256: d470123cbc6f7ec463bb1b3d6f64125e4819e92c84ce8bb0c08470cb4cdd8758
 // wgsl-opts: {"flatStorage":true,"collectErrors":true}
-// wgsl-metrics: {"bytes":94937,"lines":1598,"rtVec":0,"rtPoly":0,"rtAtomic":0,"rtNumeric":0,"fround":0,"hypot":0,"iife":8,"workgroupReductionInits":0,"flatWorkgroupArrays":0,"flatWorkgroupSlots":0,"staticBranchPrunes":0}
-// generated: 2026-05-27T17:41:05.175Z
+// wgsl-metrics: {"bytes":101327,"lines":1667,"rtVec":0,"rtPoly":0,"rtAtomic":0,"rtNumeric":0,"fround":0,"hypot":4,"iife":8,"workgroupReductionInits":0,"flatWorkgroupArrays":0,"flatWorkgroupSlots":0,"staticBranchPrunes":0}
+// generated: 2026-05-30T21:32:08.710Z
 export default function _wgsl_module(rt) {
     const FLAG_COOLING = (1 << 0);
     const FLAG_GRAVITY_EXT = (1 << 1);
@@ -36,6 +36,7 @@ export default function _wgsl_module(rt) {
     const MICRO_TRANSPORT_COUNT_VISC = 24;
     const INV_LN10_VISC = 0.4342944819032518;
     const TRANSPORT_SCALE_MAX_VISC = 1.0e5;
+    const FE_DMOM_CAP_FRAC = 1.0;
 
     function pressure_from_dual_energy(U0, U1, bx_c, by_c, gamma, p_floor) {
         const U0_x = U0.x;
@@ -55,7 +56,8 @@ export default function _wgsl_module(rt) {
         const eth_total = ((U1_x - ke) - mb);
         const eth_floor = (p_floor / (((gamma - 1.0)) < (1.0e-6) ? (1.0e-6) : ((gamma - 1.0))));
         const total_ok = ((eth_total > ((eth_floor) < ((DUAL_ENERGY_FRACTION * ((Math.abs(U1_x)) < (eth_floor) ? (eth_floor) : (Math.abs(U1_x))))) ? ((DUAL_ENERGY_FRACTION * ((Math.abs(U1_x)) < (eth_floor) ? (eth_floor) : (Math.abs(U1_x))))) : (eth_floor))) && (eth_total == eth_total));
-        const dual_eth = ((U1_z) < (eth_floor) ? (eth_floor) : (U1_z));
+        const dual_eth_in = ((U1_z == U1_z) ? U1_z : eth_floor);
+        const dual_eth = ((dual_eth_in) < (eth_floor) ? (eth_floor) : (dual_eth_in));
         const eth = (total_ok ? eth_total : dual_eth);
         return (((((gamma - 1.0)) * eth)) < (p_floor) ? (p_floor) : ((((gamma - 1.0)) * eth)));
     }
@@ -1002,6 +1004,7 @@ export default function _wgsl_module(rt) {
         const [Wx, Wy, Wz] = workgroups;
         const Lx = 8, Ly = 8, Lz = 1;
         const _b_U_uniforms = bindings.U_uniforms;
+        const _u_U_uniforms_dx = _b_U_uniforms.dx;
         const _u_U_uniforms_gamma = _b_U_uniforms.gamma;
         const _u_U_uniforms_grid_n = _b_U_uniforms.grid_n;
         const _u_U_uniforms_grid_n_total = _b_U_uniforms.grid_n_total;
@@ -1015,6 +1018,8 @@ export default function _wgsl_module(rt) {
         const _b_U1 = bindings.U1;
         const _b_Bx_face = bindings.Bx_face;
         const _b_By_face = bindings.By_face;
+        const _b_dt_buf = bindings.dt_buf;
+        const _u_dt_buf_dt = _b_dt_buf.dt;
         const _b_dU_visc = bindings.dU_visc;
         const Gx = domain && domain[0] != null ? domain[0] : Wx * Lx;
         const Gy = domain && domain[1] != null ? domain[1] : Wy * Ly;
@@ -1072,12 +1077,28 @@ export default function _wgsl_module(rt) {
                     const u1_y = _b_U1[_sroa_47_base + 1];
                     const u1_z = _b_U1[_sroa_47_base + 2];
                     const u1_w = _b_U1[_sroa_47_base + 3];
-                    const _sroa_48 = {x:u0_x, y:(u0_y + du_x), z:(u0_z + du_y), w:(u0_w + du_z)};
-                    const u0_new_x = _sroa_48.x;
-                    const u0_new_y = _sroa_48.y;
-                    const u0_new_z = _sroa_48.z;
-                    const u0_new_w = _sroa_48.w;
-                    const E = (u1_x + du_w);
+                    const rho_old = ((u0_x) < (DENSITY_FLOOR) ? (DENSITY_FLOOR) : (u0_x));
+                    const vc_x = (u0_y / rho_old);
+                    const vc_y = (u0_z / rho_old);
+                    const vc_z = (u0_w / rho_old);
+                    const _sroa_48 = {x:du_x, y:du_y, z:du_z};
+                    const d_mom_raw_x = _sroa_48.x;
+                    const d_mom_raw_y = _sroa_48.y;
+                    const d_mom_raw_z = _sroa_48.z;
+                    const dt_visc = ((_u_dt_buf_dt) < (1.0e-30) ? (1.0e-30) : (_u_dt_buf_dt));
+                    const dmom_cap = (((FE_DMOM_CAP_FRAC * rho_old) * _u_U_uniforms_dx) / dt_visc);
+                    const dmom_mag = Math.hypot(d_mom_raw_x, d_mom_raw_y, d_mom_raw_z);
+                    const _sroa_49 = {x:((dmom_mag > dmom_cap) ? (d_mom_raw_x * ((dmom_cap / ((dmom_mag) < (1.0e-30) ? (1.0e-30) : (dmom_mag))))) : d_mom_raw_x), y:((dmom_mag > dmom_cap) ? (d_mom_raw_y * ((dmom_cap / ((dmom_mag) < (1.0e-30) ? (1.0e-30) : (dmom_mag))))) : d_mom_raw_y), z:((dmom_mag > dmom_cap) ? (d_mom_raw_z * ((dmom_cap / ((dmom_mag) < (1.0e-30) ? (1.0e-30) : (dmom_mag))))) : d_mom_raw_z)};
+                    const d_mom_x = _sroa_49.x;
+                    const d_mom_y = _sroa_49.y;
+                    const d_mom_z = _sroa_49.z;
+                    const dE_lim = ((du_w - ((vc_x * d_mom_raw_x) + (vc_y * d_mom_raw_y) + (vc_z * d_mom_raw_z))) + ((vc_x * d_mom_x) + (vc_y * d_mom_y) + (vc_z * d_mom_z)));
+                    const _sroa_50 = {x:u0_x, y:(u0_y + d_mom_x), z:(u0_z + d_mom_y), w:(u0_w + d_mom_z)};
+                    const u0_new_x = _sroa_50.x;
+                    const u0_new_y = _sroa_50.y;
+                    const u0_new_z = _sroa_50.z;
+                    const u0_new_w = _sroa_50.w;
+                    const E = (u1_x + dE_lim);
                     const rho = ((u0_new_x) < (DENSITY_FLOOR) ? (DENSITY_FLOOR) : (u0_new_x));
                     let _inl_27_result;
                     _inl_27: {
@@ -1198,27 +1219,43 @@ export default function _wgsl_module(rt) {
                                 break _inl_26;
                             }
                             const c = _inl_26_result;
-                            const _sroa_49_base = ((c) * 4 + 0);
-                            const du_x = _b_dU_visc[_sroa_49_base + 0];
-                            const du_y = _b_dU_visc[_sroa_49_base + 1];
-                            const du_z = _b_dU_visc[_sroa_49_base + 2];
-                            const du_w = _b_dU_visc[_sroa_49_base + 3];
-                            const _sroa_50_base = ((c) * 4 + 0);
-                            const u0_x = _b_U0[_sroa_50_base + 0];
-                            const u0_y = _b_U0[_sroa_50_base + 1];
-                            const u0_z = _b_U0[_sroa_50_base + 2];
-                            const u0_w = _b_U0[_sroa_50_base + 3];
                             const _sroa_51_base = ((c) * 4 + 0);
-                            const u1_x = _b_U1[_sroa_51_base + 0];
-                            const u1_y = _b_U1[_sroa_51_base + 1];
-                            const u1_z = _b_U1[_sroa_51_base + 2];
-                            const u1_w = _b_U1[_sroa_51_base + 3];
-                            const _sroa_52 = {x:u0_x, y:(u0_y + du_x), z:(u0_z + du_y), w:(u0_w + du_z)};
-                            const u0_new_x = _sroa_52.x;
-                            const u0_new_y = _sroa_52.y;
-                            const u0_new_z = _sroa_52.z;
-                            const u0_new_w = _sroa_52.w;
-                            const E = (u1_x + du_w);
+                            const du_x = _b_dU_visc[_sroa_51_base + 0];
+                            const du_y = _b_dU_visc[_sroa_51_base + 1];
+                            const du_z = _b_dU_visc[_sroa_51_base + 2];
+                            const du_w = _b_dU_visc[_sroa_51_base + 3];
+                            const _sroa_52_base = ((c) * 4 + 0);
+                            const u0_x = _b_U0[_sroa_52_base + 0];
+                            const u0_y = _b_U0[_sroa_52_base + 1];
+                            const u0_z = _b_U0[_sroa_52_base + 2];
+                            const u0_w = _b_U0[_sroa_52_base + 3];
+                            const _sroa_53_base = ((c) * 4 + 0);
+                            const u1_x = _b_U1[_sroa_53_base + 0];
+                            const u1_y = _b_U1[_sroa_53_base + 1];
+                            const u1_z = _b_U1[_sroa_53_base + 2];
+                            const u1_w = _b_U1[_sroa_53_base + 3];
+                            const rho_old = ((u0_x) < (DENSITY_FLOOR) ? (DENSITY_FLOOR) : (u0_x));
+                            const vc_x = (u0_y / rho_old);
+                            const vc_y = (u0_z / rho_old);
+                            const vc_z = (u0_w / rho_old);
+                            const _sroa_54 = {x:du_x, y:du_y, z:du_z};
+                            const d_mom_raw_x = _sroa_54.x;
+                            const d_mom_raw_y = _sroa_54.y;
+                            const d_mom_raw_z = _sroa_54.z;
+                            const dt_visc = ((_u_dt_buf_dt) < (1.0e-30) ? (1.0e-30) : (_u_dt_buf_dt));
+                            const dmom_cap = (((FE_DMOM_CAP_FRAC * rho_old) * _u_U_uniforms_dx) / dt_visc);
+                            const dmom_mag = Math.hypot(d_mom_raw_x, d_mom_raw_y, d_mom_raw_z);
+                            const _sroa_55 = {x:((dmom_mag > dmom_cap) ? (d_mom_raw_x * ((dmom_cap / ((dmom_mag) < (1.0e-30) ? (1.0e-30) : (dmom_mag))))) : d_mom_raw_x), y:((dmom_mag > dmom_cap) ? (d_mom_raw_y * ((dmom_cap / ((dmom_mag) < (1.0e-30) ? (1.0e-30) : (dmom_mag))))) : d_mom_raw_y), z:((dmom_mag > dmom_cap) ? (d_mom_raw_z * ((dmom_cap / ((dmom_mag) < (1.0e-30) ? (1.0e-30) : (dmom_mag))))) : d_mom_raw_z)};
+                            const d_mom_x = _sroa_55.x;
+                            const d_mom_y = _sroa_55.y;
+                            const d_mom_z = _sroa_55.z;
+                            const dE_lim = ((du_w - ((vc_x * d_mom_raw_x) + (vc_y * d_mom_raw_y) + (vc_z * d_mom_raw_z))) + ((vc_x * d_mom_x) + (vc_y * d_mom_y) + (vc_z * d_mom_z)));
+                            const _sroa_56 = {x:u0_x, y:(u0_y + d_mom_x), z:(u0_z + d_mom_y), w:(u0_w + d_mom_z)};
+                            const u0_new_x = _sroa_56.x;
+                            const u0_new_y = _sroa_56.y;
+                            const u0_new_z = _sroa_56.z;
+                            const u0_new_w = _sroa_56.w;
+                            const E = (u1_x + dE_lim);
                             const rho = ((u0_new_x) < (DENSITY_FLOOR) ? (DENSITY_FLOOR) : (u0_new_x));
                             let _inl_27_result;
                             _inl_27: {
@@ -1339,27 +1376,43 @@ export default function _wgsl_module(rt) {
                             break _inl_26;
                         }
                         const c = _inl_26_result;
-                        const _sroa_53_base = ((c) * 4 + 0);
-                        const du_x = _b_dU_visc[_sroa_53_base + 0];
-                        const du_y = _b_dU_visc[_sroa_53_base + 1];
-                        const du_z = _b_dU_visc[_sroa_53_base + 2];
-                        const du_w = _b_dU_visc[_sroa_53_base + 3];
-                        const _sroa_54_base = ((c) * 4 + 0);
-                        const u0_x = _b_U0[_sroa_54_base + 0];
-                        const u0_y = _b_U0[_sroa_54_base + 1];
-                        const u0_z = _b_U0[_sroa_54_base + 2];
-                        const u0_w = _b_U0[_sroa_54_base + 3];
-                        const _sroa_55_base = ((c) * 4 + 0);
-                        const u1_x = _b_U1[_sroa_55_base + 0];
-                        const u1_y = _b_U1[_sroa_55_base + 1];
-                        const u1_z = _b_U1[_sroa_55_base + 2];
-                        const u1_w = _b_U1[_sroa_55_base + 3];
-                        const _sroa_56 = {x:u0_x, y:(u0_y + du_x), z:(u0_z + du_y), w:(u0_w + du_z)};
-                        const u0_new_x = _sroa_56.x;
-                        const u0_new_y = _sroa_56.y;
-                        const u0_new_z = _sroa_56.z;
-                        const u0_new_w = _sroa_56.w;
-                        const E = (u1_x + du_w);
+                        const _sroa_57_base = ((c) * 4 + 0);
+                        const du_x = _b_dU_visc[_sroa_57_base + 0];
+                        const du_y = _b_dU_visc[_sroa_57_base + 1];
+                        const du_z = _b_dU_visc[_sroa_57_base + 2];
+                        const du_w = _b_dU_visc[_sroa_57_base + 3];
+                        const _sroa_58_base = ((c) * 4 + 0);
+                        const u0_x = _b_U0[_sroa_58_base + 0];
+                        const u0_y = _b_U0[_sroa_58_base + 1];
+                        const u0_z = _b_U0[_sroa_58_base + 2];
+                        const u0_w = _b_U0[_sroa_58_base + 3];
+                        const _sroa_59_base = ((c) * 4 + 0);
+                        const u1_x = _b_U1[_sroa_59_base + 0];
+                        const u1_y = _b_U1[_sroa_59_base + 1];
+                        const u1_z = _b_U1[_sroa_59_base + 2];
+                        const u1_w = _b_U1[_sroa_59_base + 3];
+                        const rho_old = ((u0_x) < (DENSITY_FLOOR) ? (DENSITY_FLOOR) : (u0_x));
+                        const vc_x = (u0_y / rho_old);
+                        const vc_y = (u0_z / rho_old);
+                        const vc_z = (u0_w / rho_old);
+                        const _sroa_60 = {x:du_x, y:du_y, z:du_z};
+                        const d_mom_raw_x = _sroa_60.x;
+                        const d_mom_raw_y = _sroa_60.y;
+                        const d_mom_raw_z = _sroa_60.z;
+                        const dt_visc = ((_u_dt_buf_dt) < (1.0e-30) ? (1.0e-30) : (_u_dt_buf_dt));
+                        const dmom_cap = (((FE_DMOM_CAP_FRAC * rho_old) * _u_U_uniforms_dx) / dt_visc);
+                        const dmom_mag = Math.hypot(d_mom_raw_x, d_mom_raw_y, d_mom_raw_z);
+                        const _sroa_61 = {x:((dmom_mag > dmom_cap) ? (d_mom_raw_x * ((dmom_cap / ((dmom_mag) < (1.0e-30) ? (1.0e-30) : (dmom_mag))))) : d_mom_raw_x), y:((dmom_mag > dmom_cap) ? (d_mom_raw_y * ((dmom_cap / ((dmom_mag) < (1.0e-30) ? (1.0e-30) : (dmom_mag))))) : d_mom_raw_y), z:((dmom_mag > dmom_cap) ? (d_mom_raw_z * ((dmom_cap / ((dmom_mag) < (1.0e-30) ? (1.0e-30) : (dmom_mag))))) : d_mom_raw_z)};
+                        const d_mom_x = _sroa_61.x;
+                        const d_mom_y = _sroa_61.y;
+                        const d_mom_z = _sroa_61.z;
+                        const dE_lim = ((du_w - ((vc_x * d_mom_raw_x) + (vc_y * d_mom_raw_y) + (vc_z * d_mom_raw_z))) + ((vc_x * d_mom_x) + (vc_y * d_mom_y) + (vc_z * d_mom_z)));
+                        const _sroa_62 = {x:u0_x, y:(u0_y + d_mom_x), z:(u0_z + d_mom_y), w:(u0_w + d_mom_z)};
+                        const u0_new_x = _sroa_62.x;
+                        const u0_new_y = _sroa_62.y;
+                        const u0_new_z = _sroa_62.z;
+                        const u0_new_w = _sroa_62.w;
+                        const E = (u1_x + dE_lim);
                         const rho = ((u0_new_x) < (DENSITY_FLOOR) ? (DENSITY_FLOOR) : (u0_new_x));
                         let _inl_27_result;
                         _inl_27: {
@@ -1481,27 +1534,43 @@ export default function _wgsl_module(rt) {
                         break _inl_26;
                     }
                     const c = _inl_26_result;
-                    const _sroa_57_base = ((c) * 4 + 0);
-                    const du_x = _b_dU_visc[_sroa_57_base + 0];
-                    const du_y = _b_dU_visc[_sroa_57_base + 1];
-                    const du_z = _b_dU_visc[_sroa_57_base + 2];
-                    const du_w = _b_dU_visc[_sroa_57_base + 3];
-                    const _sroa_58_base = ((c) * 4 + 0);
-                    const u0_x = _b_U0[_sroa_58_base + 0];
-                    const u0_y = _b_U0[_sroa_58_base + 1];
-                    const u0_z = _b_U0[_sroa_58_base + 2];
-                    const u0_w = _b_U0[_sroa_58_base + 3];
-                    const _sroa_59_base = ((c) * 4 + 0);
-                    const u1_x = _b_U1[_sroa_59_base + 0];
-                    const u1_y = _b_U1[_sroa_59_base + 1];
-                    const u1_z = _b_U1[_sroa_59_base + 2];
-                    const u1_w = _b_U1[_sroa_59_base + 3];
-                    const _sroa_60 = {x:u0_x, y:(u0_y + du_x), z:(u0_z + du_y), w:(u0_w + du_z)};
-                    const u0_new_x = _sroa_60.x;
-                    const u0_new_y = _sroa_60.y;
-                    const u0_new_z = _sroa_60.z;
-                    const u0_new_w = _sroa_60.w;
-                    const E = (u1_x + du_w);
+                    const _sroa_63_base = ((c) * 4 + 0);
+                    const du_x = _b_dU_visc[_sroa_63_base + 0];
+                    const du_y = _b_dU_visc[_sroa_63_base + 1];
+                    const du_z = _b_dU_visc[_sroa_63_base + 2];
+                    const du_w = _b_dU_visc[_sroa_63_base + 3];
+                    const _sroa_64_base = ((c) * 4 + 0);
+                    const u0_x = _b_U0[_sroa_64_base + 0];
+                    const u0_y = _b_U0[_sroa_64_base + 1];
+                    const u0_z = _b_U0[_sroa_64_base + 2];
+                    const u0_w = _b_U0[_sroa_64_base + 3];
+                    const _sroa_65_base = ((c) * 4 + 0);
+                    const u1_x = _b_U1[_sroa_65_base + 0];
+                    const u1_y = _b_U1[_sroa_65_base + 1];
+                    const u1_z = _b_U1[_sroa_65_base + 2];
+                    const u1_w = _b_U1[_sroa_65_base + 3];
+                    const rho_old = ((u0_x) < (DENSITY_FLOOR) ? (DENSITY_FLOOR) : (u0_x));
+                    const vc_x = (u0_y / rho_old);
+                    const vc_y = (u0_z / rho_old);
+                    const vc_z = (u0_w / rho_old);
+                    const _sroa_66 = {x:du_x, y:du_y, z:du_z};
+                    const d_mom_raw_x = _sroa_66.x;
+                    const d_mom_raw_y = _sroa_66.y;
+                    const d_mom_raw_z = _sroa_66.z;
+                    const dt_visc = ((_u_dt_buf_dt) < (1.0e-30) ? (1.0e-30) : (_u_dt_buf_dt));
+                    const dmom_cap = (((FE_DMOM_CAP_FRAC * rho_old) * _u_U_uniforms_dx) / dt_visc);
+                    const dmom_mag = Math.hypot(d_mom_raw_x, d_mom_raw_y, d_mom_raw_z);
+                    const _sroa_67 = {x:((dmom_mag > dmom_cap) ? (d_mom_raw_x * ((dmom_cap / ((dmom_mag) < (1.0e-30) ? (1.0e-30) : (dmom_mag))))) : d_mom_raw_x), y:((dmom_mag > dmom_cap) ? (d_mom_raw_y * ((dmom_cap / ((dmom_mag) < (1.0e-30) ? (1.0e-30) : (dmom_mag))))) : d_mom_raw_y), z:((dmom_mag > dmom_cap) ? (d_mom_raw_z * ((dmom_cap / ((dmom_mag) < (1.0e-30) ? (1.0e-30) : (dmom_mag))))) : d_mom_raw_z)};
+                    const d_mom_x = _sroa_67.x;
+                    const d_mom_y = _sroa_67.y;
+                    const d_mom_z = _sroa_67.z;
+                    const dE_lim = ((du_w - ((vc_x * d_mom_raw_x) + (vc_y * d_mom_raw_y) + (vc_z * d_mom_raw_z))) + ((vc_x * d_mom_x) + (vc_y * d_mom_y) + (vc_z * d_mom_z)));
+                    const _sroa_68 = {x:u0_x, y:(u0_y + d_mom_x), z:(u0_z + d_mom_y), w:(u0_w + d_mom_z)};
+                    const u0_new_x = _sroa_68.x;
+                    const u0_new_y = _sroa_68.y;
+                    const u0_new_z = _sroa_68.z;
+                    const u0_new_w = _sroa_68.w;
+                    const E = (u1_x + dE_lim);
                     const rho = ((u0_new_x) < (DENSITY_FLOOR) ? (DENSITY_FLOOR) : (u0_new_x));
                     let _inl_27_result;
                     _inl_27: {

@@ -1,12 +1,12 @@
 // Auto-generated from WGSL by _build.mjs — DO NOT EDIT.
 // source: plasma/src/gpu/shaders/reconstruct-ppm.wgsl
 // wgsl-variant: y
-// helpers-sha256: eefe8364e4418fe1122eaec2c334fc5ddb0dee0d50920de592e31eb98cc89805
-// wgsl-transpile sha256: 9d13d45074f02e1ca7c3de621c09c78ea7f24634e8ff8ec28e844ca2cd7d77be
-// wgsl-transpiler-sha256: ac640ff2e57bd5c92b7bae5ed9f847914e51684c046fab990cf544842ad38716
+// helpers-sha256: 8c943a8b7cf30e7437759a9bdb9e53a56f237ffd05d70eb845b914f6b4e2b846
+// wgsl-transpile sha256: 786987331727f73541fcaff0643dc2425f99f43f3e54f6372d81ddf9573dbe5e
+// wgsl-transpiler-sha256: d470123cbc6f7ec463bb1b3d6f64125e4819e92c84ce8bb0c08470cb4cdd8758
 // wgsl-opts: {"flatStorage":true,"collectErrors":true,"specializeUniforms":{"sweep":{"sweep_dir":1}},"specializeFunctionParams":{"fast_mag_speed":{"axis":1},"mhd_flux":{"axis":1},"normal_velocity_mhd":{"axis":1},"permute_prim":{"axis":1},"pack_prim_pair_from_vec7":{"axis":1},"unpack_edge_prim":{"axis":1},"prim_to_axis_state":{"axis":1},"pack_flux":{"axis":1},"hll_flux_mhd":{"axis":1}}}
-// wgsl-metrics: {"bytes":75762,"lines":1300,"rtVec":0,"rtPoly":0,"rtAtomic":0,"rtNumeric":0,"fround":0,"hypot":0,"iife":22,"workgroupReductionInits":0,"flatWorkgroupArrays":1,"flatWorkgroupSlots":1152,"staticBranchPrunes":4}
-// generated: 2026-05-27T17:41:05.219Z
+// wgsl-metrics: {"bytes":75841,"lines":1301,"rtVec":0,"rtPoly":0,"rtAtomic":0,"rtNumeric":0,"fround":0,"hypot":0,"iife":22,"workgroupReductionInits":0,"flatWorkgroupArrays":1,"flatWorkgroupSlots":1152,"staticBranchPrunes":4}
+// generated: 2026-05-30T21:32:08.758Z
 export default function _wgsl_module(rt) {
     const FLAG_COOLING = (1 << 0);
     const FLAG_GRAVITY_EXT = (1 << 1);
@@ -52,7 +52,8 @@ export default function _wgsl_module(rt) {
         const eth_total = ((U1_x - ke) - mb);
         const eth_floor = (p_floor / (((gamma - 1.0)) < (1.0e-6) ? (1.0e-6) : ((gamma - 1.0))));
         const total_ok = ((eth_total > ((eth_floor) < ((DUAL_ENERGY_FRACTION * ((Math.abs(U1_x)) < (eth_floor) ? (eth_floor) : (Math.abs(U1_x))))) ? ((DUAL_ENERGY_FRACTION * ((Math.abs(U1_x)) < (eth_floor) ? (eth_floor) : (Math.abs(U1_x))))) : (eth_floor))) && (eth_total == eth_total));
-        const dual_eth = ((U1_z) < (eth_floor) ? (eth_floor) : (U1_z));
+        const dual_eth_in = ((U1_z == U1_z) ? U1_z : eth_floor);
+        const dual_eth = ((dual_eth_in) < (eth_floor) ? (eth_floor) : (dual_eth_in));
         const eth = (total_ok ? eth_total : dual_eth);
         return (((((gamma - 1.0)) * eth)) < (p_floor) ? (p_floor) : ((((gamma - 1.0)) * eth)));
     }
@@ -264,8 +265,8 @@ export default function _wgsl_module(rt) {
         const nf = (0.5 / ((S.asq) < (1.0e-30) ? (1.0e-30) : (S.asq)));
         const qf = (((nf * S.cf) * S.alpha_f) * S.sgn_bn);
         const qs = (((nf * S.cs) * S.alpha_s) * S.sgn_bn);
-        const af_prime = ((0.5 * S.alpha_f) / ((S.w * S.sqrtd)));
-        const as_prime = ((0.5 * S.alpha_s) / ((S.w * S.sqrtd)));
+        const af_prime = ((0.5 * S.alpha_f) / ((S.a * S.sqrtd)));
+        const as_prime = ((0.5 * S.alpha_s) / ((S.a * S.sqrtd)));
         const bt_term_v = ((S.bet1 * dW.vt1) + (S.bet2 * dW.vt2));
         const bt_term_b = ((S.bet1 * dW.bt1) + (S.bet2 * dW.bt2));
         let C_fL = 0;
@@ -288,8 +289,8 @@ export default function _wgsl_module(rt) {
     function project_from_char(C, S) {
         const qf = ((S.cf * S.alpha_f) * S.sgn_bn);
         const qs = ((S.cs * S.alpha_s) * S.sgn_bn);
-        const af = ((S.w * S.alpha_f) * S.sqrtd);
-        const as_ = ((S.w * S.alpha_s) * S.sqrtd);
+        const af = ((S.a * S.alpha_f) * S.sqrtd);
+        const as_ = ((S.a * S.alpha_s) * S.sqrtd);
         const rho = (1.0 / ((S.inv_rho) < (1.0e-30) ? (1.0e-30) : (S.inv_rho)));
         const af_sum = (S.alpha_f * ((C.fL + C.fR)));
         const as_sum = (S.alpha_s * ((C.sL + C.sR)));

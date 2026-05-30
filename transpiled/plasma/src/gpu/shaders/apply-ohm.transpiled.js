@@ -1,11 +1,11 @@
 // Auto-generated from WGSL by _build.mjs — DO NOT EDIT.
 // source: plasma/src/gpu/shaders/apply-ohm.wgsl
-// helpers-sha256: eefe8364e4418fe1122eaec2c334fc5ddb0dee0d50920de592e31eb98cc89805
-// wgsl-transpile sha256: f56a592a2b2d58a665d725c721415bf1e6c1469c3e5373eb500c68784bcadab5
-// wgsl-transpiler-sha256: ac640ff2e57bd5c92b7bae5ed9f847914e51684c046fab990cf544842ad38716
+// helpers-sha256: 8c943a8b7cf30e7437759a9bdb9e53a56f237ffd05d70eb845b914f6b4e2b846
+// wgsl-transpile sha256: 6187377ef1f46cc5c392dbe398919639b5b0773534d6371c3c0f59c25b6b1a05
+// wgsl-transpiler-sha256: d470123cbc6f7ec463bb1b3d6f64125e4819e92c84ce8bb0c08470cb4cdd8758
 // wgsl-opts: {"flatStorage":true,"collectErrors":true}
-// wgsl-metrics: {"bytes":187518,"lines":3229,"rtVec":0,"rtPoly":0,"rtAtomic":0,"rtNumeric":0,"fround":0,"hypot":0,"iife":4,"workgroupReductionInits":0,"flatWorkgroupArrays":0,"flatWorkgroupSlots":0,"staticBranchPrunes":0}
-// generated: 2026-05-27T17:41:05.157Z
+// wgsl-metrics: {"bytes":203848,"lines":3529,"rtVec":0,"rtPoly":0,"rtAtomic":0,"rtNumeric":0,"fround":0,"hypot":0,"iife":8,"workgroupReductionInits":0,"flatWorkgroupArrays":0,"flatWorkgroupSlots":0,"staticBranchPrunes":0}
+// generated: 2026-05-30T21:32:08.692Z
 export default function _wgsl_module(rt) {
     const FLAG_COOLING = (1 << 0);
     const FLAG_GRAVITY_EXT = (1 << 1);
@@ -35,6 +35,7 @@ export default function _wgsl_module(rt) {
     const MICRO_ION_START = 24;
     const MICRO_ION_COUNT = 24;
     const INV_LN10_OHM = 0.4342944819032518;
+    const BIERMANN_DBZ_CAP_FRAC = 1.0;
 
     function cell_idx_total(ix, iy, n_total) {
         return ((iy * n_total) + ix);
@@ -62,7 +63,8 @@ export default function _wgsl_module(rt) {
         const eth_total = ((U1_x - ke) - mb);
         const eth_floor = (p_floor / (((gamma - 1.0)) < (1.0e-6) ? (1.0e-6) : ((gamma - 1.0))));
         const total_ok = ((eth_total > ((eth_floor) < ((DUAL_ENERGY_FRACTION * ((Math.abs(U1_x)) < (eth_floor) ? (eth_floor) : (Math.abs(U1_x))))) ? ((DUAL_ENERGY_FRACTION * ((Math.abs(U1_x)) < (eth_floor) ? (eth_floor) : (Math.abs(U1_x))))) : (eth_floor))) && (eth_total == eth_total));
-        const dual_eth = ((U1_z) < (eth_floor) ? (eth_floor) : (U1_z));
+        const dual_eth_in = ((U1_z == U1_z) ? U1_z : eth_floor);
+        const dual_eth = ((dual_eth_in) < (eth_floor) ? (eth_floor) : (dual_eth_in));
         const eth = (total_ok ? eth_total : dual_eth);
         return (((((gamma - 1.0)) * eth)) < (p_floor) ? (p_floor) : ((((gamma - 1.0)) * eth)));
     }
@@ -2250,7 +2252,6 @@ export default function _wgsl_module(rt) {
         const Lx = 8, Ly = 8, Lz = 1;
         const _b_U_uniforms = bindings.U_uniforms;
         const _u_U_uniforms_dx = _b_U_uniforms.dx;
-        const _u_U_uniforms_gamma = _b_U_uniforms.gamma;
         const _u_U_uniforms_grid_n = _b_U_uniforms.grid_n;
         const _u_U_uniforms_grid_n_total = _b_U_uniforms.grid_n_total;
         const _u_U_uniforms_ghost_w = _b_U_uniforms.ghost_w;
@@ -2262,7 +2263,6 @@ export default function _wgsl_module(rt) {
         const _u_U_uniforms_neutral_frac = _b_U_uniforms.neutral_frac;
         const _u_U_uniforms_electron_inertia_length = _b_U_uniforms.electron_inertia_length;
         const _u_U_uniforms_electron_inertia_damping = _b_U_uniforms.electron_inertia_damping;
-        const _b_U0 = bindings.U0;
         const _b_U1 = bindings.U1;
         const _b_Bx_face = bindings.Bx_face;
         const _b_By_face = bindings.By_face;
@@ -2402,9 +2402,12 @@ export default function _wgsl_module(rt) {
                                 break _inl_67;
                             }
                             const b = _b_ohm_E[((_inl_67_result) * 4 + 0) + 3];
+                            const p_c = ((cell_pressure_ohm(ix, iy, n_total)) < (_u_U_uniforms_pressure_floor) ? (_u_U_uniforms_pressure_floor) : (cell_pressure_ohm(ix, iy, n_total)));
+                            const bz_cap = (BIERMANN_DBZ_CAP_FRAC * Math.sqrt((2.0 * p_c)));
+                            const dbz = (((_x, _lo, _hi) => { const _mx = _x < _lo ? _lo : _x; return _hi < _mx ? _hi : _mx; })((b * dt), (-bz_cap), bz_cap));
                             {
                                 const _wt0 = u1_x;
-                                const _wt1 = (u1_y + (b * dt));
+                                const _wt1 = (u1_y + dbz);
                                 const _wt2 = u1_z;
                                 const _wt3 = u1_w;
                                 u1_x = _wt0;
@@ -2413,93 +2416,12 @@ export default function _wgsl_module(rt) {
                                 u1_w = _wt3;
                             }
                         }
-                        const _sroa_86_base = ((c) * 4 + 0);
-                        const u0_x = _b_U0[_sroa_86_base + 0];
-                        const u0_y = _b_U0[_sroa_86_base + 1];
-                        const u0_z = _b_U0[_sroa_86_base + 2];
-                        const u0_w = _b_U0[_sroa_86_base + 3];
-                        const rho = ((u0_x) < (DENSITY_FLOOR) ? (DENSITY_FLOOR) : (u0_x));
-                        const ke = ((0.5 * ((((u0_y * u0_y) + (u0_z * u0_z)) + (u0_w * u0_w)))) / rho);
-                        let _inl_68_result;
-                        _inl_68: {
-                            let _inl_68__inl_32_result;
-                            _inl_68__inl_32: {
-                                _inl_68__inl_32_result = ((iy * n_total) + ix);
-                                break _inl_68__inl_32;
-                            }
-                            const _sroa_87_base = ((_inl_68__inl_32_result) * 4 + 0);
-                            const _inl_68_u1_x = _b_U1[_sroa_87_base + 0];
-                            const _inl_68_u1_y = _b_U1[_sroa_87_base + 1];
-                            const _inl_68_u1_z = _b_U1[_sroa_87_base + 2];
-                            const _inl_68_u1_w = _b_U1[_sroa_87_base + 3];
-                            let _inl_68__inl_33_result;
-                            _inl_68__inl_33: {
-                                let _inl_68__inl_33__inl_6_result;
-                                _inl_68__inl_33__inl_6: {
-                                    _inl_68__inl_33__inl_6_result = ((iy * ((n_total + 1))) + ix);
-                                    break _inl_68__inl_33__inl_6;
-                                }
-                                const _inl_68__inl_33__inl_7_ix = (ix + 1);
-                                let _inl_68__inl_33__inl_7_result;
-                                _inl_68__inl_33__inl_7: {
-                                    _inl_68__inl_33__inl_7_result = ((iy * ((n_total + 1))) + _inl_68__inl_33__inl_7_ix);
-                                    break _inl_68__inl_33__inl_7;
-                                }
-                                _inl_68__inl_33_result = (0.5 * ((_b_Bx_face[_inl_68__inl_33__inl_6_result] + _b_Bx_face[_inl_68__inl_33__inl_7_result])));
-                                break _inl_68__inl_33;
-                            }
-                            const _inl_68_bx_c = _inl_68__inl_33_result;
-                            let _inl_68__inl_34_result;
-                            _inl_68__inl_34: {
-                                let _inl_68__inl_34__inl_8_result;
-                                _inl_68__inl_34__inl_8: {
-                                    _inl_68__inl_34__inl_8_result = ((iy * n_total) + ix);
-                                    break _inl_68__inl_34__inl_8;
-                                }
-                                const _inl_68__inl_34__inl_9_iy = (iy + 1);
-                                let _inl_68__inl_34__inl_9_result;
-                                _inl_68__inl_34__inl_9: {
-                                    _inl_68__inl_34__inl_9_result = ((_inl_68__inl_34__inl_9_iy * n_total) + ix);
-                                    break _inl_68__inl_34__inl_9;
-                                }
-                                _inl_68__inl_34_result = (0.5 * ((_b_By_face[_inl_68__inl_34__inl_8_result] + _b_By_face[_inl_68__inl_34__inl_9_result])));
-                                break _inl_68__inl_34;
-                            }
-                            const _inl_68_by_c = _inl_68__inl_34_result;
-                            _inl_68_result = (0.5 * ((((_inl_68_bx_c * _inl_68_bx_c) + (_inl_68_by_c * _inl_68_by_c)) + (_inl_68_u1_y * _inl_68_u1_y))));
-                            break _inl_68;
-                        }
-                        const mb = _inl_68_result;
-                        const p = (((((_u_U_uniforms_gamma - 1.0)) * (((u1_x - ke) - mb)))) < (_u_U_uniforms_pressure_floor) ? (_u_U_uniforms_pressure_floor) : ((((_u_U_uniforms_gamma - 1.0)) * (((u1_x - ke) - mb)))));
-                        const _inl_69_E = u1_x;
-                        const _inl_69_bz = u1_y;
-                        const _inl_69_gamma = _u_U_uniforms_gamma;
-                        const _inl_69_p_floor = _u_U_uniforms_pressure_floor;
-                        let _inl_69_result_x, _inl_69_result_y, _inl_69_result_z, _inl_69_result_w;
-                        _inl_69: {
-                            const _inl_69_p_safe = ((p) < (_inl_69_p_floor) ? (_inl_69_p_floor) : (p));
-                            const _inl_69_eth = (_inl_69_p_safe / (((_inl_69_gamma - 1.0)) < (1.0e-6) ? (1.0e-6) : ((_inl_69_gamma - 1.0))));
-                            let _inl_69__inl_4_result;
-                            _inl_69__inl_4: {
-                                _inl_69__inl_4_result = (((_inl_69_p_safe) < (_inl_69_p_floor) ? (_inl_69_p_floor) : (_inl_69_p_safe)) / Math.pow(((rho) < (DENSITY_FLOOR) ? (DENSITY_FLOOR) : (rho)), _inl_69_gamma));
-                                break _inl_69__inl_4;
-                            }
-                            const _ir0 = _inl_69_E;
-                            const _ir1 = _inl_69_bz;
-                            const _ir2 = _inl_69_eth;
-                            const _ir3 = _inl_69__inl_4_result;
-                            _inl_69_result_x = _ir0;
-                            _inl_69_result_y = _ir1;
-                            _inl_69_result_z = _ir2;
-                            _inl_69_result_w = _ir3;
-                            break _inl_69;
-                        }
                         {
                             const _wbase = ((c) * 4 + 0);
-                            const _wt0 = _inl_69_result_x;
-                            const _wt1 = _inl_69_result_y;
-                            const _wt2 = _inl_69_result_z;
-                            const _wt3 = _inl_69_result_w;
+                            const _wt0 = u1_x;
+                            const _wt1 = u1_y;
+                            const _wt2 = u1_z;
+                            const _wt3 = u1_w;
                             _b_U1[_wbase + 0] = _wt0;
                             _b_U1[_wbase + 1] = _wt1;
                             _b_U1[_wbase + 2] = _wt2;
@@ -2553,14 +2475,14 @@ export default function _wgsl_module(rt) {
                             const dt_dx = (dt / _u_U_uniforms_dx);
                             if (nonhall_on) {
                                 if ((gid_y < n_interior)) {
-                                    const _sroa_88 = load_ambipolar_E(ix, iy, n_total);
-                                    const e0_x = _sroa_88.x;
-                                    const e0_y = _sroa_88.y;
-                                    const e0_z = _sroa_88.z;
-                                    const _sroa_89 = load_ambipolar_E(ix, (iy + 1), n_total);
-                                    const e1_x = _sroa_89.x;
-                                    const e1_y = _sroa_89.y;
-                                    const e1_z = _sroa_89.z;
+                                    const _sroa_86 = load_ambipolar_E(ix, iy, n_total);
+                                    const e0_x = _sroa_86.x;
+                                    const e0_y = _sroa_86.y;
+                                    const e0_z = _sroa_86.z;
+                                    const _sroa_87 = load_ambipolar_E(ix, (iy + 1), n_total);
+                                    const e1_x = _sroa_87.x;
+                                    const e1_y = _sroa_87.y;
+                                    const e1_z = _sroa_87.z;
                                     let _inl_64_result;
                                     _inl_64: {
                                         _inl_64_result = ((iy * ((n_total + 1))) + ix);
@@ -2570,14 +2492,14 @@ export default function _wgsl_module(rt) {
                                     _b_Bx_face[bxi] = (_b_Bx_face[bxi] - (dt_dx * ((e1_z - e0_z))));
                                 }
                                 if ((gid_x < n_interior)) {
-                                    const _sroa_90 = load_ambipolar_E(ix, iy, n_total);
-                                    const e0_x = _sroa_90.x;
-                                    const e0_y = _sroa_90.y;
-                                    const e0_z = _sroa_90.z;
-                                    const _sroa_91 = load_ambipolar_E((ix + 1), iy, n_total);
-                                    const e1_x = _sroa_91.x;
-                                    const e1_y = _sroa_91.y;
-                                    const e1_z = _sroa_91.z;
+                                    const _sroa_88 = load_ambipolar_E(ix, iy, n_total);
+                                    const e0_x = _sroa_88.x;
+                                    const e0_y = _sroa_88.y;
+                                    const e0_z = _sroa_88.z;
+                                    const _sroa_89 = load_ambipolar_E((ix + 1), iy, n_total);
+                                    const e1_x = _sroa_89.x;
+                                    const e1_y = _sroa_89.y;
+                                    const e1_z = _sroa_89.z;
                                     let _inl_65_result;
                                     _inl_65: {
                                         _inl_65_result = ((iy * n_total) + ix);
@@ -2594,28 +2516,28 @@ export default function _wgsl_module(rt) {
                                     break _inl_66;
                                 }
                                 const c = _inl_66_result;
-                                const _sroa_92_base = ((c) * 4 + 0);
-                                let u1_x = _b_U1[_sroa_92_base + 0];
-                                let u1_y = _b_U1[_sroa_92_base + 1];
-                                let u1_z = _b_U1[_sroa_92_base + 2];
-                                let u1_w = _b_U1[_sroa_92_base + 3];
+                                const _sroa_90_base = ((c) * 4 + 0);
+                                let u1_x = _b_U1[_sroa_90_base + 0];
+                                let u1_y = _b_U1[_sroa_90_base + 1];
+                                let u1_z = _b_U1[_sroa_90_base + 2];
+                                let u1_w = _b_U1[_sroa_90_base + 3];
                                 if (nonhall_on) {
-                                    const _sroa_93 = load_ambipolar_E(ix, iy, n_total);
-                                    const e_sw_x = _sroa_93.x;
-                                    const e_sw_y = _sroa_93.y;
-                                    const e_sw_z = _sroa_93.z;
-                                    const _sroa_94 = load_ambipolar_E((ix + 1), iy, n_total);
-                                    const e_se_x = _sroa_94.x;
-                                    const e_se_y = _sroa_94.y;
-                                    const e_se_z = _sroa_94.z;
-                                    const _sroa_95 = load_ambipolar_E(ix, (iy + 1), n_total);
-                                    const e_nw_x = _sroa_95.x;
-                                    const e_nw_y = _sroa_95.y;
-                                    const e_nw_z = _sroa_95.z;
-                                    const _sroa_96 = load_ambipolar_E((ix + 1), (iy + 1), n_total);
-                                    const e_ne_x = _sroa_96.x;
-                                    const e_ne_y = _sroa_96.y;
-                                    const e_ne_z = _sroa_96.z;
+                                    const _sroa_91 = load_ambipolar_E(ix, iy, n_total);
+                                    const e_sw_x = _sroa_91.x;
+                                    const e_sw_y = _sroa_91.y;
+                                    const e_sw_z = _sroa_91.z;
+                                    const _sroa_92 = load_ambipolar_E((ix + 1), iy, n_total);
+                                    const e_se_x = _sroa_92.x;
+                                    const e_se_y = _sroa_92.y;
+                                    const e_se_z = _sroa_92.z;
+                                    const _sroa_93 = load_ambipolar_E(ix, (iy + 1), n_total);
+                                    const e_nw_x = _sroa_93.x;
+                                    const e_nw_y = _sroa_93.y;
+                                    const e_nw_z = _sroa_93.z;
+                                    const _sroa_94 = load_ambipolar_E((ix + 1), (iy + 1), n_total);
+                                    const e_ne_x = _sroa_94.x;
+                                    const e_ne_y = _sroa_94.y;
+                                    const e_ne_z = _sroa_94.z;
                                     const dEy_dx = ((0.5 * ((((e_se_y + e_ne_y)) - ((e_sw_y + e_nw_y))))) / _u_U_uniforms_dx);
                                     const dEx_dy = ((0.5 * ((((e_nw_x + e_ne_x)) - ((e_sw_x + e_se_x))))) / _u_U_uniforms_dx);
                                     {
@@ -2636,9 +2558,12 @@ export default function _wgsl_module(rt) {
                                         break _inl_67;
                                     }
                                     const b = _b_ohm_E[((_inl_67_result) * 4 + 0) + 3];
+                                    const p_c = ((cell_pressure_ohm(ix, iy, n_total)) < (_u_U_uniforms_pressure_floor) ? (_u_U_uniforms_pressure_floor) : (cell_pressure_ohm(ix, iy, n_total)));
+                                    const bz_cap = (BIERMANN_DBZ_CAP_FRAC * Math.sqrt((2.0 * p_c)));
+                                    const dbz = (((_x, _lo, _hi) => { const _mx = _x < _lo ? _lo : _x; return _hi < _mx ? _hi : _mx; })((b * dt), (-bz_cap), bz_cap));
                                     {
                                         const _wt0 = u1_x;
-                                        const _wt1 = (u1_y + (b * dt));
+                                        const _wt1 = (u1_y + dbz);
                                         const _wt2 = u1_z;
                                         const _wt3 = u1_w;
                                         u1_x = _wt0;
@@ -2647,93 +2572,12 @@ export default function _wgsl_module(rt) {
                                         u1_w = _wt3;
                                     }
                                 }
-                                const _sroa_97_base = ((c) * 4 + 0);
-                                const u0_x = _b_U0[_sroa_97_base + 0];
-                                const u0_y = _b_U0[_sroa_97_base + 1];
-                                const u0_z = _b_U0[_sroa_97_base + 2];
-                                const u0_w = _b_U0[_sroa_97_base + 3];
-                                const rho = ((u0_x) < (DENSITY_FLOOR) ? (DENSITY_FLOOR) : (u0_x));
-                                const ke = ((0.5 * ((((u0_y * u0_y) + (u0_z * u0_z)) + (u0_w * u0_w)))) / rho);
-                                let _inl_68_result;
-                                _inl_68: {
-                                    let _inl_68__inl_32_result;
-                                    _inl_68__inl_32: {
-                                        _inl_68__inl_32_result = ((iy * n_total) + ix);
-                                        break _inl_68__inl_32;
-                                    }
-                                    const _sroa_98_base = ((_inl_68__inl_32_result) * 4 + 0);
-                                    const _inl_68_u1_x = _b_U1[_sroa_98_base + 0];
-                                    const _inl_68_u1_y = _b_U1[_sroa_98_base + 1];
-                                    const _inl_68_u1_z = _b_U1[_sroa_98_base + 2];
-                                    const _inl_68_u1_w = _b_U1[_sroa_98_base + 3];
-                                    let _inl_68__inl_33_result;
-                                    _inl_68__inl_33: {
-                                        let _inl_68__inl_33__inl_6_result;
-                                        _inl_68__inl_33__inl_6: {
-                                            _inl_68__inl_33__inl_6_result = ((iy * ((n_total + 1))) + ix);
-                                            break _inl_68__inl_33__inl_6;
-                                        }
-                                        const _inl_68__inl_33__inl_7_ix = (ix + 1);
-                                        let _inl_68__inl_33__inl_7_result;
-                                        _inl_68__inl_33__inl_7: {
-                                            _inl_68__inl_33__inl_7_result = ((iy * ((n_total + 1))) + _inl_68__inl_33__inl_7_ix);
-                                            break _inl_68__inl_33__inl_7;
-                                        }
-                                        _inl_68__inl_33_result = (0.5 * ((_b_Bx_face[_inl_68__inl_33__inl_6_result] + _b_Bx_face[_inl_68__inl_33__inl_7_result])));
-                                        break _inl_68__inl_33;
-                                    }
-                                    const _inl_68_bx_c = _inl_68__inl_33_result;
-                                    let _inl_68__inl_34_result;
-                                    _inl_68__inl_34: {
-                                        let _inl_68__inl_34__inl_8_result;
-                                        _inl_68__inl_34__inl_8: {
-                                            _inl_68__inl_34__inl_8_result = ((iy * n_total) + ix);
-                                            break _inl_68__inl_34__inl_8;
-                                        }
-                                        const _inl_68__inl_34__inl_9_iy = (iy + 1);
-                                        let _inl_68__inl_34__inl_9_result;
-                                        _inl_68__inl_34__inl_9: {
-                                            _inl_68__inl_34__inl_9_result = ((_inl_68__inl_34__inl_9_iy * n_total) + ix);
-                                            break _inl_68__inl_34__inl_9;
-                                        }
-                                        _inl_68__inl_34_result = (0.5 * ((_b_By_face[_inl_68__inl_34__inl_8_result] + _b_By_face[_inl_68__inl_34__inl_9_result])));
-                                        break _inl_68__inl_34;
-                                    }
-                                    const _inl_68_by_c = _inl_68__inl_34_result;
-                                    _inl_68_result = (0.5 * ((((_inl_68_bx_c * _inl_68_bx_c) + (_inl_68_by_c * _inl_68_by_c)) + (_inl_68_u1_y * _inl_68_u1_y))));
-                                    break _inl_68;
-                                }
-                                const mb = _inl_68_result;
-                                const p = (((((_u_U_uniforms_gamma - 1.0)) * (((u1_x - ke) - mb)))) < (_u_U_uniforms_pressure_floor) ? (_u_U_uniforms_pressure_floor) : ((((_u_U_uniforms_gamma - 1.0)) * (((u1_x - ke) - mb)))));
-                                const _inl_69_E = u1_x;
-                                const _inl_69_bz = u1_y;
-                                const _inl_69_gamma = _u_U_uniforms_gamma;
-                                const _inl_69_p_floor = _u_U_uniforms_pressure_floor;
-                                let _inl_69_result_x, _inl_69_result_y, _inl_69_result_z, _inl_69_result_w;
-                                _inl_69: {
-                                    const _inl_69_p_safe = ((p) < (_inl_69_p_floor) ? (_inl_69_p_floor) : (p));
-                                    const _inl_69_eth = (_inl_69_p_safe / (((_inl_69_gamma - 1.0)) < (1.0e-6) ? (1.0e-6) : ((_inl_69_gamma - 1.0))));
-                                    let _inl_69__inl_4_result;
-                                    _inl_69__inl_4: {
-                                        _inl_69__inl_4_result = (((_inl_69_p_safe) < (_inl_69_p_floor) ? (_inl_69_p_floor) : (_inl_69_p_safe)) / Math.pow(((rho) < (DENSITY_FLOOR) ? (DENSITY_FLOOR) : (rho)), _inl_69_gamma));
-                                        break _inl_69__inl_4;
-                                    }
-                                    const _ir0 = _inl_69_E;
-                                    const _ir1 = _inl_69_bz;
-                                    const _ir2 = _inl_69_eth;
-                                    const _ir3 = _inl_69__inl_4_result;
-                                    _inl_69_result_x = _ir0;
-                                    _inl_69_result_y = _ir1;
-                                    _inl_69_result_z = _ir2;
-                                    _inl_69_result_w = _ir3;
-                                    break _inl_69;
-                                }
                                 {
                                     const _wbase = ((c) * 4 + 0);
-                                    const _wt0 = _inl_69_result_x;
-                                    const _wt1 = _inl_69_result_y;
-                                    const _wt2 = _inl_69_result_z;
-                                    const _wt3 = _inl_69_result_w;
+                                    const _wt0 = u1_x;
+                                    const _wt1 = u1_y;
+                                    const _wt2 = u1_z;
+                                    const _wt3 = u1_w;
                                     _b_U1[_wbase + 0] = _wt0;
                                     _b_U1[_wbase + 1] = _wt1;
                                     _b_U1[_wbase + 2] = _wt2;
@@ -2787,14 +2631,14 @@ export default function _wgsl_module(rt) {
                         const dt_dx = (dt / _u_U_uniforms_dx);
                         if (nonhall_on) {
                             if ((gid_y < n_interior)) {
-                                const _sroa_99 = load_ambipolar_E(ix, iy, n_total);
-                                const e0_x = _sroa_99.x;
-                                const e0_y = _sroa_99.y;
-                                const e0_z = _sroa_99.z;
-                                const _sroa_100 = load_ambipolar_E(ix, (iy + 1), n_total);
-                                const e1_x = _sroa_100.x;
-                                const e1_y = _sroa_100.y;
-                                const e1_z = _sroa_100.z;
+                                const _sroa_95 = load_ambipolar_E(ix, iy, n_total);
+                                const e0_x = _sroa_95.x;
+                                const e0_y = _sroa_95.y;
+                                const e0_z = _sroa_95.z;
+                                const _sroa_96 = load_ambipolar_E(ix, (iy + 1), n_total);
+                                const e1_x = _sroa_96.x;
+                                const e1_y = _sroa_96.y;
+                                const e1_z = _sroa_96.z;
                                 let _inl_64_result;
                                 _inl_64: {
                                     _inl_64_result = ((iy * ((n_total + 1))) + ix);
@@ -2804,14 +2648,14 @@ export default function _wgsl_module(rt) {
                                 _b_Bx_face[bxi] = (_b_Bx_face[bxi] - (dt_dx * ((e1_z - e0_z))));
                             }
                             if ((gid_x < n_interior)) {
-                                const _sroa_101 = load_ambipolar_E(ix, iy, n_total);
-                                const e0_x = _sroa_101.x;
-                                const e0_y = _sroa_101.y;
-                                const e0_z = _sroa_101.z;
-                                const _sroa_102 = load_ambipolar_E((ix + 1), iy, n_total);
-                                const e1_x = _sroa_102.x;
-                                const e1_y = _sroa_102.y;
-                                const e1_z = _sroa_102.z;
+                                const _sroa_97 = load_ambipolar_E(ix, iy, n_total);
+                                const e0_x = _sroa_97.x;
+                                const e0_y = _sroa_97.y;
+                                const e0_z = _sroa_97.z;
+                                const _sroa_98 = load_ambipolar_E((ix + 1), iy, n_total);
+                                const e1_x = _sroa_98.x;
+                                const e1_y = _sroa_98.y;
+                                const e1_z = _sroa_98.z;
                                 let _inl_65_result;
                                 _inl_65: {
                                     _inl_65_result = ((iy * n_total) + ix);
@@ -2828,28 +2672,28 @@ export default function _wgsl_module(rt) {
                                 break _inl_66;
                             }
                             const c = _inl_66_result;
-                            const _sroa_103_base = ((c) * 4 + 0);
-                            let u1_x = _b_U1[_sroa_103_base + 0];
-                            let u1_y = _b_U1[_sroa_103_base + 1];
-                            let u1_z = _b_U1[_sroa_103_base + 2];
-                            let u1_w = _b_U1[_sroa_103_base + 3];
+                            const _sroa_99_base = ((c) * 4 + 0);
+                            let u1_x = _b_U1[_sroa_99_base + 0];
+                            let u1_y = _b_U1[_sroa_99_base + 1];
+                            let u1_z = _b_U1[_sroa_99_base + 2];
+                            let u1_w = _b_U1[_sroa_99_base + 3];
                             if (nonhall_on) {
-                                const _sroa_104 = load_ambipolar_E(ix, iy, n_total);
-                                const e_sw_x = _sroa_104.x;
-                                const e_sw_y = _sroa_104.y;
-                                const e_sw_z = _sroa_104.z;
-                                const _sroa_105 = load_ambipolar_E((ix + 1), iy, n_total);
-                                const e_se_x = _sroa_105.x;
-                                const e_se_y = _sroa_105.y;
-                                const e_se_z = _sroa_105.z;
-                                const _sroa_106 = load_ambipolar_E(ix, (iy + 1), n_total);
-                                const e_nw_x = _sroa_106.x;
-                                const e_nw_y = _sroa_106.y;
-                                const e_nw_z = _sroa_106.z;
-                                const _sroa_107 = load_ambipolar_E((ix + 1), (iy + 1), n_total);
-                                const e_ne_x = _sroa_107.x;
-                                const e_ne_y = _sroa_107.y;
-                                const e_ne_z = _sroa_107.z;
+                                const _sroa_100 = load_ambipolar_E(ix, iy, n_total);
+                                const e_sw_x = _sroa_100.x;
+                                const e_sw_y = _sroa_100.y;
+                                const e_sw_z = _sroa_100.z;
+                                const _sroa_101 = load_ambipolar_E((ix + 1), iy, n_total);
+                                const e_se_x = _sroa_101.x;
+                                const e_se_y = _sroa_101.y;
+                                const e_se_z = _sroa_101.z;
+                                const _sroa_102 = load_ambipolar_E(ix, (iy + 1), n_total);
+                                const e_nw_x = _sroa_102.x;
+                                const e_nw_y = _sroa_102.y;
+                                const e_nw_z = _sroa_102.z;
+                                const _sroa_103 = load_ambipolar_E((ix + 1), (iy + 1), n_total);
+                                const e_ne_x = _sroa_103.x;
+                                const e_ne_y = _sroa_103.y;
+                                const e_ne_z = _sroa_103.z;
                                 const dEy_dx = ((0.5 * ((((e_se_y + e_ne_y)) - ((e_sw_y + e_nw_y))))) / _u_U_uniforms_dx);
                                 const dEx_dy = ((0.5 * ((((e_nw_x + e_ne_x)) - ((e_sw_x + e_se_x))))) / _u_U_uniforms_dx);
                                 {
@@ -2870,9 +2714,12 @@ export default function _wgsl_module(rt) {
                                     break _inl_67;
                                 }
                                 const b = _b_ohm_E[((_inl_67_result) * 4 + 0) + 3];
+                                const p_c = ((cell_pressure_ohm(ix, iy, n_total)) < (_u_U_uniforms_pressure_floor) ? (_u_U_uniforms_pressure_floor) : (cell_pressure_ohm(ix, iy, n_total)));
+                                const bz_cap = (BIERMANN_DBZ_CAP_FRAC * Math.sqrt((2.0 * p_c)));
+                                const dbz = (((_x, _lo, _hi) => { const _mx = _x < _lo ? _lo : _x; return _hi < _mx ? _hi : _mx; })((b * dt), (-bz_cap), bz_cap));
                                 {
                                     const _wt0 = u1_x;
-                                    const _wt1 = (u1_y + (b * dt));
+                                    const _wt1 = (u1_y + dbz);
                                     const _wt2 = u1_z;
                                     const _wt3 = u1_w;
                                     u1_x = _wt0;
@@ -2881,93 +2728,12 @@ export default function _wgsl_module(rt) {
                                     u1_w = _wt3;
                                 }
                             }
-                            const _sroa_108_base = ((c) * 4 + 0);
-                            const u0_x = _b_U0[_sroa_108_base + 0];
-                            const u0_y = _b_U0[_sroa_108_base + 1];
-                            const u0_z = _b_U0[_sroa_108_base + 2];
-                            const u0_w = _b_U0[_sroa_108_base + 3];
-                            const rho = ((u0_x) < (DENSITY_FLOOR) ? (DENSITY_FLOOR) : (u0_x));
-                            const ke = ((0.5 * ((((u0_y * u0_y) + (u0_z * u0_z)) + (u0_w * u0_w)))) / rho);
-                            let _inl_68_result;
-                            _inl_68: {
-                                let _inl_68__inl_32_result;
-                                _inl_68__inl_32: {
-                                    _inl_68__inl_32_result = ((iy * n_total) + ix);
-                                    break _inl_68__inl_32;
-                                }
-                                const _sroa_109_base = ((_inl_68__inl_32_result) * 4 + 0);
-                                const _inl_68_u1_x = _b_U1[_sroa_109_base + 0];
-                                const _inl_68_u1_y = _b_U1[_sroa_109_base + 1];
-                                const _inl_68_u1_z = _b_U1[_sroa_109_base + 2];
-                                const _inl_68_u1_w = _b_U1[_sroa_109_base + 3];
-                                let _inl_68__inl_33_result;
-                                _inl_68__inl_33: {
-                                    let _inl_68__inl_33__inl_6_result;
-                                    _inl_68__inl_33__inl_6: {
-                                        _inl_68__inl_33__inl_6_result = ((iy * ((n_total + 1))) + ix);
-                                        break _inl_68__inl_33__inl_6;
-                                    }
-                                    const _inl_68__inl_33__inl_7_ix = (ix + 1);
-                                    let _inl_68__inl_33__inl_7_result;
-                                    _inl_68__inl_33__inl_7: {
-                                        _inl_68__inl_33__inl_7_result = ((iy * ((n_total + 1))) + _inl_68__inl_33__inl_7_ix);
-                                        break _inl_68__inl_33__inl_7;
-                                    }
-                                    _inl_68__inl_33_result = (0.5 * ((_b_Bx_face[_inl_68__inl_33__inl_6_result] + _b_Bx_face[_inl_68__inl_33__inl_7_result])));
-                                    break _inl_68__inl_33;
-                                }
-                                const _inl_68_bx_c = _inl_68__inl_33_result;
-                                let _inl_68__inl_34_result;
-                                _inl_68__inl_34: {
-                                    let _inl_68__inl_34__inl_8_result;
-                                    _inl_68__inl_34__inl_8: {
-                                        _inl_68__inl_34__inl_8_result = ((iy * n_total) + ix);
-                                        break _inl_68__inl_34__inl_8;
-                                    }
-                                    const _inl_68__inl_34__inl_9_iy = (iy + 1);
-                                    let _inl_68__inl_34__inl_9_result;
-                                    _inl_68__inl_34__inl_9: {
-                                        _inl_68__inl_34__inl_9_result = ((_inl_68__inl_34__inl_9_iy * n_total) + ix);
-                                        break _inl_68__inl_34__inl_9;
-                                    }
-                                    _inl_68__inl_34_result = (0.5 * ((_b_By_face[_inl_68__inl_34__inl_8_result] + _b_By_face[_inl_68__inl_34__inl_9_result])));
-                                    break _inl_68__inl_34;
-                                }
-                                const _inl_68_by_c = _inl_68__inl_34_result;
-                                _inl_68_result = (0.5 * ((((_inl_68_bx_c * _inl_68_bx_c) + (_inl_68_by_c * _inl_68_by_c)) + (_inl_68_u1_y * _inl_68_u1_y))));
-                                break _inl_68;
-                            }
-                            const mb = _inl_68_result;
-                            const p = (((((_u_U_uniforms_gamma - 1.0)) * (((u1_x - ke) - mb)))) < (_u_U_uniforms_pressure_floor) ? (_u_U_uniforms_pressure_floor) : ((((_u_U_uniforms_gamma - 1.0)) * (((u1_x - ke) - mb)))));
-                            const _inl_69_E = u1_x;
-                            const _inl_69_bz = u1_y;
-                            const _inl_69_gamma = _u_U_uniforms_gamma;
-                            const _inl_69_p_floor = _u_U_uniforms_pressure_floor;
-                            let _inl_69_result_x, _inl_69_result_y, _inl_69_result_z, _inl_69_result_w;
-                            _inl_69: {
-                                const _inl_69_p_safe = ((p) < (_inl_69_p_floor) ? (_inl_69_p_floor) : (p));
-                                const _inl_69_eth = (_inl_69_p_safe / (((_inl_69_gamma - 1.0)) < (1.0e-6) ? (1.0e-6) : ((_inl_69_gamma - 1.0))));
-                                let _inl_69__inl_4_result;
-                                _inl_69__inl_4: {
-                                    _inl_69__inl_4_result = (((_inl_69_p_safe) < (_inl_69_p_floor) ? (_inl_69_p_floor) : (_inl_69_p_safe)) / Math.pow(((rho) < (DENSITY_FLOOR) ? (DENSITY_FLOOR) : (rho)), _inl_69_gamma));
-                                    break _inl_69__inl_4;
-                                }
-                                const _ir0 = _inl_69_E;
-                                const _ir1 = _inl_69_bz;
-                                const _ir2 = _inl_69_eth;
-                                const _ir3 = _inl_69__inl_4_result;
-                                _inl_69_result_x = _ir0;
-                                _inl_69_result_y = _ir1;
-                                _inl_69_result_z = _ir2;
-                                _inl_69_result_w = _ir3;
-                                break _inl_69;
-                            }
                             {
                                 const _wbase = ((c) * 4 + 0);
-                                const _wt0 = _inl_69_result_x;
-                                const _wt1 = _inl_69_result_y;
-                                const _wt2 = _inl_69_result_z;
-                                const _wt3 = _inl_69_result_w;
+                                const _wt0 = u1_x;
+                                const _wt1 = u1_y;
+                                const _wt2 = u1_z;
+                                const _wt3 = u1_w;
                                 _b_U1[_wbase + 0] = _wt0;
                                 _b_U1[_wbase + 1] = _wt1;
                                 _b_U1[_wbase + 2] = _wt2;
@@ -3022,14 +2788,14 @@ export default function _wgsl_module(rt) {
                     const dt_dx = (dt / _u_U_uniforms_dx);
                     if (nonhall_on) {
                         if ((gid_y < n_interior)) {
-                            const _sroa_110 = load_ambipolar_E(ix, iy, n_total);
-                            const e0_x = _sroa_110.x;
-                            const e0_y = _sroa_110.y;
-                            const e0_z = _sroa_110.z;
-                            const _sroa_111 = load_ambipolar_E(ix, (iy + 1), n_total);
-                            const e1_x = _sroa_111.x;
-                            const e1_y = _sroa_111.y;
-                            const e1_z = _sroa_111.z;
+                            const _sroa_104 = load_ambipolar_E(ix, iy, n_total);
+                            const e0_x = _sroa_104.x;
+                            const e0_y = _sroa_104.y;
+                            const e0_z = _sroa_104.z;
+                            const _sroa_105 = load_ambipolar_E(ix, (iy + 1), n_total);
+                            const e1_x = _sroa_105.x;
+                            const e1_y = _sroa_105.y;
+                            const e1_z = _sroa_105.z;
                             let _inl_64_result;
                             _inl_64: {
                                 _inl_64_result = ((iy * ((n_total + 1))) + ix);
@@ -3039,14 +2805,14 @@ export default function _wgsl_module(rt) {
                             _b_Bx_face[bxi] = (_b_Bx_face[bxi] - (dt_dx * ((e1_z - e0_z))));
                         }
                         if ((gid_x < n_interior)) {
-                            const _sroa_112 = load_ambipolar_E(ix, iy, n_total);
-                            const e0_x = _sroa_112.x;
-                            const e0_y = _sroa_112.y;
-                            const e0_z = _sroa_112.z;
-                            const _sroa_113 = load_ambipolar_E((ix + 1), iy, n_total);
-                            const e1_x = _sroa_113.x;
-                            const e1_y = _sroa_113.y;
-                            const e1_z = _sroa_113.z;
+                            const _sroa_106 = load_ambipolar_E(ix, iy, n_total);
+                            const e0_x = _sroa_106.x;
+                            const e0_y = _sroa_106.y;
+                            const e0_z = _sroa_106.z;
+                            const _sroa_107 = load_ambipolar_E((ix + 1), iy, n_total);
+                            const e1_x = _sroa_107.x;
+                            const e1_y = _sroa_107.y;
+                            const e1_z = _sroa_107.z;
                             let _inl_65_result;
                             _inl_65: {
                                 _inl_65_result = ((iy * n_total) + ix);
@@ -3063,28 +2829,28 @@ export default function _wgsl_module(rt) {
                             break _inl_66;
                         }
                         const c = _inl_66_result;
-                        const _sroa_114_base = ((c) * 4 + 0);
-                        let u1_x = _b_U1[_sroa_114_base + 0];
-                        let u1_y = _b_U1[_sroa_114_base + 1];
-                        let u1_z = _b_U1[_sroa_114_base + 2];
-                        let u1_w = _b_U1[_sroa_114_base + 3];
+                        const _sroa_108_base = ((c) * 4 + 0);
+                        let u1_x = _b_U1[_sroa_108_base + 0];
+                        let u1_y = _b_U1[_sroa_108_base + 1];
+                        let u1_z = _b_U1[_sroa_108_base + 2];
+                        let u1_w = _b_U1[_sroa_108_base + 3];
                         if (nonhall_on) {
-                            const _sroa_115 = load_ambipolar_E(ix, iy, n_total);
-                            const e_sw_x = _sroa_115.x;
-                            const e_sw_y = _sroa_115.y;
-                            const e_sw_z = _sroa_115.z;
-                            const _sroa_116 = load_ambipolar_E((ix + 1), iy, n_total);
-                            const e_se_x = _sroa_116.x;
-                            const e_se_y = _sroa_116.y;
-                            const e_se_z = _sroa_116.z;
-                            const _sroa_117 = load_ambipolar_E(ix, (iy + 1), n_total);
-                            const e_nw_x = _sroa_117.x;
-                            const e_nw_y = _sroa_117.y;
-                            const e_nw_z = _sroa_117.z;
-                            const _sroa_118 = load_ambipolar_E((ix + 1), (iy + 1), n_total);
-                            const e_ne_x = _sroa_118.x;
-                            const e_ne_y = _sroa_118.y;
-                            const e_ne_z = _sroa_118.z;
+                            const _sroa_109 = load_ambipolar_E(ix, iy, n_total);
+                            const e_sw_x = _sroa_109.x;
+                            const e_sw_y = _sroa_109.y;
+                            const e_sw_z = _sroa_109.z;
+                            const _sroa_110 = load_ambipolar_E((ix + 1), iy, n_total);
+                            const e_se_x = _sroa_110.x;
+                            const e_se_y = _sroa_110.y;
+                            const e_se_z = _sroa_110.z;
+                            const _sroa_111 = load_ambipolar_E(ix, (iy + 1), n_total);
+                            const e_nw_x = _sroa_111.x;
+                            const e_nw_y = _sroa_111.y;
+                            const e_nw_z = _sroa_111.z;
+                            const _sroa_112 = load_ambipolar_E((ix + 1), (iy + 1), n_total);
+                            const e_ne_x = _sroa_112.x;
+                            const e_ne_y = _sroa_112.y;
+                            const e_ne_z = _sroa_112.z;
                             const dEy_dx = ((0.5 * ((((e_se_y + e_ne_y)) - ((e_sw_y + e_nw_y))))) / _u_U_uniforms_dx);
                             const dEx_dy = ((0.5 * ((((e_nw_x + e_ne_x)) - ((e_sw_x + e_se_x))))) / _u_U_uniforms_dx);
                             {
@@ -3105,9 +2871,12 @@ export default function _wgsl_module(rt) {
                                 break _inl_67;
                             }
                             const b = _b_ohm_E[((_inl_67_result) * 4 + 0) + 3];
+                            const p_c = ((cell_pressure_ohm(ix, iy, n_total)) < (_u_U_uniforms_pressure_floor) ? (_u_U_uniforms_pressure_floor) : (cell_pressure_ohm(ix, iy, n_total)));
+                            const bz_cap = (BIERMANN_DBZ_CAP_FRAC * Math.sqrt((2.0 * p_c)));
+                            const dbz = (((_x, _lo, _hi) => { const _mx = _x < _lo ? _lo : _x; return _hi < _mx ? _hi : _mx; })((b * dt), (-bz_cap), bz_cap));
                             {
                                 const _wt0 = u1_x;
-                                const _wt1 = (u1_y + (b * dt));
+                                const _wt1 = (u1_y + dbz);
                                 const _wt2 = u1_z;
                                 const _wt3 = u1_w;
                                 u1_x = _wt0;
@@ -3116,93 +2885,12 @@ export default function _wgsl_module(rt) {
                                 u1_w = _wt3;
                             }
                         }
-                        const _sroa_119_base = ((c) * 4 + 0);
-                        const u0_x = _b_U0[_sroa_119_base + 0];
-                        const u0_y = _b_U0[_sroa_119_base + 1];
-                        const u0_z = _b_U0[_sroa_119_base + 2];
-                        const u0_w = _b_U0[_sroa_119_base + 3];
-                        const rho = ((u0_x) < (DENSITY_FLOOR) ? (DENSITY_FLOOR) : (u0_x));
-                        const ke = ((0.5 * ((((u0_y * u0_y) + (u0_z * u0_z)) + (u0_w * u0_w)))) / rho);
-                        let _inl_68_result;
-                        _inl_68: {
-                            let _inl_68__inl_32_result;
-                            _inl_68__inl_32: {
-                                _inl_68__inl_32_result = ((iy * n_total) + ix);
-                                break _inl_68__inl_32;
-                            }
-                            const _sroa_120_base = ((_inl_68__inl_32_result) * 4 + 0);
-                            const _inl_68_u1_x = _b_U1[_sroa_120_base + 0];
-                            const _inl_68_u1_y = _b_U1[_sroa_120_base + 1];
-                            const _inl_68_u1_z = _b_U1[_sroa_120_base + 2];
-                            const _inl_68_u1_w = _b_U1[_sroa_120_base + 3];
-                            let _inl_68__inl_33_result;
-                            _inl_68__inl_33: {
-                                let _inl_68__inl_33__inl_6_result;
-                                _inl_68__inl_33__inl_6: {
-                                    _inl_68__inl_33__inl_6_result = ((iy * ((n_total + 1))) + ix);
-                                    break _inl_68__inl_33__inl_6;
-                                }
-                                const _inl_68__inl_33__inl_7_ix = (ix + 1);
-                                let _inl_68__inl_33__inl_7_result;
-                                _inl_68__inl_33__inl_7: {
-                                    _inl_68__inl_33__inl_7_result = ((iy * ((n_total + 1))) + _inl_68__inl_33__inl_7_ix);
-                                    break _inl_68__inl_33__inl_7;
-                                }
-                                _inl_68__inl_33_result = (0.5 * ((_b_Bx_face[_inl_68__inl_33__inl_6_result] + _b_Bx_face[_inl_68__inl_33__inl_7_result])));
-                                break _inl_68__inl_33;
-                            }
-                            const _inl_68_bx_c = _inl_68__inl_33_result;
-                            let _inl_68__inl_34_result;
-                            _inl_68__inl_34: {
-                                let _inl_68__inl_34__inl_8_result;
-                                _inl_68__inl_34__inl_8: {
-                                    _inl_68__inl_34__inl_8_result = ((iy * n_total) + ix);
-                                    break _inl_68__inl_34__inl_8;
-                                }
-                                const _inl_68__inl_34__inl_9_iy = (iy + 1);
-                                let _inl_68__inl_34__inl_9_result;
-                                _inl_68__inl_34__inl_9: {
-                                    _inl_68__inl_34__inl_9_result = ((_inl_68__inl_34__inl_9_iy * n_total) + ix);
-                                    break _inl_68__inl_34__inl_9;
-                                }
-                                _inl_68__inl_34_result = (0.5 * ((_b_By_face[_inl_68__inl_34__inl_8_result] + _b_By_face[_inl_68__inl_34__inl_9_result])));
-                                break _inl_68__inl_34;
-                            }
-                            const _inl_68_by_c = _inl_68__inl_34_result;
-                            _inl_68_result = (0.5 * ((((_inl_68_bx_c * _inl_68_bx_c) + (_inl_68_by_c * _inl_68_by_c)) + (_inl_68_u1_y * _inl_68_u1_y))));
-                            break _inl_68;
-                        }
-                        const mb = _inl_68_result;
-                        const p = (((((_u_U_uniforms_gamma - 1.0)) * (((u1_x - ke) - mb)))) < (_u_U_uniforms_pressure_floor) ? (_u_U_uniforms_pressure_floor) : ((((_u_U_uniforms_gamma - 1.0)) * (((u1_x - ke) - mb)))));
-                        const _inl_69_E = u1_x;
-                        const _inl_69_bz = u1_y;
-                        const _inl_69_gamma = _u_U_uniforms_gamma;
-                        const _inl_69_p_floor = _u_U_uniforms_pressure_floor;
-                        let _inl_69_result_x, _inl_69_result_y, _inl_69_result_z, _inl_69_result_w;
-                        _inl_69: {
-                            const _inl_69_p_safe = ((p) < (_inl_69_p_floor) ? (_inl_69_p_floor) : (p));
-                            const _inl_69_eth = (_inl_69_p_safe / (((_inl_69_gamma - 1.0)) < (1.0e-6) ? (1.0e-6) : ((_inl_69_gamma - 1.0))));
-                            let _inl_69__inl_4_result;
-                            _inl_69__inl_4: {
-                                _inl_69__inl_4_result = (((_inl_69_p_safe) < (_inl_69_p_floor) ? (_inl_69_p_floor) : (_inl_69_p_safe)) / Math.pow(((rho) < (DENSITY_FLOOR) ? (DENSITY_FLOOR) : (rho)), _inl_69_gamma));
-                                break _inl_69__inl_4;
-                            }
-                            const _ir0 = _inl_69_E;
-                            const _ir1 = _inl_69_bz;
-                            const _ir2 = _inl_69_eth;
-                            const _ir3 = _inl_69__inl_4_result;
-                            _inl_69_result_x = _ir0;
-                            _inl_69_result_y = _ir1;
-                            _inl_69_result_z = _ir2;
-                            _inl_69_result_w = _ir3;
-                            break _inl_69;
-                        }
                         {
                             const _wbase = ((c) * 4 + 0);
-                            const _wt0 = _inl_69_result_x;
-                            const _wt1 = _inl_69_result_y;
-                            const _wt2 = _inl_69_result_z;
-                            const _wt3 = _inl_69_result_w;
+                            const _wt0 = u1_x;
+                            const _wt1 = u1_y;
+                            const _wt2 = u1_z;
+                            const _wt3 = u1_w;
                             _b_U1[_wbase + 0] = _wt0;
                             _b_U1[_wbase + 1] = _wt1;
                             _b_U1[_wbase + 2] = _wt2;
@@ -3215,6 +2903,615 @@ export default function _wgsl_module(rt) {
     }
     entry["apply_dissipative_update"] = function ({ workgroups, bindings, domain, origin }) {
         return __entry_3_apply_dissipative_update(workgroups, bindings, domain, origin);
+    };
+
+    entryInfo["repair_dissipative_energy"] = {"workgroupSize":[8,8,1],"phases":1,"globalLoop":true,"workgroupMemory":false,"flatWorkgroupArrays":0,"optimizedWorkgroupReductionInits":0};
+    function __entry_4_repair_dissipative_energy(workgroups, bindings, domain, origin) {
+        const [Wx, Wy, Wz] = workgroups;
+        const Lx = 8, Ly = 8, Lz = 1;
+        const _b_U_uniforms = bindings.U_uniforms;
+        const _u_U_uniforms_gamma = _b_U_uniforms.gamma;
+        const _u_U_uniforms_grid_n = _b_U_uniforms.grid_n;
+        const _u_U_uniforms_grid_n_total = _b_U_uniforms.grid_n_total;
+        const _u_U_uniforms_ghost_w = _b_U_uniforms.ghost_w;
+        const _u_U_uniforms_pressure_floor = _b_U_uniforms.pressure_floor;
+        const _u_U_uniforms_physics_flags = _b_U_uniforms.physics_flags;
+        const _u_U_uniforms_hall_electron_pressure_frac = _b_U_uniforms.hall_electron_pressure_frac;
+        const _u_U_uniforms_ambipolar_eta = _b_U_uniforms.ambipolar_eta;
+        const _u_U_uniforms_biermann_coeff = _b_U_uniforms.biermann_coeff;
+        const _u_U_uniforms_neutral_frac = _b_U_uniforms.neutral_frac;
+        const _u_U_uniforms_electron_inertia_length = _b_U_uniforms.electron_inertia_length;
+        const _u_U_uniforms_electron_inertia_damping = _b_U_uniforms.electron_inertia_damping;
+        const _b_U0 = bindings.U0;
+        const _b_U1 = bindings.U1;
+        const _b_Bx_face = bindings.Bx_face;
+        const _b_By_face = bindings.By_face;
+        const Gx = domain && domain[0] != null ? domain[0] : Wx * Lx;
+        const Gy = domain && domain[1] != null ? domain[1] : Wy * Ly;
+        const Gz = domain && domain[2] != null ? domain[2] : Wz * Lz;
+        const Ox = origin && origin[0] != null ? origin[0] : 0;
+        const Oy = origin && origin[1] != null ? origin[1] : 0;
+        const Oz = origin && origin[2] != null ? origin[2] : 0;
+        const Xn = Ox + Gx, Yn = Oy + Gy, Zn = Oz + Gz;
+        if (Gy === 1 && Gz === 1) {
+            for (let __gx = Ox; __gx < Xn; __gx++) {
+                const gid_x = __gx;
+                const gid_y = Oy;
+                __invocation: {
+                    const _inl_68_flags = _u_U_uniforms_physics_flags;
+                    let _inl_68_result;
+                    _inl_68: {
+                        _inl_68_result = (((_inl_68_flags & FLAG_AMBIPOLAR)) != 0);
+                        break _inl_68;
+                    }
+                    const ambi_on = ((_inl_68_result && (_u_U_uniforms_ambipolar_eta > 0.0)) && (_u_U_uniforms_neutral_frac > 0.0));
+                    const _inl_69_flags = _u_U_uniforms_physics_flags;
+                    let _inl_69_result;
+                    _inl_69: {
+                        _inl_69_result = (((_inl_69_flags & FLAG_ELECTRON_INERTIA)) != 0);
+                        break _inl_69;
+                    }
+                    const electron_inertia_on = ((_inl_69_result && (_u_U_uniforms_electron_inertia_length > 0.0)) && (_u_U_uniforms_electron_inertia_damping > 0.0));
+                    const _inl_70_flags = _u_U_uniforms_physics_flags;
+                    let _inl_70_result;
+                    _inl_70: {
+                        _inl_70_result = (((_inl_70_flags & FLAG_BIERMANN)) != 0);
+                        break _inl_70;
+                    }
+                    const biermann_on = ((_inl_70_result && (_u_U_uniforms_biermann_coeff != 0.0)) && (_u_U_uniforms_hall_electron_pressure_frac > 0.0));
+                    if ((((!ambi_on) && (!electron_inertia_on)) && (!biermann_on))) {
+                        break __invocation;
+                    }
+                    const n_interior = _u_U_uniforms_grid_n;
+                    const n_total = _u_U_uniforms_grid_n_total;
+                    const ghost = _u_U_uniforms_ghost_w;
+                    if (((gid_x >= n_interior) || (gid_y >= n_interior))) {
+                        break __invocation;
+                    }
+                    const ix = (ghost + gid_x);
+                    const iy = (ghost + gid_y);
+                    let _inl_71_result;
+                    _inl_71: {
+                        _inl_71_result = ((iy * n_total) + ix);
+                        break _inl_71;
+                    }
+                    const c = _inl_71_result;
+                    const _sroa_113_base = ((c) * 4 + 0);
+                    const u0_x = _b_U0[_sroa_113_base + 0];
+                    const u0_y = _b_U0[_sroa_113_base + 1];
+                    const u0_z = _b_U0[_sroa_113_base + 2];
+                    const u0_w = _b_U0[_sroa_113_base + 3];
+                    const _sroa_114_base = ((c) * 4 + 0);
+                    const u1_x = _b_U1[_sroa_114_base + 0];
+                    const u1_y = _b_U1[_sroa_114_base + 1];
+                    const u1_z = _b_U1[_sroa_114_base + 2];
+                    const u1_w = _b_U1[_sroa_114_base + 3];
+                    const rho = ((u0_x) < (DENSITY_FLOOR) ? (DENSITY_FLOOR) : (u0_x));
+                    const ke = ((0.5 * ((((u0_y * u0_y) + (u0_z * u0_z)) + (u0_w * u0_w)))) / rho);
+                    let _inl_72_result;
+                    _inl_72: {
+                        let _inl_72__inl_32_result;
+                        _inl_72__inl_32: {
+                            _inl_72__inl_32_result = ((iy * n_total) + ix);
+                            break _inl_72__inl_32;
+                        }
+                        const _sroa_115_base = ((_inl_72__inl_32_result) * 4 + 0);
+                        const _inl_72_u1_x = _b_U1[_sroa_115_base + 0];
+                        const _inl_72_u1_y = _b_U1[_sroa_115_base + 1];
+                        const _inl_72_u1_z = _b_U1[_sroa_115_base + 2];
+                        const _inl_72_u1_w = _b_U1[_sroa_115_base + 3];
+                        let _inl_72__inl_33_result;
+                        _inl_72__inl_33: {
+                            let _inl_72__inl_33__inl_6_result;
+                            _inl_72__inl_33__inl_6: {
+                                _inl_72__inl_33__inl_6_result = ((iy * ((n_total + 1))) + ix);
+                                break _inl_72__inl_33__inl_6;
+                            }
+                            const _inl_72__inl_33__inl_7_ix = (ix + 1);
+                            let _inl_72__inl_33__inl_7_result;
+                            _inl_72__inl_33__inl_7: {
+                                _inl_72__inl_33__inl_7_result = ((iy * ((n_total + 1))) + _inl_72__inl_33__inl_7_ix);
+                                break _inl_72__inl_33__inl_7;
+                            }
+                            _inl_72__inl_33_result = (0.5 * ((_b_Bx_face[_inl_72__inl_33__inl_6_result] + _b_Bx_face[_inl_72__inl_33__inl_7_result])));
+                            break _inl_72__inl_33;
+                        }
+                        const _inl_72_bx_c = _inl_72__inl_33_result;
+                        let _inl_72__inl_34_result;
+                        _inl_72__inl_34: {
+                            let _inl_72__inl_34__inl_8_result;
+                            _inl_72__inl_34__inl_8: {
+                                _inl_72__inl_34__inl_8_result = ((iy * n_total) + ix);
+                                break _inl_72__inl_34__inl_8;
+                            }
+                            const _inl_72__inl_34__inl_9_iy = (iy + 1);
+                            let _inl_72__inl_34__inl_9_result;
+                            _inl_72__inl_34__inl_9: {
+                                _inl_72__inl_34__inl_9_result = ((_inl_72__inl_34__inl_9_iy * n_total) + ix);
+                                break _inl_72__inl_34__inl_9;
+                            }
+                            _inl_72__inl_34_result = (0.5 * ((_b_By_face[_inl_72__inl_34__inl_8_result] + _b_By_face[_inl_72__inl_34__inl_9_result])));
+                            break _inl_72__inl_34;
+                        }
+                        const _inl_72_by_c = _inl_72__inl_34_result;
+                        _inl_72_result = (0.5 * ((((_inl_72_bx_c * _inl_72_bx_c) + (_inl_72_by_c * _inl_72_by_c)) + (_inl_72_u1_y * _inl_72_u1_y))));
+                        break _inl_72;
+                    }
+                    const mb = _inl_72_result;
+                    const p = (((((_u_U_uniforms_gamma - 1.0)) * (((u1_x - ke) - mb)))) < (_u_U_uniforms_pressure_floor) ? (_u_U_uniforms_pressure_floor) : ((((_u_U_uniforms_gamma - 1.0)) * (((u1_x - ke) - mb)))));
+                    const _inl_73_E = u1_x;
+                    const _inl_73_bz = u1_y;
+                    const _inl_73_gamma = _u_U_uniforms_gamma;
+                    const _inl_73_p_floor = _u_U_uniforms_pressure_floor;
+                    let _inl_73_result_x, _inl_73_result_y, _inl_73_result_z, _inl_73_result_w;
+                    _inl_73: {
+                        const _inl_73_p_safe = ((p) < (_inl_73_p_floor) ? (_inl_73_p_floor) : (p));
+                        const _inl_73_eth = (_inl_73_p_safe / (((_inl_73_gamma - 1.0)) < (1.0e-6) ? (1.0e-6) : ((_inl_73_gamma - 1.0))));
+                        let _inl_73__inl_4_result;
+                        _inl_73__inl_4: {
+                            _inl_73__inl_4_result = (((_inl_73_p_safe) < (_inl_73_p_floor) ? (_inl_73_p_floor) : (_inl_73_p_safe)) / Math.pow(((rho) < (DENSITY_FLOOR) ? (DENSITY_FLOOR) : (rho)), _inl_73_gamma));
+                            break _inl_73__inl_4;
+                        }
+                        const _ir0 = _inl_73_E;
+                        const _ir1 = _inl_73_bz;
+                        const _ir2 = _inl_73_eth;
+                        const _ir3 = _inl_73__inl_4_result;
+                        _inl_73_result_x = _ir0;
+                        _inl_73_result_y = _ir1;
+                        _inl_73_result_z = _ir2;
+                        _inl_73_result_w = _ir3;
+                        break _inl_73;
+                    }
+                    {
+                        const _wbase = ((c) * 4 + 0);
+                        const _wt0 = _inl_73_result_x;
+                        const _wt1 = _inl_73_result_y;
+                        const _wt2 = _inl_73_result_z;
+                        const _wt3 = _inl_73_result_w;
+                        _b_U1[_wbase + 0] = _wt0;
+                        _b_U1[_wbase + 1] = _wt1;
+                        _b_U1[_wbase + 2] = _wt2;
+                        _b_U1[_wbase + 3] = _wt3;
+                    }
+                }
+            }
+        } else if (Gz === 1) {
+            if (Ox === 0 && Oy === 0) {
+                for (let __gy = 0, __rowBase = 0; __gy < Gy; __gy++, __rowBase += Gx) {
+                    for (let __gx = 0; __gx < Gx; __gx++) {
+                        const gid_x = __gx;
+                        const gid_y = __gy;
+                        __invocation: {
+                            const _inl_68_flags = _u_U_uniforms_physics_flags;
+                            let _inl_68_result;
+                            _inl_68: {
+                                _inl_68_result = (((_inl_68_flags & FLAG_AMBIPOLAR)) != 0);
+                                break _inl_68;
+                            }
+                            const ambi_on = ((_inl_68_result && (_u_U_uniforms_ambipolar_eta > 0.0)) && (_u_U_uniforms_neutral_frac > 0.0));
+                            const _inl_69_flags = _u_U_uniforms_physics_flags;
+                            let _inl_69_result;
+                            _inl_69: {
+                                _inl_69_result = (((_inl_69_flags & FLAG_ELECTRON_INERTIA)) != 0);
+                                break _inl_69;
+                            }
+                            const electron_inertia_on = ((_inl_69_result && (_u_U_uniforms_electron_inertia_length > 0.0)) && (_u_U_uniforms_electron_inertia_damping > 0.0));
+                            const _inl_70_flags = _u_U_uniforms_physics_flags;
+                            let _inl_70_result;
+                            _inl_70: {
+                                _inl_70_result = (((_inl_70_flags & FLAG_BIERMANN)) != 0);
+                                break _inl_70;
+                            }
+                            const biermann_on = ((_inl_70_result && (_u_U_uniforms_biermann_coeff != 0.0)) && (_u_U_uniforms_hall_electron_pressure_frac > 0.0));
+                            if ((((!ambi_on) && (!electron_inertia_on)) && (!biermann_on))) {
+                                break __invocation;
+                            }
+                            const n_interior = _u_U_uniforms_grid_n;
+                            const n_total = _u_U_uniforms_grid_n_total;
+                            const ghost = _u_U_uniforms_ghost_w;
+                            if (((gid_x >= n_interior) || (gid_y >= n_interior))) {
+                                break __invocation;
+                            }
+                            const ix = (ghost + gid_x);
+                            const iy = (ghost + gid_y);
+                            let _inl_71_result;
+                            _inl_71: {
+                                _inl_71_result = ((iy * n_total) + ix);
+                                break _inl_71;
+                            }
+                            const c = _inl_71_result;
+                            const _sroa_116_base = ((c) * 4 + 0);
+                            const u0_x = _b_U0[_sroa_116_base + 0];
+                            const u0_y = _b_U0[_sroa_116_base + 1];
+                            const u0_z = _b_U0[_sroa_116_base + 2];
+                            const u0_w = _b_U0[_sroa_116_base + 3];
+                            const _sroa_117_base = ((c) * 4 + 0);
+                            const u1_x = _b_U1[_sroa_117_base + 0];
+                            const u1_y = _b_U1[_sroa_117_base + 1];
+                            const u1_z = _b_U1[_sroa_117_base + 2];
+                            const u1_w = _b_U1[_sroa_117_base + 3];
+                            const rho = ((u0_x) < (DENSITY_FLOOR) ? (DENSITY_FLOOR) : (u0_x));
+                            const ke = ((0.5 * ((((u0_y * u0_y) + (u0_z * u0_z)) + (u0_w * u0_w)))) / rho);
+                            let _inl_72_result;
+                            _inl_72: {
+                                let _inl_72__inl_32_result;
+                                _inl_72__inl_32: {
+                                    _inl_72__inl_32_result = ((iy * n_total) + ix);
+                                    break _inl_72__inl_32;
+                                }
+                                const _sroa_118_base = ((_inl_72__inl_32_result) * 4 + 0);
+                                const _inl_72_u1_x = _b_U1[_sroa_118_base + 0];
+                                const _inl_72_u1_y = _b_U1[_sroa_118_base + 1];
+                                const _inl_72_u1_z = _b_U1[_sroa_118_base + 2];
+                                const _inl_72_u1_w = _b_U1[_sroa_118_base + 3];
+                                let _inl_72__inl_33_result;
+                                _inl_72__inl_33: {
+                                    let _inl_72__inl_33__inl_6_result;
+                                    _inl_72__inl_33__inl_6: {
+                                        _inl_72__inl_33__inl_6_result = ((iy * ((n_total + 1))) + ix);
+                                        break _inl_72__inl_33__inl_6;
+                                    }
+                                    const _inl_72__inl_33__inl_7_ix = (ix + 1);
+                                    let _inl_72__inl_33__inl_7_result;
+                                    _inl_72__inl_33__inl_7: {
+                                        _inl_72__inl_33__inl_7_result = ((iy * ((n_total + 1))) + _inl_72__inl_33__inl_7_ix);
+                                        break _inl_72__inl_33__inl_7;
+                                    }
+                                    _inl_72__inl_33_result = (0.5 * ((_b_Bx_face[_inl_72__inl_33__inl_6_result] + _b_Bx_face[_inl_72__inl_33__inl_7_result])));
+                                    break _inl_72__inl_33;
+                                }
+                                const _inl_72_bx_c = _inl_72__inl_33_result;
+                                let _inl_72__inl_34_result;
+                                _inl_72__inl_34: {
+                                    let _inl_72__inl_34__inl_8_result;
+                                    _inl_72__inl_34__inl_8: {
+                                        _inl_72__inl_34__inl_8_result = ((iy * n_total) + ix);
+                                        break _inl_72__inl_34__inl_8;
+                                    }
+                                    const _inl_72__inl_34__inl_9_iy = (iy + 1);
+                                    let _inl_72__inl_34__inl_9_result;
+                                    _inl_72__inl_34__inl_9: {
+                                        _inl_72__inl_34__inl_9_result = ((_inl_72__inl_34__inl_9_iy * n_total) + ix);
+                                        break _inl_72__inl_34__inl_9;
+                                    }
+                                    _inl_72__inl_34_result = (0.5 * ((_b_By_face[_inl_72__inl_34__inl_8_result] + _b_By_face[_inl_72__inl_34__inl_9_result])));
+                                    break _inl_72__inl_34;
+                                }
+                                const _inl_72_by_c = _inl_72__inl_34_result;
+                                _inl_72_result = (0.5 * ((((_inl_72_bx_c * _inl_72_bx_c) + (_inl_72_by_c * _inl_72_by_c)) + (_inl_72_u1_y * _inl_72_u1_y))));
+                                break _inl_72;
+                            }
+                            const mb = _inl_72_result;
+                            const p = (((((_u_U_uniforms_gamma - 1.0)) * (((u1_x - ke) - mb)))) < (_u_U_uniforms_pressure_floor) ? (_u_U_uniforms_pressure_floor) : ((((_u_U_uniforms_gamma - 1.0)) * (((u1_x - ke) - mb)))));
+                            const _inl_73_E = u1_x;
+                            const _inl_73_bz = u1_y;
+                            const _inl_73_gamma = _u_U_uniforms_gamma;
+                            const _inl_73_p_floor = _u_U_uniforms_pressure_floor;
+                            let _inl_73_result_x, _inl_73_result_y, _inl_73_result_z, _inl_73_result_w;
+                            _inl_73: {
+                                const _inl_73_p_safe = ((p) < (_inl_73_p_floor) ? (_inl_73_p_floor) : (p));
+                                const _inl_73_eth = (_inl_73_p_safe / (((_inl_73_gamma - 1.0)) < (1.0e-6) ? (1.0e-6) : ((_inl_73_gamma - 1.0))));
+                                let _inl_73__inl_4_result;
+                                _inl_73__inl_4: {
+                                    _inl_73__inl_4_result = (((_inl_73_p_safe) < (_inl_73_p_floor) ? (_inl_73_p_floor) : (_inl_73_p_safe)) / Math.pow(((rho) < (DENSITY_FLOOR) ? (DENSITY_FLOOR) : (rho)), _inl_73_gamma));
+                                    break _inl_73__inl_4;
+                                }
+                                const _ir0 = _inl_73_E;
+                                const _ir1 = _inl_73_bz;
+                                const _ir2 = _inl_73_eth;
+                                const _ir3 = _inl_73__inl_4_result;
+                                _inl_73_result_x = _ir0;
+                                _inl_73_result_y = _ir1;
+                                _inl_73_result_z = _ir2;
+                                _inl_73_result_w = _ir3;
+                                break _inl_73;
+                            }
+                            {
+                                const _wbase = ((c) * 4 + 0);
+                                const _wt0 = _inl_73_result_x;
+                                const _wt1 = _inl_73_result_y;
+                                const _wt2 = _inl_73_result_z;
+                                const _wt3 = _inl_73_result_w;
+                                _b_U1[_wbase + 0] = _wt0;
+                                _b_U1[_wbase + 1] = _wt1;
+                                _b_U1[_wbase + 2] = _wt2;
+                                _b_U1[_wbase + 3] = _wt3;
+                            }
+                        }
+                    }
+                }
+            } else {
+                for (let __gy = Oy; __gy < Yn; __gy++)
+                for (let __gx = Ox; __gx < Xn; __gx++) {
+                    const gid_x = __gx;
+                    const gid_y = __gy;
+                    __invocation: {
+                        const _inl_68_flags = _u_U_uniforms_physics_flags;
+                        let _inl_68_result;
+                        _inl_68: {
+                            _inl_68_result = (((_inl_68_flags & FLAG_AMBIPOLAR)) != 0);
+                            break _inl_68;
+                        }
+                        const ambi_on = ((_inl_68_result && (_u_U_uniforms_ambipolar_eta > 0.0)) && (_u_U_uniforms_neutral_frac > 0.0));
+                        const _inl_69_flags = _u_U_uniforms_physics_flags;
+                        let _inl_69_result;
+                        _inl_69: {
+                            _inl_69_result = (((_inl_69_flags & FLAG_ELECTRON_INERTIA)) != 0);
+                            break _inl_69;
+                        }
+                        const electron_inertia_on = ((_inl_69_result && (_u_U_uniforms_electron_inertia_length > 0.0)) && (_u_U_uniforms_electron_inertia_damping > 0.0));
+                        const _inl_70_flags = _u_U_uniforms_physics_flags;
+                        let _inl_70_result;
+                        _inl_70: {
+                            _inl_70_result = (((_inl_70_flags & FLAG_BIERMANN)) != 0);
+                            break _inl_70;
+                        }
+                        const biermann_on = ((_inl_70_result && (_u_U_uniforms_biermann_coeff != 0.0)) && (_u_U_uniforms_hall_electron_pressure_frac > 0.0));
+                        if ((((!ambi_on) && (!electron_inertia_on)) && (!biermann_on))) {
+                            break __invocation;
+                        }
+                        const n_interior = _u_U_uniforms_grid_n;
+                        const n_total = _u_U_uniforms_grid_n_total;
+                        const ghost = _u_U_uniforms_ghost_w;
+                        if (((gid_x >= n_interior) || (gid_y >= n_interior))) {
+                            break __invocation;
+                        }
+                        const ix = (ghost + gid_x);
+                        const iy = (ghost + gid_y);
+                        let _inl_71_result;
+                        _inl_71: {
+                            _inl_71_result = ((iy * n_total) + ix);
+                            break _inl_71;
+                        }
+                        const c = _inl_71_result;
+                        const _sroa_119_base = ((c) * 4 + 0);
+                        const u0_x = _b_U0[_sroa_119_base + 0];
+                        const u0_y = _b_U0[_sroa_119_base + 1];
+                        const u0_z = _b_U0[_sroa_119_base + 2];
+                        const u0_w = _b_U0[_sroa_119_base + 3];
+                        const _sroa_120_base = ((c) * 4 + 0);
+                        const u1_x = _b_U1[_sroa_120_base + 0];
+                        const u1_y = _b_U1[_sroa_120_base + 1];
+                        const u1_z = _b_U1[_sroa_120_base + 2];
+                        const u1_w = _b_U1[_sroa_120_base + 3];
+                        const rho = ((u0_x) < (DENSITY_FLOOR) ? (DENSITY_FLOOR) : (u0_x));
+                        const ke = ((0.5 * ((((u0_y * u0_y) + (u0_z * u0_z)) + (u0_w * u0_w)))) / rho);
+                        let _inl_72_result;
+                        _inl_72: {
+                            let _inl_72__inl_32_result;
+                            _inl_72__inl_32: {
+                                _inl_72__inl_32_result = ((iy * n_total) + ix);
+                                break _inl_72__inl_32;
+                            }
+                            const _sroa_121_base = ((_inl_72__inl_32_result) * 4 + 0);
+                            const _inl_72_u1_x = _b_U1[_sroa_121_base + 0];
+                            const _inl_72_u1_y = _b_U1[_sroa_121_base + 1];
+                            const _inl_72_u1_z = _b_U1[_sroa_121_base + 2];
+                            const _inl_72_u1_w = _b_U1[_sroa_121_base + 3];
+                            let _inl_72__inl_33_result;
+                            _inl_72__inl_33: {
+                                let _inl_72__inl_33__inl_6_result;
+                                _inl_72__inl_33__inl_6: {
+                                    _inl_72__inl_33__inl_6_result = ((iy * ((n_total + 1))) + ix);
+                                    break _inl_72__inl_33__inl_6;
+                                }
+                                const _inl_72__inl_33__inl_7_ix = (ix + 1);
+                                let _inl_72__inl_33__inl_7_result;
+                                _inl_72__inl_33__inl_7: {
+                                    _inl_72__inl_33__inl_7_result = ((iy * ((n_total + 1))) + _inl_72__inl_33__inl_7_ix);
+                                    break _inl_72__inl_33__inl_7;
+                                }
+                                _inl_72__inl_33_result = (0.5 * ((_b_Bx_face[_inl_72__inl_33__inl_6_result] + _b_Bx_face[_inl_72__inl_33__inl_7_result])));
+                                break _inl_72__inl_33;
+                            }
+                            const _inl_72_bx_c = _inl_72__inl_33_result;
+                            let _inl_72__inl_34_result;
+                            _inl_72__inl_34: {
+                                let _inl_72__inl_34__inl_8_result;
+                                _inl_72__inl_34__inl_8: {
+                                    _inl_72__inl_34__inl_8_result = ((iy * n_total) + ix);
+                                    break _inl_72__inl_34__inl_8;
+                                }
+                                const _inl_72__inl_34__inl_9_iy = (iy + 1);
+                                let _inl_72__inl_34__inl_9_result;
+                                _inl_72__inl_34__inl_9: {
+                                    _inl_72__inl_34__inl_9_result = ((_inl_72__inl_34__inl_9_iy * n_total) + ix);
+                                    break _inl_72__inl_34__inl_9;
+                                }
+                                _inl_72__inl_34_result = (0.5 * ((_b_By_face[_inl_72__inl_34__inl_8_result] + _b_By_face[_inl_72__inl_34__inl_9_result])));
+                                break _inl_72__inl_34;
+                            }
+                            const _inl_72_by_c = _inl_72__inl_34_result;
+                            _inl_72_result = (0.5 * ((((_inl_72_bx_c * _inl_72_bx_c) + (_inl_72_by_c * _inl_72_by_c)) + (_inl_72_u1_y * _inl_72_u1_y))));
+                            break _inl_72;
+                        }
+                        const mb = _inl_72_result;
+                        const p = (((((_u_U_uniforms_gamma - 1.0)) * (((u1_x - ke) - mb)))) < (_u_U_uniforms_pressure_floor) ? (_u_U_uniforms_pressure_floor) : ((((_u_U_uniforms_gamma - 1.0)) * (((u1_x - ke) - mb)))));
+                        const _inl_73_E = u1_x;
+                        const _inl_73_bz = u1_y;
+                        const _inl_73_gamma = _u_U_uniforms_gamma;
+                        const _inl_73_p_floor = _u_U_uniforms_pressure_floor;
+                        let _inl_73_result_x, _inl_73_result_y, _inl_73_result_z, _inl_73_result_w;
+                        _inl_73: {
+                            const _inl_73_p_safe = ((p) < (_inl_73_p_floor) ? (_inl_73_p_floor) : (p));
+                            const _inl_73_eth = (_inl_73_p_safe / (((_inl_73_gamma - 1.0)) < (1.0e-6) ? (1.0e-6) : ((_inl_73_gamma - 1.0))));
+                            let _inl_73__inl_4_result;
+                            _inl_73__inl_4: {
+                                _inl_73__inl_4_result = (((_inl_73_p_safe) < (_inl_73_p_floor) ? (_inl_73_p_floor) : (_inl_73_p_safe)) / Math.pow(((rho) < (DENSITY_FLOOR) ? (DENSITY_FLOOR) : (rho)), _inl_73_gamma));
+                                break _inl_73__inl_4;
+                            }
+                            const _ir0 = _inl_73_E;
+                            const _ir1 = _inl_73_bz;
+                            const _ir2 = _inl_73_eth;
+                            const _ir3 = _inl_73__inl_4_result;
+                            _inl_73_result_x = _ir0;
+                            _inl_73_result_y = _ir1;
+                            _inl_73_result_z = _ir2;
+                            _inl_73_result_w = _ir3;
+                            break _inl_73;
+                        }
+                        {
+                            const _wbase = ((c) * 4 + 0);
+                            const _wt0 = _inl_73_result_x;
+                            const _wt1 = _inl_73_result_y;
+                            const _wt2 = _inl_73_result_z;
+                            const _wt3 = _inl_73_result_w;
+                            _b_U1[_wbase + 0] = _wt0;
+                            _b_U1[_wbase + 1] = _wt1;
+                            _b_U1[_wbase + 2] = _wt2;
+                            _b_U1[_wbase + 3] = _wt3;
+                        }
+                    }
+                }
+            }
+        } else {
+            for (let __gz = Oz; __gz < Zn; __gz++)
+            for (let __gy = Oy; __gy < Yn; __gy++)
+            for (let __gx = Ox; __gx < Xn; __gx++) {
+                const gid_x = __gx;
+                const gid_y = __gy;
+                __invocation: {
+                    const _inl_68_flags = _u_U_uniforms_physics_flags;
+                    let _inl_68_result;
+                    _inl_68: {
+                        _inl_68_result = (((_inl_68_flags & FLAG_AMBIPOLAR)) != 0);
+                        break _inl_68;
+                    }
+                    const ambi_on = ((_inl_68_result && (_u_U_uniforms_ambipolar_eta > 0.0)) && (_u_U_uniforms_neutral_frac > 0.0));
+                    const _inl_69_flags = _u_U_uniforms_physics_flags;
+                    let _inl_69_result;
+                    _inl_69: {
+                        _inl_69_result = (((_inl_69_flags & FLAG_ELECTRON_INERTIA)) != 0);
+                        break _inl_69;
+                    }
+                    const electron_inertia_on = ((_inl_69_result && (_u_U_uniforms_electron_inertia_length > 0.0)) && (_u_U_uniforms_electron_inertia_damping > 0.0));
+                    const _inl_70_flags = _u_U_uniforms_physics_flags;
+                    let _inl_70_result;
+                    _inl_70: {
+                        _inl_70_result = (((_inl_70_flags & FLAG_BIERMANN)) != 0);
+                        break _inl_70;
+                    }
+                    const biermann_on = ((_inl_70_result && (_u_U_uniforms_biermann_coeff != 0.0)) && (_u_U_uniforms_hall_electron_pressure_frac > 0.0));
+                    if ((((!ambi_on) && (!electron_inertia_on)) && (!biermann_on))) {
+                        break __invocation;
+                    }
+                    const n_interior = _u_U_uniforms_grid_n;
+                    const n_total = _u_U_uniforms_grid_n_total;
+                    const ghost = _u_U_uniforms_ghost_w;
+                    if (((gid_x >= n_interior) || (gid_y >= n_interior))) {
+                        break __invocation;
+                    }
+                    const ix = (ghost + gid_x);
+                    const iy = (ghost + gid_y);
+                    let _inl_71_result;
+                    _inl_71: {
+                        _inl_71_result = ((iy * n_total) + ix);
+                        break _inl_71;
+                    }
+                    const c = _inl_71_result;
+                    const _sroa_122_base = ((c) * 4 + 0);
+                    const u0_x = _b_U0[_sroa_122_base + 0];
+                    const u0_y = _b_U0[_sroa_122_base + 1];
+                    const u0_z = _b_U0[_sroa_122_base + 2];
+                    const u0_w = _b_U0[_sroa_122_base + 3];
+                    const _sroa_123_base = ((c) * 4 + 0);
+                    const u1_x = _b_U1[_sroa_123_base + 0];
+                    const u1_y = _b_U1[_sroa_123_base + 1];
+                    const u1_z = _b_U1[_sroa_123_base + 2];
+                    const u1_w = _b_U1[_sroa_123_base + 3];
+                    const rho = ((u0_x) < (DENSITY_FLOOR) ? (DENSITY_FLOOR) : (u0_x));
+                    const ke = ((0.5 * ((((u0_y * u0_y) + (u0_z * u0_z)) + (u0_w * u0_w)))) / rho);
+                    let _inl_72_result;
+                    _inl_72: {
+                        let _inl_72__inl_32_result;
+                        _inl_72__inl_32: {
+                            _inl_72__inl_32_result = ((iy * n_total) + ix);
+                            break _inl_72__inl_32;
+                        }
+                        const _sroa_124_base = ((_inl_72__inl_32_result) * 4 + 0);
+                        const _inl_72_u1_x = _b_U1[_sroa_124_base + 0];
+                        const _inl_72_u1_y = _b_U1[_sroa_124_base + 1];
+                        const _inl_72_u1_z = _b_U1[_sroa_124_base + 2];
+                        const _inl_72_u1_w = _b_U1[_sroa_124_base + 3];
+                        let _inl_72__inl_33_result;
+                        _inl_72__inl_33: {
+                            let _inl_72__inl_33__inl_6_result;
+                            _inl_72__inl_33__inl_6: {
+                                _inl_72__inl_33__inl_6_result = ((iy * ((n_total + 1))) + ix);
+                                break _inl_72__inl_33__inl_6;
+                            }
+                            const _inl_72__inl_33__inl_7_ix = (ix + 1);
+                            let _inl_72__inl_33__inl_7_result;
+                            _inl_72__inl_33__inl_7: {
+                                _inl_72__inl_33__inl_7_result = ((iy * ((n_total + 1))) + _inl_72__inl_33__inl_7_ix);
+                                break _inl_72__inl_33__inl_7;
+                            }
+                            _inl_72__inl_33_result = (0.5 * ((_b_Bx_face[_inl_72__inl_33__inl_6_result] + _b_Bx_face[_inl_72__inl_33__inl_7_result])));
+                            break _inl_72__inl_33;
+                        }
+                        const _inl_72_bx_c = _inl_72__inl_33_result;
+                        let _inl_72__inl_34_result;
+                        _inl_72__inl_34: {
+                            let _inl_72__inl_34__inl_8_result;
+                            _inl_72__inl_34__inl_8: {
+                                _inl_72__inl_34__inl_8_result = ((iy * n_total) + ix);
+                                break _inl_72__inl_34__inl_8;
+                            }
+                            const _inl_72__inl_34__inl_9_iy = (iy + 1);
+                            let _inl_72__inl_34__inl_9_result;
+                            _inl_72__inl_34__inl_9: {
+                                _inl_72__inl_34__inl_9_result = ((_inl_72__inl_34__inl_9_iy * n_total) + ix);
+                                break _inl_72__inl_34__inl_9;
+                            }
+                            _inl_72__inl_34_result = (0.5 * ((_b_By_face[_inl_72__inl_34__inl_8_result] + _b_By_face[_inl_72__inl_34__inl_9_result])));
+                            break _inl_72__inl_34;
+                        }
+                        const _inl_72_by_c = _inl_72__inl_34_result;
+                        _inl_72_result = (0.5 * ((((_inl_72_bx_c * _inl_72_bx_c) + (_inl_72_by_c * _inl_72_by_c)) + (_inl_72_u1_y * _inl_72_u1_y))));
+                        break _inl_72;
+                    }
+                    const mb = _inl_72_result;
+                    const p = (((((_u_U_uniforms_gamma - 1.0)) * (((u1_x - ke) - mb)))) < (_u_U_uniforms_pressure_floor) ? (_u_U_uniforms_pressure_floor) : ((((_u_U_uniforms_gamma - 1.0)) * (((u1_x - ke) - mb)))));
+                    const _inl_73_E = u1_x;
+                    const _inl_73_bz = u1_y;
+                    const _inl_73_gamma = _u_U_uniforms_gamma;
+                    const _inl_73_p_floor = _u_U_uniforms_pressure_floor;
+                    let _inl_73_result_x, _inl_73_result_y, _inl_73_result_z, _inl_73_result_w;
+                    _inl_73: {
+                        const _inl_73_p_safe = ((p) < (_inl_73_p_floor) ? (_inl_73_p_floor) : (p));
+                        const _inl_73_eth = (_inl_73_p_safe / (((_inl_73_gamma - 1.0)) < (1.0e-6) ? (1.0e-6) : ((_inl_73_gamma - 1.0))));
+                        let _inl_73__inl_4_result;
+                        _inl_73__inl_4: {
+                            _inl_73__inl_4_result = (((_inl_73_p_safe) < (_inl_73_p_floor) ? (_inl_73_p_floor) : (_inl_73_p_safe)) / Math.pow(((rho) < (DENSITY_FLOOR) ? (DENSITY_FLOOR) : (rho)), _inl_73_gamma));
+                            break _inl_73__inl_4;
+                        }
+                        const _ir0 = _inl_73_E;
+                        const _ir1 = _inl_73_bz;
+                        const _ir2 = _inl_73_eth;
+                        const _ir3 = _inl_73__inl_4_result;
+                        _inl_73_result_x = _ir0;
+                        _inl_73_result_y = _ir1;
+                        _inl_73_result_z = _ir2;
+                        _inl_73_result_w = _ir3;
+                        break _inl_73;
+                    }
+                    {
+                        const _wbase = ((c) * 4 + 0);
+                        const _wt0 = _inl_73_result_x;
+                        const _wt1 = _inl_73_result_y;
+                        const _wt2 = _inl_73_result_z;
+                        const _wt3 = _inl_73_result_w;
+                        _b_U1[_wbase + 0] = _wt0;
+                        _b_U1[_wbase + 1] = _wt1;
+                        _b_U1[_wbase + 2] = _wt2;
+                        _b_U1[_wbase + 3] = _wt3;
+                    }
+                }
+            }
+        }
+    }
+    entry["repair_dissipative_energy"] = function ({ workgroups, bindings, domain, origin }) {
+        return __entry_4_repair_dissipative_energy(workgroups, bindings, domain, origin);
     };
 
     const bind = function (bindings) {
@@ -3230,6 +3527,9 @@ export default function _wgsl_module(rt) {
         };
         bound["apply_dissipative_update"] = function (workgroups, domain, origin) {
             return __entry_3_apply_dissipative_update(workgroups, bindings, domain, origin);
+        };
+        bound["repair_dissipative_energy"] = function (workgroups, domain, origin) {
+            return __entry_4_repair_dissipative_energy(workgroups, bindings, domain, origin);
         };
         return bound;
     };

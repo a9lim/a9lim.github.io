@@ -478,6 +478,19 @@ function testByteIdenticalBodies(artifacts) {
 function testArtifactMetrics(artifacts) {
     console.log('test: artifact metric headers match fresh transpile and perf budgets');
     let allMatch = true;
+    // Plasma compute artifacts must reach rt.* = 0. A few geon shaders carry
+    // known, correct rt.* fallbacks that have no inline form today; allow those
+    // exact counts so the zero-budget gate flags *new* fallbacks without
+    // flagging correct code. Exact metrics are still pinned by the header-vs-
+    // fresh comparison below, so these can't silently drift upward either.
+    const RT_BUDGET = new Map([
+        // CAS on array<atomic<u32>> storage → rt.atomicCompareExchangeWeakAt.
+        // Single-threaded CAS is correct via the runtime helper; no inline yet.
+        ['geon/src/gpu/shaders/boson-tree.wgsl', { rtAtomic: 9 }],
+        ['geon/src/gpu/shaders/tree-build.wgsl', { rtAtomic: 1 }],
+        // WGSL round() → rt.roundEven (ties-to-even). Math.round would be wrong.
+        ['geon/src/gpu/shaders/disintegration.wgsl', { rtNumeric: 4 }],
+    ]);
     const expectedFlatWorkgroupSlots = new Map([
         ['plasma/src/gpu/shaders/reconstruct-ppm.wgsl', 1152],
         ['plasma/src/gpu/shaders/conservation-reduce.wgsl', 1536],
@@ -501,11 +514,14 @@ function testArtifactMetrics(artifacts) {
             allMatch = false;
             continue;
         }
-        if (h.metrics.rtVec !== 0 || h.metrics.rtPoly !== 0 || h.metrics.rtAtomic !== 0 || h.metrics.rtNumeric !== 0) {
+        const budget = RT_BUDGET.get(h.source) || {};
+        const over = (cat) => h.metrics[cat] > (budget[cat] || 0);
+        if (over('rtVec') || over('rtPoly') || over('rtAtomic') || over('rtNumeric')) {
             console.log(
                 `    [${h.source}] perf budget exceeded: ` +
                 `rtVec=${h.metrics.rtVec}, rtPoly=${h.metrics.rtPoly}, ` +
-                `rtAtomic=${h.metrics.rtAtomic}, rtNumeric=${h.metrics.rtNumeric}`
+                `rtAtomic=${h.metrics.rtAtomic}, rtNumeric=${h.metrics.rtNumeric}` +
+                (Object.keys(budget).length ? `  (allowed: ${JSON.stringify(budget)})` : '')
             );
             allMatch = false;
         }

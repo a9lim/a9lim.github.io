@@ -1,11 +1,11 @@
 // Auto-generated from WGSL by _build.mjs — DO NOT EDIT.
 // source: plasma/src/gpu/shaders/compute-dt.wgsl
-// helpers-sha256: eefe8364e4418fe1122eaec2c334fc5ddb0dee0d50920de592e31eb98cc89805
-// wgsl-transpile sha256: 56581bf472ee819f5170b95a6ad4e4fc25b4e21d1b5a6258e1fb9686451e8ef4
-// wgsl-transpiler-sha256: ac640ff2e57bd5c92b7bae5ed9f847914e51684c046fab990cf544842ad38716
+// helpers-sha256: 8c943a8b7cf30e7437759a9bdb9e53a56f237ffd05d70eb845b914f6b4e2b846
+// wgsl-transpile sha256: f35d75587b6759d3d91a7ad748b27804fe3768050fd4930ae20964516337f25f
+// wgsl-transpiler-sha256: d470123cbc6f7ec463bb1b3d6f64125e4819e92c84ce8bb0c08470cb4cdd8758
 // wgsl-opts: {"flatStorage":true,"collectErrors":true,"inlineHotFns":["jz_mag_at"]}
-// wgsl-metrics: {"bytes":41299,"lines":646,"rtVec":0,"rtPoly":0,"rtAtomic":0,"rtNumeric":0,"fround":0,"hypot":0,"iife":10,"workgroupReductionInits":4,"flatWorkgroupArrays":0,"flatWorkgroupSlots":0,"staticBranchPrunes":0}
-// generated: 2026-05-27T19:03:55.860Z
+// wgsl-metrics: {"bytes":42129,"lines":658,"rtVec":0,"rtPoly":0,"rtAtomic":0,"rtNumeric":0,"fround":0,"hypot":0,"iife":10,"workgroupReductionInits":4,"flatWorkgroupArrays":0,"flatWorkgroupSlots":0,"staticBranchPrunes":0}
+// generated: 2026-05-30T21:32:08.717Z
 export default function _wgsl_module(rt) {
     const FLAG_COOLING = (1 << 0);
     const FLAG_GRAVITY_EXT = (1 << 1);
@@ -32,7 +32,7 @@ export default function _wgsl_module(rt) {
     const EDGE_W_BC = 3;
     const DENSITY_FLOOR = 1.0e-6;
     const DUAL_ENERGY_FRACTION = 1.0e-3;
-    const DT_MIN = 1.0e-8;
+    const DT_MIN = 1.0e-10;
     const DT_MAX = 1.0e-2;
     const TRANSPORT_SCALE_MAX_DT = 1.0e5;
 
@@ -54,7 +54,8 @@ export default function _wgsl_module(rt) {
         const eth_total = ((U1_x - ke) - mb);
         const eth_floor = (p_floor / (((gamma - 1.0)) < (1.0e-6) ? (1.0e-6) : ((gamma - 1.0))));
         const total_ok = ((eth_total > ((eth_floor) < ((DUAL_ENERGY_FRACTION * ((Math.abs(U1_x)) < (eth_floor) ? (eth_floor) : (Math.abs(U1_x))))) ? ((DUAL_ENERGY_FRACTION * ((Math.abs(U1_x)) < (eth_floor) ? (eth_floor) : (Math.abs(U1_x))))) : (eth_floor))) && (eth_total == eth_total));
-        const dual_eth = ((U1_z) < (eth_floor) ? (eth_floor) : (U1_z));
+        const dual_eth_in = ((U1_z == U1_z) ? U1_z : eth_floor);
+        const dual_eth = ((dual_eth_in) < (eth_floor) ? (eth_floor) : (dual_eth_in));
         const eth = (total_ok ? eth_total : dual_eth);
         return (((((gamma - 1.0)) * eth)) < (p_floor) ? (p_floor) : ((((gamma - 1.0)) * eth)));
     }
@@ -186,6 +187,8 @@ export default function _wgsl_module(rt) {
         const _u_U_uniforms_viscosity_bulk = _b_U_uniforms.viscosity_bulk;
         const _u_U_uniforms_viscosity_shock = _b_U_uniforms.viscosity_shock;
         const _u_U_uniforms_source_substeps_max = _b_U_uniforms.source_substeps_max;
+        const _u_U_uniforms_geometry_mode = _b_U_uniforms.geometry_mode;
+        const _u_U_uniforms_geometry_r_min = _b_U_uniforms.geometry_r_min;
         const _u_U_uniforms_radiation_c = _b_U_uniforms.radiation_c;
         const _u_U_uniforms_radiation_kappa_abs = _b_U_uniforms.radiation_kappa_abs;
         const _u_U_uniforms_radiation_kappa_scat = _b_U_uniforms.radiation_kappa_scat;
@@ -373,7 +376,7 @@ export default function _wgsl_module(rt) {
                                 }
                                 if (((_inl_25_result && (_u_U_uniforms_electron_inertia_length > 0.0)) && (_u_U_uniforms_electron_inertia_damping > 0.0))) {
                                     const eta4 = ((_u_U_uniforms_electron_inertia_damping * _u_U_uniforms_electron_inertia_length) * _u_U_uniforms_electron_inertia_length);
-                                    r_nonideal = (r_nonideal + ((16.0 * eta4) / (((((dx * dx) * dx) * dx)) < (1.0e-30) ? (1.0e-30) : ((((dx * dx) * dx) * dx)))));
+                                    r_nonideal = (r_nonideal + ((32.0 * eta4) / (((((dx * dx) * dx) * dx)) < (1.0e-30) ? (1.0e-30) : ((((dx * dx) * dx) * dx)))));
                                 }
                                 const s_nonideal_cap = (((cfl_safe * dx) * r_nonideal) / (((2.0 * n_src) * 0.45)));
                                 s = (s + (((s_nonideal_cap >= 0.0) && (s_nonideal_cap == s_nonideal_cap)) ? s_nonideal_cap : 0.0));
@@ -385,10 +388,7 @@ export default function _wgsl_module(rt) {
                                 if (((_inl_26_result && (_u_U_uniforms_radiation_c > 0.0)) && (((_u_U_uniforms_radiation_kappa_abs > 0.0) || (_u_U_uniforms_radiation_kappa_scat > 0.0))))) {
                                     const kappa = (((_u_U_uniforms_radiation_kappa_abs) < (0.0) ? (0.0) : (_u_U_uniforms_radiation_kappa_abs)) + ((_u_U_uniforms_radiation_kappa_scat) < (0.0) ? (0.0) : (_u_U_uniforms_radiation_kappa_scat)));
                                     const opacity_min = 0.01;
-                                    const opacity_max_abs = 32.0;
-                                    const r_rad_diff = ((kappa > 0.0) ? ((4.0 * _u_U_uniforms_radiation_c) / (((((kappa * opacity_min) * dx) * dx)) < (1.0e-30) ? (1.0e-30) : ((((kappa * opacity_min) * dx) * dx)))) : 0.0);
-                                    const r_rad_exchange = ((_u_U_uniforms_radiation_c * ((_u_U_uniforms_radiation_kappa_abs) < (0.0) ? (0.0) : (_u_U_uniforms_radiation_kappa_abs))) * opacity_max_abs);
-                                    const r_rad = (r_rad_diff + r_rad_exchange);
+                                    const r_rad = ((kappa > 0.0) ? ((4.0 * _u_U_uniforms_radiation_c) / (((((kappa * opacity_min) * dx) * dx)) < (1.0e-30) ? (1.0e-30) : ((((kappa * opacity_min) * dx) * dx)))) : 0.0);
                                     const s_rad_cap = (((cfl_safe * dx) * r_rad) / (((2.0 * n_src) * 0.35)));
                                     s = (s + (((s_rad_cap >= 0.0) && (s_rad_cap == s_rad_cap)) ? s_rad_cap : 0.0));
                                 }
@@ -414,6 +414,18 @@ export default function _wgsl_module(rt) {
                                     const s_self_g = (((4.0 * cfl_safe) * dx) * omega_g);
                                     s = (s + (((s_self_g >= 0.0) && (s_self_g == s_self_g)) ? s_self_g : 0.0));
                                 }
+                                let _inl_29_result;
+                                _inl_29: {
+                                    _inl_29_result = (((flags & FLAG_GEOMETRY)) != 0);
+                                    break _inl_29;
+                                }
+                                if ((_inl_29_result && (_u_U_uniforms_geometry_mode == 1))) {
+                                    const r_cell = (((_u_U_uniforms_geometry_r_min + ((((+(gid_x)) + 0.5)) * dx))) < ((0.5 * dx)) ? ((0.5 * dx)) : ((_u_U_uniforms_geometry_r_min + ((((+(gid_x)) + 0.5)) * dx))));
+                                    const s_fast = ((sx) < (sy) ? (sy) : (sx));
+                                    const omega_geom = (s_fast / r_cell);
+                                    const s_geom = (((4.0 * cfl_safe) * dx) * omega_geom);
+                                    s = (s + (((s_geom >= 0.0) && (s_geom == s_geom)) ? s_geom : 0.0));
+                                }
                                 const s_safe = (((s >= 0.0) && (s == s)) ? s : 0.0);
                                 (((_r, _k, _v) => { const _o = _r[_k]; if (_v > _o) _r[_k] = _v; return _o; })(wg, "tile_max_wave", rt.bitcast_u32_f32(s_safe)));
                                 const alpha = _u_U_uniforms_eta_anom_alpha;
@@ -421,110 +433,110 @@ export default function _wgsl_module(rt) {
                                 if ((alpha <= 0.0)) {
                                     eta_l = _u_U_uniforms_eta;
                                 } else {
-                                    let _inl_29_result;
-                                    _inl_29: {
-                                        const _inl_29__inl_6_ix = (ix + 1);
-                                        let _inl_29__inl_6_result;
-                                        _inl_29__inl_6: {
-                                            let _inl_29__inl_6__inl_2_result;
-                                            _inl_29__inl_6__inl_2: {
-                                                _inl_29__inl_6__inl_2_result = ((iy * n_total) + _inl_29__inl_6_ix);
-                                                break _inl_29__inl_6__inl_2;
+                                    let _inl_30_result;
+                                    _inl_30: {
+                                        const _inl_30__inl_6_ix = (ix + 1);
+                                        let _inl_30__inl_6_result;
+                                        _inl_30__inl_6: {
+                                            let _inl_30__inl_6__inl_2_result;
+                                            _inl_30__inl_6__inl_2: {
+                                                _inl_30__inl_6__inl_2_result = ((iy * n_total) + _inl_30__inl_6_ix);
+                                                break _inl_30__inl_6__inl_2;
                                             }
-                                            _inl_29__inl_6_result = _inl_29__inl_6__inl_2_result;
-                                            break _inl_29__inl_6;
+                                            _inl_30__inl_6_result = _inl_30__inl_6__inl_2_result;
+                                            break _inl_30__inl_6;
                                         }
-                                        const _inl_29__inl_7_ix = (ix + 1);
-                                        let _inl_29__inl_7_result;
-                                        _inl_29__inl_7: {
-                                            const _inl_29__inl_7__inl_3_iy = (iy + 1);
-                                            let _inl_29__inl_7__inl_3_result;
-                                            _inl_29__inl_7__inl_3: {
-                                                _inl_29__inl_7__inl_3_result = ((_inl_29__inl_7__inl_3_iy * n_total) + _inl_29__inl_7_ix);
-                                                break _inl_29__inl_7__inl_3;
+                                        const _inl_30__inl_7_ix = (ix + 1);
+                                        let _inl_30__inl_7_result;
+                                        _inl_30__inl_7: {
+                                            const _inl_30__inl_7__inl_3_iy = (iy + 1);
+                                            let _inl_30__inl_7__inl_3_result;
+                                            _inl_30__inl_7__inl_3: {
+                                                _inl_30__inl_7__inl_3_result = ((_inl_30__inl_7__inl_3_iy * n_total) + _inl_30__inl_7_ix);
+                                                break _inl_30__inl_7__inl_3;
                                             }
-                                            _inl_29__inl_7_result = _inl_29__inl_7__inl_3_result;
-                                            break _inl_29__inl_7;
+                                            _inl_30__inl_7_result = _inl_30__inl_7__inl_3_result;
+                                            break _inl_30__inl_7;
                                         }
-                                        const _inl_29_by_R = (0.5 * ((_b_By_face[_inl_29__inl_6_result] + _b_By_face[_inl_29__inl_7_result])));
-                                        const _inl_29__inl_8_ix = (ix - 1);
-                                        let _inl_29__inl_8_result;
-                                        _inl_29__inl_8: {
-                                            let _inl_29__inl_8__inl_2_result;
-                                            _inl_29__inl_8__inl_2: {
-                                                _inl_29__inl_8__inl_2_result = ((iy * n_total) + _inl_29__inl_8_ix);
-                                                break _inl_29__inl_8__inl_2;
+                                        const _inl_30_by_R = (0.5 * ((_b_By_face[_inl_30__inl_6_result] + _b_By_face[_inl_30__inl_7_result])));
+                                        const _inl_30__inl_8_ix = (ix - 1);
+                                        let _inl_30__inl_8_result;
+                                        _inl_30__inl_8: {
+                                            let _inl_30__inl_8__inl_2_result;
+                                            _inl_30__inl_8__inl_2: {
+                                                _inl_30__inl_8__inl_2_result = ((iy * n_total) + _inl_30__inl_8_ix);
+                                                break _inl_30__inl_8__inl_2;
                                             }
-                                            _inl_29__inl_8_result = _inl_29__inl_8__inl_2_result;
-                                            break _inl_29__inl_8;
+                                            _inl_30__inl_8_result = _inl_30__inl_8__inl_2_result;
+                                            break _inl_30__inl_8;
                                         }
-                                        const _inl_29__inl_9_ix = (ix - 1);
-                                        let _inl_29__inl_9_result;
-                                        _inl_29__inl_9: {
-                                            const _inl_29__inl_9__inl_3_iy = (iy + 1);
-                                            let _inl_29__inl_9__inl_3_result;
-                                            _inl_29__inl_9__inl_3: {
-                                                _inl_29__inl_9__inl_3_result = ((_inl_29__inl_9__inl_3_iy * n_total) + _inl_29__inl_9_ix);
-                                                break _inl_29__inl_9__inl_3;
+                                        const _inl_30__inl_9_ix = (ix - 1);
+                                        let _inl_30__inl_9_result;
+                                        _inl_30__inl_9: {
+                                            const _inl_30__inl_9__inl_3_iy = (iy + 1);
+                                            let _inl_30__inl_9__inl_3_result;
+                                            _inl_30__inl_9__inl_3: {
+                                                _inl_30__inl_9__inl_3_result = ((_inl_30__inl_9__inl_3_iy * n_total) + _inl_30__inl_9_ix);
+                                                break _inl_30__inl_9__inl_3;
                                             }
-                                            _inl_29__inl_9_result = _inl_29__inl_9__inl_3_result;
-                                            break _inl_29__inl_9;
+                                            _inl_30__inl_9_result = _inl_30__inl_9__inl_3_result;
+                                            break _inl_30__inl_9;
                                         }
-                                        const _inl_29_by_L = (0.5 * ((_b_By_face[_inl_29__inl_8_result] + _b_By_face[_inl_29__inl_9_result])));
-                                        const _inl_29__inl_10_iy = (iy + 1);
-                                        let _inl_29__inl_10_result;
-                                        _inl_29__inl_10: {
-                                            let _inl_29__inl_10__inl_0_result;
-                                            _inl_29__inl_10__inl_0: {
-                                                _inl_29__inl_10__inl_0_result = ((_inl_29__inl_10_iy * ((n_total + 1))) + ix);
-                                                break _inl_29__inl_10__inl_0;
+                                        const _inl_30_by_L = (0.5 * ((_b_By_face[_inl_30__inl_8_result] + _b_By_face[_inl_30__inl_9_result])));
+                                        const _inl_30__inl_10_iy = (iy + 1);
+                                        let _inl_30__inl_10_result;
+                                        _inl_30__inl_10: {
+                                            let _inl_30__inl_10__inl_0_result;
+                                            _inl_30__inl_10__inl_0: {
+                                                _inl_30__inl_10__inl_0_result = ((_inl_30__inl_10_iy * ((n_total + 1))) + ix);
+                                                break _inl_30__inl_10__inl_0;
                                             }
-                                            _inl_29__inl_10_result = _inl_29__inl_10__inl_0_result;
-                                            break _inl_29__inl_10;
+                                            _inl_30__inl_10_result = _inl_30__inl_10__inl_0_result;
+                                            break _inl_30__inl_10;
                                         }
-                                        const _inl_29__inl_11_iy = (iy + 1);
-                                        let _inl_29__inl_11_result;
-                                        _inl_29__inl_11: {
-                                            const _inl_29__inl_11__inl_1_ix = (ix + 1);
-                                            let _inl_29__inl_11__inl_1_result;
-                                            _inl_29__inl_11__inl_1: {
-                                                _inl_29__inl_11__inl_1_result = ((_inl_29__inl_11_iy * ((n_total + 1))) + _inl_29__inl_11__inl_1_ix);
-                                                break _inl_29__inl_11__inl_1;
+                                        const _inl_30__inl_11_iy = (iy + 1);
+                                        let _inl_30__inl_11_result;
+                                        _inl_30__inl_11: {
+                                            const _inl_30__inl_11__inl_1_ix = (ix + 1);
+                                            let _inl_30__inl_11__inl_1_result;
+                                            _inl_30__inl_11__inl_1: {
+                                                _inl_30__inl_11__inl_1_result = ((_inl_30__inl_11_iy * ((n_total + 1))) + _inl_30__inl_11__inl_1_ix);
+                                                break _inl_30__inl_11__inl_1;
                                             }
-                                            _inl_29__inl_11_result = _inl_29__inl_11__inl_1_result;
-                                            break _inl_29__inl_11;
+                                            _inl_30__inl_11_result = _inl_30__inl_11__inl_1_result;
+                                            break _inl_30__inl_11;
                                         }
-                                        const _inl_29_bx_U = (0.5 * ((_b_Bx_face[_inl_29__inl_10_result] + _b_Bx_face[_inl_29__inl_11_result])));
-                                        const _inl_29__inl_12_iy = (iy - 1);
-                                        let _inl_29__inl_12_result;
-                                        _inl_29__inl_12: {
-                                            let _inl_29__inl_12__inl_0_result;
-                                            _inl_29__inl_12__inl_0: {
-                                                _inl_29__inl_12__inl_0_result = ((_inl_29__inl_12_iy * ((n_total + 1))) + ix);
-                                                break _inl_29__inl_12__inl_0;
+                                        const _inl_30_bx_U = (0.5 * ((_b_Bx_face[_inl_30__inl_10_result] + _b_Bx_face[_inl_30__inl_11_result])));
+                                        const _inl_30__inl_12_iy = (iy - 1);
+                                        let _inl_30__inl_12_result;
+                                        _inl_30__inl_12: {
+                                            let _inl_30__inl_12__inl_0_result;
+                                            _inl_30__inl_12__inl_0: {
+                                                _inl_30__inl_12__inl_0_result = ((_inl_30__inl_12_iy * ((n_total + 1))) + ix);
+                                                break _inl_30__inl_12__inl_0;
                                             }
-                                            _inl_29__inl_12_result = _inl_29__inl_12__inl_0_result;
-                                            break _inl_29__inl_12;
+                                            _inl_30__inl_12_result = _inl_30__inl_12__inl_0_result;
+                                            break _inl_30__inl_12;
                                         }
-                                        const _inl_29__inl_13_iy = (iy - 1);
-                                        let _inl_29__inl_13_result;
-                                        _inl_29__inl_13: {
-                                            const _inl_29__inl_13__inl_1_ix = (ix + 1);
-                                            let _inl_29__inl_13__inl_1_result;
-                                            _inl_29__inl_13__inl_1: {
-                                                _inl_29__inl_13__inl_1_result = ((_inl_29__inl_13_iy * ((n_total + 1))) + _inl_29__inl_13__inl_1_ix);
-                                                break _inl_29__inl_13__inl_1;
+                                        const _inl_30__inl_13_iy = (iy - 1);
+                                        let _inl_30__inl_13_result;
+                                        _inl_30__inl_13: {
+                                            const _inl_30__inl_13__inl_1_ix = (ix + 1);
+                                            let _inl_30__inl_13__inl_1_result;
+                                            _inl_30__inl_13__inl_1: {
+                                                _inl_30__inl_13__inl_1_result = ((_inl_30__inl_13_iy * ((n_total + 1))) + _inl_30__inl_13__inl_1_ix);
+                                                break _inl_30__inl_13__inl_1;
                                             }
-                                            _inl_29__inl_13_result = _inl_29__inl_13__inl_1_result;
-                                            break _inl_29__inl_13;
+                                            _inl_30__inl_13_result = _inl_30__inl_13__inl_1_result;
+                                            break _inl_30__inl_13;
                                         }
-                                        const _inl_29_bx_D = (0.5 * ((_b_Bx_face[_inl_29__inl_12_result] + _b_Bx_face[_inl_29__inl_13_result])));
-                                        const _inl_29_dby_dx = ((((_inl_29_by_R - _inl_29_by_L)) * 0.5) * dx_inv);
-                                        const _inl_29_dbx_dy = ((((_inl_29_bx_U - _inl_29_bx_D)) * 0.5) * dx_inv);
-                                        _inl_29_result = Math.abs((_inl_29_dby_dx - _inl_29_dbx_dy));
-                                        break _inl_29;
+                                        const _inl_30_bx_D = (0.5 * ((_b_Bx_face[_inl_30__inl_12_result] + _b_Bx_face[_inl_30__inl_13_result])));
+                                        const _inl_30_dby_dx = ((((_inl_30_by_R - _inl_30_by_L)) * 0.5) * dx_inv);
+                                        const _inl_30_dbx_dy = ((((_inl_30_bx_U - _inl_30_bx_D)) * 0.5) * dx_inv);
+                                        _inl_30_result = Math.abs((_inl_30_dby_dx - _inl_30_dbx_dy));
+                                        break _inl_30;
                                     }
-                                    const jmag = _inl_29_result;
+                                    const jmag = _inl_30_result;
                                     eta_l = anomalous_eta(jmag, _u_U_uniforms_eta, alpha, _u_U_uniforms_eta_anom_jcrit);
                                 }
                                 const eta_safe = (((eta_l >= 0.0) && (eta_l == eta_l)) ? eta_l : 0.0);

@@ -1,12 +1,12 @@
 // Auto-generated from WGSL by _build.mjs — DO NOT EDIT.
 // source: plasma/src/gpu/shaders/compute-dt.wgsl
 // wgsl-variant: n1024.eta0
-// helpers-sha256: eefe8364e4418fe1122eaec2c334fc5ddb0dee0d50920de592e31eb98cc89805
-// wgsl-transpile sha256: 56581bf472ee819f5170b95a6ad4e4fc25b4e21d1b5a6258e1fb9686451e8ef4
-// wgsl-transpiler-sha256: ac640ff2e57bd5c92b7bae5ed9f847914e51684c046fab990cf544842ad38716
+// helpers-sha256: 8c943a8b7cf30e7437759a9bdb9e53a56f237ffd05d70eb845b914f6b4e2b846
+// wgsl-transpile sha256: f35d75587b6759d3d91a7ad748b27804fe3768050fd4930ae20964516337f25f
+// wgsl-transpiler-sha256: d470123cbc6f7ec463bb1b3d6f64125e4819e92c84ce8bb0c08470cb4cdd8758
 // wgsl-opts: {"flatStorage":true,"collectErrors":true,"inlineHotFns":["jz_mag_at"],"specializeUniforms":{"U_uniforms":{"grid_n":1024,"grid_n_total":1028,"ghost_w":2,"eta_anom_alpha":0}},"fixedWorkgroups":[128,128,1]}
-// wgsl-metrics: {"bytes":32670,"lines":536,"rtVec":0,"rtPoly":0,"rtAtomic":0,"rtNumeric":0,"fround":0,"hypot":0,"iife":10,"workgroupReductionInits":4,"flatWorkgroupArrays":0,"flatWorkgroupSlots":0,"staticBranchPrunes":1}
-// generated: 2026-05-27T19:03:55.871Z
+// wgsl-metrics: {"bytes":33500,"lines":548,"rtVec":0,"rtPoly":0,"rtAtomic":0,"rtNumeric":0,"fround":0,"hypot":0,"iife":10,"workgroupReductionInits":4,"flatWorkgroupArrays":0,"flatWorkgroupSlots":0,"staticBranchPrunes":1}
+// generated: 2026-05-30T21:32:08.723Z
 export default function _wgsl_module(rt) {
     const FLAG_COOLING = (1 << 0);
     const FLAG_GRAVITY_EXT = (1 << 1);
@@ -33,7 +33,7 @@ export default function _wgsl_module(rt) {
     const EDGE_W_BC = 3;
     const DENSITY_FLOOR = 1.0e-6;
     const DUAL_ENERGY_FRACTION = 1.0e-3;
-    const DT_MIN = 1.0e-8;
+    const DT_MIN = 1.0e-10;
     const DT_MAX = 1.0e-2;
     const TRANSPORT_SCALE_MAX_DT = 1.0e5;
 
@@ -55,7 +55,8 @@ export default function _wgsl_module(rt) {
         const eth_total = ((U1_x - ke) - mb);
         const eth_floor = (p_floor / (((gamma - 1.0)) < (1.0e-6) ? (1.0e-6) : ((gamma - 1.0))));
         const total_ok = ((eth_total > ((eth_floor) < ((DUAL_ENERGY_FRACTION * ((Math.abs(U1_x)) < (eth_floor) ? (eth_floor) : (Math.abs(U1_x))))) ? ((DUAL_ENERGY_FRACTION * ((Math.abs(U1_x)) < (eth_floor) ? (eth_floor) : (Math.abs(U1_x))))) : (eth_floor))) && (eth_total == eth_total));
-        const dual_eth = ((U1_z) < (eth_floor) ? (eth_floor) : (U1_z));
+        const dual_eth_in = ((U1_z == U1_z) ? U1_z : eth_floor);
+        const dual_eth = ((dual_eth_in) < (eth_floor) ? (eth_floor) : (dual_eth_in));
         const eth = (total_ok ? eth_total : dual_eth);
         return (((((gamma - 1.0)) * eth)) < (p_floor) ? (p_floor) : ((((gamma - 1.0)) * eth)));
     }
@@ -183,6 +184,8 @@ export default function _wgsl_module(rt) {
         const _u_U_uniforms_viscosity_bulk = _b_U_uniforms.viscosity_bulk;
         const _u_U_uniforms_viscosity_shock = _b_U_uniforms.viscosity_shock;
         const _u_U_uniforms_source_substeps_max = _b_U_uniforms.source_substeps_max;
+        const _u_U_uniforms_geometry_mode = _b_U_uniforms.geometry_mode;
+        const _u_U_uniforms_geometry_r_min = _b_U_uniforms.geometry_r_min;
         const _u_U_uniforms_radiation_c = _b_U_uniforms.radiation_c;
         const _u_U_uniforms_radiation_kappa_abs = _b_U_uniforms.radiation_kappa_abs;
         const _u_U_uniforms_radiation_kappa_scat = _b_U_uniforms.radiation_kappa_scat;
@@ -370,7 +373,7 @@ export default function _wgsl_module(rt) {
                                 }
                                 if (((_inl_25_result && (_u_U_uniforms_electron_inertia_length > 0.0)) && (_u_U_uniforms_electron_inertia_damping > 0.0))) {
                                     const eta4 = ((_u_U_uniforms_electron_inertia_damping * _u_U_uniforms_electron_inertia_length) * _u_U_uniforms_electron_inertia_length);
-                                    r_nonideal = (r_nonideal + ((16.0 * eta4) / (((((dx * dx) * dx) * dx)) < (1.0e-30) ? (1.0e-30) : ((((dx * dx) * dx) * dx)))));
+                                    r_nonideal = (r_nonideal + ((32.0 * eta4) / (((((dx * dx) * dx) * dx)) < (1.0e-30) ? (1.0e-30) : ((((dx * dx) * dx) * dx)))));
                                 }
                                 const s_nonideal_cap = (((cfl_safe * dx) * r_nonideal) / (((2.0 * n_src) * 0.45)));
                                 s = (s + (((s_nonideal_cap >= 0.0) && (s_nonideal_cap == s_nonideal_cap)) ? s_nonideal_cap : 0.0));
@@ -382,10 +385,7 @@ export default function _wgsl_module(rt) {
                                 if (((_inl_26_result && (_u_U_uniforms_radiation_c > 0.0)) && (((_u_U_uniforms_radiation_kappa_abs > 0.0) || (_u_U_uniforms_radiation_kappa_scat > 0.0))))) {
                                     const kappa = (((_u_U_uniforms_radiation_kappa_abs) < (0.0) ? (0.0) : (_u_U_uniforms_radiation_kappa_abs)) + ((_u_U_uniforms_radiation_kappa_scat) < (0.0) ? (0.0) : (_u_U_uniforms_radiation_kappa_scat)));
                                     const opacity_min = 0.01;
-                                    const opacity_max_abs = 32.0;
-                                    const r_rad_diff = ((kappa > 0.0) ? ((4.0 * _u_U_uniforms_radiation_c) / (((((kappa * opacity_min) * dx) * dx)) < (1.0e-30) ? (1.0e-30) : ((((kappa * opacity_min) * dx) * dx)))) : 0.0);
-                                    const r_rad_exchange = ((_u_U_uniforms_radiation_c * ((_u_U_uniforms_radiation_kappa_abs) < (0.0) ? (0.0) : (_u_U_uniforms_radiation_kappa_abs))) * opacity_max_abs);
-                                    const r_rad = (r_rad_diff + r_rad_exchange);
+                                    const r_rad = ((kappa > 0.0) ? ((4.0 * _u_U_uniforms_radiation_c) / (((((kappa * opacity_min) * dx) * dx)) < (1.0e-30) ? (1.0e-30) : ((((kappa * opacity_min) * dx) * dx)))) : 0.0);
                                     const s_rad_cap = (((cfl_safe * dx) * r_rad) / (((2.0 * n_src) * 0.35)));
                                     s = (s + (((s_rad_cap >= 0.0) && (s_rad_cap == s_rad_cap)) ? s_rad_cap : 0.0));
                                 }
@@ -410,6 +410,18 @@ export default function _wgsl_module(rt) {
                                     const omega_g = Math.sqrt(((((12.566370614359172 * _u_U_uniforms_gravity_G) * rho)) < (0.0) ? (0.0) : (((12.566370614359172 * _u_U_uniforms_gravity_G) * rho))));
                                     const s_self_g = (((4.0 * cfl_safe) * dx) * omega_g);
                                     s = (s + (((s_self_g >= 0.0) && (s_self_g == s_self_g)) ? s_self_g : 0.0));
+                                }
+                                let _inl_29_result;
+                                _inl_29: {
+                                    _inl_29_result = (((flags & FLAG_GEOMETRY)) != 0);
+                                    break _inl_29;
+                                }
+                                if ((_inl_29_result && (_u_U_uniforms_geometry_mode == 1))) {
+                                    const r_cell = (((_u_U_uniforms_geometry_r_min + ((((+(gid_x)) + 0.5)) * dx))) < ((0.5 * dx)) ? ((0.5 * dx)) : ((_u_U_uniforms_geometry_r_min + ((((+(gid_x)) + 0.5)) * dx))));
+                                    const s_fast = ((sx) < (sy) ? (sy) : (sx));
+                                    const omega_geom = (s_fast / r_cell);
+                                    const s_geom = (((4.0 * cfl_safe) * dx) * omega_geom);
+                                    s = (s + (((s_geom >= 0.0) && (s_geom == s_geom)) ? s_geom : 0.0));
                                 }
                                 const s_safe = (((s >= 0.0) && (s == s)) ? s : 0.0);
                                 (((_r, _k, _v) => { const _o = _r[_k]; if (_v > _o) _r[_k] = _v; return _o; })(wg, "tile_max_wave", rt.bitcast_u32_f32(s_safe)));

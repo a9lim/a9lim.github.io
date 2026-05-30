@@ -1,12 +1,12 @@
 // Auto-generated from WGSL by _build.mjs — DO NOT EDIT.
 // source: plasma/src/gpu/shaders/update-conserved-weighted.wgsl
 // wgsl-variant: s3
-// helpers-sha256: eefe8364e4418fe1122eaec2c334fc5ddb0dee0d50920de592e31eb98cc89805
-// wgsl-transpile sha256: 79c286e1c21cfecdca54330565e127dfa8d32a75e635412cacb49c84aabef56c
-// wgsl-transpiler-sha256: ac640ff2e57bd5c92b7bae5ed9f847914e51684c046fab990cf544842ad38716
+// helpers-sha256: 8c943a8b7cf30e7437759a9bdb9e53a56f237ffd05d70eb845b914f6b4e2b846
+// wgsl-transpile sha256: caaafe848c71af331930dba1f3d57fc64de6bb7eea06511a0b69064832e05766
+// wgsl-transpiler-sha256: d470123cbc6f7ec463bb1b3d6f64125e4819e92c84ce8bb0c08470cb4cdd8758
 // wgsl-opts: {"flatStorage":true,"collectErrors":true,"specializeUniforms":{"stage_params":{"a0":0.3333333333333333,"a1":0.6666666666666666,"dt_w":0.6666666666666666}}}
-// wgsl-metrics: {"bytes":76165,"lines":1009,"rtVec":0,"rtPoly":0,"rtAtomic":0,"rtNumeric":0,"fround":0,"hypot":0,"iife":20,"workgroupReductionInits":0,"flatWorkgroupArrays":0,"flatWorkgroupSlots":0,"staticBranchPrunes":0}
-// generated: 2026-05-27T17:41:05.253Z
+// wgsl-metrics: {"bytes":77357,"lines":1029,"rtVec":0,"rtPoly":0,"rtAtomic":0,"rtNumeric":0,"fround":0,"hypot":0,"iife":20,"workgroupReductionInits":0,"flatWorkgroupArrays":0,"flatWorkgroupSlots":0,"staticBranchPrunes":0}
+// generated: 2026-05-30T21:32:08.794Z
 export default function _wgsl_module(rt) {
     const FLAG_COOLING = (1 << 0);
     const FLAG_GRAVITY_EXT = (1 << 1);
@@ -253,14 +253,16 @@ export default function _wgsl_module(rt) {
                         let mx = ((u0_raw_y == u0_raw_y) ? u0_raw_y : 0.0);
                         let my = ((u0_raw_z == u0_raw_z) ? u0_raw_z : 0.0);
                         let mz = ((u0_raw_w == u0_raw_w) ? u0_raw_w : 0.0);
-                        const rho = (((_x, _lo, _hi) => { const _mx = _x < _lo ? _lo : _x; return _hi < _mx ? _hi : _mx; })(u0_raw_x, DENSITY_FLOOR, 1.0e30));
+                        const rho_in = ((u0_raw_x == u0_raw_x) ? u0_raw_x : DENSITY_FLOOR);
+                        const rho = (((_x, _lo, _hi) => { const _mx = _x < _lo ? _lo : _x; return _hi < _mx ? _hi : _mx; })(rho_in, DENSITY_FLOOR, 1.0e30));
+                        const density_floored = (!((u0_raw_x > DENSITY_FLOOR)));
                         const V_MAX_SANE = 10.0;
                         const v_inv_rho = (1.0 / rho);
                         const vx_raw = (mx * v_inv_rho);
                         const vy_raw = (my * v_inv_rho);
                         const vz_raw = (mz * v_inv_rho);
                         const v_mag = Math.sqrt((((vx_raw * vx_raw) + (vy_raw * vy_raw)) + (vz_raw * vz_raw)));
-                        if ((v_mag > V_MAX_SANE)) {
+                        if ((density_floored && (v_mag > V_MAX_SANE))) {
                             const scale = (V_MAX_SANE / v_mag);
                             mx = (mx * scale);
                             my = (my * scale);
@@ -268,9 +270,12 @@ export default function _wgsl_module(rt) {
                         }
                         const ke = ((0.5 * ((((mx * mx) + (my * my)) + (mz * mz)))) / rho);
                         const E_min = (ke + (_u_U_uniforms_pressure_floor / ((_u_U_uniforms_gamma - 1.0))));
-                        const E = (((_x, _lo, _hi) => { const _mx = _x < _lo ? _lo : _x; return _hi < _mx ? _hi : _mx; })(u1_raw_x, E_min, 1.0e30));
+                        const E_in = ((u1_raw_x == u1_raw_x) ? u1_raw_x : E_min);
+                        const E = (((_x, _lo, _hi) => { const _mx = _x < _lo ? _lo : _x; return _hi < _mx ? _hi : _mx; })(E_in, E_min, 1.0e30));
                         const bz = ((u1_raw_y == u1_raw_y) ? u1_raw_y : 0.0);
-                        const eth_aux = ((u1_raw_z) < ((_u_U_uniforms_pressure_floor / (((_u_U_uniforms_gamma - 1.0)) < (1.0e-6) ? (1.0e-6) : ((_u_U_uniforms_gamma - 1.0))))) ? ((_u_U_uniforms_pressure_floor / (((_u_U_uniforms_gamma - 1.0)) < (1.0e-6) ? (1.0e-6) : ((_u_U_uniforms_gamma - 1.0))))) : (u1_raw_z));
+                        const eth_floor = (_u_U_uniforms_pressure_floor / (((_u_U_uniforms_gamma - 1.0)) < (1.0e-6) ? (1.0e-6) : ((_u_U_uniforms_gamma - 1.0))));
+                        const eth_in = ((u1_raw_z == u1_raw_z) ? u1_raw_z : eth_floor);
+                        const eth_aux = ((eth_in) < (eth_floor) ? (eth_floor) : (eth_in));
                         const p_aux = (((((_u_U_uniforms_gamma - 1.0)) * eth_aux)) < (_u_U_uniforms_pressure_floor) ? (_u_U_uniforms_pressure_floor) : ((((_u_U_uniforms_gamma - 1.0)) * eth_aux)));
                         {
                             const _wbase = ((idx_c) * 4 + 0);
@@ -486,14 +491,16 @@ export default function _wgsl_module(rt) {
                             let mx = ((u0_raw_y == u0_raw_y) ? u0_raw_y : 0.0);
                             let my = ((u0_raw_z == u0_raw_z) ? u0_raw_z : 0.0);
                             let mz = ((u0_raw_w == u0_raw_w) ? u0_raw_w : 0.0);
-                            const rho = (((_x, _lo, _hi) => { const _mx = _x < _lo ? _lo : _x; return _hi < _mx ? _hi : _mx; })(u0_raw_x, DENSITY_FLOOR, 1.0e30));
+                            const rho_in = ((u0_raw_x == u0_raw_x) ? u0_raw_x : DENSITY_FLOOR);
+                            const rho = (((_x, _lo, _hi) => { const _mx = _x < _lo ? _lo : _x; return _hi < _mx ? _hi : _mx; })(rho_in, DENSITY_FLOOR, 1.0e30));
+                            const density_floored = (!((u0_raw_x > DENSITY_FLOOR)));
                             const V_MAX_SANE = 10.0;
                             const v_inv_rho = (1.0 / rho);
                             const vx_raw = (mx * v_inv_rho);
                             const vy_raw = (my * v_inv_rho);
                             const vz_raw = (mz * v_inv_rho);
                             const v_mag = Math.sqrt((((vx_raw * vx_raw) + (vy_raw * vy_raw)) + (vz_raw * vz_raw)));
-                            if ((v_mag > V_MAX_SANE)) {
+                            if ((density_floored && (v_mag > V_MAX_SANE))) {
                                 const scale = (V_MAX_SANE / v_mag);
                                 mx = (mx * scale);
                                 my = (my * scale);
@@ -501,9 +508,12 @@ export default function _wgsl_module(rt) {
                             }
                             const ke = ((0.5 * ((((mx * mx) + (my * my)) + (mz * mz)))) / rho);
                             const E_min = (ke + (_u_U_uniforms_pressure_floor / ((_u_U_uniforms_gamma - 1.0))));
-                            const E = (((_x, _lo, _hi) => { const _mx = _x < _lo ? _lo : _x; return _hi < _mx ? _hi : _mx; })(u1_raw_x, E_min, 1.0e30));
+                            const E_in = ((u1_raw_x == u1_raw_x) ? u1_raw_x : E_min);
+                            const E = (((_x, _lo, _hi) => { const _mx = _x < _lo ? _lo : _x; return _hi < _mx ? _hi : _mx; })(E_in, E_min, 1.0e30));
                             const bz = ((u1_raw_y == u1_raw_y) ? u1_raw_y : 0.0);
-                            const eth_aux = ((u1_raw_z) < ((_u_U_uniforms_pressure_floor / (((_u_U_uniforms_gamma - 1.0)) < (1.0e-6) ? (1.0e-6) : ((_u_U_uniforms_gamma - 1.0))))) ? ((_u_U_uniforms_pressure_floor / (((_u_U_uniforms_gamma - 1.0)) < (1.0e-6) ? (1.0e-6) : ((_u_U_uniforms_gamma - 1.0))))) : (u1_raw_z));
+                            const eth_floor = (_u_U_uniforms_pressure_floor / (((_u_U_uniforms_gamma - 1.0)) < (1.0e-6) ? (1.0e-6) : ((_u_U_uniforms_gamma - 1.0))));
+                            const eth_in = ((u1_raw_z == u1_raw_z) ? u1_raw_z : eth_floor);
+                            const eth_aux = ((eth_in) < (eth_floor) ? (eth_floor) : (eth_in));
                             const p_aux = (((((_u_U_uniforms_gamma - 1.0)) * eth_aux)) < (_u_U_uniforms_pressure_floor) ? (_u_U_uniforms_pressure_floor) : ((((_u_U_uniforms_gamma - 1.0)) * eth_aux)));
                             {
                                 const _wbase = ((idx_c) * 4 + 0);
@@ -718,14 +728,16 @@ export default function _wgsl_module(rt) {
                         let mx = ((u0_raw_y == u0_raw_y) ? u0_raw_y : 0.0);
                         let my = ((u0_raw_z == u0_raw_z) ? u0_raw_z : 0.0);
                         let mz = ((u0_raw_w == u0_raw_w) ? u0_raw_w : 0.0);
-                        const rho = (((_x, _lo, _hi) => { const _mx = _x < _lo ? _lo : _x; return _hi < _mx ? _hi : _mx; })(u0_raw_x, DENSITY_FLOOR, 1.0e30));
+                        const rho_in = ((u0_raw_x == u0_raw_x) ? u0_raw_x : DENSITY_FLOOR);
+                        const rho = (((_x, _lo, _hi) => { const _mx = _x < _lo ? _lo : _x; return _hi < _mx ? _hi : _mx; })(rho_in, DENSITY_FLOOR, 1.0e30));
+                        const density_floored = (!((u0_raw_x > DENSITY_FLOOR)));
                         const V_MAX_SANE = 10.0;
                         const v_inv_rho = (1.0 / rho);
                         const vx_raw = (mx * v_inv_rho);
                         const vy_raw = (my * v_inv_rho);
                         const vz_raw = (mz * v_inv_rho);
                         const v_mag = Math.sqrt((((vx_raw * vx_raw) + (vy_raw * vy_raw)) + (vz_raw * vz_raw)));
-                        if ((v_mag > V_MAX_SANE)) {
+                        if ((density_floored && (v_mag > V_MAX_SANE))) {
                             const scale = (V_MAX_SANE / v_mag);
                             mx = (mx * scale);
                             my = (my * scale);
@@ -733,9 +745,12 @@ export default function _wgsl_module(rt) {
                         }
                         const ke = ((0.5 * ((((mx * mx) + (my * my)) + (mz * mz)))) / rho);
                         const E_min = (ke + (_u_U_uniforms_pressure_floor / ((_u_U_uniforms_gamma - 1.0))));
-                        const E = (((_x, _lo, _hi) => { const _mx = _x < _lo ? _lo : _x; return _hi < _mx ? _hi : _mx; })(u1_raw_x, E_min, 1.0e30));
+                        const E_in = ((u1_raw_x == u1_raw_x) ? u1_raw_x : E_min);
+                        const E = (((_x, _lo, _hi) => { const _mx = _x < _lo ? _lo : _x; return _hi < _mx ? _hi : _mx; })(E_in, E_min, 1.0e30));
                         const bz = ((u1_raw_y == u1_raw_y) ? u1_raw_y : 0.0);
-                        const eth_aux = ((u1_raw_z) < ((_u_U_uniforms_pressure_floor / (((_u_U_uniforms_gamma - 1.0)) < (1.0e-6) ? (1.0e-6) : ((_u_U_uniforms_gamma - 1.0))))) ? ((_u_U_uniforms_pressure_floor / (((_u_U_uniforms_gamma - 1.0)) < (1.0e-6) ? (1.0e-6) : ((_u_U_uniforms_gamma - 1.0))))) : (u1_raw_z));
+                        const eth_floor = (_u_U_uniforms_pressure_floor / (((_u_U_uniforms_gamma - 1.0)) < (1.0e-6) ? (1.0e-6) : ((_u_U_uniforms_gamma - 1.0))));
+                        const eth_in = ((u1_raw_z == u1_raw_z) ? u1_raw_z : eth_floor);
+                        const eth_aux = ((eth_in) < (eth_floor) ? (eth_floor) : (eth_in));
                         const p_aux = (((((_u_U_uniforms_gamma - 1.0)) * eth_aux)) < (_u_U_uniforms_pressure_floor) ? (_u_U_uniforms_pressure_floor) : ((((_u_U_uniforms_gamma - 1.0)) * eth_aux)));
                         {
                             const _wbase = ((idx_c) * 4 + 0);
@@ -951,14 +966,16 @@ export default function _wgsl_module(rt) {
                     let mx = ((u0_raw_y == u0_raw_y) ? u0_raw_y : 0.0);
                     let my = ((u0_raw_z == u0_raw_z) ? u0_raw_z : 0.0);
                     let mz = ((u0_raw_w == u0_raw_w) ? u0_raw_w : 0.0);
-                    const rho = (((_x, _lo, _hi) => { const _mx = _x < _lo ? _lo : _x; return _hi < _mx ? _hi : _mx; })(u0_raw_x, DENSITY_FLOOR, 1.0e30));
+                    const rho_in = ((u0_raw_x == u0_raw_x) ? u0_raw_x : DENSITY_FLOOR);
+                    const rho = (((_x, _lo, _hi) => { const _mx = _x < _lo ? _lo : _x; return _hi < _mx ? _hi : _mx; })(rho_in, DENSITY_FLOOR, 1.0e30));
+                    const density_floored = (!((u0_raw_x > DENSITY_FLOOR)));
                     const V_MAX_SANE = 10.0;
                     const v_inv_rho = (1.0 / rho);
                     const vx_raw = (mx * v_inv_rho);
                     const vy_raw = (my * v_inv_rho);
                     const vz_raw = (mz * v_inv_rho);
                     const v_mag = Math.sqrt((((vx_raw * vx_raw) + (vy_raw * vy_raw)) + (vz_raw * vz_raw)));
-                    if ((v_mag > V_MAX_SANE)) {
+                    if ((density_floored && (v_mag > V_MAX_SANE))) {
                         const scale = (V_MAX_SANE / v_mag);
                         mx = (mx * scale);
                         my = (my * scale);
@@ -966,9 +983,12 @@ export default function _wgsl_module(rt) {
                     }
                     const ke = ((0.5 * ((((mx * mx) + (my * my)) + (mz * mz)))) / rho);
                     const E_min = (ke + (_u_U_uniforms_pressure_floor / ((_u_U_uniforms_gamma - 1.0))));
-                    const E = (((_x, _lo, _hi) => { const _mx = _x < _lo ? _lo : _x; return _hi < _mx ? _hi : _mx; })(u1_raw_x, E_min, 1.0e30));
+                    const E_in = ((u1_raw_x == u1_raw_x) ? u1_raw_x : E_min);
+                    const E = (((_x, _lo, _hi) => { const _mx = _x < _lo ? _lo : _x; return _hi < _mx ? _hi : _mx; })(E_in, E_min, 1.0e30));
                     const bz = ((u1_raw_y == u1_raw_y) ? u1_raw_y : 0.0);
-                    const eth_aux = ((u1_raw_z) < ((_u_U_uniforms_pressure_floor / (((_u_U_uniforms_gamma - 1.0)) < (1.0e-6) ? (1.0e-6) : ((_u_U_uniforms_gamma - 1.0))))) ? ((_u_U_uniforms_pressure_floor / (((_u_U_uniforms_gamma - 1.0)) < (1.0e-6) ? (1.0e-6) : ((_u_U_uniforms_gamma - 1.0))))) : (u1_raw_z));
+                    const eth_floor = (_u_U_uniforms_pressure_floor / (((_u_U_uniforms_gamma - 1.0)) < (1.0e-6) ? (1.0e-6) : ((_u_U_uniforms_gamma - 1.0))));
+                    const eth_in = ((u1_raw_z == u1_raw_z) ? u1_raw_z : eth_floor);
+                    const eth_aux = ((eth_in) < (eth_floor) ? (eth_floor) : (eth_in));
                     const p_aux = (((((_u_U_uniforms_gamma - 1.0)) * eth_aux)) < (_u_U_uniforms_pressure_floor) ? (_u_U_uniforms_pressure_floor) : ((((_u_U_uniforms_gamma - 1.0)) * eth_aux)));
                     {
                         const _wbase = ((idx_c) * 4 + 0);

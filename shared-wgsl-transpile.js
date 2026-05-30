@@ -1745,12 +1745,17 @@ class ExprResolver {
     module() {
         // Walk every function (helpers + entry points).
         for (const fnAst of this.sym.catalog.fns.values()) this.fn(fnAst);
-        // Type inferred (no-annotation) consts from their init exprs.
+        // Walk every const initializer so its operands get `.resolvedType` —
+        // without this, scalar arithmetic in an *annotated* const (e.g.
+        // `SCHWINGER_E_CR: f32 = ELECTRON_MASS * ELECTRON_MASS / BOSON_CHARGE`)
+        // emits as rt.mul/rt.div instead of inline scalar ops. Annotated
+        // consts already carry their declared type (set at catalog time, and
+        // visible to forward references via constTypes); only backfill the
+        // inferred (no-annotation) ones from the walked initializer type.
         for (const c of this.sym.catalog.constants.values()) {
-            if (c.value != null && !this.sym.constTypes.has(c.name)) {
-                const t = concretize(this.expr(c.value));
-                if (t) this.sym.constTypes.set(c.name, t);
-            }
+            if (c.value == null) continue;
+            const t = concretize(this.expr(c.value));
+            if (t && !this.sym.constTypes.has(c.name)) this.sym.constTypes.set(c.name, t);
         }
     }
 }
@@ -3781,8 +3786,11 @@ class Emitter {
     emitModule() {
         this.open(); // body lives inside the (implicit) module fn
 
-        // Constants and helper fns hoist into the closure.
-        for (const c of this.constants.values()) this.emitConst(c);
+        // Constants and helper fns hoist into the closure. WGSL lets module
+        // consts reference each other in any order; JS `const` has a temporal
+        // dead zone, so emit them dependency-first (geon's injected block has
+        // `SCHWINGER_E_CR = ELECTRON_MASS * …` declared before ELECTRON_MASS).
+        for (const c of this.sortedConstItems()) this.emitConst(c);
         if (this.constants.size > 0) this.blank();
 
         const reachableFns = this.opts.noDCE ? null : this.reachableFunctionNames();
@@ -3924,6 +3932,54 @@ class Emitter {
         this.localScopes = [];
         this.constScopes = [];
         this.line(`const ${_safe(c.name)} = ${this.expr(c.value)};`);
+    }
+
+    // Collect the names of other module consts referenced by an initializer
+    // expression. Generic AST walk so it survives any Expr node shape; skips
+    // resolvedType/loc to avoid traversing the (cyclic) type graph.
+    collectConstDeps(node, names, out, seen) {
+        if (!node || typeof node !== 'object') return;
+        if (seen.has(node)) return;
+        seen.add(node);
+        if (Array.isArray(node)) {
+            for (const x of node) this.collectConstDeps(x, names, out, seen);
+            return;
+        }
+        if (node.kind === 'ident' && names.has(node.name)) out.add(node.name);
+        for (const [k, v] of Object.entries(node)) {
+            if (k === 'resolvedType' || k === 'loc' || k === 'name' || k === 'kind') continue;
+            if (v && typeof v === 'object') this.collectConstDeps(v, names, out, seen);
+        }
+    }
+
+    // Module consts in dependency-first order (deps emitted before dependents),
+    // preserving source order among mutually-independent consts. A WGSL module
+    // can declare consts in any order; JS const can't forward-reference, so we
+    // topo-sort. Cyclic refs (impossible in valid WGSL) fall back to source
+    // order via the in-progress guard.
+    sortedConstItems() {
+        const items = [...this.constants.values()];
+        const names = new Set(items.map(c => c.name));
+        const byName = new Map(items.map(c => [c.name, c]));
+        const deps = new Map();
+        for (const c of items) {
+            const d = new Set();
+            this.collectConstDeps(c.value, names, d, new Set());
+            d.delete(c.name);
+            deps.set(c.name, d);
+        }
+        const ordered = [];
+        const state = new Map();   // name → 'visiting' | 'done'
+        const visit = (name) => {
+            const st = state.get(name);
+            if (st === 'done' || st === 'visiting') return;
+            state.set(name, 'visiting');
+            for (const dep of deps.get(name)) visit(dep);
+            state.set(name, 'done');
+            ordered.push(byName.get(name));
+        };
+        for (const c of items) visit(c.name);
+        return ordered;
     }
 
     scalarReturnCloneName(fnName, comp) {
@@ -7809,8 +7865,12 @@ class Emitter {
             return `rt.${callee}()`;
         }
 
-        // Atomic intrinsics: atomicLoad/Store/Add/...
-        if (callee.startsWith('atomic')) {
+        // Atomic intrinsics: atomicLoad/Store/Add/... A user-defined helper
+        // whose name merely starts with `atomic` (geon's
+        // `atomicAddParticleCount` wraps `atomicAdd`) is NOT an intrinsic —
+        // it lives in this.fns and must emit as a normal call, else it lowers
+        // to an undefined `rt.atomicAddParticleCount` that throws at dispatch.
+        if (callee.startsWith('atomic') && !this.fns.has(callee)) {
             return this.emitAtomicCall(e, args);
         }
 
@@ -7873,8 +7933,17 @@ class Emitter {
         // components, and multi-char combinations like `.xyz`,
         // `.rgba`, `.wzyx` as vec constructors.
         // Heuristic: if name is 1-4 chars of [xyzwrgba] (without
-        // mixing the two halves), treat as a swizzle.
-        if (name.length >= 1 && name.length <= 4 &&
+        // mixing the two halves), treat as a swizzle — but ONLY when the
+        // base is a vector. A struct field whose name happens to be
+        // swizzle chars (geon's PQS interpolation struct has `wx`/`wy`
+        // `array<f32,4>` fields) must stay a plain field access; otherwise
+        // `result.wx` lowers to `{x:result.w, y:result.x}` — silently wrong
+        // as a read and invalid JS as an lvalue. Unresolved bases keep the
+        // heuristic so unmodeled constructs still degrade gracefully (mirrors
+        // the `swizzleStoreComponents` vec-base guard on the store path).
+        const swizzleBaseType = e.value.resolvedType;
+        const swizzleEligible = !swizzleBaseType || swizzleBaseType.kind === 'vec';
+        if (swizzleEligible && name.length >= 1 && name.length <= 4 &&
                 /^[xyzw]+$|^[rgba]+$/.test(name)) {
             if (name.length === 1 && e.value?.kind === 'call') {
                 const direct = this.emitScalarReturnCloneCall(e.value, SWIZZLE_MAP[name]);
@@ -8489,10 +8558,21 @@ export function wrapEntry(_threadFn, _workgroupSize) {
  *                                       into `result.errors` instead of
  *                                       throwing on the first failure.
  *                                       Used by the build-time walker.
+ * @param {string} [opts.prependSource]  WGSL source prepended verbatim
+ *                                       before tokenizing. For sims that
+ *                                       inject a generated const block at
+ *                                       runtime (e.g. geon's
+ *                                       buildWGSLConstants()) that lives in
+ *                                       no .wgsl file. Kept in opts (not the
+ *                                       source unit) so the build-time
+ *                                       source-hash stays over the on-disk
+ *                                       helpers+entry, while build-smoke can
+ *                                       still reproduce the exact transpile
+ *                                       from the serialized opts alone.
  * @returns {{ jsSource: string, body: string, entryPoints: string[], bindings: string[], entryInfo: object, metrics: object, errors: Array<{phase:string,kind:string,message:string,line:number,col:number}> }}
  */
 export function transpileWGSL(source, opts = {}) {
-    const tokens = tokenize(source);
+    const tokens = tokenize(opts.prependSource ? opts.prependSource + '\n' + source : source);
     const ast = parse(tokens);
     const sym = !opts.polymorphic ? resolveModule(ast) : null;
     if (!opts.polymorphic && !opts.noInline) inlineModulePass(ast, opts);
@@ -8563,7 +8643,7 @@ export function transpileWGSL(source, opts = {}) {
  */
 export function compileWGSL(source, opts = {}) {
     const rt     = opts.runtime || runtime;
-    const tokens = tokenize(source);
+    const tokens = tokenize(opts.prependSource ? opts.prependSource + '\n' + source : source);
     const ast    = parse(tokens);
     // Run the resolver so the emitter sees `.resolvedType` on every
     // Expr node and can emit inline scalar/vec ops where possible.

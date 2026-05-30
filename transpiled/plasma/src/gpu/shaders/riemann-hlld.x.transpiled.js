@@ -1,12 +1,12 @@
 // Auto-generated from WGSL by _build.mjs — DO NOT EDIT.
 // source: plasma/src/gpu/shaders/riemann-hlld.wgsl
 // wgsl-variant: x
-// helpers-sha256: eefe8364e4418fe1122eaec2c334fc5ddb0dee0d50920de592e31eb98cc89805
-// wgsl-transpile sha256: 01c47e5da9a1f716edf6006c05d4a5d9e72a6ebab94bcca8d57ffce7a8177d22
-// wgsl-transpiler-sha256: ac640ff2e57bd5c92b7bae5ed9f847914e51684c046fab990cf544842ad38716
+// helpers-sha256: 8c943a8b7cf30e7437759a9bdb9e53a56f237ffd05d70eb845b914f6b4e2b846
+// wgsl-transpile sha256: 2f9a132415e1a326e7862d3acb15063a2351f9c3070be6f6ea9a84e1e5bc841c
+// wgsl-transpiler-sha256: d470123cbc6f7ec463bb1b3d6f64125e4819e92c84ce8bb0c08470cb4cdd8758
 // wgsl-opts: {"flatStorage":true,"collectErrors":true,"specializeUniforms":{"sweep":{"sweep_dir":0}},"specializeFunctionParams":{"fast_mag_speed":{"axis":0},"mhd_flux":{"axis":0},"normal_velocity_mhd":{"axis":0},"permute_prim":{"axis":0},"pack_prim_pair_from_vec7":{"axis":0},"unpack_edge_prim":{"axis":0},"prim_to_axis_state":{"axis":0},"pack_flux":{"axis":0},"hll_flux_mhd":{"axis":0}}}
-// wgsl-metrics: {"bytes":304921,"lines":5168,"rtVec":0,"rtPoly":0,"rtAtomic":0,"rtNumeric":0,"fround":0,"hypot":0,"iife":0,"workgroupReductionInits":0,"flatWorkgroupArrays":0,"flatWorkgroupSlots":0,"staticBranchPrunes":24}
-// generated: 2026-05-27T17:41:05.231Z
+// wgsl-metrics: {"bytes":304793,"lines":5168,"rtVec":0,"rtPoly":0,"rtAtomic":0,"rtNumeric":0,"fround":0,"hypot":0,"iife":0,"workgroupReductionInits":0,"flatWorkgroupArrays":0,"flatWorkgroupSlots":0,"staticBranchPrunes":24}
+// generated: 2026-05-30T21:32:08.772Z
 export default function _wgsl_module(rt) {
     const FLAG_COOLING = (1 << 0);
     const FLAG_GRAVITY_EXT = (1 << 1);
@@ -589,7 +589,7 @@ export default function _wgsl_module(rt) {
                     const rcL_pre = (AL_rho * ((SL - AL_un)));
                     const rcR_pre = (AR_rho * ((SR - AR_un)));
                     const SM_den_pre = (rcR_pre - rcL_pre);
-                    const SM_face = ((((((rcR_pre * AR_un) - (rcL_pre * AL_un)) - AR_pT) + AL_pT)) / ((Math.abs(SM_den_pre) < 1.0e-30) ? (Math.sign(SM_den_pre) * 1.0e-12) : SM_den_pre));
+                    const SM_face = ((((((rcR_pre * AR_un) - (rcL_pre * AL_un)) - AR_pT) + AL_pT)) / ((Math.abs(SM_den_pre) < 1.0e-30) ? ((SM_den_pre < 0.0) ? (-1.0e-12) : 1.0e-12) : SM_den_pre));
                     const dst = idx_r;
                     if ((SL >= 0.0)) {
                         const _sroa_13 = pack_flux({ f_rho: FL_f_rho, f_mn: FL_f_mn, f_mt1: FL_f_mt1, f_mt2: FL_f_mt2, f_E: FL_f_E, f_bt1: FL_f_bt1, f_bt2: FL_f_bt2 }, axis);
@@ -942,8 +942,8 @@ export default function _wgsl_module(rt) {
                         const denom_R = (((SR - SM)) < (1.0e-20) ? (1.0e-20) : ((SR - SM)));
                         const rhoLs = ((AL_rho * ((SL - AL_un))) / denom_L);
                         const rhoRs = ((AR_rho * ((SR - AR_un))) / denom_R);
-                        const E_Ls = (((((((SL - AL_un)) * AL_E) - (AL_pT * AL_un)) + (pT_star * SM))) / ((SL - SM)));
-                        const E_Rs = (((((((SR - AR_un)) * AR_E) - (AR_pT * AR_un)) + (pT_star * SM))) / ((SR - SM)));
+                        const E_Ls = (((((((SL - AL_un)) * AL_E) - (AL_pT * AL_un)) + (pT_star * SM))) / denom_L);
+                        const E_Rs = (((((((SR - AR_un)) * AR_E) - (AR_pT * AR_un)) + (pT_star * SM))) / denom_R);
                         let _inl_20_result;
                         _inl_20: {
                             let _inl_20__inl_6_result;
@@ -1124,16 +1124,16 @@ export default function _wgsl_module(rt) {
                             Fout_f_mt1 = (FL_f_mt1 + (SL * (((rhoLs * AL_ut1) - (AL_rho * AL_ut1)))));
                             Fout_f_mt2 = (FL_f_mt2 + (SL * (((rhoLs * AL_ut2) - (AL_rho * AL_ut2)))));
                             Fout_f_E = (FL_f_E + (SL * ((E_Ls - AL_E))));
-                            Fout_f_bt1 = (FL_f_bt1 + (SL * ((((AL_bt1 * ((SL - AL_un))) / ((SL - SM))) - AL_bt1))));
-                            Fout_f_bt2 = (FL_f_bt2 + (SL * ((((AL_bt2 * ((SL - AL_un))) / ((SL - SM))) - AL_bt2))));
+                            Fout_f_bt1 = (FL_f_bt1 + (SL * ((((AL_bt1 * ((SL - AL_un))) / denom_L) - AL_bt1))));
+                            Fout_f_bt2 = (FL_f_bt2 + (SL * ((((AL_bt2 * ((SL - AL_un))) / denom_L) - AL_bt2))));
                         } else {
                             Fout_f_rho = (FR_f_rho + (SR * ((rhoRs - AR_rho))));
                             Fout_f_mn = (FR_f_mn + (SR * (((rhoRs * SM) - (AR_rho * AR_un)))));
                             Fout_f_mt1 = (FR_f_mt1 + (SR * (((rhoRs * AR_ut1) - (AR_rho * AR_ut1)))));
                             Fout_f_mt2 = (FR_f_mt2 + (SR * (((rhoRs * AR_ut2) - (AR_rho * AR_ut2)))));
                             Fout_f_E = (FR_f_E + (SR * ((E_Rs - AR_E))));
-                            Fout_f_bt1 = (FR_f_bt1 + (SR * ((((AR_bt1 * ((SR - AR_un))) / ((SR - SM))) - AR_bt1))));
-                            Fout_f_bt2 = (FR_f_bt2 + (SR * ((((AR_bt2 * ((SR - AR_un))) / ((SR - SM))) - AR_bt2))));
+                            Fout_f_bt1 = (FR_f_bt1 + (SR * ((((AR_bt1 * ((SR - AR_un))) / denom_R) - AR_bt1))));
+                            Fout_f_bt2 = (FR_f_bt2 + (SR * ((((AR_bt2 * ((SR - AR_un))) / denom_R) - AR_bt2))));
                         }
                         const _sroa_18 = pack_flux({ f_rho: Fout_f_rho, f_mn: Fout_f_mn, f_mt1: Fout_f_mt1, f_mt2: Fout_f_mt2, f_E: Fout_f_E, f_bt1: Fout_f_bt1, f_bt2: Fout_f_bt2 }, axis);
                         const pfA_f0_x = _sroa_18.f0.x;
@@ -1189,8 +1189,8 @@ export default function _wgsl_module(rt) {
                     const vdotb_R = (((AR_un * b_normal) + (AR_ut1 * AR_bt1)) + (AR_ut2 * AR_bt2));
                     const vdotbLs = (((SM * b_normal) + (ut1_Ls * bt1_Ls)) + (ut2_Ls * bt2_Ls));
                     const vdotbRs = (((SM * b_normal) + (ut1_Rs * bt1_Rs)) + (ut2_Rs * bt2_Rs));
-                    const E_Ls = ((((((((SL - AL_un)) * AL_E) - (AL_pT * AL_un)) + (pT_star * SM)) + (b_normal * ((vdotb_L - vdotbLs))))) / ((SL - SM)));
-                    const E_Rs = ((((((((SR - AR_un)) * AR_E) - (AR_pT * AR_un)) + (pT_star * SM)) + (b_normal * ((vdotb_R - vdotbRs))))) / ((SR - SM)));
+                    const E_Ls = ((((((((SL - AL_un)) * AL_E) - (AL_pT * AL_un)) + (pT_star * SM)) + (b_normal * ((vdotb_L - vdotbLs))))) / dL);
+                    const E_Rs = ((((((((SR - AR_un)) * AR_E) - (AR_pT * AR_un)) + (pT_star * SM)) + (b_normal * ((vdotb_R - vdotbRs))))) / dR);
                     let _inl_22_result;
                     _inl_22: {
                         _inl_22_result = (((pT_star == pT_star)) && ((Math.abs(pT_star) < 1.0e30)));
@@ -1770,7 +1770,7 @@ export default function _wgsl_module(rt) {
                             const rcL_pre = (AL_rho * ((SL - AL_un)));
                             const rcR_pre = (AR_rho * ((SR - AR_un)));
                             const SM_den_pre = (rcR_pre - rcL_pre);
-                            const SM_face = ((((((rcR_pre * AR_un) - (rcL_pre * AL_un)) - AR_pT) + AL_pT)) / ((Math.abs(SM_den_pre) < 1.0e-30) ? (Math.sign(SM_den_pre) * 1.0e-12) : SM_den_pre));
+                            const SM_face = ((((((rcR_pre * AR_un) - (rcL_pre * AL_un)) - AR_pT) + AL_pT)) / ((Math.abs(SM_den_pre) < 1.0e-30) ? ((SM_den_pre < 0.0) ? (-1.0e-12) : 1.0e-12) : SM_den_pre));
                             const dst = idx_r;
                             if ((SL >= 0.0)) {
                                 const _sroa_28 = pack_flux({ f_rho: FL_f_rho, f_mn: FL_f_mn, f_mt1: FL_f_mt1, f_mt2: FL_f_mt2, f_E: FL_f_E, f_bt1: FL_f_bt1, f_bt2: FL_f_bt2 }, axis);
@@ -2123,8 +2123,8 @@ export default function _wgsl_module(rt) {
                                 const denom_R = (((SR - SM)) < (1.0e-20) ? (1.0e-20) : ((SR - SM)));
                                 const rhoLs = ((AL_rho * ((SL - AL_un))) / denom_L);
                                 const rhoRs = ((AR_rho * ((SR - AR_un))) / denom_R);
-                                const E_Ls = (((((((SL - AL_un)) * AL_E) - (AL_pT * AL_un)) + (pT_star * SM))) / ((SL - SM)));
-                                const E_Rs = (((((((SR - AR_un)) * AR_E) - (AR_pT * AR_un)) + (pT_star * SM))) / ((SR - SM)));
+                                const E_Ls = (((((((SL - AL_un)) * AL_E) - (AL_pT * AL_un)) + (pT_star * SM))) / denom_L);
+                                const E_Rs = (((((((SR - AR_un)) * AR_E) - (AR_pT * AR_un)) + (pT_star * SM))) / denom_R);
                                 let _inl_20_result;
                                 _inl_20: {
                                     let _inl_20__inl_6_result;
@@ -2305,16 +2305,16 @@ export default function _wgsl_module(rt) {
                                     Fout_f_mt1 = (FL_f_mt1 + (SL * (((rhoLs * AL_ut1) - (AL_rho * AL_ut1)))));
                                     Fout_f_mt2 = (FL_f_mt2 + (SL * (((rhoLs * AL_ut2) - (AL_rho * AL_ut2)))));
                                     Fout_f_E = (FL_f_E + (SL * ((E_Ls - AL_E))));
-                                    Fout_f_bt1 = (FL_f_bt1 + (SL * ((((AL_bt1 * ((SL - AL_un))) / ((SL - SM))) - AL_bt1))));
-                                    Fout_f_bt2 = (FL_f_bt2 + (SL * ((((AL_bt2 * ((SL - AL_un))) / ((SL - SM))) - AL_bt2))));
+                                    Fout_f_bt1 = (FL_f_bt1 + (SL * ((((AL_bt1 * ((SL - AL_un))) / denom_L) - AL_bt1))));
+                                    Fout_f_bt2 = (FL_f_bt2 + (SL * ((((AL_bt2 * ((SL - AL_un))) / denom_L) - AL_bt2))));
                                 } else {
                                     Fout_f_rho = (FR_f_rho + (SR * ((rhoRs - AR_rho))));
                                     Fout_f_mn = (FR_f_mn + (SR * (((rhoRs * SM) - (AR_rho * AR_un)))));
                                     Fout_f_mt1 = (FR_f_mt1 + (SR * (((rhoRs * AR_ut1) - (AR_rho * AR_ut1)))));
                                     Fout_f_mt2 = (FR_f_mt2 + (SR * (((rhoRs * AR_ut2) - (AR_rho * AR_ut2)))));
                                     Fout_f_E = (FR_f_E + (SR * ((E_Rs - AR_E))));
-                                    Fout_f_bt1 = (FR_f_bt1 + (SR * ((((AR_bt1 * ((SR - AR_un))) / ((SR - SM))) - AR_bt1))));
-                                    Fout_f_bt2 = (FR_f_bt2 + (SR * ((((AR_bt2 * ((SR - AR_un))) / ((SR - SM))) - AR_bt2))));
+                                    Fout_f_bt1 = (FR_f_bt1 + (SR * ((((AR_bt1 * ((SR - AR_un))) / denom_R) - AR_bt1))));
+                                    Fout_f_bt2 = (FR_f_bt2 + (SR * ((((AR_bt2 * ((SR - AR_un))) / denom_R) - AR_bt2))));
                                 }
                                 const _sroa_33 = pack_flux({ f_rho: Fout_f_rho, f_mn: Fout_f_mn, f_mt1: Fout_f_mt1, f_mt2: Fout_f_mt2, f_E: Fout_f_E, f_bt1: Fout_f_bt1, f_bt2: Fout_f_bt2 }, axis);
                                 const pfA_f0_x = _sroa_33.f0.x;
@@ -2370,8 +2370,8 @@ export default function _wgsl_module(rt) {
                             const vdotb_R = (((AR_un * b_normal) + (AR_ut1 * AR_bt1)) + (AR_ut2 * AR_bt2));
                             const vdotbLs = (((SM * b_normal) + (ut1_Ls * bt1_Ls)) + (ut2_Ls * bt2_Ls));
                             const vdotbRs = (((SM * b_normal) + (ut1_Rs * bt1_Rs)) + (ut2_Rs * bt2_Rs));
-                            const E_Ls = ((((((((SL - AL_un)) * AL_E) - (AL_pT * AL_un)) + (pT_star * SM)) + (b_normal * ((vdotb_L - vdotbLs))))) / ((SL - SM)));
-                            const E_Rs = ((((((((SR - AR_un)) * AR_E) - (AR_pT * AR_un)) + (pT_star * SM)) + (b_normal * ((vdotb_R - vdotbRs))))) / ((SR - SM)));
+                            const E_Ls = ((((((((SL - AL_un)) * AL_E) - (AL_pT * AL_un)) + (pT_star * SM)) + (b_normal * ((vdotb_L - vdotbLs))))) / dL);
+                            const E_Rs = ((((((((SR - AR_un)) * AR_E) - (AR_pT * AR_un)) + (pT_star * SM)) + (b_normal * ((vdotb_R - vdotbRs))))) / dR);
                             let _inl_22_result;
                             _inl_22: {
                                 _inl_22_result = (((pT_star == pT_star)) && ((Math.abs(pT_star) < 1.0e30)));
@@ -2951,7 +2951,7 @@ export default function _wgsl_module(rt) {
                         const rcL_pre = (AL_rho * ((SL - AL_un)));
                         const rcR_pre = (AR_rho * ((SR - AR_un)));
                         const SM_den_pre = (rcR_pre - rcL_pre);
-                        const SM_face = ((((((rcR_pre * AR_un) - (rcL_pre * AL_un)) - AR_pT) + AL_pT)) / ((Math.abs(SM_den_pre) < 1.0e-30) ? (Math.sign(SM_den_pre) * 1.0e-12) : SM_den_pre));
+                        const SM_face = ((((((rcR_pre * AR_un) - (rcL_pre * AL_un)) - AR_pT) + AL_pT)) / ((Math.abs(SM_den_pre) < 1.0e-30) ? ((SM_den_pre < 0.0) ? (-1.0e-12) : 1.0e-12) : SM_den_pre));
                         const dst = idx_r;
                         if ((SL >= 0.0)) {
                             const _sroa_43 = pack_flux({ f_rho: FL_f_rho, f_mn: FL_f_mn, f_mt1: FL_f_mt1, f_mt2: FL_f_mt2, f_E: FL_f_E, f_bt1: FL_f_bt1, f_bt2: FL_f_bt2 }, axis);
@@ -3304,8 +3304,8 @@ export default function _wgsl_module(rt) {
                             const denom_R = (((SR - SM)) < (1.0e-20) ? (1.0e-20) : ((SR - SM)));
                             const rhoLs = ((AL_rho * ((SL - AL_un))) / denom_L);
                             const rhoRs = ((AR_rho * ((SR - AR_un))) / denom_R);
-                            const E_Ls = (((((((SL - AL_un)) * AL_E) - (AL_pT * AL_un)) + (pT_star * SM))) / ((SL - SM)));
-                            const E_Rs = (((((((SR - AR_un)) * AR_E) - (AR_pT * AR_un)) + (pT_star * SM))) / ((SR - SM)));
+                            const E_Ls = (((((((SL - AL_un)) * AL_E) - (AL_pT * AL_un)) + (pT_star * SM))) / denom_L);
+                            const E_Rs = (((((((SR - AR_un)) * AR_E) - (AR_pT * AR_un)) + (pT_star * SM))) / denom_R);
                             let _inl_20_result;
                             _inl_20: {
                                 let _inl_20__inl_6_result;
@@ -3486,16 +3486,16 @@ export default function _wgsl_module(rt) {
                                 Fout_f_mt1 = (FL_f_mt1 + (SL * (((rhoLs * AL_ut1) - (AL_rho * AL_ut1)))));
                                 Fout_f_mt2 = (FL_f_mt2 + (SL * (((rhoLs * AL_ut2) - (AL_rho * AL_ut2)))));
                                 Fout_f_E = (FL_f_E + (SL * ((E_Ls - AL_E))));
-                                Fout_f_bt1 = (FL_f_bt1 + (SL * ((((AL_bt1 * ((SL - AL_un))) / ((SL - SM))) - AL_bt1))));
-                                Fout_f_bt2 = (FL_f_bt2 + (SL * ((((AL_bt2 * ((SL - AL_un))) / ((SL - SM))) - AL_bt2))));
+                                Fout_f_bt1 = (FL_f_bt1 + (SL * ((((AL_bt1 * ((SL - AL_un))) / denom_L) - AL_bt1))));
+                                Fout_f_bt2 = (FL_f_bt2 + (SL * ((((AL_bt2 * ((SL - AL_un))) / denom_L) - AL_bt2))));
                             } else {
                                 Fout_f_rho = (FR_f_rho + (SR * ((rhoRs - AR_rho))));
                                 Fout_f_mn = (FR_f_mn + (SR * (((rhoRs * SM) - (AR_rho * AR_un)))));
                                 Fout_f_mt1 = (FR_f_mt1 + (SR * (((rhoRs * AR_ut1) - (AR_rho * AR_ut1)))));
                                 Fout_f_mt2 = (FR_f_mt2 + (SR * (((rhoRs * AR_ut2) - (AR_rho * AR_ut2)))));
                                 Fout_f_E = (FR_f_E + (SR * ((E_Rs - AR_E))));
-                                Fout_f_bt1 = (FR_f_bt1 + (SR * ((((AR_bt1 * ((SR - AR_un))) / ((SR - SM))) - AR_bt1))));
-                                Fout_f_bt2 = (FR_f_bt2 + (SR * ((((AR_bt2 * ((SR - AR_un))) / ((SR - SM))) - AR_bt2))));
+                                Fout_f_bt1 = (FR_f_bt1 + (SR * ((((AR_bt1 * ((SR - AR_un))) / denom_R) - AR_bt1))));
+                                Fout_f_bt2 = (FR_f_bt2 + (SR * ((((AR_bt2 * ((SR - AR_un))) / denom_R) - AR_bt2))));
                             }
                             const _sroa_48 = pack_flux({ f_rho: Fout_f_rho, f_mn: Fout_f_mn, f_mt1: Fout_f_mt1, f_mt2: Fout_f_mt2, f_E: Fout_f_E, f_bt1: Fout_f_bt1, f_bt2: Fout_f_bt2 }, axis);
                             const pfA_f0_x = _sroa_48.f0.x;
@@ -3551,8 +3551,8 @@ export default function _wgsl_module(rt) {
                         const vdotb_R = (((AR_un * b_normal) + (AR_ut1 * AR_bt1)) + (AR_ut2 * AR_bt2));
                         const vdotbLs = (((SM * b_normal) + (ut1_Ls * bt1_Ls)) + (ut2_Ls * bt2_Ls));
                         const vdotbRs = (((SM * b_normal) + (ut1_Rs * bt1_Rs)) + (ut2_Rs * bt2_Rs));
-                        const E_Ls = ((((((((SL - AL_un)) * AL_E) - (AL_pT * AL_un)) + (pT_star * SM)) + (b_normal * ((vdotb_L - vdotbLs))))) / ((SL - SM)));
-                        const E_Rs = ((((((((SR - AR_un)) * AR_E) - (AR_pT * AR_un)) + (pT_star * SM)) + (b_normal * ((vdotb_R - vdotbRs))))) / ((SR - SM)));
+                        const E_Ls = ((((((((SL - AL_un)) * AL_E) - (AL_pT * AL_un)) + (pT_star * SM)) + (b_normal * ((vdotb_L - vdotbLs))))) / dL);
+                        const E_Rs = ((((((((SR - AR_un)) * AR_E) - (AR_pT * AR_un)) + (pT_star * SM)) + (b_normal * ((vdotb_R - vdotbRs))))) / dR);
                         let _inl_22_result;
                         _inl_22: {
                             _inl_22_result = (((pT_star == pT_star)) && ((Math.abs(pT_star) < 1.0e30)));
@@ -4133,7 +4133,7 @@ export default function _wgsl_module(rt) {
                     const rcL_pre = (AL_rho * ((SL - AL_un)));
                     const rcR_pre = (AR_rho * ((SR - AR_un)));
                     const SM_den_pre = (rcR_pre - rcL_pre);
-                    const SM_face = ((((((rcR_pre * AR_un) - (rcL_pre * AL_un)) - AR_pT) + AL_pT)) / ((Math.abs(SM_den_pre) < 1.0e-30) ? (Math.sign(SM_den_pre) * 1.0e-12) : SM_den_pre));
+                    const SM_face = ((((((rcR_pre * AR_un) - (rcL_pre * AL_un)) - AR_pT) + AL_pT)) / ((Math.abs(SM_den_pre) < 1.0e-30) ? ((SM_den_pre < 0.0) ? (-1.0e-12) : 1.0e-12) : SM_den_pre));
                     const dst = idx_r;
                     if ((SL >= 0.0)) {
                         const _sroa_58 = pack_flux({ f_rho: FL_f_rho, f_mn: FL_f_mn, f_mt1: FL_f_mt1, f_mt2: FL_f_mt2, f_E: FL_f_E, f_bt1: FL_f_bt1, f_bt2: FL_f_bt2 }, axis);
@@ -4486,8 +4486,8 @@ export default function _wgsl_module(rt) {
                         const denom_R = (((SR - SM)) < (1.0e-20) ? (1.0e-20) : ((SR - SM)));
                         const rhoLs = ((AL_rho * ((SL - AL_un))) / denom_L);
                         const rhoRs = ((AR_rho * ((SR - AR_un))) / denom_R);
-                        const E_Ls = (((((((SL - AL_un)) * AL_E) - (AL_pT * AL_un)) + (pT_star * SM))) / ((SL - SM)));
-                        const E_Rs = (((((((SR - AR_un)) * AR_E) - (AR_pT * AR_un)) + (pT_star * SM))) / ((SR - SM)));
+                        const E_Ls = (((((((SL - AL_un)) * AL_E) - (AL_pT * AL_un)) + (pT_star * SM))) / denom_L);
+                        const E_Rs = (((((((SR - AR_un)) * AR_E) - (AR_pT * AR_un)) + (pT_star * SM))) / denom_R);
                         let _inl_20_result;
                         _inl_20: {
                             let _inl_20__inl_6_result;
@@ -4668,16 +4668,16 @@ export default function _wgsl_module(rt) {
                             Fout_f_mt1 = (FL_f_mt1 + (SL * (((rhoLs * AL_ut1) - (AL_rho * AL_ut1)))));
                             Fout_f_mt2 = (FL_f_mt2 + (SL * (((rhoLs * AL_ut2) - (AL_rho * AL_ut2)))));
                             Fout_f_E = (FL_f_E + (SL * ((E_Ls - AL_E))));
-                            Fout_f_bt1 = (FL_f_bt1 + (SL * ((((AL_bt1 * ((SL - AL_un))) / ((SL - SM))) - AL_bt1))));
-                            Fout_f_bt2 = (FL_f_bt2 + (SL * ((((AL_bt2 * ((SL - AL_un))) / ((SL - SM))) - AL_bt2))));
+                            Fout_f_bt1 = (FL_f_bt1 + (SL * ((((AL_bt1 * ((SL - AL_un))) / denom_L) - AL_bt1))));
+                            Fout_f_bt2 = (FL_f_bt2 + (SL * ((((AL_bt2 * ((SL - AL_un))) / denom_L) - AL_bt2))));
                         } else {
                             Fout_f_rho = (FR_f_rho + (SR * ((rhoRs - AR_rho))));
                             Fout_f_mn = (FR_f_mn + (SR * (((rhoRs * SM) - (AR_rho * AR_un)))));
                             Fout_f_mt1 = (FR_f_mt1 + (SR * (((rhoRs * AR_ut1) - (AR_rho * AR_ut1)))));
                             Fout_f_mt2 = (FR_f_mt2 + (SR * (((rhoRs * AR_ut2) - (AR_rho * AR_ut2)))));
                             Fout_f_E = (FR_f_E + (SR * ((E_Rs - AR_E))));
-                            Fout_f_bt1 = (FR_f_bt1 + (SR * ((((AR_bt1 * ((SR - AR_un))) / ((SR - SM))) - AR_bt1))));
-                            Fout_f_bt2 = (FR_f_bt2 + (SR * ((((AR_bt2 * ((SR - AR_un))) / ((SR - SM))) - AR_bt2))));
+                            Fout_f_bt1 = (FR_f_bt1 + (SR * ((((AR_bt1 * ((SR - AR_un))) / denom_R) - AR_bt1))));
+                            Fout_f_bt2 = (FR_f_bt2 + (SR * ((((AR_bt2 * ((SR - AR_un))) / denom_R) - AR_bt2))));
                         }
                         const _sroa_63 = pack_flux({ f_rho: Fout_f_rho, f_mn: Fout_f_mn, f_mt1: Fout_f_mt1, f_mt2: Fout_f_mt2, f_E: Fout_f_E, f_bt1: Fout_f_bt1, f_bt2: Fout_f_bt2 }, axis);
                         const pfA_f0_x = _sroa_63.f0.x;
@@ -4733,8 +4733,8 @@ export default function _wgsl_module(rt) {
                     const vdotb_R = (((AR_un * b_normal) + (AR_ut1 * AR_bt1)) + (AR_ut2 * AR_bt2));
                     const vdotbLs = (((SM * b_normal) + (ut1_Ls * bt1_Ls)) + (ut2_Ls * bt2_Ls));
                     const vdotbRs = (((SM * b_normal) + (ut1_Rs * bt1_Rs)) + (ut2_Rs * bt2_Rs));
-                    const E_Ls = ((((((((SL - AL_un)) * AL_E) - (AL_pT * AL_un)) + (pT_star * SM)) + (b_normal * ((vdotb_L - vdotbLs))))) / ((SL - SM)));
-                    const E_Rs = ((((((((SR - AR_un)) * AR_E) - (AR_pT * AR_un)) + (pT_star * SM)) + (b_normal * ((vdotb_R - vdotbRs))))) / ((SR - SM)));
+                    const E_Ls = ((((((((SL - AL_un)) * AL_E) - (AL_pT * AL_un)) + (pT_star * SM)) + (b_normal * ((vdotb_L - vdotbLs))))) / dL);
+                    const E_Rs = ((((((((SR - AR_un)) * AR_E) - (AR_pT * AR_un)) + (pT_star * SM)) + (b_normal * ((vdotb_R - vdotbRs))))) / dR);
                     let _inl_22_result;
                     _inl_22: {
                         _inl_22_result = (((pT_star == pT_star)) && ((Math.abs(pT_star) < 1.0e30)));

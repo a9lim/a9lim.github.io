@@ -713,6 +713,30 @@ function bcModeGridVariants() {
   })));
 }
 
+// Geon prepends a generated WGSL const block (config.js values + palette
+// colors) to every shader at runtime via buildWGSLConstants(). Those consts
+// (EPSILON, GRID, FLAG_*, capacity limits, …) live in no .wgsl file, so the
+// build-time transpile needs the same block injected as `prependSource`.
+// buildWGSLConstants() is browser-oriented; shim the two globals it needs so
+// it runs headless. config.js is pure (no DOM); shared-tokens.js sets the
+// palette globals at import time.
+async function geonWGSLConstants() {
+  globalThis.window = globalThis.window || {};
+  globalThis.document = globalThis.document || {
+    createElement: () => ({ style: {}, appendChild() {} }),
+    head: { appendChild() {} },
+  };
+  await import('./shared-tokens.js');
+  const { buildWGSLConstants } = await import('./geon/src/gpu/gpu-constants.js');
+  let block = buildWGSLConstants();
+  // Spin-ring colors derive from palette hue fields (spinPos/spinNeg) that are
+  // injected only by browser-side project setup; headless they evaluate to
+  // non-finite. No compute shader references COLOR_SPIN_*, so sanitize the
+  // non-finite literals to keep the prepended block parseable.
+  block = block.replace(/\bNaN(\.0)?\b/g, '0.0').replace(/-?\bInfinity(\.0)?\b/g, '0.0');
+  return block;
+}
+
 const WGSL_SHADER_DIRS = [
   {
     dir: 'plasma/src/gpu/shaders',
@@ -778,6 +802,31 @@ const WGSL_SHADER_DIRS = [
       })),
     },
   },
+  {
+    dir: 'geon/src/gpu/shaders',
+    prependSource: geonWGSLConstants,   // resolved (awaited) before the loop
+    opts: {
+      flatStorage: true,
+      collectErrors: true,
+    },
+    // Excluded until the transpiler grows the features these need — without
+    // exclusion they emit SILENTLY WRONG JS, not a build error, so the gate
+    // here is a correctness safeguard, not just scope management:
+    //   - loop/if-carried workgroupBarrier(): runtime barrier is a no-op and
+    //     splitPhases only lifts top-level barriers, so each invocation runs
+    //     the whole reduction/tile loop independently → garbage reductions.
+    //   - scalar ptr<function,f32> out-params: helper mutates a by-value JS
+    //     number, write-back is dropped → caller never sees the result.
+    // See tests/wgsl-transpile/README.md "Geon integration" for the plan.
+    exclude: [
+      'collision.wgsl',      // loop-carried barrier
+      'compute-stats.wgsl',  // loop-carried barrier (tree reductions)
+      'pair-force.wgsl',     // loop-carried barrier (tiled accumulation)
+      'quadrupole.wgsl',     // loop-carried barrier
+      'heatmap.wgsl',        // scalar ptr<function,f32> out-params (gPhi/ePhi/yPhi)
+      'field-forces.wgsl',   // ptr<storage,array<f32>> + scalar deref helpers
+    ],
+  },
 ];
 
 const WGSL_FORCE = process.argv.includes('--force-wgsl');
@@ -835,12 +884,18 @@ function artifactJobsFor(rec, baseOpts, shaderOpts = {}, variants = {}) {
   return jobs;
 }
 
-function transpileOneDir({ dir, opts, shaderOpts = {}, variants }) {
+function transpileOneDir({ dir, opts, shaderOpts = {}, variants, prependSource, exclude = [] }) {
   const dirAbs = join(ROOT, dir);
   if (!existsSync(dirAbs)) {
     console.log(`wgsl-transpile: skipping ${dir} (not present)`);
-    return { entries: 0, written: 0, skipped: 0, errors: [] };
+    return { entries: 0, written: 0, skipped: 0, errors: [], excluded: [] };
   }
+  // prependSource (a generated const block injected ahead of every unit) is
+  // carried in opts so it serializes into the artifact header — build-smoke
+  // reproduces the exact transpile from opts alone, and the on-disk source
+  // hash stays over the real helpers+entry unit.
+  const baseOpts = prependSource ? { ...opts, prependSource } : opts;
+  const excludeSet = new Set(exclude);
   const files = readdirSync(dirAbs)
     .filter(f => f.endsWith('.wgsl'))
     .sort();
@@ -861,16 +916,18 @@ function transpileOneDir({ dir, opts, shaderOpts = {}, variants }) {
 
   let entries = 0, written = 0, skipped = 0;
   const allErrors = [];
+  const excluded = [];
 
   for (const rec of records) {
     if (!rec.isEntry) continue;  // helpers don't get standalone artifacts
+    if (excludeSet.has(rec.f)) { excluded.push(rec.f); continue; }
     // Mirror the source path under transpiled/ so the parent repo
     // tracks artifacts even when the source lives in a submodule.
     const srcRel = relative(ROOT, rec.abs);
     const unitSrc = helpers.length ? helperSrc + '\n' + rec.src : rec.src;
     const unitHash = sha256Hex(unitSrc);
 
-    for (const job of artifactJobsFor(rec, opts, shaderOpts, variants)) {
+    for (const job of artifactJobsFor(rec, baseOpts, shaderOpts, variants)) {
       entries++;
       const outPath = artifactPathFor(srcRel, job.name);
       mkdirSync(dirname(outPath), { recursive: true });
@@ -936,10 +993,15 @@ function transpileOneDir({ dir, opts, shaderOpts = {}, variants }) {
     }
   }
 
-  return { entries, written, skipped, errors: allErrors };
+  return { entries, written, skipped, errors: allErrors, excluded };
 }
 
 console.log('');
+// Resolve any prependSource thunks (e.g. geon's generated const block) once,
+// up front — they may dynamic-import browser-shaped modules under a shim.
+for (const cfg of WGSL_SHADER_DIRS) {
+  if (typeof cfg.prependSource === 'function') cfg.prependSource = await cfg.prependSource();
+}
 let totalEntries = 0, totalWritten = 0, totalSkipped = 0;
 const allWgslErrors = [];
 for (const cfg of WGSL_SHADER_DIRS) {
@@ -948,7 +1010,10 @@ for (const cfg of WGSL_SHADER_DIRS) {
   totalWritten += r.written;
   totalSkipped += r.skipped;
   for (const e of r.errors) allWgslErrors.push(e);
-  console.log(`wgsl-transpile: ${cfg.dir} — ${r.entries} entries (${r.written} written, ${r.skipped} skipped${r.errors.length ? `, ${r.errors.length} errors` : ''})`);
+  const exTail = r.excluded && r.excluded.length
+    ? `; excluded ${r.excluded.length} (${r.excluded.join(', ')})`
+    : '';
+  console.log(`wgsl-transpile: ${cfg.dir} — ${r.entries} entries (${r.written} written, ${r.skipped} skipped${r.errors.length ? `, ${r.errors.length} errors` : ''})${exTail}`);
 }
 if (totalEntries) {
   console.log(`wgsl-transpile: ${totalEntries} total entries (${totalWritten} written, ${totalSkipped} skipped)`);
