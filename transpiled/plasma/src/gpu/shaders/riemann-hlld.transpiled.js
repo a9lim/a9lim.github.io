@@ -2,10 +2,10 @@
 // source: plasma/src/gpu/shaders/riemann-hlld.wgsl
 // helpers-sha256: 8c943a8b7cf30e7437759a9bdb9e53a56f237ffd05d70eb845b914f6b4e2b846
 // wgsl-transpile sha256: 2f9a132415e1a326e7862d3acb15063a2351f9c3070be6f6ea9a84e1e5bc841c
-// wgsl-transpiler-sha256: f8f743464a9ef9689040c4e7659a83a86a44b7650616b5d1894a7bf750131a93
+// wgsl-transpiler-sha256: f474a253aa6a80ec60eed44e2b4eb8e5eaaebe9a90358665421c342dd1453de6
 // wgsl-opts: {"flatStorage":true,"collectErrors":true}
 // wgsl-metrics: {"bytes":319538,"lines":5398,"rtVec":0,"rtPoly":0,"rtAtomic":0,"rtNumeric":0,"fround":0,"hypot":0,"iife":0,"workgroupReductionInits":0,"flatWorkgroupArrays":0,"flatWorkgroupSlots":0,"staticBranchPrunes":0}
-// generated: 2026-05-30T22:00:38.678Z
+// generated: 2026-05-30T22:40:33.575Z
 export default function _wgsl_module(rt) {
     const FLAG_COOLING = (1 << 0);
     const FLAG_GRAVITY_EXT = (1 << 1);

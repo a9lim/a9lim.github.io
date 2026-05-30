@@ -434,12 +434,29 @@ post-barrier local visibility, this carries specialized uniform aliases
 forward so post-barrier `if (axis == 0u)` branches can be pruned in
 `reconstruct-ppm` variants.
 
-**Limitation**: barriers nested inside `if`/`for`/`while` aren't lifted
-out into phases. Doing so would require duplicating the surrounding
-control flow across phase boundaries. plasma+geon currently use only
-top-level barriers so this hasn't bitten yet, but if a future shader
-needs it, the work is contained to `splitPhases` + a control-flow
-analyzer pass.
+**Loop-carried barriers (Phase C)**: barriers nested inside `for`/`while`/
+`loop`/`if` are handled by a barrier-schedule emitter (`emitScheduledBody` →
+`emitSchedule` → `emitWorkgroupControl`). `entryHasNestedBarrier` routes such
+entries off the flat-phase path; barrier-containing control flow emits at
+workgroup scope while each barrier-free segment is its own per-invocation loop
+(`emitInvocationLoop`), and replayable per-invocation decls (`tid = lid`) are
+re-emitted per segment. This covers **Class 1** — tree reductions where only
+workgroup/uniform state crosses the barrier (geon `compute-stats`,
+`quadrupole`; it also caught a latent plasma bug — `solve-poisson.reduce_mean`
+was silently wrong on the old no-op-barrier path).
+
+Two things are deliberately **fail-closed** (emit a runtime-throwing
+`rt.__unsupported(...)` stub, never silently-wrong JS):
+- **Class 2**: a per-invocation local lives across the barrier (a tiled
+  accumulator — geon `pair-force`'s `&accum`, `collision`'s carried predicates).
+  Needs variable privatization (per-lane arrays) — `analyzeBarrierCrossingLocals`
+  detects and rejects it. This is the next increment.
+- Constructs outside the supported subset (`barrierScheduleReject`):
+  barrier-in-`switch`, non-uniform barrier loop/`if` conditions,
+  `break`/`continue` targeting a barrier-carrying loop, `return` inside a
+  barrier region, and nested barrier-carrying loops. `solve-poisson`'s
+  `loop{}` (stateful uniform `stride` declared outside the loop) also lands
+  here until uniform-local hoisting is added.
 
 ## Next steps
 

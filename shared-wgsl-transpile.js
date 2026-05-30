@@ -4202,6 +4202,7 @@ class Emitter {
         const canUseGlobalLoops =
             phases.length === 1 &&
             wgEntries.length === 0 &&
+            !this.entryHasNestedBarrier(f.body.stmts) &&
             builtinBindings.every(b => {
                 const use = this.usedBuiltinComponents.get(b.name);
                 return !use || b.scope === 'inv' && b.name &&
@@ -4277,62 +4278,18 @@ class Emitter {
         // sets up the per-invocation builtins (gid/lid/lidx) and runs
         // the phase body inside the __invocation labeled block so that
         // an early WGSL `return` can `break __invocation` out cleanly.
-        for (let p = 0; p < phases.length; p++) {
-            if (phases.length > 1) this.line(`// Phase ${p}`);
-            this.line(`{`);
-            this.open();
-            let loopDepth = 0;
-            if (sz === 1) this.line(`const lz = 0;`);
-            else {
-                this.line(`for (let lz = 0; lz < Lz; lz++) {`);
-                this.open();
-                loopDepth++;
+        if (this.entryHasNestedBarrier(f.body.stmts)) {
+            // Loop/if-carried barriers: emit a barrier-schedule tree —
+            // barrier-containing control flow runs at workgroup scope, each
+            // barrier-free segment is its own invocation loop. Rejected (by
+            // emitEntry's pre-check) if any per-invocation local crosses a
+            // barrier (Class 2 / privatization — not yet supported).
+            this.emitScheduledBody(f.body.stmts, builtinBindings, f, { sx, sy, sz });
+        } else {
+            for (let p = 0; p < phases.length; p++) {
+                if (phases.length > 1) this.line(`// Phase ${p}`);
+                this.emitInvocationLoop(phases[p], builtinBindings, f, { sx, sy, sz });
             }
-            if (sy === 1) this.line(`const ly = 0;`);
-            else {
-                this.line(`for (let ly = 0; ly < Ly; ly++) {`);
-                this.open();
-                loopDepth++;
-            }
-            if (sx === 1) this.line(`const lx = 0;`);
-            else {
-                this.line(`for (let lx = 0; lx < Lx; lx++) {`);
-                this.open();
-                loopDepth++;
-            }
-            // Invocation-scope builtins (gid, lid, lidx) — scalarized.
-            for (const b of builtinBindings) {
-                if (b.scope !== 'inv') continue;
-                if (b.arity === 3) {
-                    if (this.shouldEmitBuiltinComponent(b.name, 'x')) this.line(`const ${_safe(b.name)}_x = ${b.xyz[0]};`);
-                    if (this.shouldEmitBuiltinComponent(b.name, 'y')) this.line(`const ${_safe(b.name)}_y = ${b.xyz[1]};`);
-                    if (this.shouldEmitBuiltinComponent(b.name, 'z')) this.line(`const ${_safe(b.name)}_z = ${b.xyz[2]};`);
-                } else {
-                    if (this.shouldEmitBuiltinScalar(b.name)) this.line(`const ${_safe(b.name)} = ${b.expr};`);
-                }
-            }
-            const invocationLabel = this.phaseNeedsInvocationLabel(phases[p]);
-            this.line(invocationLabel ? `__invocation: {` : `{`);
-            this.open();
-            this.localScopes = [new Set(f.params.map(p => p.name))];
-            this.constScopes = [new Map()];
-            // SROA pre-pass — per-phase, since phase boundaries split
-            // the body and locals can't live across them anyway.
-            this.collectScalarizable(phases[p]);
-            // Builtins are scalarized too — must be added AFTER
-            // collectScalarizable since that clears the map.
-            for (const b of builtinBindings) {
-                if (b.arity === 3) this.scalarized.set(b.name, 3);
-            }
-            for (const s of phases[p]) this.stmt(s, /*inEntry=*/true);
-            this.close();
-            this.line(`}`);
-            while (loopDepth-- > 0) {
-                this.close();
-                this.line(`}`);
-            }
-            this.close();
-            this.line(`}`); // close invocation loop block
         }
 
         this.close();
@@ -4341,6 +4298,456 @@ class Emitter {
         this.close();
         this.line(`}`);
         this.emitEntryObjectWrapper(f.name, internalName);
+    }
+
+    // Emit one per-invocation triple-loop running `segStmts`. Factored from
+    // the flat-phase path so the barrier-schedule path can reuse it for each
+    // barrier-free segment. `outerLocals` seeds the local scope with names
+    // declared at workgroup scope (hoisted barrier-loop control vars) so the
+    // segment body reads them as plain idents.
+    emitInvocationLoop(segStmts, builtinBindings, f, { sx, sy, sz }, outerLocals = null) {
+        this.line(`{`);
+        this.open();
+        let loopDepth = 0;
+        if (sz === 1) this.line(`const lz = 0;`);
+        else { this.line(`for (let lz = 0; lz < Lz; lz++) {`); this.open(); loopDepth++; }
+        if (sy === 1) this.line(`const ly = 0;`);
+        else { this.line(`for (let ly = 0; ly < Ly; ly++) {`); this.open(); loopDepth++; }
+        if (sx === 1) this.line(`const lx = 0;`);
+        else { this.line(`for (let lx = 0; lx < Lx; lx++) {`); this.open(); loopDepth++; }
+        // Invocation-scope builtins (gid, lid, lidx) — scalarized.
+        for (const b of builtinBindings) {
+            if (b.scope !== 'inv') continue;
+            if (b.arity === 3) {
+                if (this.shouldEmitBuiltinComponent(b.name, 'x')) this.line(`const ${_safe(b.name)}_x = ${b.xyz[0]};`);
+                if (this.shouldEmitBuiltinComponent(b.name, 'y')) this.line(`const ${_safe(b.name)}_y = ${b.xyz[1]};`);
+                if (this.shouldEmitBuiltinComponent(b.name, 'z')) this.line(`const ${_safe(b.name)}_z = ${b.xyz[2]};`);
+            } else {
+                if (this.shouldEmitBuiltinScalar(b.name)) this.line(`const ${_safe(b.name)} = ${b.expr};`);
+            }
+        }
+        const invocationLabel = this.phaseNeedsInvocationLabel(segStmts);
+        this.line(invocationLabel ? `__invocation: {` : `{`);
+        this.open();
+        const baseLocals = f.params.map(p => p.name);
+        this.localScopes = [new Set(outerLocals ? [...baseLocals, ...outerLocals] : baseLocals)];
+        this.constScopes = [new Map()];
+        // SROA pre-pass — per-segment, since barrier boundaries split the
+        // body and (in Class 1) no per-invocation local lives across them.
+        this.collectScalarizable(segStmts);
+        // Builtins are scalarized too — must be added AFTER
+        // collectScalarizable since that clears the map.
+        for (const b of builtinBindings) {
+            if (b.arity === 3) this.scalarized.set(b.name, 3);
+        }
+        for (const s of segStmts) this.stmt(s, /*inEntry=*/true);
+        this.close();
+        this.line(`}`);
+        while (loopDepth-- > 0) {
+            this.close();
+            this.line(`}`);
+        }
+        this.close();
+        this.line(`}`); // close invocation loop block
+    }
+
+    // True if any workgroupBarrier()/storageBarrier() appears anywhere in this
+    // statement subtree (used to find barrier-bearing control flow).
+    stmtSubtreeHasBarrier(s) {
+        if (!s) return false;
+        if (this.isBarrier(s)) return true;
+        const anyIn = (stmts) => (stmts || []).some(x => this.stmtSubtreeHasBarrier(x));
+        switch (s.kind) {
+            case 'block':  return anyIn(s.stmts);
+            case 'if':     return anyIn(s.then?.stmts) ||
+                                  (s.else ? (s.else.kind === 'if' ? this.stmtSubtreeHasBarrier(s.else) : anyIn(s.else.stmts)) : false);
+            case 'for':    return anyIn(s.body?.stmts);
+            case 'while':  return anyIn(s.body?.stmts);
+            case 'loop':   return anyIn(s.body?.stmts) || anyIn(s.continuing?.stmts);
+            case 'switch': return (s.cases || []).some(c => anyIn(c.body?.stmts));
+            default:       return false;
+        }
+    }
+
+    // True if the entry has a barrier nested inside control flow (not just at
+    // the top level). Top-level-only barriers use the flat-phase path.
+    entryHasNestedBarrier(stmts) {
+        for (const s of stmts) {
+            if (this.isBarrier(s)) continue;             // top-level barrier — flat path handles it
+            if (this.stmtSubtreeHasBarrier(s)) return true;
+        }
+        return false;
+    }
+
+    // Fail-closed marker for a nested-barrier construct we can't lower. Emits
+    // a runtime-throwing stub (never silently wrong) and records a soft error
+    // under collectErrors, but does NOT throw — the corpus walker compiles
+    // every shader, and an unsupported construct shouldn't fail the build for
+    // shaders that are excluded from artifact generation anyway.
+    emitBarrierUnsupported(msg, loc) {
+        if (this.opts && this.opts.collectErrors) {
+            this.errors.push({ phase: 'emit', kind: 'barrier-fission', message: msg, line: loc?.line ?? 0, col: loc?.col ?? 0 });
+        }
+        this.line(`rt.__unsupported(${JSON.stringify(msg)});`);
+    }
+
+    // Loop var ids of barrier-containing for-loops — treated as workgroup-
+    // uniform (WGSL requires uniform control flow for a barrier, so the loop
+    // trip count is the same across the workgroup) and hoisted to workgroup
+    // scope, NOT privatized.
+    collectBarrierLoopVarIds(stmts) {
+        const ids = new Set();
+        const visit = (s) => {
+            if (!s) return;
+            if (s.kind === 'for' && this.stmtSubtreeHasBarrier(s) &&
+                s.init && (s.init.kind === 'var' || s.init.kind === 'let') &&
+                s.init.resolvedLocalId != null) {
+                ids.add(s.init.resolvedLocalId);
+            }
+            switch (s.kind) {
+                case 'block':  (s.stmts || []).forEach(visit); break;
+                case 'if':     (s.then?.stmts || []).forEach(visit);
+                               if (s.else) (s.else.kind === 'if' ? visit(s.else) : (s.else.stmts || []).forEach(visit));
+                               break;
+                case 'for': case 'while': case 'loop':
+                               (s.body?.stmts || []).forEach(visit); break;
+                case 'switch': (s.cases || []).forEach(c => (c.body?.stmts || []).forEach(visit)); break;
+            }
+        };
+        stmts.forEach(visit);
+        return ids;
+    }
+
+    // Find per-invocation locals whose live range crosses a barrier — i.e.
+    // read in a different barrier-delimited segment than the one declaring
+    // them. Those would need privatization (per-lane arrays); we don't do that
+    // yet (Class 2), so a non-empty result means "reject this entry, fail
+    // closed". Excludes: uniform loop vars, builtins, and replayable decls
+    // (builtin/uniform/const-derived `let`/`const` like `let tid = lid`, which
+    // are simply re-emitted into each segment, exactly as the flat-phase path
+    // does via replayPhaseLocalDecls).
+    analyzeBarrierCrossingLocals(stmts, uniformIds) {
+        const builtinNames = this._barrierBuiltinNames || new Set();
+        const declSeg = new Map(), declName = new Map();
+        const replayable = new Set(), replayNames = new Set();
+        const crossing = new Map();
+        let seg = 0;
+        const noteRead = (id, name) => {
+            if (id == null || uniformIds.has(id) || replayable.has(id)) return;
+            const d = declSeg.get(id);
+            if (d != null && d !== seg) crossing.set(id, declName.get(id) ?? name);
+        };
+        const visitExpr = (e) => {
+            if (!e) return;
+            if (e.kind === 'ident') noteRead(e.resolvedLocalId, e.name);
+            switch (e.kind) {
+                case 'bin':    visitExpr(e.lhs); visitExpr(e.rhs); break;
+                case 'una':    visitExpr(e.value); break;
+                case 'paren':  visitExpr(e.value); break;
+                case 'member': visitExpr(e.value); break;
+                case 'index':  visitExpr(e.value); visitExpr(e.index); break;
+                case 'call':   (e.args || []).forEach(visitExpr); break;
+            }
+        };
+        const noteDecl = (s) => {
+            if (s.resolvedLocalId == null) return;
+            declSeg.set(s.resolvedLocalId, seg);
+            declName.set(s.resolvedLocalId, s.name);
+            if ((s.kind === 'let' || s.kind === 'const') &&
+                this.isReplayablePhaseDecl(s, builtinNames, replayNames)) {
+                replayable.add(s.resolvedLocalId);
+                replayNames.add(s.name);
+            }
+        };
+        const visitStmt = (s) => {
+            if (!s) return;
+            switch (s.kind) {
+                case 'let': case 'const': case 'var':
+                    if (s.value) visitExpr(s.value); noteDecl(s); break;
+                case 'assign':
+                    visitExpr(s.value);
+                    if (s.target.kind === 'ident') {
+                        // Pure (re)assignment kills any prior definition — the
+                        // new value flows from here, so a later read in this
+                        // segment is NOT live-across-barrier (covers loop
+                        // counters reused per pass, e.g. `i = tid`).
+                        if (s.target.resolvedLocalId != null) declSeg.set(s.target.resolvedLocalId, seg);
+                    } else {
+                        visitExpr(s.target);   // index/member: subexpr reads only
+                    }
+                    break;
+                case 'compound':
+                    // Read-modify-write: the target IS read (so cross-barrier
+                    // accumulation like `acc += x` is correctly flagged), then
+                    // redefined in this segment.
+                    visitExpr(s.value); visitExpr(s.target);
+                    if (s.target.kind === 'ident' && s.target.resolvedLocalId != null) declSeg.set(s.target.resolvedLocalId, seg);
+                    break;
+                case 'postfix':
+                    visitExpr(s.target);
+                    if (s.target.kind === 'ident' && s.target.resolvedLocalId != null) declSeg.set(s.target.resolvedLocalId, seg);
+                    break;
+                case 'return':  if (s.value) visitExpr(s.value); break;
+                case 'expr_stmt':
+                    if (this.isBarrier(s)) seg++;
+                    else visitExpr(s.expr);
+                    break;
+                case 'block': (s.stmts || []).forEach(visitStmt); break;
+                case 'if': {
+                    visitExpr(s.cond);
+                    const split = this.stmtSubtreeHasBarrier(s);
+                    if (split) seg++;
+                    (s.then?.stmts || []).forEach(visitStmt);
+                    if (s.else) (s.else.kind === 'if' ? visitStmt(s.else) : (s.else.stmts || []).forEach(visitStmt));
+                    if (split) seg++;
+                    break;
+                }
+                case 'for': {
+                    if (s.init) visitStmt(s.init);
+                    if (s.cond) visitExpr(s.cond);
+                    const split = this.stmtSubtreeHasBarrier(s);
+                    if (split) seg++;
+                    (s.body?.stmts || []).forEach(visitStmt);
+                    if (s.update) visitStmt(s.update);
+                    if (split) seg++;
+                    break;
+                }
+                case 'while': case 'loop': {
+                    if (s.cond) visitExpr(s.cond);
+                    const split = this.stmtSubtreeHasBarrier(s);
+                    if (split) seg++;
+                    (s.body?.stmts || []).forEach(visitStmt);
+                    if (split) seg++;
+                    break;
+                }
+                case 'switch':
+                    visitExpr(s.selector);
+                    (s.cases || []).forEach(c => (c.body?.stmts || []).forEach(visitStmt));
+                    break;
+            }
+        };
+        stmts.forEach(visitStmt);
+        return [...crossing.entries()].map(([id, name]) => ({ id, name }));
+    }
+
+    // Conservative uniformity test for a barrier-control expression (the
+    // loop/if condition that gates a barrier). True only if provably
+    // workgroup-uniform: literals, module consts, uniform-buffer reads,
+    // workgroup builtins (wgid/nwg), hoisted loop vars, replayable uniform
+    // locals. Per-invocation builtins (lid/gid), storage/array indexing, and
+    // user calls => non-uniform. WGSL requires barriers in uniform control
+    // flow, so a non-uniform result means the shader is either invalid or
+    // beyond what we model — reject either way.
+    isUniformBarrierControl(e, uniformIds, replayNames, invBuiltinNames) {
+        const visit = (e) => {
+            if (!e) return true;
+            switch (e.kind) {
+                case 'lit': return true;
+                case 'ident':
+                    if (invBuiltinNames.has(e.name)) return false;
+                    if (e.resolvedLocalId != null) return uniformIds.has(e.resolvedLocalId) || replayNames.has(e.name);
+                    if (this.constants.has(e.name)) return true;
+                    if (this._barrierBuiltinNames?.has(e.name)) return true; // wg-scope builtin (inv excluded above)
+                    return false;
+                case 'member':
+                    if (e.value?.kind === 'ident') {
+                        if (invBuiltinNames.has(e.value.name)) return false;
+                        const b = this.bindings.get(e.value.name);
+                        if (b?.addressSpace === 'uniform') return true;
+                    }
+                    return visit(e.value);
+                case 'index':  return false;
+                case 'paren':  return visit(e.value);
+                case 'una':    return e.op !== '&' && visit(e.value);
+                case 'bin':    return visit(e.lhs) && visit(e.rhs);
+                case 'call':   return !this.fns.has(e.callee) && (e.args || []).every(visit);
+                default:       return false;
+            }
+        };
+        return visit(e);
+    }
+
+    // Fail-closed gate for the supported Class-1 barrier-schedule subset.
+    // Returns a reason string for constructs we can't lower correctly (so the
+    // caller emits a runtime-throwing stub instead of silently-wrong code),
+    // else null. Keeps the holes Codex flagged out of the accepted set:
+    // barrier-in-switch, non-uniform barrier control, break/continue whose
+    // innermost loop carries a barrier, return inside a barrier region, and
+    // nested barrier-carrying loops.
+    barrierScheduleReject(stmts, uniformIds, invBuiltinNames) {
+        const replayNames = new Set();
+        const collectReplay = (ss) => {
+            for (const s of (ss || [])) {
+                if ((s.kind === 'let' || s.kind === 'const') &&
+                    this.isReplayablePhaseDecl(s, this._barrierBuiltinNames || new Set(), replayNames)) {
+                    replayNames.add(s.name);
+                }
+                if (s.kind === 'if') { collectReplay(s.then?.stmts); collectReplay(s.else?.kind === 'if' ? [s.else] : s.else?.stmts); }
+                else if (s.body) collectReplay(s.body.stmts);
+                else if (s.stmts) collectReplay(s.stmts);
+                else if (s.cases) for (const c of s.cases) collectReplay(c.body?.stmts);
+            }
+        };
+        collectReplay(stmts);
+
+        let reason = null;
+        const walk = (s, barrierLoopDepth, innerLoopHasBarrier) => {
+            if (reason || !s) return;
+            switch (s.kind) {
+                case 'break': case 'continue':
+                    if (innerLoopHasBarrier) reason = `'${s.kind}' targeting a barrier-carrying loop`;
+                    break;
+                case 'return':
+                    if (barrierLoopDepth > 0) reason = `'return' inside a barrier region`;
+                    break;
+                case 'switch':
+                    if (this.stmtSubtreeHasBarrier(s)) { reason = `barrier inside 'switch'`; break; }
+                    for (const c of (s.cases || [])) for (const x of (c.body?.stmts || [])) walk(x, barrierLoopDepth, innerLoopHasBarrier);
+                    break;
+                case 'for': case 'while': case 'loop': {
+                    const hasB = this.stmtSubtreeHasBarrier(s);
+                    if (hasB) {
+                        if (barrierLoopDepth > 0) { reason = `nested barrier-carrying loops`; break; }
+                        if (s.cond && !this.isUniformBarrierControl(s.cond, uniformIds, replayNames, invBuiltinNames)) { reason = `non-uniform barrier loop condition`; break; }
+                    }
+                    const nd = hasB ? barrierLoopDepth + 1 : barrierLoopDepth;
+                    for (const x of (s.body?.stmts || [])) walk(x, nd, hasB);
+                    break;
+                }
+                case 'if': {
+                    const hasB = this.stmtSubtreeHasBarrier(s);
+                    if (hasB && !this.isUniformBarrierControl(s.cond, uniformIds, replayNames, invBuiltinNames)) { reason = `non-uniform barrier 'if' condition`; break; }
+                    for (const x of (s.then?.stmts || [])) walk(x, barrierLoopDepth, innerLoopHasBarrier);
+                    if (s.else) { if (s.else.kind === 'if') walk(s.else, barrierLoopDepth, innerLoopHasBarrier); else for (const x of (s.else.stmts || [])) walk(x, barrierLoopDepth, innerLoopHasBarrier); }
+                    break;
+                }
+                case 'block':
+                    for (const x of (s.stmts || [])) walk(x, barrierLoopDepth, innerLoopHasBarrier);
+                    break;
+            }
+        };
+        for (const s of stmts) walk(s, 0, false);
+        return reason;
+    }
+
+    emitScheduledBody(stmts, builtinBindings, f, dims) {
+        const uniformIds = this.collectBarrierLoopVarIds(stmts);
+        this._barrierBuiltinNames = new Set(builtinBindings.map(b => b.name));
+        const invBuiltinNames = new Set(builtinBindings.filter(b => b.scope === 'inv').map(b => b.name));
+        // Fail-closed: reject constructs around barriers we can't lower.
+        const rejectReason = this.barrierScheduleReject(stmts, uniformIds, invBuiltinNames);
+        if (rejectReason) {
+            this.emitBarrierUnsupported(`unsupported barrier construct: ${rejectReason}`, f.loc);
+            return;
+        }
+        const crossing = this.analyzeBarrierCrossingLocals(stmts, uniformIds);
+        if (crossing.length) {
+            // Class 2 (per-invocation locals live across a barrier — needs
+            // privatization). Fail closed: runtime-throwing stub, not silently
+            // wrong, and not a hard compile error (the corpus walker compiles
+            // every shader; build configs exclude these from artifacts).
+            this.emitBarrierUnsupported(
+                `loop-carried barrier with per-invocation local(s) live across it ` +
+                `(${crossing.map(c => c.name).join(', ')}) — privatization not implemented`,
+                f.loc);
+            return;
+        }
+        // Class 1: barrier-delimited segments share only workgroup/uniform
+        // state. Walk the body as a barrier-schedule tree.
+        this.scheduleReplay = [];
+        this._scheduleReplayNames = new Set();
+        this.scheduleOuterLocals = new Set();
+        this.localScopes = [new Set(f.params.map(p => p.name))];
+        this.constScopes = [new Map()];
+        this.emitSchedule(stmts, builtinBindings, f, dims);
+    }
+
+    // Recursive barrier-schedule emit: batch barrier-free statements into a
+    // segment (one invocation loop); a barrier ends a segment; control flow
+    // that transitively contains a barrier is emitted at WORKGROUP scope with
+    // its body scheduled recursively. Replayable per-invocation decls (tid =
+    // lid, etc.) accumulate and are re-emitted at the head of each segment.
+    emitSchedule(stmts, builtinBindings, f, dims) {
+        let seg = [];
+        const flush = () => {
+            if (!seg.length) return;
+            const withReplay = this.scheduleReplay.length ? [...this.scheduleReplay, ...seg] : seg.slice();
+            this.emitInvocationLoop(withReplay, builtinBindings, f, dims, this.scheduleOuterLocals);
+            for (const s of seg) {
+                if ((s.kind === 'let' || s.kind === 'const') &&
+                    this.isReplayablePhaseDecl(s, this._barrierBuiltinNames, this._scheduleReplayNames)) {
+                    this.scheduleReplay.push(s);
+                    this._scheduleReplayNames.add(s.name);
+                }
+            }
+            seg = [];
+        };
+        for (const s of stmts) {
+            if (this.isBarrier(s)) { flush(); continue; }
+            if (this.stmtSubtreeHasBarrier(s)) { flush(); this.emitWorkgroupControl(s, builtinBindings, f, dims); continue; }
+            seg.push(s);
+        }
+        flush();
+    }
+
+    // Emit a barrier-containing control-flow statement at workgroup scope.
+    // Loop control is assumed workgroup-uniform (WGSL barrier uniformity
+    // axiom); the loop var is hoisted and registered so nested segments read
+    // it as a plain ident.
+    // Schedule a nested block while scoping replay state to it — replayable
+    // decls declared inside this block must not leak into segments emitted
+    // after the block (they'd double-declare, e.g. a loop-body `let tid` and a
+    // later top-level `let tid`). scheduleOuterLocals (hoisted loop vars) are
+    // managed separately by the caller.
+    emitScheduledBlock(stmts, builtinBindings, f, dims) {
+        const savedLen = this.scheduleReplay.length;
+        const savedNames = new Set(this._scheduleReplayNames);
+        this.emitSchedule(stmts, builtinBindings, f, dims);
+        this.scheduleReplay.length = savedLen;
+        this._scheduleReplayNames = savedNames;
+    }
+
+    emitWorkgroupControl(s, builtinBindings, f, dims) {
+        if (s.kind === 'for') {
+            this.pushScope();
+            const initStr = s.init ? this.forStmtInline(s.init) : '';
+            const condStr = s.cond ? this.expr(s.cond) : '';
+            const updStr  = s.update ? this.forUpdateInline(s.update) : '';
+            const loopVar = (s.init && (s.init.kind === 'var' || s.init.kind === 'let')) ? s.init.name : null;
+            if (loopVar) this.scheduleOuterLocals.add(loopVar);
+            this.line(`for (${initStr}; ${condStr}; ${updStr}) {`);
+            this.open();
+            this.emitScheduledBlock(s.body.stmts, builtinBindings, f, dims);
+            this.close();
+            this.line(`}`);
+            if (loopVar) this.scheduleOuterLocals.delete(loopVar);
+            this.popScope();
+        } else if (s.kind === 'while' || s.kind === 'loop') {
+            this.pushScope();
+            const cond = s.kind === 'loop' ? 'true' : this.expr(s.cond);
+            this.line(`while (${cond}) {`);
+            this.open();
+            this.emitScheduledBlock(s.body.stmts, builtinBindings, f, dims);
+            this.close();
+            this.line(`}`);
+            this.popScope();
+        } else if (s.kind === 'if') {
+            this.pushScope();
+            this.line(`if (${this.expr(s.cond)}) {`);
+            this.open();
+            this.emitScheduledBlock(s.then.stmts, builtinBindings, f, dims);
+            this.close();
+            if (s.else) {
+                this.line(`} else {`);
+                this.open();
+                this.emitScheduledBlock(s.else.kind === 'if' ? [s.else] : s.else.stmts, builtinBindings, f, dims);
+                this.close();
+            }
+            this.line(`}`);
+            this.popScope();
+        } else {
+            this.emitBarrierUnsupported(`barrier inside unsupported construct '${s.kind}'`, s.loc);
+        }
     }
 
     emitEntryBindingHoists(usedBindings = null) {

@@ -1,11 +1,16 @@
 {
-  "generatedAt": "2026-05-30T22:01:09.550Z",
+  "generatedAt": "2026-05-30T22:40:33.373Z",
   "lastDeploy": {
-    "hash": "5a67d2f",
-    "iso": "2026-05-30T14:45:26-07:00",
-    "subject": "wgsl-transpile: wire geon shaders + fix forward-ref/swizzle/atomic emit bugs"
+    "hash": "7a41edb",
+    "iso": "2026-05-30T15:03:33-07:00",
+    "subject": "wgsl-transpile: fix scalar + storage pointer out-params (geon heatmap, field-forces)"
   },
   "commits": [
+    {
+      "hash": "7a41edb",
+      "iso": "2026-05-30T15:03:33-07:00",
+      "subject": "wgsl-transpile: fix scalar + storage pointer out-params (geon heatmap, field-forces)"
+    },
     {
       "hash": "5a67d2f",
       "iso": "2026-05-30T14:45:26-07:00",
@@ -30,11 +35,6 @@
       "hash": "0734b5d",
       "iso": "2026-05-27T22:53:41-07:00",
       "subject": "Add plasma submodule (v1.0) + transpiler variants infrastructure"
-    },
-    {
-      "hash": "c0aae5e",
-      "iso": "2026-05-25T16:42:04-07:00",
-      "subject": "wgsl-transpile: build-smoke.js + opts in artifact header"
     }
   ],
   "stats": {
@@ -42,6 +42,6 @@
     "posts": 1,
     "scriptureWorks": 16,
     "scriptureChapters": 2724,
-    "sourceLines": 167676
+    "sourceLines": 172464
   }
 }

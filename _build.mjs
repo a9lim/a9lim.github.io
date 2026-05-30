@@ -744,6 +744,14 @@ const WGSL_SHADER_DIRS = [
       flatStorage: true,        // array<vecN<f32>> storage bindings flow as Float32Array
       collectErrors: true,      // aggregate all failures into one report
     },
+    // solve-poisson.reduce_mean is a `loop {}` tree reduction whose loop
+    // counter `stride` is a stateful uniform declared OUTSIDE the loop. The
+    // barrier-schedule emitter can't prove it uniform (it's not a for-header
+    // var, and it mutates), so it fails closed (Class 2). It was silently
+    // wrong before this (flat-phase no-op barrier). The default Poisson solver
+    // is the barrier-free multigrid (solve-poisson-mg); this Jacobi fallback
+    // stays GPU-only until uniform-local hoisting lands.
+    exclude: ['solve-poisson.wgsl'],
     shaderOpts: {
       // Profile-shaped per-shader defaults. These helpers sit in hot
       // per-cell paths and are cheap enough to duplicate after profiling,
@@ -809,20 +817,16 @@ const WGSL_SHADER_DIRS = [
       flatStorage: true,
       collectErrors: true,
     },
-    // Excluded until the transpiler grows the features these need — without
-    // exclusion they emit SILENTLY WRONG JS, not a build error, so the gate
-    // here is a correctness safeguard, not just scope management:
-    //   - loop/if-carried workgroupBarrier(): runtime barrier is a no-op and
-    //     splitPhases only lifts top-level barriers, so each invocation runs
-    //     the whole reduction/tile loop independently → garbage reductions.
-    // See tests/wgsl-transpile/README.md "Geon integration" for the plan.
-    // (Scalar/storage pointer out-params — heatmap, field-forces — are now
-    //  handled: scalar-local boxing + whole-binding addressOf passthrough.)
+    // Class 2 loop-carried barriers: per-invocation locals live across the
+    // barrier (a tiled accumulator), which needs privatization (per-lane
+    // arrays) the transpiler doesn't do yet. The barrier-schedule emitter
+    // fails closed on these (runtime-throwing stub, never silently wrong), so
+    // the exclusion here just keeps them out of artifact generation.
+    // Class 1 loop-carried barriers (tree reductions — compute-stats,
+    // quadrupole) ARE handled now via barrier-schedule fission.
     exclude: [
-      'collision.wgsl',      // loop-carried barrier
-      'compute-stats.wgsl',  // loop-carried barrier (tree reductions)
-      'pair-force.wgsl',     // loop-carried barrier (tiled accumulation)
-      'quadrupole.wgsl',     // loop-carried barrier
+      'collision.wgsl',      // Class 2: tiled scan, per-invocation values across barrier
+      'pair-force.wgsl',     // Class 2: tiled force accumulation (&accum across barrier)
     ],
   },
 ];
