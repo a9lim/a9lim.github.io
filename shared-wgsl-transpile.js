@@ -3118,6 +3118,14 @@ class Emitter {
         this.structScalarizedIds = new Map(); // resolver local id -> struct SROA spec
         this.arrayScalarized = new Map();     // source name -> fixed array SROA spec
         this.arrayScalarizedIds = new Map();  // resolver local id -> fixed array SROA spec
+        // Address-taken scalar locals (`&x` for `x: f32`). JS numbers are
+        // by-value, so a `ptr<function,f32>` out-param can't write back unless
+        // the local lives in a mutable container. We box such locals as a
+        // 1-element array `[v]`: decl emits `let x = [init]`, every read/write
+        // routes through `x[0]`, `&x` passes the box, and `*p` for a scalar
+        // pointer derefs to `p[0]`. Vec/struct locals need no box — they're
+        // already JS objects (by-reference). Reset per fn body.
+        this.boxedScalars = new Set();
         this.sroaCounter = 0;
 
         // Entry-body hot-path aliases. Helper fns live outside entry
@@ -5448,6 +5456,7 @@ class Emitter {
         this.structScalarizedIds.clear();
         this.arrayScalarized.clear();
         this.arrayScalarizedIds.clear();
+        this.boxedScalars.clear();
         const candidate = new Map();   // name → arity (fallback for synthetic/no-id locals)
         const candidateIds = new Map(); // local id → { name, arity }
         const structCandidate = new Map();    // name → struct Type
@@ -5467,6 +5476,14 @@ class Emitter {
                 if (root && root.kind === 'ident') {
                     if (root.resolvedLocalId != null) bannedIds.add(root.resolvedLocalId);
                     else banned.add(root.name);
+                    // A scalar local that has its address taken must be boxed
+                    // (a `ptr<function,f32>` out-param can't write back to a
+                    // by-value JS number). Vec/struct locals are already
+                    // objects — passing them by reference works as-is, so
+                    // they're left alone (and stay banned from SROA above).
+                    if (root.resolvedLocalId != null && root.resolvedType?.kind === 'scalar') {
+                        this.boxedScalars.add(root.name);
+                    }
                 }
                 visitExpr(e.value);
                 return;
@@ -6456,6 +6473,15 @@ class Emitter {
 
             case 'var':
                 this.declareLocal(s.name);
+                // Address-taken scalar local → box as a 1-element array so a
+                // `ptr<function,f32>` out-param can write back through it.
+                if (this.boxedScalars.has(s.name)) {
+                    const init = s.value != null
+                        ? this.expr(s.value)
+                        : this.defaultInit(s.type || { kind: 'type_scalar', name: 'f32' });
+                    this.line(`let ${_safe(s.name)} = [${init}];`);
+                    break;
+                }
                 {
                     const arraySpec = this.arraySroaForDecl(s);
                     if (arraySpec && this.emitArraySroaVarDecl(s, arraySpec)) break;
@@ -7127,6 +7153,9 @@ class Emitter {
                 .map(c => `${c}:${_safe(name)}_${c}`);
             return `{${parts.join(', ')}}`;
         }
+        // Address-taken scalar local: stored boxed as `[v]`, so every read
+        // (and lvalue, since lvalue() routes through expr) is `name[0]`.
+        if (this.boxedScalars.has(name)) return `${_safe(name)}[0]`;
         // Locals, constants, and user fns are emitted as bare idents
         // (possibly escaped). Globals living on `bindings`/`wg`/`priv`
         // use member access on those container objects — no escape
@@ -7413,6 +7442,7 @@ class Emitter {
         if (this.structScalarized.has(name)) {
             return this.structSroaObject(this.structScalarized.get(name));
         }
+        if (this.boxedScalars.has(name))   return `${_safe(name)}[0]`;
         if (this.isLocal(name))            return _safe(name);
         if (this.bindings.has(name))       return this.bindingSource(name);
         if (this.workgroupVars.has(name))  return `wg.${name}`;
@@ -7431,8 +7461,15 @@ class Emitter {
             return this.addressOfExpr(e.value);
         }
         if (e.op === '*') {
-            // Pointer dereference — pointers are just the underlying
-            // value in our model. So `(*p)[i]` is `p[i]`.
+            // Pointer dereference. Pointers are the underlying value in our
+            // model (vec/struct/array bindings are JS objects by-reference),
+            // so `(*p)[i]` is `p[i]` and `*p` is `p` — EXCEPT a pointer to a
+            // scalar, whose target is boxed as `[v]` (see boxedScalars); there
+            // `*p` is `p[0]`.
+            if (e.value.resolvedType?.kind === 'ptr' &&
+                e.value.resolvedType.of?.kind === 'scalar') {
+                return `${v}[0]`;
+            }
             return v;
         }
         return `(${e.op}${v})`;
@@ -7464,7 +7501,13 @@ class Emitter {
                     // address into that single-element container.
                     return `rt.addressOf(${this.bindingSource(name)}, 0)`;
                 }
-                return `rt.addressOf(bindings, ${JSON.stringify(name)})`;
+                // Whole-binding pointer (`&higgsField` for a
+                // `ptr<storage, array<f32>>` helper param). Deref drops the
+                // star (`(*p)[i]` → `p[i]`), so the pointer must *be* the
+                // binding value — pass the binding source directly, exactly
+                // like `&local` for an object below. A {ref,key} handle here
+                // would make `(*p)[i]` index the handle and read undefined.
+                return this.bindingSource(name);
             }
             if (this.workgroupVars.has(name)) {
                 return `rt.addressOf(wg, ${JSON.stringify(name)})`;

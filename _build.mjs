@@ -815,16 +815,14 @@ const WGSL_SHADER_DIRS = [
     //   - loop/if-carried workgroupBarrier(): runtime barrier is a no-op and
     //     splitPhases only lifts top-level barriers, so each invocation runs
     //     the whole reduction/tile loop independently → garbage reductions.
-    //   - scalar ptr<function,f32> out-params: helper mutates a by-value JS
-    //     number, write-back is dropped → caller never sees the result.
     // See tests/wgsl-transpile/README.md "Geon integration" for the plan.
+    // (Scalar/storage pointer out-params — heatmap, field-forces — are now
+    //  handled: scalar-local boxing + whole-binding addressOf passthrough.)
     exclude: [
       'collision.wgsl',      // loop-carried barrier
       'compute-stats.wgsl',  // loop-carried barrier (tree reductions)
       'pair-force.wgsl',     // loop-carried barrier (tiled accumulation)
       'quadrupole.wgsl',     // loop-carried barrier
-      'heatmap.wgsl',        // scalar ptr<function,f32> out-params (gPhi/ePhi/yPhi)
-      'field-forces.wgsl',   // ptr<storage,array<f32>> + scalar deref helpers
     ],
   },
 ];

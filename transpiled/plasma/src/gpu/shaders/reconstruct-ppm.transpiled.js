@@ -2,10 +2,10 @@
 // source: plasma/src/gpu/shaders/reconstruct-ppm.wgsl
 // helpers-sha256: 8c943a8b7cf30e7437759a9bdb9e53a56f237ffd05d70eb845b914f6b4e2b846
 // wgsl-transpile sha256: 786987331727f73541fcaff0643dc2425f99f43f3e54f6372d81ddf9573dbe5e
-// wgsl-transpiler-sha256: d470123cbc6f7ec463bb1b3d6f64125e4819e92c84ce8bb0c08470cb4cdd8758
+// wgsl-transpiler-sha256: f8f743464a9ef9689040c4e7659a83a86a44b7650616b5d1894a7bf750131a93
 // wgsl-opts: {"flatStorage":true,"collectErrors":true}
 // wgsl-metrics: {"bytes":79511,"lines":1369,"rtVec":0,"rtPoly":0,"rtAtomic":0,"rtNumeric":0,"fround":0,"hypot":0,"iife":22,"workgroupReductionInits":0,"flatWorkgroupArrays":1,"flatWorkgroupSlots":1152,"staticBranchPrunes":0}
-// generated: 2026-05-30T21:32:08.752Z
+// generated: 2026-05-30T22:00:38.660Z
 export default function _wgsl_module(rt) {
     const FLAG_COOLING = (1 << 0);
     const FLAG_GRAVITY_EXT = (1 << 1);

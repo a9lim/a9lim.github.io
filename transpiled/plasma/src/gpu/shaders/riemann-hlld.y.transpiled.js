@@ -3,10 +3,10 @@
 // wgsl-variant: y
 // helpers-sha256: 8c943a8b7cf30e7437759a9bdb9e53a56f237ffd05d70eb845b914f6b4e2b846
 // wgsl-transpile sha256: 2f9a132415e1a326e7862d3acb15063a2351f9c3070be6f6ea9a84e1e5bc841c
-// wgsl-transpiler-sha256: d470123cbc6f7ec463bb1b3d6f64125e4819e92c84ce8bb0c08470cb4cdd8758
+// wgsl-transpiler-sha256: f8f743464a9ef9689040c4e7659a83a86a44b7650616b5d1894a7bf750131a93
 // wgsl-opts: {"flatStorage":true,"collectErrors":true,"specializeUniforms":{"sweep":{"sweep_dir":1}},"specializeFunctionParams":{"fast_mag_speed":{"axis":1},"mhd_flux":{"axis":1},"normal_velocity_mhd":{"axis":1},"permute_prim":{"axis":1},"pack_prim_pair_from_vec7":{"axis":1},"unpack_edge_prim":{"axis":1},"prim_to_axis_state":{"axis":1},"pack_flux":{"axis":1},"hll_flux_mhd":{"axis":1}}}
 // wgsl-metrics: {"bytes":304761,"lines":5168,"rtVec":0,"rtPoly":0,"rtAtomic":0,"rtNumeric":0,"fround":0,"hypot":0,"iife":0,"workgroupReductionInits":0,"flatWorkgroupArrays":0,"flatWorkgroupSlots":0,"staticBranchPrunes":24}
-// generated: 2026-05-30T21:32:08.777Z
+// generated: 2026-05-30T22:00:38.695Z
 export default function _wgsl_module(rt) {
     const FLAG_COOLING = (1 << 0);
     const FLAG_GRAVITY_EXT = (1 << 1);

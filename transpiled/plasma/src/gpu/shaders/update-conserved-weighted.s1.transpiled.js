@@ -3,10 +3,10 @@
 // wgsl-variant: s1
 // helpers-sha256: 8c943a8b7cf30e7437759a9bdb9e53a56f237ffd05d70eb845b914f6b4e2b846
 // wgsl-transpile sha256: caaafe848c71af331930dba1f3d57fc64de6bb7eea06511a0b69064832e05766
-// wgsl-transpiler-sha256: d470123cbc6f7ec463bb1b3d6f64125e4819e92c84ce8bb0c08470cb4cdd8758
+// wgsl-transpiler-sha256: f8f743464a9ef9689040c4e7659a83a86a44b7650616b5d1894a7bf750131a93
 // wgsl-opts: {"flatStorage":true,"collectErrors":true,"specializeUniforms":{"stage_params":{"a0":1,"a1":0,"dt_w":1}}}
 // wgsl-metrics: {"bytes":75657,"lines":1029,"rtVec":0,"rtPoly":0,"rtAtomic":0,"rtNumeric":0,"fround":0,"hypot":0,"iife":20,"workgroupReductionInits":0,"flatWorkgroupArrays":0,"flatWorkgroupSlots":0,"staticBranchPrunes":0}
-// generated: 2026-05-30T21:32:08.791Z
+// generated: 2026-05-30T22:00:38.715Z
 export default function _wgsl_module(rt) {
     const FLAG_COOLING = (1 << 0);
     const FLAG_GRAVITY_EXT = (1 << 1);
