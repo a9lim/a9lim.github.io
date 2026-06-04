@@ -21,7 +21,6 @@
     "/miasma/*",
     "/pile/*",
     "/plasma/*",
-    "/transpiled/*",
     "/.well-known/*",
     "/*.txt",
     "/*.md",
