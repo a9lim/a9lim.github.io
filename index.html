@@ -542,7 +542,7 @@
 
                 <section class="resume-section">
                     <h3 class="resume-h3" data-i18n="resume.h.profile">Profile</h3>
-                    <p><span data-i18n="resume.profile.pre">I'm a Singaporean developer building simulations, tools, and more at </span><a href="/" data-page="home">a9l.im</a><span data-i18n="resume.profile.post">. Everything I make is vanilla JS that I write with Claude. I'm interested in freelance and collaboration, especially in DIY projects like research tools.</span></p>
+                    <p><span data-i18n="resume.profile.pre">I'm a Singaporean developer building simulations, tools, and interpretability research, most of it hosted at </span><a href="/" data-page="home">a9l.im</a><span data-i18n="resume.profile.post">. Literally everything I make is written with Claude: vanilla JS for the site, plus Python and Rust for research. I'm open to freelance and collaboration, especially research tools and anything DIY.</span></p>
                 </section>
 
                 <section class="resume-section">
@@ -554,9 +554,8 @@
                             <span class="resume-job-dates" data-i18n="resume.job.indep.dates">Feb 2026 &ndash; Present</span>
                         </div>
                         <ul class="resume-bullets">
-                            <li data-i18n="resume.job.indep.b1">Built and maintain a portfolio of open&ndash;source interactive simulations and tools (see Selected Projects below) plus the shared design system and component library used across all of them. Implemented in rawdogged vanilla JavaScript.</li>
-                            <li data-i18n="resume.job.indep.b2">Architected the SSR layer on Cloudflare Workers + Assets: per&ndash;route HTMLRewriter injection, edge&ndash;rendered markdown, structured data, and per&ndash;route security headers.</li>
-                            <li data-i18n="resume.job.indep.b3">Maintains the entire stack solo in collaboration with Claude.</li>
+                            <li data-i18n="resume.job.indep.b1">Built and maintain, solo, a portfolio of open&ndash;source interactive simulations and tools plus the shared design system and component library used across all of them, all in rawdogged vanilla JavaScript.</li>
+                            <li data-i18n="resume.job.indep.b2">Architected the SSR layer on Cloudflare Workers and Assets: per&ndash;route HTMLRewriter injection, edge&ndash;rendered markdown, structured data, and per&ndash;route security headers.</li>
                         </ul>
                     </div>
 
@@ -566,10 +565,33 @@
                             <span class="resume-job-dates" data-i18n="resume.job.sddm.dates">2025 &ndash; Present</span>
                         </div>
                         <ul class="resume-bullets">
-                            <li data-i18n="resume.job.sddm.b1">Led rewrite and modernization of Catppuccin's SDDM display manager theme in QtQuick.</li>
-                            <li data-i18n="resume.job.sddm.b2">Implemented dynamic accent color and per&ndash;user icon integration.</li>
-                            <li data-i18n="resume.job.sddm.b3">Automated theme generation across the four Catppuccin flavors to streamline maintenance.</li>
-                            <li data-i18n="resume.job.sddm.b4">Designed vector backgrounds and user iconography.</li>
+                            <li data-i18n="resume.job.sddm.b1">Led the QtQuick rewrite of Catppuccin's SDDM display&ndash;manager theme: dynamic accent colors, per&ndash;user icons, designed vector backgrounds, and automated theme generation across all four flavors.</li>
+                        </ul>
+                    </div>
+                </section>
+
+                <section class="resume-section">
+                    <h3 class="resume-h3" data-i18n="resume.h.research">Research</h3>
+
+                    <div class="resume-job">
+                        <div class="resume-job-head">
+                            <h4 class="resume-job-title"><a href="https://github.com/a9lim/saklas" target="_blank" rel="noopener noreferrer">Saklas</a></h4>
+                            <span class="resume-job-dates" data-i18n="resume.research.saklas.tagline">PyPI &middot; Python</span>
+                        </div>
+                        <ul class="resume-bullets">
+                            <li><span data-i18n="resume.research.saklas.b1.pre">Activation steering and probing library powering the studies below: pulls contrastive steering vectors (</span><a href="https://arxiv.org/abs/2310.01405" target="_blank" rel="noopener noreferrer" data-i18n="resume.research.saklas.b1.link">Zou et al. 2023</a><span data-i18n="resume.research.saklas.b1.post">) and adds them to hidden states at generation time, no fine&ndash;tuning. Ships 21 in&ndash;flight probes for affect, stance, register, and alignment.</span></li>
+                            <li data-i18n="resume.research.saklas.b2">Python API, an OpenAI&ndash; and Ollama&ndash;compatible server, and a live terminal UI; supports 53 model architectures. On PyPI under AGPL&ndash;3.0 with CI and llama.cpp GGUF interchange.</li>
+                        </ul>
+                    </div>
+
+                    <div class="resume-job">
+                        <div class="resume-job-head">
+                            <h4 class="resume-job-title"><a href="/blog/introspection-via-kaomoji" data-page="blog">Introspection via Kaomoji</a></h4>
+                            <span class="resume-job-dates" data-i18n="resume.research.kaomoji.tagline">Python &middot; HuggingFace</span>
+                        </div>
+                        <ul class="resume-bullets">
+                            <li data-i18n="resume.research.kaomoji.b1">Built llmoji, a CLI that hooks coding agents (Claude Code, Codex, Hermes) to open every turn with a kaomoji, then synthesizes a meaning per face and ships the corpus as a public HuggingFace dataset.</li>
+                            <li data-i18n="resume.research.kaomoji.b2">Found that a model's hidden&ndash;state affect quadrant is recoverable from its kaomoji choice across open&ndash;weight families (by Jensen&ndash;Shannon similarity, not argmax). Sibling studies probe a residual&ndash;stream attractor basin and whether stated elapsed time is represented or confabulated.</li>
                         </ul>
                     </div>
                 </section>
@@ -579,74 +601,32 @@
 
                     <div class="resume-job">
                         <div class="resume-job-head">
-                            <h4 class="resume-job-title"><a href="https://github.com/a9lim/saklas" target="_blank" rel="noopener noreferrer">Saklas</a></h4>
-                            <span class="resume-job-dates" data-i18n="resume.proj.saklas.tagline">PyPI &middot; Python</span>
+                            <h4 class="resume-job-title"><a href="https://github.com/a9lim/pleroma" target="_blank" rel="noopener noreferrer">Pleroma</a></h4>
+                            <span class="resume-job-dates" data-i18n="resume.proj.pleroma.tagline">Rust &middot; Python</span>
                         </div>
                         <ul class="resume-bullets">
-                            <li data-i18n="resume.proj.saklas.b1">Activation steering and trait monitoring for HuggingFace transformers &mdash; extracts contrastive steering vectors and adds them to hidden states at generation time, no fine&ndash;tuning required.</li>
-                            <li><span data-i18n="resume.proj.saklas.b2.pre">Three interfaces: a terminal UI with live alpha knobs and probe sparklines, an HTTP server speaking both OpenAI </span><code>/v1/*</code><span data-i18n="resume.proj.saklas.b2.mid"> and Ollama </span><code>/api/*</code><span data-i18n="resume.proj.saklas.b2.post"> wire formats on the same port, and a Python API for scripted experiments.</span></li>
-                            <li data-i18n="resume.proj.saklas.b3">Ships 21 pre&ndash;built probes scoring affect, epistemic stance, register, and alignment in&ndash;flight; tested on Qwen, Gemma, Ministral, gpt&ndash;oss, Llama, and GLM.</li>
-                            <li><span data-i18n="resume.proj.saklas.b4.pre">Implements the contrastive&ndash;PCA reading procedure from </span><a href="https://arxiv.org/abs/2310.01405" target="_blank" rel="noopener noreferrer" data-i18n="resume.proj.saklas.b4.linkText">Zou et al. (2023)</a><span data-i18n="resume.proj.saklas.b4.post">; published to PyPI under AGPL&ndash;3.0 with CI, type checking, and llama.cpp GGUF interchange.</span></li>
+                            <li data-i18n="resume.proj.pleroma.b1">Clifford algebras (with nilpotents, so a degenerate form recovers the full exterior algebra) over the three field&ndash;like cores of Conway's combinatorial games. Surreals recover the real Cl(p,q) classification with infinite and infinitesimal metric entries; nimbers give genuinely new characteristic&ndash;2 algebras. Verified Rust core with Python bindings.</li>
                         </ul>
                     </div>
 
                     <div class="resume-job">
                         <div class="resume-job-head">
-                            <h4 class="resume-job-title"><a href="/geon" data-page="home">Geon</a><span data-i18n="resume.proj.geon.title.post"> &mdash; Relativistic Particle Physics</span></h4>
-                            <span class="resume-job-dates" data-i18n="resume.proj.geon.tagline">JavaScript &middot; WebGPU</span>
+                            <h4 class="resume-job-title"><a href="https://github.com/a9lim/bio-transformer" target="_blank" rel="noopener noreferrer">Bio-transformer</a></h4>
+                            <span class="resume-job-dates" data-i18n="resume.proj.bioformer.tagline">Python</span>
                         </div>
                         <ul class="resume-bullets">
-                            <li data-i18n="resume.proj.geon.b1">Real&ndash;time N&ndash;body simulator running on WebGPU compute shaders, modeling 11 force types &mdash; Newtonian gravity, gravitomagnetism, Coulomb, Lorentz, Yukawa, Higgs and axion field couplings, Hubble expansion, 1PN general&ndash;relativistic corrections, spin&ndash;orbit, and radiation reaction.</li>
-                            <li data-i18n="resume.proj.geon.b2">Barnes&ndash;Hut tree acceleration for O(N log N) scaling; Boris integrator preserving phase&ndash;space volume.</li>
-                            <li data-i18n="resume.proj.geon.b3">Black&ndash;hole mode with Kerr&ndash;Newman event horizons, Hawking radiation, Schwinger pair&ndash;production discharge, and superradiant axion clouds. Nineteen curated presets demonstrate Keplerian orbits, Rutherford scattering, Higgs wells, gravitational&ndash;wave inspiral, and more.</li>
+                            <li data-i18n="resume.proj.bioformer.b1">Neuromorphic transformer from three brain subsystems that each compute something transformer&ndash;shaped: astrocytes as recurrent linear attention, the Marr&ndash;Albus cerebellum as the FFN, and laminar neocortex as the residual stream via predictive coding. Every neuron is a leaky integrate&ndash;and&ndash;fire spiker and every weight update is local (Oja, Hebbian, and climbing&ndash;fibre rules), with no backprop or surrogate gradient.</li>
                         </ul>
                     </div>
 
                     <div class="resume-job">
                         <div class="resume-job-head">
-                            <h4 class="resume-job-title"><a href="/cyano" data-page="home">Cyano</a><span data-i18n="resume.proj.cyano.title.post"> &mdash; Cellular Metabolism</span></h4>
-                            <span class="resume-job-dates" data-i18n="resume.proj.cyano.tagline">JavaScript</span>
+                            <h4 class="resume-job-title" data-i18n="resume.proj.sims.title">Interactive Simulations</h4>
+                            <span class="resume-job-dates" data-i18n="resume.proj.sims.tagline">JavaScript &middot; WebGPU</span>
                         </div>
                         <ul class="resume-bullets">
-                            <li data-i18n="resume.proj.cyano.b1">Interactive biochemistry simulator covering twelve metabolic pathways &mdash; glycolysis, gluconeogenesis, PPP, Krebs, beta&ndash;oxidation, fatty acid synthesis, the Calvin cycle, the light reactions, fermentation, the urea cycle, and amino acid catabolism &mdash; connected through shared metabolite pools.</li>
-                            <li data-i18n="resume.proj.cyano.b2">14&ndash;complex electron transport chain with proton motive force, oxidative phosphorylation, uncoupling, leak, and reactive oxygen species generation; allosteric regulation gates every reaction (PFK, PDH, ICDH).</li>
-                            <li data-i18n="resume.proj.cyano.b3">Six organism presets including a cancer&ndash;cell preset that demonstrates the Warburg effect.</li>
-                        </ul>
-                    </div>
-
-                    <div class="resume-job">
-                        <div class="resume-job-head">
-                            <h4 class="resume-job-title"><a href="/shoals" data-page="home">Shoals</a><span data-i18n="resume.proj.shoals.title.post"> &mdash; Options Trading</span></h4>
-                            <span class="resume-job-dates" data-i18n="resume.proj.shoals.tagline">JavaScript</span>
-                        </div>
-                        <ul class="resume-bullets">
-                            <li data-i18n="resume.proj.shoals.b1">Derivatives pricing simulator combining Heston stochastic volatility and Merton jump diffusion with a Vasicek mean&ndash;reverting interest rate. American options priced via 128&ndash;step Cox&ndash;Ross&ndash;Rubinstein binomial tree with term&ndash;structure volatility, moneyness skew, and discrete dividends.</li>
-                            <li data-i18n="resume.proj.shoals.b2">25&ndash;strike options chain with real&ndash;time Greeks, multi&ndash;leg strategy builder (spreads, straddles, condors, butterflies), payoff diagrams, and portfolio&ndash;level margin tracking.</li>
-                            <li data-i18n="resume.proj.shoals.b3">Narrative event engine with 400+ curated scenarios &mdash; earnings, monetary policy, geopolitics, sector rotation, technical signals, black swans &mdash; chained via a Poisson scheduler with trait&ndash;aware likelihood weighting.</li>
-                        </ul>
-                    </div>
-
-                    <div class="resume-job">
-                        <div class="resume-job-head">
-                            <h4 class="resume-job-title"><a href="/gerry" data-page="home">Gerry</a><span data-i18n="resume.proj.gerry.title.post"> &mdash; Redistricting &amp; Electoral Fairness</span></h4>
-                            <span class="resume-job-dates" data-i18n="resume.proj.gerry.tagline">JavaScript</span>
-                        </div>
-                        <ul class="resume-bullets">
-                            <li data-i18n="resume.proj.gerry.b1">Interactive gerrymandering simulator on a procedural hex&ndash;tile electorate. Players paint districts and evaluate them against six fairness metrics: efficiency gap, partisan symmetry, competitive&ndash;district count, Polsby&ndash;Popper compactness, contiguity, and majority&ndash;minority districts.</li>
-                            <li data-i18n="resume.proj.gerry.b2">Automated modes include pack&ndash;and&ndash;crack and a simulated&ndash;annealing fair&ndash;draw optimizer; Monte Carlo election stress tests run thousands of simulated elections with turnout noise to evaluate map robustness.</li>
-                            <li data-i18n="resume.proj.gerry.b3">Procedural maps generated via seeded Perlin noise with configurable urban clustering and minority density, reproducible by URL hash.</li>
-                        </ul>
-                    </div>
-
-                    <div class="resume-job">
-                        <div class="resume-job-head">
-                            <h4 class="resume-job-title"><a href="/scripture/" data-page="home">Scripture</a><span data-i18n="resume.proj.scripture.title.post"> &mdash; Sacred Text Reader</span></h4>
-                            <span class="resume-job-dates" data-i18n="resume.proj.scripture.tagline">JavaScript</span>
-                        </div>
-                        <ul class="resume-bullets">
-                            <li data-i18n="resume.proj.scripture.b1">Browser&ndash;based reader for sixteen sacred texts spanning Christian, Islamic, LDS, Confucian, Taoist, Shinto, Zoroastrian, Buddhist, Finnish, and Norse traditions &mdash; ~50&nbsp;MB of static JSON, loaded on demand per chapter.</li>
-                            <li data-i18n="resume.proj.scripture.b2">Full&ndash;text search across all sixteen works, TF&ndash;IDF concordance for related passage discovery, verse&ndash;linked notes, text&ndash;to&ndash;speech, and deep linking to any verse via URL.</li>
-                            <li><span data-i18n="resume.proj.scripture.b3.pre">Edge&ndash;SSR'd verse content with per&ndash;chapter </span><code>Chapter</code><span data-i18n="resume.proj.scripture.b3.mid"> JSON&ndash;LD and per&ndash;verse </span><code>Quotation</code><span data-i18n="resume.proj.scripture.b3.post"> structured data so the corpus is crawlable without JavaScript execution.</span></li>
+                            <li><strong><a href="/geon">Geon</a></strong><span data-i18n="resume.proj.sims.geon">: relativistic N&ndash;body simulator on WebGPU compute shaders, with 11 forces, Barnes&ndash;Hut scaling, and Kerr&ndash;Newman black holes. </span><strong><a href="/shoals">Shoals</a></strong><span data-i18n="resume.proj.sims.shoals">: options&ndash;trading sim with Heston, Merton, and Vasicek pricing and a 400+ scenario event engine.</span></li>
+                            <li data-i18n="resume.proj.sims.more">Plus Plasma (WebGPU resistive MHD), Pile (PWR, RBMK, and molten&ndash;salt reactor neutronics), Miasma (stochastic spatial epidemics), Cyano (cellular metabolism), Gerry (redistricting and fairness metrics), and Scripture (sixteen&ndash;text reader with full&ndash;text search and edge SSR).</li>
                         </ul>
                     </div>
 
@@ -675,23 +655,18 @@
                 <section class="resume-section">
                     <h3 class="resume-h3" data-i18n="resume.h.skills">Skills</h3>
                     <dl class="resume-skills">
-                        <dt data-i18n="resume.skill.ai.k">Building with agentic AI</dt>
-                        <dd data-i18n="resume.skill.ai.v">Daily driver: Claude Code. Comfortable directing, reviewing, and integrating large volumes of AI&ndash;generated code at production scale.</dd>
+                        <dt data-i18n="resume.skill.ai.k">AI &amp; interpretability</dt>
+                        <dd data-i18n="resume.skill.ai.v">Daily driver: Claude Code and Codex, integrating AI&ndash;generated code at scale; activation steering, contrastive&ndash;PCA probing, and hidden&ndash;state analysis on HuggingFace transformers; MCP server authoring.</dd>
 
                         <dt data-i18n="resume.skill.lang.k">Languages</dt>
-                        <dd data-i18n="resume.skill.lang.v">JavaScript (vanilla, ES modules, Canvas, WebGL, GLSL), Python (NumPy, Matplotlib, ML tooling), Java, QtQuick / QML, LaTeX, HTML, CSS.</dd>
+                        <dd data-i18n="resume.skill.lang.v">JavaScript (Canvas, WebGL, WebGPU, GLSL, WGSL), Python (PyTorch, HuggingFace transformers, NumPy), Rust, Java, QtQuick and QML, LaTeX, HTML, CSS.</dd>
 
                         <dt data-i18n="resume.skill.web.k">Web &amp; infrastructure</dt>
-                        <dd data-i18n="resume.skill.web.v">Cloudflare Workers, Workers Assets, Analytics Engine, edge SSR via HTMLRewriter, structured data (JSON&ndash;LD, schema.org, OpenGraph), self&ndash;hosted typography, no&ndash;build pipelines.</dd>
+                        <dd data-i18n="resume.skill.web.v">Cloudflare Workers and Assets, edge SSR via HTMLRewriter, JSON&ndash;LD structured data, self&ndash;hosted typography, no&ndash;build pipelines.</dd>
 
                         <dt data-i18n="resume.skill.other.k">Other</dt>
-                        <dd data-i18n="resume.skill.other.v">Technical writing, vector graphics, soldering, Spanish (novice), conlang construction.</dd>
+                        <dd data-i18n="resume.skill.other.v">Technical writing, vector graphics, soldering, Spanish (novice), and conlang construction.</dd>
                     </dl>
-                </section>
-
-                <section class="resume-section">
-                    <h3 class="resume-h3" data-i18n="resume.h.open">Open to</h3>
-                    <p><span data-i18n="resume.open.pre">Anyone who wants to work with me on something, reach out at </span><a href="mailto:mx@a9l.im">mx@a9l.im</a><span data-i18n="resume.open.mid"> or </span><span>@a9lim</span><span data-i18n="resume.open.post"> on Discord.</span></p>
                 </section>
             </article>
         </div>

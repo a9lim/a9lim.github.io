@@ -1,11 +1,31 @@
 {
-  "generatedAt": "2026-05-30T22:40:33.373Z",
+  "generatedAt": "2026-06-07T09:03:59.394Z",
   "lastDeploy": {
-    "hash": "7a41edb",
-    "iso": "2026-05-30T15:03:33-07:00",
-    "subject": "wgsl-transpile: fix scalar + storage pointer out-params (geon heatmap, field-forces)"
+    "hash": "8bac3fa",
+    "iso": "2026-06-06T17:24:38-07:00",
+    "subject": "Add Bio-transformer, Dagwood, Gaslamp, Pleroma to projects page"
   },
   "commits": [
+    {
+      "hash": "8bac3fa",
+      "iso": "2026-06-06T17:24:38-07:00",
+      "subject": "Add Bio-transformer, Dagwood, Gaslamp, Pleroma to projects page"
+    },
+    {
+      "hash": "ff16c33",
+      "iso": "2026-06-04T12:34:52-07:00",
+      "subject": "Remove WGSL transpiler path from build (plasma + geon)"
+    },
+    {
+      "hash": "f9dafd4",
+      "iso": "2026-05-30T15:55:18-07:00",
+      "subject": "wgsl-transpile: GPU-golden differential harness (scaffold)"
+    },
+    {
+      "hash": "3391b49",
+      "iso": "2026-05-30T15:41:44-07:00",
+      "subject": "wgsl-transpile: Phase C Class 1 — loop-carried barrier fission for reductions"
+    },
     {
       "hash": "7a41edb",
       "iso": "2026-05-30T15:03:33-07:00",
@@ -15,26 +35,6 @@
       "hash": "5a67d2f",
       "iso": "2026-05-30T14:45:26-07:00",
       "subject": "wgsl-transpile: wire geon shaders + fix forward-ref/swizzle/atomic emit bugs"
-    },
-    {
-      "hash": "2390384",
-      "iso": "2026-05-28T22:46:21-07:00",
-      "subject": "pile: bump to RBMK/MSR plant-systems parity + bespoke shapes (8f97c84)"
-    },
-    {
-      "hash": "061be4b",
-      "iso": "2026-05-28T16:23:20-07:00",
-      "subject": "shared-utils: add mulberry32 + gaussian; cross-sim shared-code adoptions"
-    },
-    {
-      "hash": "0284a71",
-      "iso": "2026-05-28T13:43:12-07:00",
-      "subject": "Wire new sims into homepage metadata + bump submodule pointers"
-    },
-    {
-      "hash": "0734b5d",
-      "iso": "2026-05-27T22:53:41-07:00",
-      "subject": "Add plasma submodule (v1.0) + transpiler variants infrastructure"
     }
   ],
   "stats": {
@@ -42,6 +42,6 @@
     "posts": 1,
     "scriptureWorks": 16,
     "scriptureChapters": 2724,
-    "sourceLines": 172464
+    "sourceLines": 29837
   }
 }

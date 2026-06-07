@@ -7,7 +7,7 @@
 
 \documentclass[9pt,a4paper]{extarticle}
 
-\usepackage[a4paper, top=14mm, bottom=14mm, left=15mm, right=15mm]{geometry}
+\usepackage[a4paper, top=9mm, bottom=9mm, left=15mm, right=15mm]{geometry}
 \usepackage{fontspec}
 \usepackage{xcolor}
 \usepackage{titlesec}
@@ -18,7 +18,7 @@
 \usepackage{tabularx}
 
 \setlength{\parindent}{0pt}
-\setlength{\parskip}{2pt}
+\setlength{\parskip}{1pt}
 
 % --- Colors (black & white; greys mirror shared-tokens.js light palette) ---
 \definecolor{accent}{HTML}{000000}
@@ -51,7 +51,7 @@
   pdftitle   = {a9lim — Resume},
   pdfauthor  = {a9lim},
   pdfsubject = {Resume},
-  pdfkeywords = {a9lim, resume, developer, simulations, JavaScript, Cloudflare, Claude},
+  pdfkeywords = {a9lim, resume, developer, simulations, interpretability, JavaScript, Python, Rust, Cloudflare, Claude},
 }
 
 % --- Section headings: accent-colored rule below (line accent, not border) ---
@@ -60,19 +60,19 @@
   {}{0pt}
   {}
   [\vspace{2pt}{\color{accent}\rule{\linewidth}{1.2pt}}]
-\titlespacing*{\section}{0pt}{10pt}{4pt}
+\titlespacing*{\section}{0pt}{4pt}{2pt}
 
 % --- Job entry: bold title left, muted dates right ---
 \newcommand{\role}[2]{%
-  \par\vspace{2pt}%
+  \par\vspace{1pt}%
   \noindent\begin{tabularx}{\linewidth}{@{}X r@{}}
     \textbf{#1} & \textcolor{textsec}{#2} \\
   \end{tabularx}%
-  \par\vspace{-4pt}%
+  \par\vspace{-5pt}%
 }
 
 % --- Bullet list ---
-\setlist[itemize]{leftmargin=12pt, itemsep=0.5pt, topsep=1pt, parsep=0pt}
+\setlist[itemize]{leftmargin=12pt, itemsep=0.5pt, topsep=0.5pt, parsep=0pt}
 
 % --- Header (name + contact) ---
 \newcommand{\resumeheader}{%
@@ -102,70 +102,53 @@
 \resumeheader
 
 \section*{Profile}
-I'm a Singaporean developer building simulations, tools, and more at
-\href{https://a9l.im}{a9l.im}. Everything I make is vanilla JS that I write with Claude.
-I'm interested in freelance and collaboration, especially in DIY projects like research tools.
+I'm a Singaporean developer building simulations, tools, and interpretability research, most of it hosted at
+\href{https://a9l.im}{a9l.im}. Literally everything I make is written with Claude: vanilla JS for the site,
+plus Python and Rust for research. I'm open to freelance and collaboration, especially research tools and anything DIY.
 
 \section*{Experience}
 
 \role{Independent Developer --- \href{https://a9l.im}{a9l.im}}{Feb 2026 -- Present}
 \begin{itemize}
-  \item Built and maintain a portfolio of open-source interactive simulations and tools (see Selected Projects below) plus the shared design system and component library used across all of them. Implemented in rawdogged vanilla JavaScript.
-  \item Architected the SSR layer on Cloudflare Workers + Assets: per-route HTMLRewriter injection, edge-rendered markdown, structured data, and per-route security headers.
-  \item Maintains the entire stack solo with Claude.
+  \item Built and maintain, solo, a portfolio of open-source interactive simulations and tools plus the shared design system and component library used across all of them, all in rawdogged vanilla JavaScript.
+  \item Architected the SSR layer on Cloudflare Workers and Assets: per-route HTMLRewriter injection, edge-rendered markdown, structured data, and per-route security headers.
 \end{itemize}
 
 \role{SDDM Theme Maintainer --- \href{https://github.com/catppuccin/sddm}{Catppuccin}}{2025 -- Present}
 \begin{itemize}
-  \item Led rewrite and modernization of Catppuccin's SDDM display manager theme in QtQuick.
-  \item Implemented dynamic accent color and per-user icon integration.
-  \item Automated theme generation across the four Catppuccin flavors to streamline maintenance.
-  \item Designed vector backgrounds and user iconography.
+  \item Led the QtQuick rewrite of Catppuccin's SDDM display-manager theme: dynamic accent colors, per-user icons, designed vector backgrounds, and automated theme generation across all four flavors.
+\end{itemize}
+
+\section*{Research}
+
+\role{\href{https://github.com/a9lim/saklas}{Saklas}}{PyPI \textperiodcentered{} Python}
+\begin{itemize}
+  \item Activation steering and probing library powering the studies below: pulls contrastive steering vectors (\href{https://arxiv.org/abs/2310.01405}{Zou et al.\ 2023}) and adds them to hidden states at generation, no fine-tuning. Ships 21 in-flight probes for affect, stance, register, and alignment.
+  \item Python API, an OpenAI- and Ollama-compatible server, and a live terminal UI; supports 53 model architectures. On PyPI under AGPL-3.0 with CI and llama.cpp GGUF interchange.
+\end{itemize}
+
+\role{\href{https://a9l.im/blog/introspection-via-kaomoji}{Introspection via Kaomoji}}{Python \textperiodcentered{} HuggingFace}
+\begin{itemize}
+  \item Built llmoji, a CLI that hooks coding agents (Claude Code, Codex, Hermes) to open every turn with a kaomoji, then synthesizes a meaning per face and ships the corpus as a public HuggingFace dataset.
+  \item Found that a model's hidden-state affect quadrant is recoverable from its kaomoji choice across open-weight families (by Jensen-Shannon similarity, not argmax). Sibling studies probe a residual-stream attractor basin and whether stated elapsed time is represented or confabulated.
 \end{itemize}
 
 \section*{Selected Projects}
 
-\role{\href{https://github.com/a9lim/saklas}{Saklas}}{PyPI \textperiodcentered{} Python}
+\role{\href{https://github.com/a9lim/pleroma}{Pleroma}}{Rust \textperiodcentered{} Python}
 \begin{itemize}
-  \item Activation steering and trait monitoring for HuggingFace transformers --- extracts contrastive steering vectors and adds them to hidden states at generation time, no fine-tuning required.
-  \item Three interfaces: a terminal UI with live alpha knobs and probe sparklines, an HTTP server speaking both OpenAI \texttt{/v1/*} and Ollama \texttt{/api/*} wire formats on the same port, and a Python API for scripted experiments.
-  \item Ships 21 pre-built probes scoring affect, epistemic stance, register, and alignment in-flight; tested on Qwen, Gemma, Ministral, gpt-oss, Llama, and GLM.
-  \item Implements the contrastive-PCA reading procedure from \href{https://arxiv.org/abs/2310.01405}{Zou et al.\ (2023)}; published to PyPI under AGPL-3.0 with CI, type checking, and llama.cpp GGUF interchange.
+  \item Clifford algebras (with nilpotents, so a degenerate form recovers the full exterior algebra) over the three field-like cores of Conway's combinatorial games. Surreals recover the real Cl(p,q) classification with infinite and infinitesimal metric entries; nimbers give genuinely new characteristic-2 algebras. Verified Rust core with Python bindings.
 \end{itemize}
 
-\role{\href{https://a9l.im/geon}{Geon} --- Relativistic Particle Physics}{JavaScript \textperiodcentered{} WebGPU}
+\role{\href{https://github.com/a9lim/bio-transformer}{Bio-transformer}}{Python}
 \begin{itemize}
-  \item Real-time N-body simulator running on WebGPU compute shaders, modeling 11 force types --- Newtonian gravity, gravitomagnetism, Coulomb, Lorentz, Yukawa, Higgs and axion field couplings, Hubble expansion, 1PN general-relativistic corrections, spin-orbit, and radiation reaction.
-  \item Barnes-Hut tree acceleration for $O(N \log N)$ scaling; Boris integrator preserving phase-space volume.
-  \item Black-hole mode with Kerr-Newman event horizons, Hawking radiation, Schwinger pair-production discharge, and superradiant axion clouds. Nineteen curated presets demonstrate Keplerian orbits, Rutherford scattering, Higgs wells, gravitational-wave inspiral, and more.
+  \item Neuromorphic transformer from three brain subsystems that each compute something transformer-shaped: astrocytes as recurrent linear attention, the Marr--Albus cerebellum as the FFN, and laminar neocortex as the residual stream via predictive coding. Every neuron is a leaky integrate-and-fire spiker and every weight update is local (Oja, Hebbian, and climbing-fibre rules), with no backprop or surrogate gradient.
 \end{itemize}
 
-\role{\href{https://a9l.im/cyano}{Cyano} --- Cellular Metabolism}{JavaScript}
+\role{Interactive Simulations --- \href{https://a9l.im}{a9l.im}}{JavaScript \textperiodcentered{} WebGPU}
 \begin{itemize}
-  \item Interactive biochemistry simulator covering twelve metabolic pathways --- glycolysis, gluconeogenesis, PPP, Krebs, beta-oxidation, fatty acid synthesis, the Calvin cycle, the light reactions, fermentation, the urea cycle, and amino acid catabolism --- connected through shared metabolite pools.
-  \item 14-complex electron transport chain with proton motive force, oxidative phosphorylation, uncoupling, leak, and reactive oxygen species generation; allosteric regulation gates every reaction (PFK, PDH, ICDH).
-  \item Six organism presets including a cancer-cell preset that demonstrates the Warburg effect.
-\end{itemize}
-
-\role{\href{https://a9l.im/shoals}{Shoals} --- Options Trading}{JavaScript}
-\begin{itemize}
-  \item Derivatives pricing simulator combining Heston stochastic volatility and Merton jump diffusion with a Vasicek mean-reverting interest rate. American options priced via 128-step Cox-Ross-Rubinstein binomial tree with term-structure volatility, moneyness skew, and discrete dividends.
-  \item 25-strike options chain with real-time Greeks, multi-leg strategy builder (spreads, straddles, condors, butterflies), payoff diagrams, and portfolio-level margin tracking.
-  \item Narrative event engine with 400+ curated scenarios --- earnings, monetary policy, geopolitics, sector rotation, technical signals, black swans --- chained via a Poisson scheduler with trait-aware likelihood weighting.
-\end{itemize}
-
-\role{\href{https://a9l.im/gerry}{Gerry} --- Redistricting \& Electoral Fairness}{JavaScript}
-\begin{itemize}
-  \item Interactive gerrymandering simulator on a procedural hex-tile electorate. Players paint districts and evaluate them against six fairness metrics: efficiency gap, partisan symmetry, competitive-district count, Polsby-Popper compactness, contiguity, and majority-minority districts.
-  \item Automated modes include pack-and-crack and a simulated-annealing fair-draw optimizer; Monte Carlo election stress tests run thousands of simulated elections with turnout noise to evaluate map robustness.
-  \item Procedural maps generated via seeded Perlin noise with configurable urban clustering and minority density, reproducible by URL hash.
-\end{itemize}
-
-\role{\href{https://a9l.im/scripture/}{Scripture} --- Sacred Text Reader}{JavaScript}
-\begin{itemize}
-  \item Browser-based reader for sixteen sacred texts spanning Christian, Islamic, LDS, Confucian, Taoist, Shinto, Zoroastrian, Buddhist, Finnish, and Norse traditions --- $\sim$50\,MB of static JSON, loaded on demand per chapter.
-  \item Full-text search across all sixteen works, TF-IDF concordance for related passage discovery, verse-linked notes, text-to-speech, and deep linking to any verse via URL.
-  \item Edge-SSR'd verse content with per-chapter \texttt{Chapter} JSON-LD and per-verse \texttt{Quotation} structured data so the corpus is crawlable without JavaScript execution.
+  \item \textbf{\href{https://a9l.im/geon}{Geon}}: relativistic N-body simulator on WebGPU compute shaders, with 11 forces, Barnes-Hut scaling, and Kerr-Newman black holes. \textbf{\href{https://a9l.im/shoals}{Shoals}}: options-trading sim with Heston, Merton, and Vasicek pricing and a 400+ scenario event engine.
+  \item Plus \textbf{\href{https://a9l.im/plasma}{Plasma}} (WebGPU resistive MHD), \textbf{\href{https://a9l.im/pile}{Pile}} (PWR, RBMK, and molten-salt reactor neutronics), \textbf{\href{https://a9l.im/miasma}{Miasma}} (stochastic spatial epidemics), \textbf{\href{https://a9l.im/cyano}{Cyano}} (cellular metabolism), \textbf{\href{https://a9l.im/gerry}{Gerry}} (redistricting and fairness metrics), and \textbf{\href{https://a9l.im/scripture/}{Scripture}} (sixteen-text reader with full-text search and edge SSR).
 \end{itemize}
 
 \section*{Education}
@@ -178,16 +161,9 @@ Summa Cum Laude \textperiodcentered{} GPA 4.50
 
 \section*{Skills}
 
-\skillrow{Building with agentic AI}{Daily driver: Claude Code. Comfortable directing, reviewing, and integrating large volumes of AI-generated code at production scale.}
-
-\skillrow{Languages}{JavaScript (vanilla, ES modules, Canvas, WebGL, GLSL), Python (NumPy, Matplotlib, ML tooling), Java, QtQuick / QML, LaTeX, HTML, CSS.}
-
-\skillrow{Web \& infrastructure}{Cloudflare Workers, Workers Assets, Analytics Engine, edge SSR via HTMLRewriter, structured data (JSON-LD, schema.org, OpenGraph), self-hosted typography, no-build pipelines.}
-
-\skillrow{Other}{Technical writing, vector graphics, soldering, Spanish (novice), conlang construction.}
-
-\section*{Open to}
-Anyone who wants to work with me on something, reach out at
-\href{mailto:mx@a9l.im}{mx@a9l.im} or @a9lim on Discord.
+\textbf{AI \& interpretability:} Claude Code and Codex daily, integrating AI-generated code at scale; activation steering, contrastive-PCA probing, and hidden-state analysis on HuggingFace transformers; MCP server authoring.\\
+\textbf{Languages:} JavaScript (Canvas, WebGL, WebGPU, GLSL, WGSL), Python (PyTorch, HuggingFace transformers, NumPy), Rust, Java, QtQuick and QML, LaTeX.\\
+\textbf{Web \& infrastructure:} Cloudflare Workers and Assets, edge SSR via HTMLRewriter, JSON-LD structured data, self-hosted typography, no-build pipelines.\\
+\textbf{Other:} Technical writing, vector graphics, soldering, Spanish (novice), and conlang construction.
 
 \end{document}

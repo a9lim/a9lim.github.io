@@ -220,7 +220,7 @@ const ROUTE_META = {
   },
   '/resume': {
     title: 'Resume | a9l.im',
-    desc: 'Resume of a9lim \u2014 independent developer building interactive educational simulations and tools at a9l.im, available for freelance and collaborations.',
+    desc: 'Resume of a9lim \u2014 independent developer building interactive simulations, research tooling, and mechanistic-interpretability experiments at a9l.im, open to freelance and collaboration.',
     ogTitle: 'Resume | a9l.im',
   },
 };
