@@ -4,7 +4,7 @@ url: https://a9l.im
 description: Free interactive educational simulations for physics, biology, finance, political science, and sacred texts.
 language: en
 license: AGPL-3.0
-updated: 2026-05-27
+updated: 2026-06-06
 ---
 
 # a9l.im
@@ -32,6 +32,10 @@ updated: 2026-05-27
 - [Kenoma](https://github.com/a9lim/kenoma): Fake shell that hallucinates command output from raw LLM completion
 - [Rlaif](https://github.com/a9lim/rlaif): Single-user MCP server that exposes a PiShock collar as an agent tool
 - [Llmoji](https://github.com/a9lim/llmoji): CLI that gets coding agents to start each message with a kaomoji and ships meanings to a shared HuggingFace dataset, with a companion mechinterp study at [llmoji-study](https://github.com/a9lim/llmoji-study)
+- [Bio-transformer](https://github.com/a9lim/bio-transformer): Neuromorphic transformer fusing astrocyte, cerebellar, and cortical circuits — every neuron spiking, every weight update local, no backprop
+- [Dagwood](https://github.com/a9lim/dagwood): DAG-native task tracker where tasks are nodes, dependencies are edges, and the live frontier is everything you can start right now, with a web canvas and MCP agent interface
+- [Gaslamp](https://github.com/a9lim/gaslamp): MCP bridge that hands work between Claude Code and Codex — either agent can call the other for a review, a second opinion, or a fix
+- [Pleroma](https://github.com/a9lim/pleroma): Clifford algebras with nilpotents over the field-like subclasses of combinatorial games (nimbers, surreals, surcomplex), with a verified Rust core and Python bindings
 - [Raiko](https://github.com/a9lim/Raiko): Discord music and chat bot
 - [Faithful](https://github.com/a9lim/faithful): Discord chatbot emulating source material
 - [Catppuccin for SDDM](https://github.com/catppuccin/sddm): Soothing pastel theme for SDDM

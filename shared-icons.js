@@ -132,6 +132,10 @@ var _ICON = (function () {
         projRaiko:      '<svg viewBox="0 0 24 24"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>',
         projFaithful:   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="square" stroke-linejoin="miter"><path d="M21 15V3H3v18l4-4h12a2 2 0 002-2z"/></svg>',
         projCatppuccin: '<svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>',
+        projDagwood:    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="square" stroke-linejoin="miter"><circle cx="6" cy="5" r="2.5"/><circle cx="18" cy="5" r="2.5"/><circle cx="12" cy="19" r="2.5"/><line x1="7" y1="7.3" x2="11" y2="16.7"/><line x1="17" y1="7.3" x2="13" y2="16.7"/></svg>',
+        projPleroma:    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="square" stroke-linejoin="miter"><path d="M5 19 L15 17 L19 7 L9 9 Z"/><circle cx="5" cy="19" r="1.2" fill="currentColor"/></svg>',
+        projGaslamp:    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="square" stroke-linejoin="miter"><line x1="12" y1="2" x2="12" y2="5"/><path d="M8 5 L16 5 L17 10 L7 10 Z"/><path d="M8.5 10 L12 16 L15.5 10"/></svg>',
+        projBioformer:  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="square" stroke-linejoin="miter"><circle cx="10" cy="10" r="3"/><line x1="10" y1="7" x2="10" y2="3"/><line x1="7.9" y1="7.9" x2="4" y2="5"/><line x1="7.9" y1="12.1" x2="4" y2="14.5"/><line x1="12.1" y1="12.1" x2="19" y2="18"/><circle cx="20" cy="18" r="1.6" fill="currentColor"/></svg>',
 
         // ── Project card arrow ──
         projectArrow: '<svg viewBox="0 0 24 24"><path d="M7 17L16.3 7.7M17 7H7M17 7v10"/></svg>'
