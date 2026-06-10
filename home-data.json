@@ -1,11 +1,16 @@
 {
-  "generatedAt": "2026-06-07T09:03:59.394Z",
+  "generatedAt": "2026-06-10T07:07:54.280Z",
   "lastDeploy": {
-    "hash": "8bac3fa",
-    "iso": "2026-06-06T17:24:38-07:00",
-    "subject": "Add Bio-transformer, Dagwood, Gaslamp, Pleroma to projects page"
+    "hash": "80604ea",
+    "iso": "2026-06-07T02:05:13-07:00",
+    "subject": "resume: add Research section + new work, curate to one page"
   },
   "commits": [
+    {
+      "hash": "80604ea",
+      "iso": "2026-06-07T02:05:13-07:00",
+      "subject": "resume: add Research section + new work, curate to one page"
+    },
     {
       "hash": "8bac3fa",
       "iso": "2026-06-06T17:24:38-07:00",
@@ -30,11 +35,6 @@
       "hash": "7a41edb",
       "iso": "2026-05-30T15:03:33-07:00",
       "subject": "wgsl-transpile: fix scalar + storage pointer out-params (geon heatmap, field-forces)"
-    },
-    {
-      "hash": "5a67d2f",
-      "iso": "2026-05-30T14:45:26-07:00",
-      "subject": "wgsl-transpile: wire geon shaders + fix forward-ref/swizzle/atomic emit bugs"
     }
   ],
   "stats": {
@@ -42,6 +42,6 @@
     "posts": 1,
     "scriptureWorks": 16,
     "scriptureChapters": 2724,
-    "sourceLines": 29837
+    "sourceLines": 29852
   }
 }
