@@ -260,7 +260,6 @@ const staticRoutes = [
   { path: '/sims',      file: 'index.html',           changefreq: 'monthly', priority: 0.8 },
   { path: '/projects',  file: 'index.html',           changefreq: 'monthly', priority: 0.8 },
   { path: '/blog',      file: 'index.html',           changefreq: 'monthly', priority: 0.8 },
-  { path: '/resume',    file: 'index.html',           changefreq: 'monthly', priority: 0.7 },
   { path: '/geon',      file: 'geon/index.html',      changefreq: 'monthly', priority: 0.9 },
   { path: '/cyano',     file: 'cyano/index.html',     changefreq: 'monthly', priority: 0.9 },
   { path: '/gerry',     file: 'gerry/index.html',     changefreq: 'monthly', priority: 0.9 },

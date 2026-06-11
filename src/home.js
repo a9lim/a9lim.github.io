@@ -268,7 +268,6 @@ function initCheatsheet() {
         ['g h', 'home'],
         ['g p', 'projects'],
         ['g b', 'blog'],
-        ['g r', 'resume'],
         ['g s', 'scripture'],
         ['t',   'toggle theme'],
         ['?',   'this cheatsheet'],
@@ -348,7 +347,7 @@ function initCheatsheet() {
         // `g <letter>` sequences
         if (gPending) {
             gPending = false; if (gTimer) clearTimeout(gTimer);
-            const map = { h: '/', p: '/projects', b: '/blog', r: '/resume', s: '/scripture/' };
+            const map = { h: '/', p: '/projects', b: '/blog', s: '/scripture/' };
             const target = map[e.key.toLowerCase()];
             if (target) { e.preventDefault(); go(target); }
             return;

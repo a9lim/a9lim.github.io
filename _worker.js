@@ -218,11 +218,6 @@ const ROUTE_META = {
     desc: 'Articles on building educational simulations, computational physics, browser-based rendering, and interactive learning tools.',
     ogTitle: 'Blog | a9l.im',
   },
-  '/resume': {
-    title: 'Resume | a9l.im',
-    desc: 'Resume of a9lim \u2014 independent developer building interactive simulations, research tooling, and mechanistic-interpretability experiments at a9l.im, open to freelance and collaboration.',
-    ogTitle: 'Resume | a9l.im',
-  },
 };
 
 const BLOG_META = {
@@ -232,55 +227,6 @@ const BLOG_META = {
     ogTitle: 'Introspection via Kaomoji | a9l.im',
   },
 };
-
-const ABOUT_JSONLD = JSON.stringify({
-  '@context': 'https://schema.org',
-  '@type': 'Person',
-  '@id': 'https://a9l.im/#person',
-  name: 'a9lim',
-  url: 'https://a9l.im/',
-  nationality: { '@type': 'Country', name: 'Singapore' },
-  alumniOf: [
-    { '@type': 'CollegeOrUniversity', name: 'University of California, San Diego', '@id': 'https://www.wikidata.org/wiki/Q622664' },
-    { '@type': 'EducationalOrganization', name: 'Singapore American School', '@id': 'https://www.wikidata.org/wiki/Q7522875' },
-  ],
-  sameAs: [
-    'https://github.com/a9lim',
-    'https://twitter.com/_a9lim',
-  ],
-  description: 'Singaporean developer building simulations, AI agents, and browser tools across physics, biology, finance, religion, and more.',
-  jobTitle: 'Software Engineer',
-  knowsAbout: [
-    'Particle physics simulation',
-    'Cellular metabolism',
-    'Options pricing',
-    'Gerrymandering and electoral fairness',
-    'Sacred text analysis',
-    'AI agents',
-    'Activation steering',
-    'WebGPU',
-    'JavaScript',
-    'Python',
-    'Computational science',
-    'Interactive educational tools',
-  ],
-  hasOccupation: {
-    '@type': 'Occupation',
-    name: 'Software Engineer',
-    occupationalCategory: '15-1252.00',
-    skills: ['WebGPU', 'JavaScript', 'Numerical simulation', 'Data visualization', 'Cloudflare Workers'],
-  },
-  makesOffer: {
-    '@type': 'Offer',
-    itemOffered: {
-      '@type': 'CreativeWork',
-      name: 'Educational Simulations',
-      description: 'Open-source interactive simulations for physics, biology, finance, and political science',
-      url: 'https://a9l.im/sims',
-    },
-  },
-  mainEntityOfPage: { '@type': 'WebPage', '@id': 'https://a9l.im/' },
-});
 
 // SSR mirrors of src/projects.js, split by `kind`. SIMS_SSR feeds the
 // /sims grid, PROJECTS_SSR feeds the /projects grid — keep both in sync
@@ -468,13 +414,6 @@ function rewriteHTML(response, meta) {
     .on('#page-blog', {
       element(el) {
         if (meta.canonical === 'https://a9l.im/blog' || meta.canonical.startsWith('https://a9l.im/blog/')) {
-          el.setAttribute('class', 'page-section active');
-        }
-      },
-    })
-    .on('#page-resume', {
-      element(el) {
-        if (meta.canonical === 'https://a9l.im/resume') {
           el.setAttribute('class', 'page-section active');
         }
       },
@@ -689,6 +628,11 @@ export default {
     // Folded /about into / — preserve inbound links with a permanent redirect
     if (pathname === '/about' || pathname === '/about/') {
       return Response.redirect(`${origin}/`, 308);
+    }
+
+    // Webpage resume removed — the PDF is canonical. Redirect inbound links.
+    if (pathname === '/resume' || pathname === '/resume/') {
+      return Response.redirect(`${origin}/resume.pdf`, 308);
     }
 
     // Scripture sub-SPA
@@ -995,7 +939,7 @@ export default {
     }
 
     // Root SPA routes — serve index.html with per-route meta injection
-    if (pathname === '/sims' || pathname === '/projects' || pathname === '/blog' || pathname.startsWith('/blog/') || pathname === '/resume') {
+    if (pathname === '/sims' || pathname === '/projects' || pathname === '/blog' || pathname.startsWith('/blog/')) {
       const response = await env.ASSETS.fetch(new URL('/index.html', origin));
 
       let meta;
@@ -1080,7 +1024,7 @@ export default {
         }
       } else {
         meta = { ...ROUTE_META[pathname], canonical: `https://a9l.im${pathname}` };
-        const pageName = pathname === '/sims' ? 'Simulations' : pathname === '/projects' ? 'Projects' : pathname === '/blog' ? 'Blog' : 'Resume';
+        const pageName = pathname === '/sims' ? 'Simulations' : pathname === '/projects' ? 'Projects' : 'Blog';
         meta.ssrBreadcrumb = `<a href="/">Home</a> <span aria-hidden="true">\u203a</span> <span>${pageName}</span>`;
         const navElement = {
           '@type': 'SiteNavigationElement',
@@ -1090,7 +1034,6 @@ export default {
             { '@type': 'WebPage', name: 'Simulations', url: 'https://a9l.im/sims' },
             { '@type': 'WebPage', name: 'Projects', url: 'https://a9l.im/projects' },
             { '@type': 'WebPage', name: 'Blog', url: 'https://a9l.im/blog' },
-            { '@type': 'WebPage', name: 'Resume', url: 'https://a9l.im/resume' },
           ],
         };
         const breadcrumb = {
@@ -1100,37 +1043,7 @@ export default {
             { '@type': 'ListItem', position: 2, name: pageName, item: `https://a9l.im${pathname}` },
           ],
         };
-        if (pathname === '/resume') {
-          const person = JSON.parse(ABOUT_JSONLD);
-          delete person['@context'];
-          person.url = 'https://a9l.im/resume';
-          person.mainEntityOfPage = { '@type': 'WebPage', '@id': 'https://a9l.im/resume' };
-          person.hasOccupation = {
-            '@type': 'Occupation',
-            name: 'Independent Developer',
-            occupationalCategory: '15-1252.00',
-            skills: [
-              'Building with agentic AI', 'JavaScript', 'WebGL', 'GLSL', 'Cloudflare Workers',
-              'Edge SSR', 'Python', 'NumPy', 'QtQuick', 'LaTeX', 'Numerical simulation',
-              'Data visualization', 'Structured data (JSON-LD, schema.org)',
-            ],
-          };
-          person.seeks = {
-            '@type': 'Demand',
-            name: 'Freelance and collaborations',
-            description: 'Open to freelance and collaboration on DIY-flavored work — research tools, simulations, and browser experiments.',
-          };
-          const profilePage = {
-            '@type': 'ProfilePage',
-            '@id': 'https://a9l.im/resume',
-            url: 'https://a9l.im/resume',
-            name: 'Resume | a9lim',
-            mainEntity: { '@id': 'https://a9l.im/#person' },
-            datePublished: '2026-04-15T00:00:00+00:00',
-            dateModified: '2026-05-11T00:00:00+00:00',
-          };
-          meta.jsonLd = JSON.stringify({ '@context': 'https://schema.org', '@graph': [profilePage, person, breadcrumb, navElement] });
-        } else if (pathname === '/sims') {
+        if (pathname === '/sims') {
           const simItems = [
             { position: 1, name: 'Geon — Relativistic Particle Physics Simulator', url: 'https://a9l.im/geon' },
             { position: 2, name: 'Cyano — Cellular Biochemistry Simulator', url: 'https://a9l.im/cyano' },

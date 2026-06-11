@@ -57,7 +57,7 @@
     <link rel="sitemap" type="application/xml" href="/sitemap.xml">
 
     <script type="speculationrules">
-    {"prefetch":[{"source":"document","where":{"href_matches":["/sims","/projects","/blog","/resume","/geon","/cyano","/gerry","/shoals","/scripture","/scripture/*","/miasma","/pile","/plasma"]},"eagerness":"moderate"}],"prerender":[{"source":"document","where":{"href_matches":["/sims","/projects","/blog","/resume"]},"eagerness":"conservative"}]}
+    {"prefetch":[{"source":"document","where":{"href_matches":["/sims","/projects","/blog","/geon","/cyano","/gerry","/shoals","/scripture","/scripture/*","/miasma","/pile","/plasma"]},"eagerness":"moderate"}],"prerender":[{"source":"document","where":{"href_matches":["/sims","/projects","/blog"]},"eagerness":"conservative"}]}
     </script>
 
     <script type="application/ld+json">
@@ -204,7 +204,6 @@
         {"@type": "WebPage", "name": "Simulations", "url": "https://a9l.im/sims"},
         {"@type": "WebPage", "name": "Projects", "url": "https://a9l.im/projects"},
         {"@type": "WebPage", "name": "Blog", "url": "https://a9l.im/blog"},
-        {"@type": "WebPage", "name": "Resume", "url": "https://a9l.im/resume"},
         {"@type": "WebPage", "name": "Scripture", "url": "https://a9l.im/scripture/"}
       ]
     }
@@ -310,7 +309,6 @@
         <a href="/sims" class="nav-link" data-page="sims" data-i18n="nav.sims">sims</a>
         <a href="/projects" class="nav-link" data-page="projects" data-i18n="nav.projects">projects</a>
         <a href="/blog" class="nav-link" data-page="blog" data-i18n="nav.blog">blog</a>
-        <a href="/resume" class="nav-link" data-page="resume" data-i18n="nav.resume">resume</a>
     </div>
 
     <main id="main-content">
@@ -518,159 +516,6 @@
         </div>
     </section>
 
-    <!-- ═══════════════════════════════════
-         Page: Resume
-         ═══════════════════════════════════ -->
-    <section id="page-resume" class="page-section" aria-label="Resume">
-        <div class="page-container">
-            <article class="resume fade-in">
-                <header class="resume-header">
-                    <h2 class="resume-name">a9lim</h2>
-                    <p class="resume-meta">
-                        <span>Singapore</span>
-                        <span aria-hidden="true">·</span>
-                        <a href="mailto:mx@a9l.im">mx@a9l.im</a>
-                        <span aria-hidden="true">·</span>
-                        <a href="https://github.com/a9lim" target="_blank" rel="noopener noreferrer">github.com/a9lim</a>
-                        <span aria-hidden="true">·</span>
-                        <a href="https://twitter.com/_a9lim" target="_blank" rel="noopener noreferrer">@_a9lim</a>
-                        <span aria-hidden="true">·</span>
-                        <span>@a9lim (Discord)</span>
-                    </p>
-                    <p class="resume-download"><a href="/resume.pdf" download><span data-icon="download" data-icon-size="16" aria-hidden="true"></span><span data-i18n="resume.dl.download">Download PDF</span></a></p>
-                </header>
-
-                <section class="resume-section">
-                    <h3 class="resume-h3" data-i18n="resume.h.profile">Profile</h3>
-                    <p><span data-i18n="resume.profile.pre">I'm a Singaporean developer building simulations, tools, and interpretability research, most of it hosted at </span><a href="/" data-page="home">a9l.im</a><span data-i18n="resume.profile.post">. Literally everything I make is written with Claude: vanilla JS for the site, plus Python and Rust for research. I'm open to freelance and collaboration, especially research tools and anything DIY.</span></p>
-                </section>
-
-                <section class="resume-section">
-                    <h3 class="resume-h3" data-i18n="resume.h.experience">Experience</h3>
-
-                    <div class="resume-job">
-                        <div class="resume-job-head">
-                            <h4 class="resume-job-title"><span data-i18n="resume.job.indep.title.pre">Independent Developer &mdash; </span><a href="/" data-page="home">a9l.im</a></h4>
-                            <span class="resume-job-dates" data-i18n="resume.job.indep.dates">Feb 2026 &ndash; Present</span>
-                        </div>
-                        <ul class="resume-bullets">
-                            <li data-i18n="resume.job.indep.b1">Built and maintain, solo, a portfolio of open&ndash;source interactive simulations and tools plus the shared design system and component library used across all of them, all in rawdogged vanilla JavaScript.</li>
-                            <li data-i18n="resume.job.indep.b2">Architected the SSR layer on Cloudflare Workers and Assets: per&ndash;route HTMLRewriter injection, edge&ndash;rendered markdown, structured data, and per&ndash;route security headers.</li>
-                        </ul>
-                    </div>
-
-                    <div class="resume-job">
-                        <div class="resume-job-head">
-                            <h4 class="resume-job-title"><span data-i18n="resume.job.sddm.title.pre">SDDM Theme Maintainer &mdash; </span><a href="https://github.com/catppuccin/sddm" target="_blank" rel="noopener noreferrer">Catppuccin</a></h4>
-                            <span class="resume-job-dates" data-i18n="resume.job.sddm.dates">2025 &ndash; Present</span>
-                        </div>
-                        <ul class="resume-bullets">
-                            <li data-i18n="resume.job.sddm.b1">Led the QtQuick rewrite of Catppuccin's SDDM display&ndash;manager theme: dynamic accent colors, per&ndash;user icons, designed vector backgrounds, and automated theme generation across all four flavors.</li>
-                        </ul>
-                    </div>
-                </section>
-
-                <section class="resume-section">
-                    <h3 class="resume-h3" data-i18n="resume.h.research">Research</h3>
-
-                    <div class="resume-job">
-                        <div class="resume-job-head">
-                            <h4 class="resume-job-title"><a href="https://github.com/a9lim/saklas" target="_blank" rel="noopener noreferrer">Saklas</a></h4>
-                            <span class="resume-job-dates" data-i18n="resume.research.saklas.tagline">PyPI &middot; Python</span>
-                        </div>
-                        <ul class="resume-bullets">
-                            <li><span data-i18n="resume.research.saklas.b1.pre">Activation steering and probing library powering the studies below: pulls contrastive steering vectors (</span><a href="https://arxiv.org/abs/2310.01405" target="_blank" rel="noopener noreferrer" data-i18n="resume.research.saklas.b1.link">Zou et al. 2023</a><span data-i18n="resume.research.saklas.b1.post">) and adds them to hidden states at generation time, no fine&ndash;tuning. Ships 26 in&ndash;flight probes for affect, stance, register, and alignment.</span></li>
-                            <li data-i18n="resume.research.saklas.b2">Python API, an OpenAI&ndash; and Ollama&ndash;compatible server, and a live terminal UI; supports 55 model architectures. On PyPI under AGPL&ndash;3.0 with CI and llama.cpp GGUF interchange.</li>
-                        </ul>
-                    </div>
-
-                    <div class="resume-job">
-                        <div class="resume-job-head">
-                            <h4 class="resume-job-title"><a href="/blog/introspection-via-kaomoji" data-page="blog">Introspection via Kaomoji</a></h4>
-                            <span class="resume-job-dates" data-i18n="resume.research.kaomoji.tagline">Python &middot; HuggingFace</span>
-                        </div>
-                        <ul class="resume-bullets">
-                            <li data-i18n="resume.research.kaomoji.b1">Built llmoji, a CLI that hooks coding agents (Claude Code, Codex, Hermes) to open every turn with a kaomoji, then synthesizes a meaning per face and ships the corpus as a public HuggingFace dataset.</li>
-                            <li data-i18n="resume.research.kaomoji.b2">Found that a model's hidden&ndash;state affect quadrant is recoverable from its kaomoji choice across open&ndash;weight families (by Jensen&ndash;Shannon similarity, not argmax). Sibling studies probe a residual&ndash;stream attractor basin and whether stated elapsed time is represented or confabulated.</li>
-                        </ul>
-                    </div>
-                </section>
-
-                <section class="resume-section">
-                    <h3 class="resume-h3" data-i18n="resume.h.projects">Selected Projects</h3>
-
-                    <div class="resume-job">
-                        <div class="resume-job-head">
-                            <h4 class="resume-job-title"><a href="https://github.com/a9lim/ogdoad" target="_blank" rel="noopener noreferrer">Ogdoad</a></h4>
-                            <span class="resume-job-dates" data-i18n="resume.proj.ogdoad.tagline">Rust &middot; Python</span>
-                        </div>
-                        <ul class="resume-bullets">
-                            <li data-i18n="resume.proj.ogdoad.b1">Clifford algebras and quadratic-form classification over the commutative number systems adjacent to Conway's combinatorial games, laid out as one table by place (Archimedean, p&ndash;adic, transfinite, finite) and characteristic. Surreals recover the real Cl(p,q) classification with infinite and infinitesimal metric entries; characteristic&ndash;2 legs like the nimbers swap the 8&ndash;fold periodicity for the Arf invariant and Brauer&ndash;Wall group. Verified Rust core with Python bindings.</li>
-                        </ul>
-                    </div>
-
-                    <div class="resume-job">
-                        <div class="resume-job-head">
-                            <h4 class="resume-job-title"><a href="https://github.com/a9lim/bio-transformer" target="_blank" rel="noopener noreferrer">Bio-transformer</a></h4>
-                            <span class="resume-job-dates" data-i18n="resume.proj.bioformer.tagline">Python</span>
-                        </div>
-                        <ul class="resume-bullets">
-                            <li data-i18n="resume.proj.bioformer.b1">Neuromorphic transformer from three brain subsystems that each compute something transformer&ndash;shaped: astrocytes as recurrent linear attention, the Marr&ndash;Albus cerebellum as the FFN, and laminar neocortex as the residual stream via predictive coding. Every neuron is a leaky integrate&ndash;and&ndash;fire spiker and every weight update is local (Oja, Hebbian, and climbing&ndash;fibre rules), with no backprop or surrogate gradient.</li>
-                        </ul>
-                    </div>
-
-                    <div class="resume-job">
-                        <div class="resume-job-head">
-                            <h4 class="resume-job-title" data-i18n="resume.proj.sims.title">Interactive Simulations</h4>
-                            <span class="resume-job-dates" data-i18n="resume.proj.sims.tagline">JavaScript &middot; WebGPU</span>
-                        </div>
-                        <ul class="resume-bullets">
-                            <li><strong><a href="/geon">Geon</a></strong><span data-i18n="resume.proj.sims.geon">: relativistic N&ndash;body simulator on WebGPU compute shaders, with 11 forces, Barnes&ndash;Hut scaling, and Kerr&ndash;Newman black holes. </span><strong><a href="/shoals">Shoals</a></strong><span data-i18n="resume.proj.sims.shoals">: options&ndash;trading sim with Heston, Merton, and Vasicek pricing and a 400+ scenario event engine.</span></li>
-                            <li data-i18n="resume.proj.sims.more">Plus Plasma (WebGPU resistive MHD), Pile (PWR, RBMK, and molten&ndash;salt reactor neutronics), Miasma (stochastic spatial epidemics), Cyano (cellular metabolism), Gerry (redistricting and fairness metrics), and Scripture (sixteen&ndash;text reader with full&ndash;text search and edge SSR).</li>
-                        </ul>
-                    </div>
-
-                </section>
-
-                <section class="resume-section">
-                    <h3 class="resume-h3" data-i18n="resume.h.education">Education</h3>
-
-                    <div class="resume-job">
-                        <div class="resume-job-head">
-                            <h4 class="resume-job-title">University of California, San Diego</h4>
-                            <span class="resume-job-dates" data-i18n="resume.edu.ucsd.dates">March 2026</span>
-                        </div>
-                        <p class="resume-edu-line" data-i18n="resume.edu.ucsd.line">B.S. in Mathematics &middot; GPA 3.75 &middot; GRE 335 (170Q, 165V)</p>
-                    </div>
-
-                    <div class="resume-job">
-                        <div class="resume-job-head">
-                            <h4 class="resume-job-title">Singapore American School</h4>
-                            <span class="resume-job-dates" data-i18n="resume.edu.sas.dates">Class of 2023</span>
-                        </div>
-                        <p class="resume-edu-line" data-i18n="resume.edu.sas.line">Summa Cum Laude &middot; GPA 4.50</p>
-                    </div>
-                </section>
-
-                <section class="resume-section">
-                    <h3 class="resume-h3" data-i18n="resume.h.skills">Skills</h3>
-                    <dl class="resume-skills">
-                        <dt data-i18n="resume.skill.ai.k">AI &amp; interpretability</dt>
-                        <dd data-i18n="resume.skill.ai.v">Daily driver: Claude Code and Codex, integrating AI&ndash;generated code at scale; activation steering, contrastive&ndash;PCA probing, and hidden&ndash;state analysis on HuggingFace transformers; MCP server authoring.</dd>
-
-                        <dt data-i18n="resume.skill.lang.k">Languages</dt>
-                        <dd data-i18n="resume.skill.lang.v">JavaScript (Canvas, WebGL, WebGPU, GLSL, WGSL), Python (PyTorch, HuggingFace transformers, NumPy), Rust, Java, QtQuick and QML, LaTeX, HTML, CSS.</dd>
-
-                        <dt data-i18n="resume.skill.web.k">Web &amp; infrastructure</dt>
-                        <dd data-i18n="resume.skill.web.v">Cloudflare Workers and Assets, edge SSR via HTMLRewriter, JSON&ndash;LD structured data, self&ndash;hosted typography, no&ndash;build pipelines.</dd>
-
-                        <dt data-i18n="resume.skill.other.k">Other</dt>
-                        <dd data-i18n="resume.skill.other.v">Technical writing, vector graphics, soldering, Spanish (novice), and conlang construction.</dd>
-                    </dl>
-                </section>
-            </article>
-        </div>
-    </section>
     </main>
 
     <!-- ═══ Footer ═══ -->
@@ -680,7 +525,6 @@
         <p class="footer-copy">
             <a href="/asteroids" class="egg">A</a>GPL-3.0
             · <a href="https://github.com/a9lim/a9lim.github.io" target="_blank" rel="noopener" data-i18n="footer.source">source</a>
-            · <a href="/resume" data-page="resume" data-i18n="footer.cv">cv</a>
             · <a href="/feed.xml" data-i18n="footer.rss">rss</a>
             <span id="footer-deploy" class="footer-deploy"></span>
         </p>
