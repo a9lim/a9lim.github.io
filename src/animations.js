@@ -1,19 +1,7 @@
 // ─── Scroll Animations & Fade-Ins ───
 // Two independent reveal systems: `.fade-in` (page-nav triggered) and
 // `.scroll-reveal` (IntersectionObserver, one-shot). Also drives the
-// accent stripe slide-in and exposes scrollNorm for the shader.
-
-let scrollNorm = 0;
-
-/** Normalized scroll position [0..1], consumed by the shader uniform u_scroll. */
-export function getScrollNorm() {
-    return scrollNorm;
-}
-
-function updateScrollNorm() {
-    const maxScroll = Math.max(1, document.documentElement.scrollHeight - window.innerHeight);
-    scrollNorm = window.scrollY / maxScroll;
-}
+// accent stripe slide-in and hero-orb parallax.
 
 /**
  * Replay entrance animations on all `.fade-in` children of container.
@@ -66,8 +54,6 @@ export function initScrollReveal() {
     const orbs = document.querySelectorAll('.hero-orb');
 
     function onScroll() {
-        updateScrollNorm();
-
         // Subtle parallax on hero orbs
         if (orbs.length) {
             const sy = window.scrollY;

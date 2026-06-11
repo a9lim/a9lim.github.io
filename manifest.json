@@ -1,13 +1,13 @@
 {
-  "name": "a9l.im \u2014 Interactive Educational Simulations",
+  "name": "a9l.im \u2014 a9lim's research, sims & experiments",
   "short_name": "a9l.im",
-  "description": "Interactive simulations for physics, biology, finance, and political science.",
+  "description": "LLM interpretability research plus interactive simulations for physics, biology, finance, political science, and sacred texts.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
   "id": "/",
   "lang": "en",
-  "theme_color": "#C8553D",
+  "theme_color": "#E11107",
   "background_color": "#FDFBF5",
   "categories": ["education", "science"],
   "icons": [

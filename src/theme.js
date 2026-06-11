@@ -1,5 +1,4 @@
 // Light/dark toggle. Sets data-theme on <html> and persists to localStorage.
-// The shader's MutationObserver watches for data-theme changes here.
 
 export function getTheme() {
     return document.documentElement.dataset.theme || 'light';

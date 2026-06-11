@@ -1,47 +1,15 @@
 {
-  "generatedAt": "2026-06-11T04:26:05.800Z",
+  "generatedAt": "2026-06-11T21:14:35.643Z",
   "lastDeploy": {
-    "hash": "0802678",
-    "iso": "2026-06-10T00:10:39-07:00",
-    "subject": "Rename Pleroma→Ogdoad, add GPQueue, refresh Saklas counts"
+    "hash": "89f6b83",
+    "iso": "2026-06-10T21:34:12-07:00",
+    "subject": "Remove webpage resume in favor of canonical PDF"
   },
-  "commits": [
-    {
-      "hash": "0802678",
-      "iso": "2026-06-10T00:10:39-07:00",
-      "subject": "Rename Pleroma→Ogdoad, add GPQueue, refresh Saklas counts"
-    },
-    {
-      "hash": "80604ea",
-      "iso": "2026-06-07T02:05:13-07:00",
-      "subject": "resume: add Research section + new work, curate to one page"
-    },
-    {
-      "hash": "8bac3fa",
-      "iso": "2026-06-06T17:24:38-07:00",
-      "subject": "Add Bio-transformer, Dagwood, Gaslamp, Pleroma to projects page"
-    },
-    {
-      "hash": "ff16c33",
-      "iso": "2026-06-04T12:34:52-07:00",
-      "subject": "Remove WGSL transpiler path from build (plasma + geon)"
-    },
-    {
-      "hash": "f9dafd4",
-      "iso": "2026-05-30T15:55:18-07:00",
-      "subject": "wgsl-transpile: GPU-golden differential harness (scaffold)"
-    },
-    {
-      "hash": "3391b49",
-      "iso": "2026-05-30T15:41:44-07:00",
-      "subject": "wgsl-transpile: Phase C Class 1 — loop-carried barrier fission for reductions"
-    }
-  ],
   "stats": {
     "sims": 8,
     "posts": 1,
     "scriptureWorks": 16,
     "scriptureChapters": 2724,
-    "sourceLines": 29253
+    "sourceLines": 28959
   }
 }

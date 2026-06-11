@@ -60,20 +60,6 @@ a:hover { color: var(--accent-light); }
 }
 
 /* ═══════════════════════════════════
-   Shader Background Canvas
-   ═══════════════════════════════════ */
-#shader-bg {
-    position: fixed;
-    inset: 0;
-    z-index: 0;
-    pointer-events: none;
-    opacity: 1.0;
-    transition: opacity 0.8s var(--ease-out);
-}
-
-[data-theme="dark"] #shader-bg { opacity: 0.9; }
-
-/* ═══════════════════════════════════
    Navigation Bar
    ═══════════════════════════════════ */
 #navbar {
@@ -553,6 +539,32 @@ a:hover { color: var(--accent-light); }
 .project-card:hover .project-tag:nth-child(3) { transition-delay: 0.08s; }
 .project-card:hover .project-tag:nth-child(4) { transition-delay: 0.12s; }
 .project-card:hover .project-tag:nth-child(5) { transition-delay: 0.16s; }
+
+/* ── Planned card: non-clickable, subdued, "planned" tag ──── */
+.project-card-planned {
+    cursor: default;
+    opacity: 0.62;
+}
+
+/* Planned cards don't lift, glow, or shimmer — they're placeholders. */
+.project-card-planned::before,
+.project-card-planned::after { content: none; }
+
+.project-card-planned .project-tag {
+    opacity: 1;
+    transform: none;
+}
+
+.project-planned-tag {
+    font-family: var(--font-mono);
+    font-size: var(--font-sm);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    align-self: flex-start;
+    margin-top: 4px;
+    flex-shrink: 0;
+}
 
 /* ═══════════════════════════════════
    Blog Page
@@ -1654,57 +1666,92 @@ a.contact-social:hover {
     text-underline-offset: 3px;
 }
 
-/* ── Sims list ────────────────────────────────────────────── */
-.home-sims {
+/* ── Lead section: Research gets a larger scale than the rest ─ */
+.home-section-lead {
+    margin: 48px 0;
+}
+
+.home-h-lead {
+    font-size: 1rem;
+    letter-spacing: 0.1em;
+    color: var(--text);
+    padding-bottom: 8px;
+    position: relative;
+    margin-bottom: 18px;
+}
+
+.home-h-lead::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    width: 32px;
+    height: 2px;
+    background: var(--accent);
+}
+
+.home-research-intro {
+    color: var(--text-secondary);
+    font-size: 1.02rem;
+    line-height: 1.65;
+    margin: 0 0 20px;
+    max-width: 62ch;
+}
+
+.home-research {
     list-style: none;
     padding: 0;
     margin: 0;
+    display: grid;
+    gap: 16px;
 }
 
-.home-sims li {
-    display: flex;
+.home-research-item {
+    display: grid;
+    grid-template-columns: 9rem 1fr;
+    column-gap: 18px;
     align-items: baseline;
-    gap: 10px;
-    padding: 6px 0;
-    color: var(--text);
 }
 
-.home-sims a {
+.home-research-name {
     color: var(--accent);
     font-weight: 600;
+    font-size: 1.05rem;
 }
 
-.home-sims a:hover {
+.home-research-name:hover {
     text-decoration: underline;
     text-underline-offset: 3px;
 }
 
-.home-sims-tag {
+.home-research-desc {
+    color: var(--text-secondary);
+    font-size: 0.98rem;
+    line-height: 1.6;
+}
+
+.home-research-tag {
     display: inline-block;
-    flex: 0 0 auto;
     padding: 2px 8px;
     font-size: 0.72rem;
     font-weight: 600;
     letter-spacing: 0.04em;
     text-transform: uppercase;
     border-radius: var(--radius);
-    background: var(--accent-subtle);
-    color: var(--accent);
-    min-width: 56px;
-    text-align: center;
-}
-
-.home-sims-tag[data-tag="planned"] {
     background: var(--bg-hover);
     color: var(--text-muted);
+    justify-self: start;
 }
 
-.home-sims-desc {
-    color: var(--text-secondary);
-}
-
-.home-sims-muted {
+.home-research-muted {
     color: var(--text-muted);
+}
+
+@media (max-width: 600px) {
+    .home-research-item {
+        grid-template-columns: 1fr;
+        row-gap: 4px;
+    }
 }
 
 .home-more {
@@ -1749,30 +1796,6 @@ a.contact-social:hover {
     color: var(--accent);
 }
 
-/* ── Takes ────────────────────────────────────────────────── */
-.home-takes {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-}
-
-.home-take {
-    padding: 4px 0;
-    color: var(--text);
-    display: flex;
-    gap: 12px;
-    align-items: baseline;
-}
-
-.home-take-d {
-    color: var(--text-muted);
-    font-family: var(--font-mono);
-    font-size: 0.8rem;
-    font-variant-numeric: tabular-nums;
-    flex: 0 0 auto;
-    white-space: nowrap;
-}
-
 /* ── Posts ────────────────────────────────────────────────── */
 .home-posts {
     list-style: none;
@@ -1813,53 +1836,6 @@ a.contact-social:hover {
     color: var(--text-secondary);
     font-size: 0.9rem;
     line-height: 1.55;
-}
-
-/* ── Commits ──────────────────────────────────────────────── */
-.home-commits {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-}
-
-.home-commit {
-    padding: 4px 0;
-    color: var(--text);
-    display: flex;
-    gap: 10px;
-    align-items: baseline;
-    font-size: 0.9rem;
-}
-
-.home-commit-h {
-    color: var(--accent);
-    font-family: var(--font-mono);
-    font-size: 0.85rem;
-    font-weight: 600;
-    flex: 0 0 7ch;
-}
-
-.home-commit-h:hover {
-    text-decoration: underline;
-    text-underline-offset: 3px;
-}
-
-.home-commit-t {
-    color: var(--text-muted);
-    font-family: var(--font-mono);
-    font-size: 0.8rem;
-    font-variant-numeric: tabular-nums;
-    flex: 0 0 5ch;
-    white-space: nowrap;
-}
-
-.home-commit-s {
-    color: var(--text-secondary);
-    flex: 1 1 auto;
-    min-width: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
 }
 
 /* ── Predictions table ────────────────────────────────────── */
@@ -1940,6 +1916,62 @@ a.contact-social:hover {
     margin: 10px 0 0;
     color: var(--text-secondary);
     font-size: 0.9rem;
+}
+
+/* ── Marginalia zone: charming margin notes, two columns ──── */
+/* Differentiated by a recessed surface + tighter scale, never borders.
+   Now / Special interest / Predictions / Ask me about / Other things read
+   as side-notes rather than co-equal sections. */
+.home-margin {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 4px;
+    margin: 36px 0;
+    background: var(--bg-panel-solid);
+    border-radius: var(--radius);
+    overflow: hidden;
+}
+
+.home-margin-card {
+    background: var(--bg-elevated);
+    padding: 20px 22px;
+    margin: 0;
+    font-size: var(--font-lg);
+}
+
+/* Full-width row inside the two-column zone (e.g. Other things). */
+.home-margin-wide {
+    grid-column: 1 / -1;
+}
+
+/* Marginalia headings sit a notch quieter than full-width section heads. */
+.home-margin-card .home-h {
+    font-size: var(--font-sm);
+    margin-bottom: 10px;
+}
+
+/* Tighten the inner blocks for the smaller marginalia scale. */
+.home-margin-card .home-now,
+.home-margin-card .home-pred {
+    font-size: var(--font-lg);
+}
+
+.home-margin-card .home-fix {
+    padding: 12px 14px;
+}
+
+.home-margin-card .home-other li {
+    font-size: var(--font-lg);
+    margin-bottom: 10px;
+}
+
+@media (max-width: 720px) {
+    .home-margin {
+        grid-template-columns: 1fr;
+    }
+    .home-margin-wide {
+        grid-column: auto;
+    }
 }
 
 /* ── Claude's corner ──────────────────────────────────────── */
@@ -2156,27 +2188,6 @@ a.contact-social:hover {
     .home-now {
         grid-template-columns: minmax(5.5rem, max-content) 1fr;
         column-gap: 12px;
-    }
-
-    .home-sims li {
-        flex-wrap: wrap;
-        row-gap: 2px;
-    }
-
-    .home-sims-desc,
-    .home-sims-muted {
-        flex-basis: 100%;
-        padding-left: 66px;
-    }
-
-    .home-commit {
-        flex-wrap: wrap;
-    }
-
-    .home-commit-s {
-        flex-basis: 100%;
-        padding-left: calc(7ch + 5ch + 20px);
-        white-space: normal;
     }
 
     .home-pred {

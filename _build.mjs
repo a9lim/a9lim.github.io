@@ -507,21 +507,19 @@ for (const p of posts) {
 writeFileSync(join(ROOT, 'llms-full.txt'), llmsParts.join('\n'));
 console.log('llms-full.txt: generated');
 
-// --- generate home-data.json (baked-in commit feed + live-ish stats) ---
+// --- generate home-data.json (last-deploy marker + live-ish stats) ---
 
-function gitCommits(n) {
+function gitLastDeploy() {
   try {
     const raw = execFileSync(
       'git',
-      ['log', `-${n}`, '--format=%h\x1f%aI\x1f%s'],
+      ['log', '-1', '--format=%h\x1f%aI\x1f%s'],
       { cwd: ROOT, encoding: 'utf8' }
     ).trim();
-    if (!raw) return [];
-    return raw.split('\n').map(line => {
-      const [hash, iso, subject] = line.split('\x1f');
-      return { hash, iso, subject };
-    });
-  } catch { return []; }
+    if (!raw) return null;
+    const [hash, iso, subject] = raw.split('\x1f');
+    return { hash, iso, subject };
+  } catch { return null; }
 }
 
 function countScriptureChapters() {
@@ -552,12 +550,10 @@ function countSourceLines() {
   } catch { return 0; }
 }
 
-const commits = gitCommits(6);
-const lastDeploy = commits[0] || null;
+const lastDeploy = gitLastDeploy();
 const homeData = {
   generatedAt: new Date().toISOString(),
   lastDeploy,
-  commits,
   stats: {
     sims: 8,
     posts: posts.length,
@@ -568,7 +564,7 @@ const homeData = {
 };
 
 writeFileSync(join(ROOT, 'home-data.json'), JSON.stringify(homeData, null, 2) + '\n');
-console.log(`home-data.json: ${commits.length} commits, ${homeData.stats.scriptureChapters} scripture chapters, ${homeData.stats.sourceLines} source lines`);
+console.log(`home-data.json: ${homeData.stats.scriptureChapters} scripture chapters, ${homeData.stats.sourceLines} source lines`);
 
 // --- build resume.pdf via tectonic (skips gracefully if absent) ---
 

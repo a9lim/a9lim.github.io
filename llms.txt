@@ -1,15 +1,15 @@
 ---
 title: a9l.im
 url: https://a9l.im
-description: Free interactive educational simulations for physics, biology, finance, political science, and sacred texts.
+description: Homepage of a9lim, an LLM interpretability researcher. Research on emotional and functional states in language models, plus interactive simulations for physics, biology, finance, political science, and sacred texts.
 language: en
 license: AGPL-3.0
-updated: 2026-06-09
+updated: 2026-06-11
 ---
 
 # a9l.im
 
-> Free interactive educational simulations for physics, biology, finance, political science, and sacred texts. Open-source, zero-dependency browser tools.
+> Homepage of a9lim, an LLM interpretability researcher. Research on emotional and functional states in language models, plus open-source, zero-dependency interactive simulations for physics, biology, finance, political science, and sacred texts.
 
 ## Simulations
 

@@ -7,6 +7,11 @@
 // on /projects (external GitHub repos). Keep `kind` in sync with the
 // _worker.js SSR mirrors.
 //
+// `planned: true` marks an unshipped entry: it renders as a non-clickable,
+// visually-subdued card with a "planned" tag and no link. Planned entries
+// sort to the end of their grid. Keep these in sync with the _worker.js SSR
+// mirrors too.
+//
 // i18n: `*_ja` siblings give JA card copy. Project names (Saklas, Geon, etc.)
 // are coined proper nouns and stay in Roman script across languages. The SSR
 // mirror in _worker.js is English-only by design — same-URL model.
@@ -234,6 +239,20 @@ export const PROJECTS = [
         kind: 'sim',
     },
     {
+        title: 'Epidemiology sim (zombies)',
+        title_ja: '感染症シミュレーション(ゾンビ)',
+        shortDesc: 'Resurrect the 2018 zombie-outbreak sim: agent-based spread on a city map, panic and barricades, the dead getting back up.',
+        shortDesc_ja: '2018 年版のゾンビ流行シミュレーションを復活させる。都市マップ上のエージェントベースの伝播、パニックとバリケード、起き上がる死者。',
+        longDesc: 'Resurrect the 2018 zombie-outbreak sim: agent-based spread on a city map, panic and barricades, the dead getting back up.',
+        longDesc_ja: '2018 年版のゾンビ流行シミュレーションを復活させる。都市マップ上のエージェントベースの伝播、パニックとバリケード、起き上がる死者。',
+        tags: ['epidemiology', 'agent-based'],
+        tags_ja: ['疫学', 'エージェントベース'],
+        icon: _ICON.projMiasma,
+        external: false,
+        kind: 'sim',
+        planned: true,
+    },
+    {
         href: 'https://github.com/a9lim/Raiko',
         title: 'Raiko',
         shortDesc: 'Discord music and chat bot with queue management and conversational AI.',
@@ -271,5 +290,18 @@ export const PROJECTS = [
         icon: _ICON.projCatppuccin,
         external: true,
         kind: 'project',
+    },
+    {
+        title: 'Hylic',
+        shortDesc: 'Typing-style finetuning provider: feed it any text corpus, like Faithful, and it serves a model actually finetuned on it instead of just prompted.',
+        shortDesc_ja: 'タイピングスタイルの fine-tuning プロバイダ。Faithful のような任意のテキストコーパスを与えると、プロンプトだけでなく実際にそれで fine-tune したモデルを提供する。',
+        longDesc: 'Typing-style finetuning provider: feed it any text corpus, like Faithful, and it serves a model actually finetuned on it instead of just prompted.',
+        longDesc_ja: 'タイピングスタイルの fine-tuning プロバイダ。Faithful のような任意のテキストコーパスを与えると、プロンプトだけでなく実際にそれで fine-tune したモデルを提供する。',
+        tags: ['python', 'llm', 'finetuning'],
+        tags_ja: ['python', 'LLM', 'fine-tuning'],
+        icon: _ICON.projFaithful,
+        external: true,
+        kind: 'project',
+        planned: true,
     },
 ];

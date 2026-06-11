@@ -32,19 +32,39 @@ export function renderProjectCards(container, projects) {
             _renders.forEach(r => renderProjectCards(r.container, r.projects));
         });
     }
+    const plannedLabel = (window._i18n && window._i18n.t)
+        ? window._i18n.t('projects.planned')
+        : 'planned';
     container.innerHTML = projects.map(p => {
-        const ext = p.external ? ' target="_blank" rel="noopener noreferrer"' : '';
+        const title = _pickField(p, 'title');
         const longDesc = _pickField(p, 'longDesc');
         const tags = _pickField(p, 'tags') || [];
+        const tagsHtml = tags.map(t => `<span class="project-tag">${escapeHtml(t)}</span>`).join('');
+
+        // Planned entries are non-clickable: a subdued <div> card with a
+        // "planned" tag and no arrow/link, sorted to the end of the grid.
+        if (p.planned) {
+            return `<div class="project-card project-card-planned glass">
+                <div class="project-card-top">
+                    <div class="project-icon" aria-hidden="true">${p.icon}</div>
+                    <span class="project-planned-tag">${escapeHtml(plannedLabel)}</span>
+                </div>
+                <h3 class="project-title">${escapeHtml(title)}</h3>
+                <p class="project-desc">${escapeHtml(longDesc)}</p>
+                <div class="project-tags">${tagsHtml}</div>
+            </div>`;
+        }
+
+        const ext = p.external ? ' target="_blank" rel="noopener noreferrer"' : '';
         return `<a href="${escapeHtml(p.href)}" class="project-card glass fade-in"${ext}>
             <div class="project-card-top">
                 <div class="project-icon" aria-hidden="true">${p.icon}</div>
                 <span class="project-arrow" aria-hidden="true">${ARROW_SVG}</span>
             </div>
-            <h3 class="project-title">${escapeHtml(p.title)}</h3>
+            <h3 class="project-title">${escapeHtml(title)}</h3>
             <p class="project-desc">${escapeHtml(longDesc)}</p>
             <div class="project-tags">
-                ${tags.map(t => `<span class="project-tag">${escapeHtml(t)}</span>`).join('')}
+                ${tagsHtml}
             </div>
         </a>`;
     }).join('');

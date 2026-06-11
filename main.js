@@ -1,11 +1,10 @@
 // Entry point for a9l.im portfolio. Wires DOM cache, renders dynamic cards,
-// and boots all subsystems (router, shader, home, etc.).
+// and boots all subsystems (router, home, etc.).
 
 import { initRouter } from './src/router.js';
 import { initTheme } from './src/theme.js';
 import { initMobileMenu } from './src/mobile-menu.js';
 import { triggerFadeIns, initNavbarScroll, initScrollReveal } from './src/animations.js';
-import { initShader } from './src/shader.js';
 import { initCardTilt } from './src/card-effects.js';
 import { showBlogListing, showBlogPost, wireBlogI18n } from './src/blog.js';
 import { PROJECTS } from './src/projects.js';
@@ -19,7 +18,6 @@ const $ = {
     themeToggle: document.getElementById('theme-toggle'),
     menuToggle:  document.getElementById('menu-toggle'),
     mobileNav:   document.getElementById('mobile-nav'),
-    shaderBg:    document.getElementById('shader-bg'),
     blogListing: document.getElementById('blog-listing'),
     blogPost:    document.getElementById('blog-post'),
     blogListCt:  document.getElementById('blog-list-container'),
@@ -46,7 +44,6 @@ initRouter({
     showBlogListing: () => showBlogListing($),
 });
 
-initShader($);
 initScrollReveal();
 initCardTilt('.project-card');
 initCardTilt('.contact-section');

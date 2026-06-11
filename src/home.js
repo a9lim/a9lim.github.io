@@ -1,12 +1,12 @@
 // Populates the homepage "command-center" slab from home.json (hand-edited)
-// and home-data.json (build-generated: commits + stats). Everything rendered
-// here goes through createElement/textContent — no innerHTML.
+// and home-data.json (build-generated: lastDeploy marker + stats). Everything
+// rendered here goes through createElement/textContent — no innerHTML.
 //
 // i18n: when window._i18n is present, hand-edited fields with a parallel `_ja`
 // sibling (status_ja, bio_ja, now_ja, hyperfixation_ja, predictions_ja,
 // askMeAbout_ja, colophon_ja) are swapped in for ja. Build-generated fields
-// (commits, stats) stay language-neutral. On language change we re-render
-// everything that's hydrated from home.json.
+// (stats) stay language-neutral. On language change we re-render everything
+// that's hydrated from home.json.
 
 let _homeInited = false;
 let _homeRendered = false;
@@ -139,28 +139,6 @@ function renderPosts(posts) {
     }
 }
 
-function renderCommits(commits) {
-    const root = document.getElementById('home-commits');
-    if (!root || !Array.isArray(commits)) return;
-    clear(root);
-    for (const c of commits.slice(0, 5)) {
-        const li = el('li', { class: 'home-commit' });
-        const link = el('a', {
-            href: 'https://github.com/a9lim/a9lim.github.io/commit/' + c.hash,
-            target: '_blank',
-            rel: 'noopener noreferrer',
-            class: 'home-commit-h',
-            text: c.hash,
-        });
-        li.appendChild(link);
-        li.appendChild(document.createTextNode(' '));
-        li.appendChild(el('span', { class: 'home-commit-t', text: relTime(c.iso) }));
-        li.appendChild(document.createTextNode('  '));
-        li.appendChild(el('span', { class: 'home-commit-s', text: c.subject || '' }));
-        root.appendChild(li);
-    }
-}
-
 function renderStats(stats) {
     const root = document.getElementById('home-stats');
     if (!root || !stats) return;
@@ -231,7 +209,6 @@ function renderFromCache() {
     }
     if (posts) renderPosts(posts);
     if (data) {
-        renderCommits(data.commits);
         renderStats(data.stats);
         renderColophon(home && pickLang(home, 'colophon'), data.lastDeploy);
     } else if (home) {
@@ -363,7 +340,7 @@ export function initHome() {
     if (_homeInited) return;
     _homeInited = true;
     initCheatsheet();
-    // Defer to idle so it doesn't compete with shader boot.
+    // Defer to idle so it doesn't compete with first paint.
     if (typeof requestIdleCallback === 'function') {
         requestIdleCallback(loadAndRender, { timeout: 600 });
     } else {

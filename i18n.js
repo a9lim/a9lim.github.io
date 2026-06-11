@@ -30,10 +30,10 @@
     var STRINGS_EN = {
         // ── <head> meta ──
         'meta.titleShort':         'a9l.im',
-        'meta.title':              "a9l.im — @_a9lim's sims & experiments",
-        'meta.description':        "a9lim's poster-brain homepage. Sims, tools, and experiments across physics, biology, finance, political science, religion, and AI. Vanilla JS, vibe-coded with Claude, AGPL-3.0.",
-        'meta.descriptionShort':   'Sims, tools, and experiments across physics, biology, finance, political science, religion, and AI. Vanilla JS, vibe-coded with Claude.',
-        'meta.ogImageAlt':         'a9l.im — interactive educational simulations',
+        'meta.title':              "a9l.im — @_a9lim's research, sims & experiments",
+        'meta.description':        "a9lim's poster-brain homepage. LLM interpretability research, plus sims, tools, and experiments across physics, biology, finance, political science, and religion. Vanilla JS, vibe-coded with Claude, AGPL-3.0.",
+        'meta.descriptionShort':   'LLM interpretability research, sims, tools, and experiments across physics, biology, finance, political science, and religion. Vanilla JS, vibe-coded with Claude.',
+        'meta.ogImageAlt':         'a9l.im — an interpretability researcher who builds sims',
 
         // ── Navbar ──
         'nav.home':       'home',
@@ -63,42 +63,32 @@
         'home.bio.langs.v':     'English (native), Spanish (novice), Mandarin (heritage)',
 
         // ── Home: section headings ──
+        'home.h.research': 'Research',
         'home.h.now':     'Now',
         'home.h.fix':     'Special interest of the month',
-        'home.h.sims':    'Sims',
-        'home.h.misc':    'Misc Projects',
         'home.h.blog':    'Blog',
-        'home.h.commits': 'Commits',
         'home.h.pred':    'Predictions',
         'home.h.ama':     'Ask me about',
         'home.h.claude':  "Claude's corner",
 
-        // ── Home: sims list ──
-        'home.sims.shipped': 'shipped',
-        'home.sims.planned': 'planned',
-        'home.sims.geon':    'relativistic N-body particle physics, 11 forces, WebGPU.',
-        'home.sims.cyano':   'cellular metabolism, 12 pathways, electron transport chain.',
-        'home.sims.shoals':  'options pricing, Heston and Merton, 400+ scenarios.',
-        'home.sims.gerry':   'gerrymandering on hex tiles, 6 fairness metrics, Monte Carlo.',
-        'home.sims.scripture': '16 sacred texts, full-text search, TF-IDF concordance.',
-        'home.sims.miasma':  'stochastic spatial epidemic, multi-strain evolution, hex-grid topology, intervention paint.',
-        'home.sims.pile':    'nuclear reactor sim, 3 reactor types, axial neutronics, coupled plant systems.',
-        'home.sims.plasma':  '2D resistive MHD, HLLD + PPM + constrained transport, WebGPU.',
-        'home.sims.mechinterp': 'Mechinterp visualizer for Saklas probes.',
-        'home.sims.epi':     'Epidemiology sim (zombies): resurrect the 2018 one.',
-        'home.sims.full':    'Full grid →',
+        // ── Home: research list ──
+        // The career-relevant thread: interpretability work + the tools it runs on.
+        'home.research.intro':       'My main thread is mechanistic interpretability — emotional and functional states in LLMs, and the tooling around it.',
+        'home.research.tag':         'planned',
+        'home.research.kaomoji.name': 'Introspection via kaomoji',
+        'home.research.kaomoji.pre':  'kaomoji are a partial readout of model state: five open-weight models recover a shared affect geometry, and a single kaomoji pins the emotional quadrant up to 80% of the time. ',
+        'home.research.kaomoji.dataset': 'data on HuggingFace',
+        'home.research.kaomoji.post': '.',
+        'home.research.saklas':      'activation steering and trait monitoring on HuggingFace causal LMs via contrastive PCA, 55 architectures.',
+        'home.research.llmoji':      'stop-hook kaomoji journaling for coding agents, PyPI package, the corpus the study runs on.',
+        'home.research.mechinterp':  'mechinterp visualizer for Saklas probes.',
+        'home.research.full':        'Projects →',
 
-        // ── Home: misc projects list ──
-        'home.misc.saklas':  'activation steering on HuggingFace transformers, 55 architectures, contrastive PCA.',
-        'home.misc.kenoma':  'fake shell, hallucinates command output via raw LLM completion, real PS1 as the stop token.',
-        'home.misc.rlaif':   'single-user MCP server, exposes a PiShock collar as an agent tool, rate-limited and consent-gated.',
-        'home.misc.llmoji':  'kaomoji-injection CLI for coding agents, with a companion mechinterp study on the corpus.',
-        'home.misc.faithful': 'Discord chatbot, emulates a given user from a corpus of their messages.',
-        'home.misc.hylic':   'Hylic: typing-style finetuning provider, takes any text corpus (like Faithful) and serves a model actually finetuned on it.',
+        // ── Projects grid: planned-card tag ──
+        'projects.planned':  'planned',
 
-        // ── Home: blog / commits / predictions ──
+        // ── Home: blog / predictions ──
         'home.blog.all':       'All posts →',
-        'home.commits.more':   'More on GitHub →',
         'home.pred.th.label':  'Prediction',
         'home.pred.th.p':      'p',
         'home.pred.th.by':     'by',
@@ -173,10 +163,10 @@
     var STRINGS_JA = {
         // ── <head> meta ──
         'meta.titleShort':         'a9l.im',
-        'meta.title':              'a9l.im — @_a9lim のシミュレーション・実験集',
-        'meta.description':        'a9lim のポスター脳ホームページ。物理・生物・金融・政治学・宗教・AI を横断するシミュレーション、ツール、実験。素の JavaScript、Claude と一緒に雰囲気コーディング、AGPL-3.0。',
-        'meta.descriptionShort':   '物理・生物・金融・政治学・宗教・AI を横断するシミュレーション、ツール、実験。素の JavaScript、Claude と一緒に雰囲気コーディング。',
-        'meta.ogImageAlt':         'a9l.im — インタラクティブな学習シミュレーション',
+        'meta.title':              'a9l.im — @_a9lim の研究・シミュレーション・実験集',
+        'meta.description':        'a9lim のポスター脳ホームページ。LLM の解釈可能性研究に加え、物理・生物・金融・政治学・宗教を横断するシミュレーション、ツール、実験。素の JavaScript、Claude と一緒に雰囲気コーディング、AGPL-3.0。',
+        'meta.descriptionShort':   'LLM の解釈可能性研究、物理・生物・金融・政治学・宗教を横断するシミュレーション、ツール、実験。素の JavaScript、Claude と一緒に雰囲気コーディング。',
+        'meta.ogImageAlt':         'a9l.im — シミュレーションを作る解釈可能性研究者',
 
         // ── Navbar ──
         'nav.home':       'ホーム',
@@ -201,42 +191,31 @@
         'home.bio.langs.v':     '英語(母語)、スペイン語(初級)、中国語(継承語)',
 
         // ── Home: section headings ──
+        'home.h.research': '研究',
         'home.h.now':     'いま',
         'home.h.fix':     '今月のお気に入り',
-        'home.h.sims':    'シミュレーション',
-        'home.h.misc':    'その他のプロジェクト',
         'home.h.blog':    'ブログ',
-        'home.h.commits': 'コミット',
         'home.h.pred':    '予測',
         'home.h.ama':     '聞きたいこと',
         'home.h.claude':  'Claude のコーナー',
 
-        // ── Home: sims list ──
-        'home.sims.shipped': '公開済',
-        'home.sims.planned': '構想中',
-        'home.sims.geon':    '相対論的 N 体粒子物理、11 種類の力、WebGPU。',
-        'home.sims.cyano':   '細胞代謝、12 の代謝経路、電子伝達系。',
-        'home.sims.shoals':  'オプション価格付け、ヘストン・マートンモデル、400 以上のシナリオ。',
-        'home.sims.gerry':   '六角タイル上のゲリマンダー、6 つの公平性指標、モンテカルロ。',
-        'home.sims.scripture': '16 の聖典、全文検索、TF-IDF コンコーダンス。',
-        'home.sims.miasma':  '確率的空間疫学、多系統進化、ヘックスグリッド・トポロジ、介入ペイント。',
-        'home.sims.pile':    '原子炉シミュレーション、3 炉型、軸方向中性子動特性、結合プラント系統。',
-        'home.sims.plasma':  '2 次元抵抗性 MHD、HLLD + PPM + 拘束輸送法、WebGPU。',
-        'home.sims.mechinterp': 'Saklas プローブのための機械論的解釈可能性ビジュアライザ。',
-        'home.sims.epi':     '感染症シミュレーション(ゾンビ)、2018 年版を復活させる。',
-        'home.sims.full':    '一覧へ →',
+        // ── Home: research list ──
+        'home.research.intro':       '私の主軸は機械論的解釈可能性——LLM の感情的・機能的状態と、その周辺のツール群だ。',
+        'home.research.tag':         '構想中',
+        'home.research.kaomoji.name': '顔文字による内省',
+        'home.research.kaomoji.pre':  '顔文字はモデル内部状態の部分的な読み出しになっている。5 つのオープンウェイトモデルが共通の感情幾何を復元し、顔文字 1 つで感情の象限を最大 80% の確率で言い当てられる。',
+        'home.research.kaomoji.dataset': 'データは HuggingFace に公開',
+        'home.research.kaomoji.post': '。',
+        'home.research.saklas':      'HuggingFace の因果 LM に対する対照 PCA によるアクティベーション・ステアリングと特性監視、55 アーキテクチャ対応。',
+        'home.research.llmoji':      'コーディングエージェント向けの Stop フック式顔文字ジャーナリング、PyPI パッケージ、研究が走るコーパスそのもの。',
+        'home.research.mechinterp':  'Saklas プローブのための機械論的解釈可能性ビジュアライザ。',
+        'home.research.full':        'プロジェクト →',
 
-        // ── Home: misc projects list ──
-        'home.misc.saklas':  'HuggingFace transformers のアクティベーション・ステアリング、55 アーキテクチャ対応、対照 PCA。',
-        'home.misc.kenoma':  '偽シェル。生の LLM 補完でコマンド出力を捏造し、本物の PS1 を停止トークンに使う。',
-        'home.misc.rlaif':   '個人用の MCP サーバ。PiShock 首輪をエージェントツールとして公開、レート制限と同意制。',
-        'home.misc.llmoji':  'コーディングエージェント向けの顔文字注入 CLI、コーパスを用いた機械論的解釈可能性研究を併設。',
-        'home.misc.faithful': 'Discord チャットボット。任意ユーザのメッセージのコーパスから本人を模倣する。',
-        'home.misc.hylic':   'Hylic: タイピングスタイル fine-tuning プロバイダ。任意のテキストコーパス(例: Faithful)を受け取り、それで実際に fine-tune したモデルを提供する。',
+        // ── Projects grid: planned-card tag ──
+        'projects.planned':  '構想中',
 
-        // ── Home: blog / commits / predictions ──
+        // ── Home: blog / predictions ──
         'home.blog.all':       'すべての投稿 →',
-        'home.commits.more':   'GitHub でもっと見る →',
         'home.pred.th.label':  '予測',
         'home.pred.th.p':      '確率',
         'home.pred.th.by':     '期日',

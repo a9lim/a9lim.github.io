@@ -215,7 +215,7 @@ const ROUTE_META = {
   },
   '/blog': {
     title: 'Blog | a9l.im',
-    desc: 'Articles on building educational simulations, computational physics, browser-based rendering, and interactive learning tools.',
+    desc: 'Writeups on LLM interpretability, computational science, and the browser tools and simulations behind this site.',
     ogTitle: 'Blog | a9l.im',
   },
 };
@@ -240,6 +240,7 @@ const SIMS_SSR = `
 <div class="project-card fade-in visible"><a href="/miasma"><h3>Miasma</h3><p>Stochastic spatial epidemic simulator with multi-strain evolution, hex-grid topology toggle, and intervention painting.</p><span class="tag">epidemiology</span><span class="tag">cellular automaton</span><span class="tag">canvas</span></a></div>
 <div class="project-card fade-in visible"><a href="/pile"><h3>Pile</h3><p>Nuclear reactor simulator with three reactor types, axial point-kinetics neutronics, and a coupled plant-systems model.</p><span class="tag">physics</span><span class="tag">nuclear</span><span class="tag">canvas</span></a></div>
 <div class="project-card fade-in visible"><a href="/plasma"><h3>Plasma</h3><p>2D resistive magnetohydrodynamics simulator with HLLD Riemann solver, PPM reconstruction, and constrained transport.</p><span class="tag">physics</span><span class="tag">webgpu</span><span class="tag">mhd</span><span class="tag">canvas</span></a></div>
+<div class="project-card project-card-planned"><div class="project-card-top"><h3>Epidemiology sim (zombies)</h3><span class="project-planned-tag">planned</span></div><p>Resurrect the 2018 zombie-outbreak sim: agent-based spread on a city map, panic and barricades, the dead getting back up.</p><span class="tag">epidemiology</span><span class="tag">agent-based</span></div>
 `;
 
 const PROJECTS_SSR = `
@@ -255,6 +256,7 @@ const PROJECTS_SSR = `
 <div class="project-card fade-in visible"><a href="https://github.com/a9lim/Raiko" target="_blank" rel="noopener noreferrer"><h3>Raiko</h3><p>Discord music and chat bot with queue management and conversational AI.</p><span class="tag">discord</span><span class="tag">java</span><span class="tag">music</span></a></div>
 <div class="project-card fade-in visible"><a href="https://github.com/a9lim/faithful" target="_blank" rel="noopener noreferrer"><h3>Faithful</h3><p>Discord chatbot that emulates given messages in the style of source material.</p><span class="tag">discord</span><span class="tag">chatbot</span><span class="tag">nlp</span></a></div>
 <div class="project-card fade-in visible"><a href="https://github.com/catppuccin/sddm" target="_blank" rel="noopener noreferrer"><h3>Catppuccin for SDDM</h3><p>Soothing pastel theme for the SDDM display manager with all four flavor variants.</p><span class="tag">linux</span><span class="tag">theme</span><span class="tag">catppuccin</span></a></div>
+<div class="project-card project-card-planned"><div class="project-card-top"><h3>Hylic</h3><span class="project-planned-tag">planned</span></div><p>Typing-style finetuning provider: feed it any text corpus, like Faithful, and it serves a model actually finetuned on it instead of just prompted.</p><span class="tag">python</span><span class="tag">llm</span><span class="tag">finetuning</span></div>
 `;
 
 // ─── Security headers for Worker responses ───
@@ -950,7 +952,7 @@ export default {
           const pretty = slug.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
           meta = {
             title: `${pretty} | a9l.im`,
-            desc: 'Articles on simulation design, web development, and educational technology.',
+            desc: 'Writeups on LLM interpretability, computational science, and the tools and simulations behind this site.',
             ogTitle: `${pretty} | a9l.im`,
           };
         }
