@@ -7,6 +7,11 @@
 // on /projects (external GitHub repos). Keep `kind` in sync with the
 // _worker.js SSR mirrors.
 //
+// `major: true` marks a flagship entry. Each grid (sims, projects) is split
+// into a "Major" group (the flagged entries) and a "Minor" group (everything
+// else), each under a `.section-label` heading. Source order is preserved
+// within each group, so keep flagship entries near the top of their kind.
+//
 // `planned: true` marks an unshipped entry: it renders as a non-clickable,
 // visually-subdued card with a "planned" tag and no link. Planned entries
 // sort to the end of their grid. Keep these in sync with the _worker.js SSR
@@ -29,6 +34,7 @@ export const PROJECTS = [
         icon: _ICON.projSaklas,
         external: true,
         kind: 'project',
+        major: true,
     },
     {
         href: 'https://github.com/a9lim/kenoma',
@@ -133,6 +139,7 @@ export const PROJECTS = [
         icon: _ICON.projOgdoad,
         external: true,
         kind: 'project',
+        major: true,
     },
     {
         href: '/geon',
@@ -146,6 +153,7 @@ export const PROJECTS = [
         icon: _ICON.projGeon,
         external: false,
         kind: 'sim',
+        major: true,
     },
     {
         href: '/cyano',
@@ -185,6 +193,7 @@ export const PROJECTS = [
         icon: _ICON.projShoals,
         external: false,
         kind: 'sim',
+        major: true,
     },
     {
         href: '/scripture',
@@ -237,20 +246,6 @@ export const PROJECTS = [
         icon: _ICON.projPlasma,
         external: false,
         kind: 'sim',
-    },
-    {
-        title: 'Epidemiology sim (zombies)',
-        title_ja: '感染症シミュレーション(ゾンビ)',
-        shortDesc: 'Resurrect the 2018 zombie-outbreak sim: agent-based spread on a city map, panic and barricades, the dead getting back up.',
-        shortDesc_ja: '2018 年版のゾンビ流行シミュレーションを復活させる。都市マップ上のエージェントベースの伝播、パニックとバリケード、起き上がる死者。',
-        longDesc: 'Resurrect the 2018 zombie-outbreak sim: agent-based spread on a city map, panic and barricades, the dead getting back up.',
-        longDesc_ja: '2018 年版のゾンビ流行シミュレーションを復活させる。都市マップ上のエージェントベースの伝播、パニックとバリケード、起き上がる死者。',
-        tags: ['epidemiology', 'agent-based'],
-        tags_ja: ['疫学', 'エージェントベース'],
-        icon: _ICON.projMiasma,
-        external: false,
-        kind: 'sim',
-        planned: true,
     },
     {
         href: 'https://github.com/a9lim/Raiko',

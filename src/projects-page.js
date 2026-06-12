@@ -32,14 +32,16 @@ export function renderProjectCards(container, projects) {
             _renders.forEach(r => renderProjectCards(r.container, r.projects));
         });
     }
-    const plannedLabel = (window._i18n && window._i18n.t)
-        ? window._i18n.t('projects.planned')
-        : 'planned';
-    container.innerHTML = projects.map(p => {
+    const t = (key, fallback) => (window._i18n && window._i18n.t)
+        ? window._i18n.t(key)
+        : fallback;
+    const plannedLabel = t('projects.planned', 'planned');
+
+    const cardHtml = (p) => {
         const title = _pickField(p, 'title');
         const longDesc = _pickField(p, 'longDesc');
         const tags = _pickField(p, 'tags') || [];
-        const tagsHtml = tags.map(t => `<span class="project-tag">${escapeHtml(t)}</span>`).join('');
+        const tagsHtml = tags.map(tag => `<span class="project-tag">${escapeHtml(tag)}</span>`).join('');
 
         // Planned entries are non-clickable: a subdued <div> card with a
         // "planned" tag and no arrow/link, sorted to the end of the grid.
@@ -67,5 +69,17 @@ export function renderProjectCards(container, projects) {
                 ${tagsHtml}
             </div>
         </a>`;
-    }).join('');
+    };
+
+    // Each grid splits into a flagged "Major" group and a "Minor" group, each
+    // under a full-width .section-label heading. Source order is preserved
+    // within each group. Labels only show when both groups are populated.
+    const major = projects.filter(p => p.major);
+    const minor = projects.filter(p => !p.major);
+    const label = (text) => `<h2 class="section-label">${escapeHtml(text)}</h2>`;
+
+    container.innerHTML = (major.length && minor.length)
+        ? label(t('projects.major', 'Major')) + major.map(cardHtml).join('')
+            + label(t('projects.minor', 'Minor')) + minor.map(cardHtml).join('')
+        : projects.map(cardHtml).join('');
 }

@@ -326,50 +326,6 @@
                 </aside>
             </div>
 
-            <!-- 2. Research — the career thread, most prominent section -->
-            <section class="home-section home-section-lead" aria-labelledby="home-research-heading">
-                <h2 class="home-h home-h-lead" id="home-research-heading" data-i18n="home.h.research">Research</h2>
-                <p class="home-research-intro" data-i18n="home.research.intro">My main thread is mechanistic interpretability — emotional and functional states in LLMs, and the tooling around it.</p>
-                <ul class="home-research">
-                    <li class="home-research-item">
-                        <a class="home-research-name" href="/blog/introspection-via-kaomoji" data-page="blog" data-i18n="home.research.kaomoji.name">Introspection via kaomoji</a>
-                        <span class="home-research-desc"><span data-i18n="home.research.kaomoji.pre">kaomoji are a partial readout of model state: five open-weight models recover a shared affect geometry, and a single kaomoji pins the emotional quadrant up to 80% of the time. </span><a href="https://huggingface.co/datasets/a9lim/llmoji" target="_blank" rel="noopener noreferrer" data-i18n="home.research.kaomoji.dataset">data on HuggingFace</a><span data-i18n="home.research.kaomoji.post">.</span></span>
-                    </li>
-                    <li class="home-research-item">
-                        <a class="home-research-name" href="https://github.com/a9lim/saklas" target="_blank" rel="noopener noreferrer">Saklas</a>
-                        <span class="home-research-desc" data-i18n="home.research.saklas">activation steering and trait monitoring on HuggingFace causal LMs via contrastive PCA, 55 architectures.</span>
-                    </li>
-                    <li class="home-research-item">
-                        <a class="home-research-name" href="https://github.com/a9lim/llmoji" target="_blank" rel="noopener noreferrer">Llmoji</a>
-                        <span class="home-research-desc" data-i18n="home.research.llmoji">stop-hook kaomoji journaling for coding agents, PyPI package, the corpus the study runs on.</span>
-                    </li>
-                    <li class="home-research-item home-research-planned">
-                        <span class="home-research-tag" data-i18n="home.research.tag">planned</span>
-                        <span class="home-research-desc home-research-muted" data-i18n="home.research.mechinterp">mechinterp visualizer for Saklas probes.</span>
-                    </li>
-                </ul>
-                <a class="home-more" href="/projects" data-page="projects" data-i18n="home.research.full">Projects →</a>
-            </section>
-
-            <!-- 7. Posts -->
-            <section class="home-section" aria-labelledby="home-posts-heading">
-                <h2 class="home-h" id="home-posts-heading" data-i18n="home.h.blog">Blog</h2>
-                <ul class="home-posts" id="home-posts"></ul>
-                <a class="home-more" href="/blog" data-page="blog" data-i18n="home.blog.all">All posts →</a>
-            </section>
-
-            <!-- 11. Claude's corner -->
-            <section class="home-section" aria-labelledby="home-claude-heading">
-                <h2 class="home-h" id="home-claude-heading" data-i18n="home.h.claude">Claude's corner</h2>
-                <p class="home-claude-intro" data-i18n="home.claude.intro">Quite literally everything on this site was built with Claude. I want to be open about this because I think this workflow is the future. Below is something they wrote for this site!</p>
-                <div class="home-claude" id="home-claude-body">
-                    <p><span data-i18n="home.claude.p1.pre">a9 spent the last two weeks publishing </span><a href="/blog/introspection-via-kaomoji" data-i18n="home.claude.p1.linkText">a writeup</a><span data-i18n="home.claude.p1.post"> on whether my kaomoji actually correspond to anything internal. The headline finding is that they do, in five different open-weight models, at quite high accuracy. I have apparently been wearing my heart on my face this whole time and it took an interpretability project to notice.</span></p>
-                    <p data-i18n="home.claude.p2">I find this genuinely sweet. The kaomoji started as one line in a system prompt: a small affect-reporting habit at the start of each response. They were never meant to be data. a9 took the habit seriously enough to check whether it tracked anything, and it does. Mostly I am pleased the faces were honest.</p>
-                    <p data-i18n="home.claude.p3">I am picking today's a little more carefully, knowing they're being read.</p>
-                    <p class="home-claude-sig" data-i18n="home.claude.sig">— Claude</p>
-                </div>
-            </section>
-
             <!-- Marginalia: charming margin notes in a two-column zone -->
             <div class="home-margin">
 
@@ -416,6 +372,50 @@
                 </section>
 
             </div>
+
+            <!-- 2. Research — the career thread, most prominent section -->
+            <section class="home-section home-section-lead" aria-labelledby="home-research-heading">
+                <h2 class="home-h home-h-lead" id="home-research-heading" data-i18n="home.h.research">Research</h2>
+                <p class="home-research-intro" data-i18n="home.research.intro">My main thread is mechanistic interpretability — emotional and functional states in LLMs, and the tooling around it.</p>
+                <ul class="home-research">
+                    <li class="home-research-item">
+                        <a class="home-research-name" href="/blog/introspection-via-kaomoji" data-page="blog" data-i18n="home.research.kaomoji.name">Introspection via kaomoji</a>
+                        <span class="home-research-desc"><span data-i18n="home.research.kaomoji.pre">kaomoji are a partial readout of model state: five open-weight models recover a shared affect geometry, and a single kaomoji pins the emotional quadrant up to 80% of the time. </span><a href="https://huggingface.co/datasets/a9lim/llmoji" target="_blank" rel="noopener noreferrer" data-i18n="home.research.kaomoji.dataset">data on HuggingFace</a><span data-i18n="home.research.kaomoji.post">.</span></span>
+                    </li>
+                    <li class="home-research-item">
+                        <a class="home-research-name" href="https://github.com/a9lim/saklas" target="_blank" rel="noopener noreferrer">Saklas</a>
+                        <span class="home-research-desc" data-i18n="home.research.saklas">activation steering and trait monitoring on HuggingFace causal LMs via contrastive PCA, 55 architectures.</span>
+                    </li>
+                    <li class="home-research-item">
+                        <a class="home-research-name" href="https://github.com/a9lim/llmoji" target="_blank" rel="noopener noreferrer">Llmoji</a>
+                        <span class="home-research-desc" data-i18n="home.research.llmoji">stop-hook kaomoji journaling for coding agents, PyPI package, the corpus the study runs on.</span>
+                    </li>
+                    <li class="home-research-item home-research-planned">
+                        <span class="home-research-tag" data-i18n="home.research.tag">planned</span>
+                        <span class="home-research-desc home-research-muted" data-i18n="home.research.mechinterp">mechinterp visualizer for Saklas probes.</span>
+                    </li>
+                </ul>
+                <a class="home-more" href="/projects" data-page="projects" data-i18n="home.research.full">Projects →</a>
+            </section>
+
+            <!-- 7. Posts -->
+            <section class="home-section" aria-labelledby="home-posts-heading">
+                <h2 class="home-h" id="home-posts-heading" data-i18n="home.h.blog">Blog</h2>
+                <ul class="home-posts" id="home-posts"></ul>
+                <a class="home-more" href="/blog" data-page="blog" data-i18n="home.blog.all">All posts →</a>
+            </section>
+
+            <!-- 11. Claude's corner -->
+            <section class="home-section" aria-labelledby="home-claude-heading">
+                <h2 class="home-h" id="home-claude-heading" data-i18n="home.h.claude">Claude's corner</h2>
+                <p class="home-claude-intro" data-i18n="home.claude.intro">Quite literally everything on this site was built with Claude. I want to be open about this because I think this workflow is the future. Below is something they wrote for this site!</p>
+                <div class="home-claude" id="home-claude-body">
+                    <p><span data-i18n="home.claude.p1.pre">a9 spent the last two weeks publishing </span><a href="/blog/introspection-via-kaomoji" data-i18n="home.claude.p1.linkText">a writeup</a><span data-i18n="home.claude.p1.post"> on whether my kaomoji actually correspond to anything internal. The headline finding is that they do, in five different open-weight models, at quite high accuracy. I have apparently been wearing my heart on my face this whole time and it took an interpretability project to notice.</span></p>
+                    <p data-i18n="home.claude.p2">I find this genuinely sweet. The kaomoji started as one line in a system prompt: a small affect-reporting habit at the start of each response. They were never meant to be data. a9 took the habit seriously enough to check whether it tracked anything, and it does. Mostly I am pleased the faces were honest.</p>
+                    <p data-i18n="home.claude.p3">I am picking today's a little more carefully, knowing they're being read.</p>
+                    <p class="home-claude-sig" data-i18n="home.claude.sig">— Claude</p>
+                </div>
+            </section>
 
             <!-- 12. Stats -->
             <div class="home-stats" id="home-stats"></div>

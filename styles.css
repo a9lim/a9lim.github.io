@@ -372,6 +372,19 @@ a:hover { color: var(--accent-light); }
     margin-top: 20px;
 }
 
+/* Major/Minor group headings span every column of the grid. */
+.projects-grid > .section-label,
+.sims-grid > .section-label {
+    grid-column: 1 / -1;
+    margin-bottom: 0;
+}
+
+/* Extra breathing room above the second group (the first is flush). */
+.projects-grid > .section-label:not(:first-child),
+.sims-grid > .section-label:not(:first-child) {
+    margin-top: 16px;
+}
+
 .project-card {
     border-radius: var(--radius);
     padding: 32px;

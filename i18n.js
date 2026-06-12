@@ -84,7 +84,9 @@
         'home.research.mechinterp':  'mechinterp visualizer for Saklas probes.',
         'home.research.full':        'Projects →',
 
-        // ── Projects grid: planned-card tag ──
+        // ── Projects grid: group headings + planned-card tag ──
+        'projects.major':    'Major',
+        'projects.minor':    'Minor',
         'projects.planned':  'planned',
 
         // ── Home: blog / predictions ──
@@ -211,7 +213,9 @@
         'home.research.mechinterp':  'Saklas プローブのための機械論的解釈可能性ビジュアライザ。',
         'home.research.full':        'プロジェクト →',
 
-        // ── Projects grid: planned-card tag ──
+        // ── Projects grid: group headings + planned-card tag ──
+        'projects.major':    '主要',
+        'projects.minor':    'その他',
         'projects.planned':  '構想中',
 
         // ── Home: blog / predictions ──
