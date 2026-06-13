@@ -63,26 +63,12 @@
         'home.bio.langs.v':     'English (native), Spanish (novice), Mandarin (heritage)',
 
         // ── Home: section headings ──
-        'home.h.research': 'Research',
         'home.h.now':     'Now',
         'home.h.fix':     'Special interest of the month',
         'home.h.blog':    'Blog',
         'home.h.pred':    'Predictions',
         'home.h.ama':     'Ask me about',
         'home.h.claude':  "Claude's corner",
-
-        // ── Home: research list ──
-        // The career-relevant thread: interpretability work + the tools it runs on.
-        'home.research.intro':       'My main thread is mechanistic interpretability — emotional and functional states in LLMs, and the tooling around it.',
-        'home.research.tag':         'planned',
-        'home.research.kaomoji.name': 'Introspection via kaomoji',
-        'home.research.kaomoji.pre':  'kaomoji are a partial readout of model state: five open-weight models recover a shared affect geometry, and a single kaomoji pins the emotional quadrant up to 80% of the time. ',
-        'home.research.kaomoji.dataset': 'data on HuggingFace',
-        'home.research.kaomoji.post': '.',
-        'home.research.saklas':      'activation steering and trait monitoring on HuggingFace causal LMs via contrastive PCA, 55 architectures.',
-        'home.research.llmoji':      'stop-hook kaomoji journaling for coding agents, PyPI package, the corpus the study runs on.',
-        'home.research.mechinterp':  'mechinterp visualizer for Saklas probes.',
-        'home.research.full':        'Projects →',
 
         // ── Projects grid: group headings + planned-card tag ──
         'projects.major':    'Major',
@@ -193,25 +179,12 @@
         'home.bio.langs.v':     '英語(母語)、スペイン語(初級)、中国語(継承語)',
 
         // ── Home: section headings ──
-        'home.h.research': '研究',
         'home.h.now':     'いま',
         'home.h.fix':     '今月のお気に入り',
         'home.h.blog':    'ブログ',
         'home.h.pred':    '予測',
         'home.h.ama':     '聞きたいこと',
         'home.h.claude':  'Claude のコーナー',
-
-        // ── Home: research list ──
-        'home.research.intro':       '私の主軸は機械論的解釈可能性——LLM の感情的・機能的状態と、その周辺のツール群だ。',
-        'home.research.tag':         '構想中',
-        'home.research.kaomoji.name': '顔文字による内省',
-        'home.research.kaomoji.pre':  '顔文字はモデル内部状態の部分的な読み出しになっている。5 つのオープンウェイトモデルが共通の感情幾何を復元し、顔文字 1 つで感情の象限を最大 80% の確率で言い当てられる。',
-        'home.research.kaomoji.dataset': 'データは HuggingFace に公開',
-        'home.research.kaomoji.post': '。',
-        'home.research.saklas':      'HuggingFace の因果 LM に対する対照 PCA によるアクティベーション・ステアリングと特性監視、55 アーキテクチャ対応。',
-        'home.research.llmoji':      'コーディングエージェント向けの Stop フック式顔文字ジャーナリング、PyPI パッケージ、研究が走るコーパスそのもの。',
-        'home.research.mechinterp':  'Saklas プローブのための機械論的解釈可能性ビジュアライザ。',
-        'home.research.full':        'プロジェクト →',
 
         // ── Projects grid: group headings + planned-card tag ──
         'projects.major':    '主要',

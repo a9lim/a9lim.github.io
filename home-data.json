@@ -1,15 +1,15 @@
 {
-  "generatedAt": "2026-06-11T21:14:35.643Z",
+  "generatedAt": "2026-06-13T23:57:17.183Z",
   "lastDeploy": {
-    "hash": "89f6b83",
-    "iso": "2026-06-10T21:34:12-07:00",
-    "subject": "Remove webpage resume in favor of canonical PDF"
+    "hash": "fa4b46a",
+    "iso": "2026-06-12T16:02:57-07:00",
+    "subject": "Split sims/projects into Major/Minor, drop zombie sim"
   },
   "stats": {
     "sims": 8,
     "posts": 1,
     "scriptureWorks": 16,
     "scriptureChapters": 2724,
-    "sourceLines": 28959
+    "sourceLines": 28824
   }
 }

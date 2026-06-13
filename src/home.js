@@ -58,16 +58,6 @@ function relTime(iso) {
     return Math.floor(s / 31536000) + 'y ago';
 }
 
-function renderBio(pairs) {
-    const root = document.getElementById('home-bio');
-    if (!root || !Array.isArray(pairs)) return;
-    clear(root);
-    for (const [k, v] of pairs) {
-        root.appendChild(el('dt', { class: 'home-bio-k', text: k }));
-        root.appendChild(el('dd', { class: 'home-bio-v', text: v }));
-    }
-}
-
 function renderNow(pairs) {
     const root = document.getElementById('home-now');
     if (!root || !Array.isArray(pairs)) return;
@@ -200,8 +190,9 @@ async function fetchJSON(url) {
 function renderFromCache() {
     const { home, data, posts } = _homeCache;
     if (home) {
-        renderBio(pickLang(home, 'bio'));
-        renderNow(pickLang(home, 'now'));
+        const bio = pickLang(home, 'bio');
+        const now = pickLang(home, 'now');
+        renderNow([...(Array.isArray(bio) ? bio : []), ...(Array.isArray(now) ? now : [])]);
         renderHyperfix(pickLang(home, 'hyperfixation'));
         renderPredictions(pickLang(home, 'predictions'));
         renderChips(pickLang(home, 'askMeAbout'));

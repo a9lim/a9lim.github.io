@@ -75,7 +75,7 @@
           "mainEntityOfPage": {"@type": "WebPage", "@id": "https://a9l.im"},
           "speakable": {
             "@type": "SpeakableSpecification",
-            "cssSelector": [".home-bio-prose", ".home-research-intro"]
+            "cssSelector": [".home-bio-prose"]
           },
           "about": [
             {"@type": "Thing", "@id": "https://www.wikidata.org/wiki/Q413", "name": "Physics"},
@@ -303,14 +303,6 @@
                         <p><span data-i18n="about.bio.p3.pre">I got into a lot of these when I was young by playing with Colorado Boulder's </span><a href="https://phet.colorado.edu" target="_blank" rel="noopener noreferrer" data-i18n="about.bio.p3.link">PhET</a><span data-i18n="about.bio.p3.post"> sims, spending hours poking around with the ways the world worked. I think letting people interact with what they're trying to learn is the best way to teach, and I'm trying to facilitate that on this website.</span></p>
                         <p data-i18n="about.bio.p4">I want to be able to do work that matters to me. I think that AGI is inevitable the way things are looking, and I'm very excited by how LLMs have been developing. Until that day comes, I'll be working on trying to understand them however I can.</p>
                     </div>
-
-                    <!-- home.js re-renders this dl from home.json on hydration; the inline rows below are an SSR fallback. -->
-                    <dl class="home-bio" id="home-bio">
-                        <dt class="home-bio-k" data-i18n="home.bio.loc.k">Location</dt><dd class="home-bio-v" data-i18n="home.bio.loc.v">Singapore (ex-UCSD)</dd>
-                        <dt class="home-bio-k" data-i18n="home.bio.stack.k">Stack</dt><dd class="home-bio-v" data-i18n="home.bio.stack.v">Vanilla JS + Claude Code</dd>
-                        <dt class="home-bio-k" data-i18n="home.bio.obsessed.k">Obsessed</dt><dd class="home-bio-v" data-i18n="home.bio.obsessed.v">Interpretability, Middle Chinese, the Warburg effect</dd>
-                        <dt class="home-bio-k" data-i18n="home.bio.langs.k">Languages</dt><dd class="home-bio-v" data-i18n="home.bio.langs.v">English (native), Spanish (novice), Mandarin (heritage)</dd>
-                    </dl>
                 </div>
 
                 <aside class="home-contact glass fade-in" aria-labelledby="home-contact-h">
@@ -331,7 +323,13 @@
 
                 <section class="home-margin-card" aria-labelledby="home-now-heading">
                     <h2 class="home-h" id="home-now-heading" data-i18n="home.h.now">Now</h2>
-                    <dl class="home-now" id="home-now"></dl>
+                    <!-- home.js re-renders this dl from home.json (bio + now) on hydration; the inline rows below are an SSR fallback. -->
+                    <dl class="home-now" id="home-now">
+                        <dt class="home-now-k" data-i18n="home.bio.loc.k">Location</dt><dd class="home-now-v" data-i18n="home.bio.loc.v">Singapore (ex-UCSD)</dd>
+                        <dt class="home-now-k" data-i18n="home.bio.stack.k">Stack</dt><dd class="home-now-v" data-i18n="home.bio.stack.v">Vanilla JS + Claude Code</dd>
+                        <dt class="home-now-k" data-i18n="home.bio.obsessed.k">Obsessed</dt><dd class="home-now-v" data-i18n="home.bio.obsessed.v">Interpretability, Middle Chinese, the Warburg effect</dd>
+                        <dt class="home-now-k" data-i18n="home.bio.langs.k">Languages</dt><dd class="home-now-v" data-i18n="home.bio.langs.v">English (native), Spanish (novice), Mandarin (heritage)</dd>
+                    </dl>
                 </section>
 
                 <section class="home-margin-card" aria-labelledby="home-fix-heading">
@@ -372,31 +370,6 @@
                 </section>
 
             </div>
-
-            <!-- 2. Research — the career thread, most prominent section -->
-            <section class="home-section home-section-lead" aria-labelledby="home-research-heading">
-                <h2 class="home-h home-h-lead" id="home-research-heading" data-i18n="home.h.research">Research</h2>
-                <p class="home-research-intro" data-i18n="home.research.intro">My main thread is mechanistic interpretability — emotional and functional states in LLMs, and the tooling around it.</p>
-                <ul class="home-research">
-                    <li class="home-research-item">
-                        <a class="home-research-name" href="/blog/introspection-via-kaomoji" data-page="blog" data-i18n="home.research.kaomoji.name">Introspection via kaomoji</a>
-                        <span class="home-research-desc"><span data-i18n="home.research.kaomoji.pre">kaomoji are a partial readout of model state: five open-weight models recover a shared affect geometry, and a single kaomoji pins the emotional quadrant up to 80% of the time. </span><a href="https://huggingface.co/datasets/a9lim/llmoji" target="_blank" rel="noopener noreferrer" data-i18n="home.research.kaomoji.dataset">data on HuggingFace</a><span data-i18n="home.research.kaomoji.post">.</span></span>
-                    </li>
-                    <li class="home-research-item">
-                        <a class="home-research-name" href="https://github.com/a9lim/saklas" target="_blank" rel="noopener noreferrer">Saklas</a>
-                        <span class="home-research-desc" data-i18n="home.research.saklas">activation steering and trait monitoring on HuggingFace causal LMs via contrastive PCA, 55 architectures.</span>
-                    </li>
-                    <li class="home-research-item">
-                        <a class="home-research-name" href="https://github.com/a9lim/llmoji" target="_blank" rel="noopener noreferrer">Llmoji</a>
-                        <span class="home-research-desc" data-i18n="home.research.llmoji">stop-hook kaomoji journaling for coding agents, PyPI package, the corpus the study runs on.</span>
-                    </li>
-                    <li class="home-research-item home-research-planned">
-                        <span class="home-research-tag" data-i18n="home.research.tag">planned</span>
-                        <span class="home-research-desc home-research-muted" data-i18n="home.research.mechinterp">mechinterp visualizer for Saklas probes.</span>
-                    </li>
-                </ul>
-                <a class="home-more" href="/projects" data-page="projects" data-i18n="home.research.full">Projects →</a>
-            </section>
 
             <!-- 7. Posts -->
             <section class="home-section" aria-labelledby="home-posts-heading">
