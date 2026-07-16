@@ -9,6 +9,11 @@
 // italic, bold-italic.
 // Limitations: no nested lists, no reference-style links, no HTML
 // passthrough, no setext headings.
+//
+// Single source of truth for all three render surfaces: the blog client
+// (src/blog.js), edge SSR (_worker.js, bundled by wrangler), and the
+// build (_build.mjs for feeds/llms-full). Keep it isomorphic — no DOM,
+// no Node APIs.
 
 let _switcherCounter = 0;
 
@@ -25,25 +30,32 @@ function unstashMath(s) {
     return s.replace(/\x00MATH(\d+)\x00/g, function (_, i) { return _mathStash[i]; });
 }
 
-function esc(s) {
+export function mdEsc(s) {
     return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
+/** Reject script-scheme URLs; returns '' when unsafe. */
+function mdSafeUrl(u) {
+    const l = u.trim().toLowerCase();
+    if (l.startsWith('javascript:') || l.startsWith('vbscript:') || l.startsWith('data:text/html')) return '';
+    return u;
+}
+
 /** Process inline formatting (images, links, code, bold, italic). */
-function inline(src) {
+export function mdInline(src) {
     // Order matters: images before links (share bracket syntax), bold-italic
     // before bold before italic to avoid partial matches
     return src
         .replace(/!\[([^\]]*)\]\(([^)]+)\)/g, (_, alt, url) => {
             const pi = url.indexOf('|');
             if (pi !== -1) {
-                const l = url.slice(0, pi).trim();
-                const d = url.slice(pi + 1).trim();
+                const l = mdSafeUrl(url.slice(0, pi).trim());
+                const d = mdSafeUrl(url.slice(pi + 1).trim());
                 return '<img src="' + l + '" alt="' + alt + '" loading="lazy" class="theme-light"><img src="' + d + '" alt="' + alt + '" loading="lazy" class="theme-dark">';
             }
-            return '<img src="' + url + '" alt="' + alt + '" loading="lazy">';
+            return '<img src="' + mdSafeUrl(url) + '" alt="' + alt + '" loading="lazy">';
         })
-        .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>')
+        .replace(/\[([^\]]+)\]\(([^)]+)\)/g, (_, text, url) => { const s = mdSafeUrl(url); return s ? '<a href="' + s + '" target="_blank" rel="noopener noreferrer">' + text + '</a>' : text; })
         .replace(/`([^`]+)`/g, '<code>$1</code>')
         .replace(/\*{3}(.+?)\*{3}/g, '<strong><em>$1</em></strong>')
         .replace(/_{3}(.+?)_{3}/g, '<strong><em>$1</em></strong>')
@@ -81,7 +93,7 @@ export function parseMarkdown(src) {
             const code = [];
             i++;
             while (i < len && lines[i].indexOf(fence) !== 0) {
-                code.push(isIframe ? lines[i] : esc(lines[i]));
+                code.push(isIframe ? lines[i] : mdEsc(lines[i]));
                 i++;
             }
             i++;
@@ -96,17 +108,17 @@ export function parseMarkdown(src) {
                     const c = (lang.match(/caption="([^"]*)"/) || [])[1] || t;
                     if (paths.length === 1) {
                         html.push('<figure class="iframe-figure">'
-                            + '<iframe src="' + esc(paths[0]) + '" title="' + esc(t) + '" height="' + h + '" loading="lazy"></iframe>'
-                            + (c ? '<figcaption>' + inline(esc(c)) + '</figcaption>' : '')
+                            + '<iframe src="' + mdEsc(paths[0]) + '" title="' + mdEsc(t) + '" height="' + h + '" loading="lazy"></iframe>'
+                            + (c ? '<figcaption>' + mdInline(mdEsc(c)) + '</figcaption>' : '')
                             + '</figure>');
                     } else {
                         let inner = '';
                         for (const p of paths) {
-                            inner += '<div class="iframe-pair-item"><iframe src="' + esc(p) + '" title="' + esc(t) + '" height="' + h + '" loading="lazy"></iframe></div>';
+                            inner += '<div class="iframe-pair-item"><iframe src="' + mdEsc(p) + '" title="' + mdEsc(t) + '" height="' + h + '" loading="lazy"></iframe></div>';
                         }
                         html.push('<figure class="iframe-figure iframe-figure-pair">'
                             + inner
-                            + (c ? '<figcaption>' + inline(esc(c)) + '</figcaption>' : '')
+                            + (c ? '<figcaption>' + mdInline(mdEsc(c)) + '</figcaption>' : '')
                             + '</figure>');
                     }
                 }
@@ -123,32 +135,32 @@ export function parseMarkdown(src) {
                     let out = '<figure class="switcher-figure"><div class="mode-toggles">';
                     for (let n = 0; n < tabs.length; n++) {
                         const label = labels[n] || ('panel ' + (n + 1));
-                        out += '<button class="mode-btn' + (n === 0 ? ' active' : '') + '" data-panel="' + n + '">' + esc(label) + '</button>';
+                        out += '<button class="mode-btn' + (n === 0 ? ' active' : '') + '" data-panel="' + n + '">' + mdEsc(label) + '</button>';
                     }
                     out += '</div><div class="switcher-panels">';
                     for (let n = 0; n < tabs.length; n++) {
-                        const urls = tabs[n].split('|').map(u => u.trim());
+                        const urls = tabs[n].split('|').map(u => u.trim()).map(mdSafeUrl);
                         const lt = urls[0];
                         const dk = urls[1] || urls[0];
                         const altText = (labels[n] || '') + (caption ? ' — ' + caption : '');
                         const cls = 'switcher-panel' + (n === 0 ? ' active' : '');
                         if (lt === dk) {
-                            out += '<div class="' + cls + '"><img src="' + lt + '" alt="' + esc(altText) + '" loading="lazy"></div>';
+                            out += '<div class="' + cls + '"><img src="' + lt + '" alt="' + mdEsc(altText) + '" loading="lazy"></div>';
                         } else {
                             out += '<div class="' + cls + '">'
-                                + '<img src="' + lt + '" alt="' + esc(altText) + '" loading="lazy" class="theme-light">'
-                                + '<img src="' + dk + '" alt="' + esc(altText) + '" loading="lazy" class="theme-dark">'
+                                + '<img src="' + lt + '" alt="' + mdEsc(altText) + '" loading="lazy" class="theme-light">'
+                                + '<img src="' + dk + '" alt="' + mdEsc(altText) + '" loading="lazy" class="theme-dark">'
                                 + '</div>';
                         }
                     }
                     out += '</div>';
-                    if (caption) out += '<figcaption>' + inline(esc(caption)) + '</figcaption>';
+                    if (caption) out += '<figcaption>' + mdInline(mdEsc(caption)) + '</figcaption>';
                     out += '</figure>';
                     html.push(out);
                 }
                 continue;
             }
-            const langAttr = lang ? ' class="language-' + esc(lang) + '"' : '';
+            const langAttr = lang ? ' class="language-' + mdEsc(lang) + '"' : '';
             html.push('<pre><code' + langAttr + '>' + code.join('\n') + '</code></pre>');
             continue;
         }
@@ -172,7 +184,7 @@ export function parseMarkdown(src) {
         if (headingMatch) {
             const level = headingMatch[1].length;
             const slug = headingMatch[2].toLowerCase().replace(/<[^>]+>/g, '').replace(/&[^;]+;/g, '').replace(/[^\w]+/g, '-').replace(/^-|-$/g, '');
-            html.push('<h' + level + ' id="' + slug + '">' + inline(esc(headingMatch[2])) + '</h' + level + '>');
+            html.push('<h' + level + ' id="' + slug + '">' + mdInline(mdEsc(headingMatch[2])) + '</h' + level + '>');
             i++;
             continue;
         }
@@ -200,7 +212,7 @@ export function parseMarkdown(src) {
                 items.push(lines[i].replace(/^[\-*+]\s+/, ''));
                 i++;
             }
-            html.push('<ul>' + items.map(it => '<li>' + inline(esc(it)) + '</li>').join('') + '</ul>');
+            html.push('<ul>' + items.map(it => '<li>' + mdInline(mdEsc(it)) + '</li>').join('') + '</ul>');
             continue;
         }
 
@@ -215,9 +227,9 @@ export function parseMarkdown(src) {
                 i++;
             }
             html.push('<table><thead><tr>'
-                + headers.map(h => '<th>' + inline(esc(h)) + '</th>').join('')
+                + headers.map(h => '<th>' + mdInline(mdEsc(h)) + '</th>').join('')
                 + '</tr></thead><tbody>'
-                + bodyRows.map(row => '<tr>' + row.map(c => '<td>' + inline(esc(c)) + '</td>').join('') + '</tr>').join('')
+                + bodyRows.map(row => '<tr>' + row.map(c => '<td>' + mdInline(mdEsc(c)) + '</td>').join('') + '</tr>').join('')
                 + '</tbody></table>');
             continue;
         }
@@ -228,7 +240,7 @@ export function parseMarkdown(src) {
                 olItems.push(lines[i].replace(/^\d+[.)]\s+/, ''));
                 i++;
             }
-            html.push('<ol>' + olItems.map(it => '<li>' + inline(esc(it)) + '</li>').join('') + '</ol>');
+            html.push('<ol>' + olItems.map(it => '<li>' + mdInline(mdEsc(it)) + '</li>').join('') + '</ol>');
             continue;
         }
 
@@ -240,7 +252,7 @@ export function parseMarkdown(src) {
             i++;
         }
         if (pLines.length) {
-            html.push('<p>' + inline(esc(pLines.join('\n'))) + '</p>');
+            html.push('<p>' + mdInline(mdEsc(pLines.join('\n'))) + '</p>');
         }
     }
 

@@ -5,9 +5,23 @@ import { execFileSync, spawnSync } from 'node:child_process';
 import { dirname, join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createHash } from 'node:crypto';
+import { parseMarkdown, mdEsc } from './src/markdown.js';
 
 const ROOT = dirname(fileURLToPath(import.meta.url));
 const SITE = 'https://a9l.im';
+
+// --check: verify the deterministic content-derived artifacts are current
+// instead of writing them, then exit (nothing is modified in this mode).
+const CHECK = process.argv.includes('--check');
+const checkFailures = [];
+
+// Write a content-derived artifact — or, under --check, diff it against disk.
+function emit(rel, content) {
+  if (!CHECK) { writeFileSync(join(ROOT, rel), content); return; }
+  let current = null;
+  try { current = readText(rel); } catch { /* missing counts as stale */ }
+  if (current !== content) checkFailures.push(rel);
+}
 
 // --- helpers ---
 
@@ -44,181 +58,549 @@ function escXml(s) {
   return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
-// --- Markdown renderer (duplicated from _worker.js — update both when changing) ---
+// Markdown rendering comes from src/markdown.js — the single parser shared
+// by the blog client, the worker's edge SSR, and this build.
 
-let _mdMathStash = [];
-let _switcherCounter = 0;
-function mdStashMath(s) {
-  _mdMathStash = [];
-  return s.replace(/\$\$[\s\S]+?\$\$|\$[^$\n]+?\$/g, m => { _mdMathStash.push(m); return '\x00MATH' + (_mdMathStash.length - 1) + '\x00'; });
-}
-function mdUnstashMath(s) {
-  return s.replace(/\x00MATH(\d+)\x00/g, (_, i) => _mdMathStash[i]);
-}
-function mdEsc(s) {
-  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-}
+// ═══ content/ pipeline ═══
+// content/ is the hand-edited source of truth for blog posts, project
+// cards, and homepage copy. This section parses it and emits the derived
+// artifacts (posts/*.md, posts.json, src/projects.js, _content.generated.mjs).
+// Generated files carry a banner — edit content/, never them.
 
-function mdSafeUrl(u) {
-  const l = u.trim().toLowerCase();
-  if (l.startsWith('javascript:') || l.startsWith('vbscript:') || l.startsWith('data:text/html')) return '';
-  return u;
+function fmValue(v) {
+  if (v === 'true') return true;
+  if (v === 'false') return false;
+  if (/^-?\d+$/.test(v)) return Number(v);
+  return v;
 }
 
-function mdInline(src) {
-  return src
-    .replace(/!\[([^\]]*)\]\(([^)]+)\)/g, (_, alt, url) => {
-      const pi = url.indexOf('|');
-      if (pi !== -1) {
-        const l = mdSafeUrl(url.slice(0, pi).trim());
-        const d = mdSafeUrl(url.slice(pi + 1).trim());
-        return `<img src="${l}" alt="${alt}" loading="lazy" class="theme-light"><img src="${d}" alt="${alt}" loading="lazy" class="theme-dark">`;
-      }
-      return `<img src="${mdSafeUrl(url)}" alt="${alt}" loading="lazy">`;
-    })
-    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, (_, text, url) => { const s = mdSafeUrl(url); return s ? `<a href="${s}" target="_blank" rel="noopener noreferrer">${text}</a>` : text; })
-    .replace(/`([^`]+)`/g, '<code>$1</code>')
-    .replace(/\*{3}(.+?)\*{3}/g, '<strong><em>$1</em></strong>')
-    .replace(/_{3}(.+?)_{3}/g, '<strong><em>$1</em></strong>')
-    .replace(/\*{2}(.+?)\*{2}/g, '<strong>$1</strong>')
-    .replace(/_{2}(.+?)_{2}/g, '<strong>$1</strong>')
-    .replace(/\*(.+?)\*/g, '<em>$1</em>')
-    .replace(/(^|[\s(])_(.+?)_([\s).,!?]|$)/g, '$1<em>$2</em>$3');
-}
-
-function renderMarkdown(src) {
-  _switcherCounter = 0;
-  src = mdStashMath(src);
-  const lines = src.replace(/\r\n?/g, '\n').split('\n');
-  const html = [];
-  let i = 0;
-  const len = lines.length;
-  while (i < len) {
-    const line = lines[i];
-    const fenceMatch = line.match(/^(`{3,}|~{3,})(.*)$/);
-    if (fenceMatch) {
-      const fence = fenceMatch[1];
-      const lang = fenceMatch[2].trim();
-      const isIframe = /^iframe(\s|$)/.test(lang);
-      const code = [];
-      i++;
-      while (i < len && lines[i].indexOf(fence) !== 0) { code.push(isIframe ? lines[i] : mdEsc(lines[i])); i++; }
-      i++;
-      if (isIframe) {
-        const PATH_RE = /^\/[A-Za-z0-9_./?&=%#-]*$/;
-        const paths = code.map(l => l.trim()).filter(Boolean).filter(l => PATH_RE.test(l));
-        if (paths.length) {
-          const h = (lang.match(/height=(\d+)/) || [])[1] || '720';
-          const t = (lang.match(/title="([^"]*)"/) || [])[1] || '';
-          const c = (lang.match(/caption="([^"]*)"/) || [])[1] || t;
-          if (paths.length === 1) {
-            html.push('<figure class="iframe-figure">'
-              + '<iframe src="' + mdEsc(paths[0]) + '" title="' + mdEsc(t) + '" height="' + h + '" loading="lazy"></iframe>'
-              + (c ? '<figcaption>' + mdInline(mdEsc(c)) + '</figcaption>' : '')
-              + '</figure>');
-          } else {
-            let inner = '';
-            for (const p of paths) {
-              inner += '<div class="iframe-pair-item"><iframe src="' + mdEsc(p) + '" title="' + mdEsc(t) + '" height="' + h + '" loading="lazy"></iframe></div>';
-            }
-            html.push('<figure class="iframe-figure iframe-figure-pair">'
-              + inner
-              + (c ? '<figcaption>' + mdInline(mdEsc(c)) + '</figcaption>' : '')
-              + '</figure>');
-          }
-        }
-        continue;
-      }
-      if (/^switcher(\s|$)/.test(lang)) {
-        const labelsMatch = lang.match(/labels="([^"]*)"/);
-        const captionMatch = lang.match(/caption="([^"]*)"/);
-        const labels = (labelsMatch ? labelsMatch[1] : '').split('|').map(l => l.trim()).filter(Boolean);
-        const caption = captionMatch ? captionMatch[1] : '';
-        const tabs = code.map(l => l.trim()).filter(Boolean);
-        if (tabs.length) {
-          _switcherCounter++;
-          let out = '<figure class="switcher-figure"><div class="mode-toggles">';
-          for (let n = 0; n < tabs.length; n++) {
-            const label = labels[n] || ('panel ' + (n + 1));
-            out += '<button class="mode-btn' + (n === 0 ? ' active' : '') + '" data-panel="' + n + '">' + mdEsc(label) + '</button>';
-          }
-          out += '</div><div class="switcher-panels">';
-          for (let n = 0; n < tabs.length; n++) {
-            const urls = tabs[n].split('|').map(u => u.trim()).map(mdSafeUrl);
-            const lt = urls[0];
-            const dk = urls[1] || urls[0];
-            const altText = (labels[n] || '') + (caption ? ' — ' + caption : '');
-            const cls = 'switcher-panel' + (n === 0 ? ' active' : '');
-            if (lt === dk) {
-              out += '<div class="' + cls + '"><img src="' + lt + '" alt="' + mdEsc(altText) + '" loading="lazy"></div>';
-            } else {
-              out += '<div class="' + cls + '">'
-                + '<img src="' + lt + '" alt="' + mdEsc(altText) + '" loading="lazy" class="theme-light">'
-                + '<img src="' + dk + '" alt="' + mdEsc(altText) + '" loading="lazy" class="theme-dark">'
-                + '</div>';
-            }
-          }
-          out += '</div>';
-          if (caption) out += '<figcaption>' + mdInline(mdEsc(caption)) + '</figcaption>';
-          out += '</figure>';
-          html.push(out);
-        }
-        continue;
-      }
-      const langAttr = lang ? ' class="language-' + mdEsc(lang) + '"' : '';
-      html.push('<pre><code' + langAttr + '>' + code.join('\n') + '</code></pre>');
+// Minimal YAML subset: `key: value` scalars (string / bool / integer) and
+// `key:` followed by indented `- item` lists. Nothing else — parse errors
+// are loud so a typo can't silently drop content.
+function parseFrontmatter(rel) {
+  const raw = readText(rel);
+  if (!raw.startsWith('---\n')) throw new Error(rel + ': missing frontmatter');
+  const end = raw.indexOf('\n---\n', 4);
+  if (end === -1) throw new Error(rel + ': unterminated frontmatter');
+  const meta = {};
+  let listKey = null;
+  for (const line of raw.slice(4, end).split('\n')) {
+    if (!line.trim() || line.trim().startsWith('#')) continue;
+    const item = line.match(/^\s+-\s+(.+)$/);
+    if (item) {
+      if (!listKey) throw new Error(rel + ': list item outside a list: ' + line);
+      meta[listKey].push(fmValue(item[1]));
       continue;
     }
-    if (/^\s*$/.test(line)) { i++; continue; }
-    if (/^\$\$/.test(line) && !/^\$\$.*\$\$/.test(line)) {
-      const ml = [line]; i++;
-      while (i < len && !/\$\$\s*$/.test(lines[i])) { ml.push(lines[i]); i++; }
-      if (i < len) { ml.push(lines[i]); i++; }
-      html.push('<p>' + mdUnstashMath(ml.join('\n')) + '</p>');
-      continue;
-    }
-    const hm = line.match(/^(#{1,6})\s+(.+)$/);
-    if (hm) { const slug = hm[2].toLowerCase().replace(/<[^>]+>/g, '').replace(/&[^;]+;/g, '').replace(/[^\w]+/g, '-').replace(/^-|-$/g, ''); html.push('<h' + hm[1].length + ' id="' + slug + '">' + mdInline(mdEsc(hm[2])) + '</h' + hm[1].length + '>'); i++; continue; }
-    if (/^(-{3,}|\*{3,}|_{3,})\s*$/.test(line)) { html.push('<hr>'); i++; continue; }
-    if (/^>\s?/.test(line)) {
-      const bq = [];
-      while (i < len && /^>\s?/.test(lines[i])) { bq.push(lines[i].replace(/^>\s?/, '')); i++; }
-      html.push('<blockquote>' + renderMarkdown(bq.join('\n')) + '</blockquote>');
-      continue;
-    }
-    if (/^[\-*+]\s+/.test(line)) {
-      const items = [];
-      while (i < len && /^[\-*+]\s+/.test(lines[i])) { items.push(lines[i].replace(/^[\-*+]\s+/, '')); i++; }
-      html.push('<ul>' + items.map(it => '<li>' + mdInline(mdEsc(it)) + '</li>').join('') + '</ul>');
-      continue;
-    }
-    if (/^\|.+\|\s*$/.test(line) && i + 1 < len && /^\|[\s:|-]+\|\s*$/.test(lines[i + 1])) {
-      const splitRow = (s) => s.replace(/^\||\|\s*$/g, '').split('|').map(c => c.trim());
-      const headers = splitRow(line);
-      i += 2;
-      const bodyRows = [];
-      while (i < len && /^\|.+\|\s*$/.test(lines[i])) { bodyRows.push(splitRow(lines[i])); i++; }
-      html.push('<table><thead><tr>'
-        + headers.map(h => '<th>' + mdInline(mdEsc(h)) + '</th>').join('')
-        + '</tr></thead><tbody>'
-        + bodyRows.map(row => '<tr>' + row.map(c => '<td>' + mdInline(mdEsc(c)) + '</td>').join('') + '</tr>').join('')
-        + '</tbody></table>');
-      continue;
-    }
-    if (/^\d+[.)]\s+/.test(line)) {
-      const ol = [];
-      while (i < len && /^\d+[.)]\s+/.test(lines[i])) { ol.push(lines[i].replace(/^\d+[.)]\s+/, '')); i++; }
-      html.push('<ol>' + ol.map(it => '<li>' + mdInline(mdEsc(it)) + '</li>').join('') + '</ol>');
-      continue;
-    }
-    const p = [];
-    while (i < len && !/^\s*$/.test(lines[i])
-      && !/^(#{1,6}\s|>\s?|[\-*+]\s|`{3,}|~{3,}|\d+[.)]\s|(-{3,}|\*{3,}|_{3,})\s*$)/.test(lines[i])) {
-      p.push(lines[i]); i++;
-    }
-    if (p.length) html.push('<p>' + mdInline(mdEsc(p.join('\n'))) + '</p>');
+    const kv = line.match(/^([A-Za-z][\w]*):(?:\s+(.*))?$/);
+    if (!kv) throw new Error(rel + ': bad frontmatter line: ' + line);
+    if (kv[2] === undefined || kv[2] === '') { listKey = kv[1]; meta[listKey] = []; }
+    else { listKey = null; meta[kv[1]] = fmValue(kv[2].trim()); }
   }
-  return mdUnstashMath(html.join('\n'));
+  return { meta, body: raw.slice(end + 5) };
+}
+
+function contentSlugs(dir) {
+  return readdirSync(join(ROOT, dir))
+    .filter(f => f.endsWith('.md') && !f.endsWith('.ja.md'))
+    .map(f => f.replace(/\.md$/, ''));
+}
+
+// Each content file may have a parallel `{slug}.ja.md` translation.
+function loadContentPair(dir, slug) {
+  const en = parseFrontmatter(`${dir}/${slug}.md`);
+  const jaRel = `${dir}/${slug}.ja.md`;
+  const ja = existsSync(join(ROOT, jaRel)) ? parseFrontmatter(jaRel) : null;
+  return { slug, meta: en.meta, body: en.body, ja };
+}
+
+// --- posts: content/posts/*.md → posts/*.md (frontmatter stripped) + posts.json ---
+
+const postEntries = contentSlugs('content/posts')
+  .map(slug => loadContentPair('content/posts', slug))
+  .sort((a, b) => (a.meta.date < b.meta.date ? 1 : -1));
+
+const posts = [];
+for (const p of postEntries) {
+  for (const req of ['title', 'date', 'tag', 'excerpt']) {
+    if (p.meta[req] == null) throw new Error(`content/posts/${p.slug}.md: missing ${req}`);
+  }
+  emit('posts/' + p.slug + '.md', p.body);
+  if (p.ja) emit('posts/' + p.slug + '.ja.md', p.ja.body);
+  posts.push({
+    slug: p.slug,
+    title: p.meta.title,
+    ...(p.ja && p.ja.meta.title && { title_ja: p.ja.meta.title }),
+    date: p.meta.date,
+    ...(p.meta.updated && { updated: p.meta.updated }),
+    tag: p.meta.tag,
+    ...(p.ja && p.ja.meta.tag && { tag_ja: p.ja.meta.tag }),
+    excerpt: p.meta.excerpt,
+    ...(p.ja && p.ja.meta.excerpt && { excerpt_ja: p.ja.meta.excerpt }),
+    ...(p.ja && { translations: ['ja'] }),
+  });
+}
+emit('posts.json', JSON.stringify(posts, null, 2) + '\n');
+console.log(`posts.json: ${posts.length} posts (from content/posts/)`);
+
+// --- projects: content/projects/*.md → src/projects.js + worker SSR data ---
+
+const projectEntries = contentSlugs('content/projects')
+  .map(slug => loadContentPair('content/projects', slug))
+  .sort((a, b) => (a.meta.order ?? 1e9) - (b.meta.order ?? 1e9));
+
+const projectsData = projectEntries.map(p => {
+  for (const req of ['title', 'kind', 'icon', 'tags', 'shortDesc']) {
+    if (p.meta[req] == null) throw new Error(`content/projects/${p.slug}.md: missing ${req}`);
+  }
+  if (!p.ja) throw new Error(`content/projects/${p.slug}.md: missing .ja.md sibling`);
+  return {
+    ...(p.meta.href && { href: p.meta.href }),
+    title: p.meta.title,
+    shortDesc: p.meta.shortDesc,
+    shortDesc_ja: p.ja.meta.shortDesc,
+    longDesc: p.body.trim(),
+    longDesc_ja: p.ja.body.trim(),
+    tags: p.meta.tags,
+    tags_ja: p.ja.meta.tags,
+    icon: p.meta.icon,
+    external: !!p.meta.external,
+    kind: p.meta.kind,
+    ...(p.meta.major && { major: true }),
+    ...(p.meta.planned && { planned: true }),
+    seoName: p.meta.seoName || null,
+    seoUrl: p.meta.seoUrl || null,
+  };
+});
+
+{
+  const lines = [];
+  for (const p of projectsData) {
+    const o = ['    {'];
+    if (p.href) o.push(`        href: ${JSON.stringify(p.href)},`);
+    o.push(`        title: ${JSON.stringify(p.title)},`);
+    o.push(`        shortDesc: ${JSON.stringify(p.shortDesc)},`);
+    o.push(`        shortDesc_ja: ${JSON.stringify(p.shortDesc_ja)},`);
+    o.push(`        longDesc: ${JSON.stringify(p.longDesc)},`);
+    o.push(`        longDesc_ja: ${JSON.stringify(p.longDesc_ja)},`);
+    o.push(`        tags: ${JSON.stringify(p.tags)},`);
+    o.push(`        tags_ja: ${JSON.stringify(p.tags_ja)},`);
+    o.push(`        icon: _ICON.${p.icon},`);
+    o.push(`        external: ${p.external},`);
+    o.push(`        kind: ${JSON.stringify(p.kind)},`);
+    if (p.major) o.push('        major: true,');
+    if (p.planned) o.push('        planned: true,');
+    o.push('    },');
+    lines.push(o.join('\n'));
+  }
+  const projectsJs = `// GENERATED by _build.mjs from content/projects/*.md — do not hand-edit.
+// Single source of truth for the /sims and /projects grids (split by kind,
+// then by major/minor), consumed by projects-page.js. The worker's SSR
+// mirrors and JSON-LD item lists are generated from the same content files
+// into _content.generated.mjs, so the two can no longer drift.
+export const PROJECTS = [
+${lines.join('\n')}
+];
+`;
+  emit('src/projects.js', projectsJs);
+  console.log(`src/projects.js: ${projectsData.length} cards (from content/projects/)`);
+}
+
+// --- homepage: content/home/*.md → index.html regions + i18n dict + home-data ---
+//
+// Each card is one file (+ optional .ja.md). The build renders the EN
+// markdown into `<!-- content:{name} -->…<!-- /content:{name} -->` regions
+// in index.html and emits matching dictionary entries into the generated
+// sections of i18n.js. Paragraphs with inline links/emphasis are split into
+// per-segment spans mechanically — the old hand-maintained pre/link/post
+// keys, but machine-made and structurally validated against the JA text.
+
+const homeCards = {};
+for (const slug of contentSlugs('content/home')) homeCards[slug] = loadContentPair('content/home', slug);
+for (const req of ['site', 'bio', 'contact', 'now', 'hyperfixation', 'predictions',
+  'ask-me-about', 'other-things', 'claude-corner', 'scripture-rotation', 'footer']) {
+  if (!homeCards[req]) throw new Error(`content/home/${req}.md missing`);
+}
+
+function mdBlocksOf(body) {
+  return body.split(/\n{2,}/).map(b => b.replace(/^\n+|\n+$/g, '')).filter(b => b.trim());
+}
+
+function parseTableBlock(block, rel) {
+  const lines = block.split('\n').filter(l => l.trim());
+  if (!/^\|.*\|\s*$/.test(lines[0]) || !/^\|[\s:|-]+\|\s*$/.test(lines[1] || '')) {
+    throw new Error(rel + ': expected a pipe table, got: ' + lines[0]);
+  }
+  const splitRow = s => s.replace(/^\s*\||\|\s*$/g, '').split('|').map(c => c.trim());
+  return { header: splitRow(lines[0]), rows: lines.slice(2).map(splitRow) };
+}
+
+function parseListBlock(block, rel) {
+  return block.split('\n').filter(l => l.trim()).map(l => {
+    const m = l.match(/^[-*+]\s+(.*)$/);
+    if (!m) throw new Error(rel + ': expected a list item, got: ' + l);
+    return m[1];
+  });
+}
+
+const i18nEn = {};
+const i18nJa = {};
+
+function i18nScalar(key, en, ja) {
+  i18nEn[key] = en;
+  if (ja != null) i18nJa[key] = ja;
+}
+
+// Tokenize markdown inline syntax into translatable segments.
+function segmentInline(text) {
+  const tokens = [];
+  const re = /\[([^\]]+)\]\(([^)]+)\)|\*\*(.+?)\*\*|\*(.+?)\*|`([^`]+)`/g;
+  let last = 0, m;
+  while ((m = re.exec(text))) {
+    if (m.index > last) tokens.push({ type: 'text', text: text.slice(last, m.index) });
+    if (m[1] !== undefined) tokens.push({ type: 'link', text: m[1], href: m[2] });
+    else if (m[3] !== undefined) tokens.push({ type: 'strong', text: m[3] });
+    else if (m[4] !== undefined) tokens.push({ type: 'em', text: m[4] });
+    else tokens.push({ type: 'code', text: m[5] });
+    last = re.lastIndex;
+  }
+  if (last < text.length) tokens.push({ type: 'text', text: text.slice(last) });
+  return tokens;
+}
+
+// Render one translatable inline block as an element with data-i18n hooks,
+// registering EN/JA dictionary entries. Multi-segment blocks are validated:
+// the JA translation must have the same segment structure (and link targets)
+// as the EN source, so a dropped link in a translation fails the build.
+function i18nBlock(tag, key, en, ja, rel, attrs = '') {
+  const enToks = segmentInline(en);
+  const jaToks = ja != null ? segmentInline(ja) : null;
+  if (jaToks) {
+    if (jaToks.length !== enToks.length) {
+      throw new Error(`${rel}: EN/JA segment count mismatch for ${key} (${enToks.length} vs ${jaToks.length})`);
+    }
+    enToks.forEach((t, i) => {
+      if (t.type !== jaToks[i].type) throw new Error(`${rel}: EN/JA segment type mismatch at ${key}.s${i} (${t.type} vs ${jaToks[i].type})`);
+      if (t.type === 'link' && t.href !== jaToks[i].href) throw new Error(`${rel}: EN/JA link href mismatch at ${key}.s${i}`);
+    });
+  }
+  if (enToks.length === 1 && enToks[0].type === 'text') {
+    i18nScalar(key, enToks[0].text, jaToks ? jaToks[0].text : null);
+    return `<${tag}${attrs} data-i18n="${key}">${mdEsc(enToks[0].text)}</${tag}>`;
+  }
+  let inner = '';
+  enToks.forEach((t, i) => {
+    const k = `${key}.s${i}`;
+    i18nScalar(k, t.text, jaToks ? jaToks[i].text : null);
+    if (t.type === 'link') {
+      const ext = /^https?:\/\//.test(t.href) ? ' target="_blank" rel="noopener noreferrer"' : '';
+      inner += `<a href="${t.href}"${ext} data-i18n="${k}">${mdEsc(t.text)}</a>`;
+    } else if (t.type === 'text') {
+      inner += `<span data-i18n="${k}">${mdEsc(t.text)}</span>`;
+    } else {
+      const tg = t.type === 'strong' ? 'strong' : t.type === 'em' ? 'em' : 'code';
+      inner += `<${tg} data-i18n="${k}">${mdEsc(t.text)}</${tg}>`;
+    }
+  });
+  return `<${tag}${attrs}>${inner}</${tag}>`;
+}
+
+const regions = {};
+const IND = '                '; // base indent inside home cards (4 levels)
+
+// bio — prose paragraphs
+{
+  const c = homeCards['bio'];
+  const en = mdBlocksOf(c.body), ja = mdBlocksOf(c.ja.body);
+  if (en.length !== ja.length) throw new Error('content/home/bio: EN/JA paragraph count mismatch');
+  regions.bio = en.map((p, i) => IND + '    ' + i18nBlock('p', `c.bio.p${i + 1}`, p, ja[i], 'content/home/bio.md')).join('\n');
+}
+
+// contact — heading + blurb (socials list stays hand-edited in index.html)
+{
+  const c = homeCards['contact'];
+  i18nScalar('c.contact.h', c.meta.heading, c.ja.meta.heading);
+  const en = mdBlocksOf(c.body), ja = mdBlocksOf(c.ja.body);
+  regions.contact = [
+    IND + `<h3 id="home-contact-h" data-i18n="c.contact.h">${mdEsc(c.meta.heading)}</h3>`,
+    IND + i18nBlock('p', 'c.contact.p1', en[0], ja[0], 'content/home/contact.md'),
+  ].join('\n');
+}
+
+// now — heading + 2-col table → SSR fallback <dl> rows + home-data pairs
+let homeNow, homeNowJa;
+{
+  const c = homeCards['now'];
+  i18nScalar('c.now.h', c.meta.heading, c.ja.meta.heading);
+  const t = parseTableBlock(c.body, 'content/home/now.md');
+  const tja = parseTableBlock(c.ja.body, 'content/home/now.ja.md');
+  if (t.rows.length !== tja.rows.length) throw new Error('content/home/now: EN/JA row count mismatch');
+  homeNow = t.rows;
+  homeNowJa = tja.rows;
+  const dl = t.rows.map(([k, v], i) => {
+    i18nScalar(`c.now.r${i}.k`, k, tja.rows[i][0]);
+    i18nScalar(`c.now.r${i}.v`, v, tja.rows[i][1]);
+    return IND + `        <dt class="home-now-k" data-i18n="c.now.r${i}.k">${mdEsc(k)}</dt><dd class="home-now-v" data-i18n="c.now.r${i}.v">${mdEsc(v)}</dd>`;
+  }).join('\n');
+  regions.now = [
+    IND + `    <h2 class="home-h" id="home-now-heading" data-i18n="c.now.h">${mdEsc(c.meta.heading)}</h2>`,
+    IND + '    <!-- home.js re-renders this dl from home-data.json on hydration; these rows are the SSR fallback. -->',
+    IND + '    <dl class="home-now" id="home-now">',
+    dl,
+    IND + '    </dl>',
+  ].join('\n');
+}
+
+// hyperfixation — heading label from frontmatter; card body is JS-hydrated
+let homeFix, homeFixJa;
+{
+  const c = homeCards['hyperfixation'];
+  i18nScalar('c.fix.label', c.meta.label, c.ja.meta.label);
+  const body = mdBlocksOf(c.body).join('\n\n');
+  const bodyJa = mdBlocksOf(c.ja.body).join('\n\n');
+  homeFix = { label: c.meta.label, title: c.meta.title, body, link: c.meta.link, linkLabel: c.meta.linkLabel };
+  homeFixJa = { label: c.ja.meta.label, title: c.ja.meta.title, body: bodyJa, link: c.ja.meta.link, linkLabel: c.ja.meta.linkLabel };
+  regions.hyperfixation = IND + `    <h2 class="home-h" id="home-fix-heading"><span id="home-fix-label" data-i18n="c.fix.label">${mdEsc(c.meta.label)}</span></h2>`;
+}
+
+// predictions — heading + note from frontmatter, rows + column labels from table
+let homePred, homePredJa;
+{
+  const c = homeCards['predictions'];
+  i18nScalar('c.pred.h', c.meta.heading, c.ja.meta.heading);
+  i18nScalar('c.pred.note', c.meta.note, c.ja.meta.note);
+  const t = parseTableBlock(c.body, 'content/home/predictions.md');
+  const tja = parseTableBlock(c.ja.body, 'content/home/predictions.ja.md');
+  if (t.rows.length !== tja.rows.length) throw new Error('content/home/predictions: EN/JA row count mismatch');
+  homePred = t.rows;
+  homePredJa = tja.rows;
+  const ths = t.header.map((h, i) => {
+    i18nScalar(`c.pred.th${i}`, h, tja.header[i]);
+    return `<th scope="col" data-i18n="c.pred.th${i}">${mdEsc(h)}</th>`;
+  }).join('');
+  regions.predictions = [
+    IND + `    <h2 class="home-h" id="home-pred-heading" data-i18n="c.pred.h">${mdEsc(c.meta.heading)}</h2>`,
+    IND + '    <table class="home-pred" id="home-pred">',
+    IND + '        <thead>',
+    IND + `            <tr>${ths}</tr>`,
+    IND + '        </thead>',
+    IND + '        <tbody></tbody>',
+    IND + '    </table>',
+    IND + `    <p class="home-pred-note" data-i18n="c.pred.note">${mdEsc(c.meta.note)}</p>`,
+  ].join('\n');
+}
+
+// ask-me-about — chips list (JS-hydrated) + contact hint paragraph
+let homeChips, homeChipsJa;
+{
+  const c = homeCards['ask-me-about'];
+  i18nScalar('c.ama.h', c.meta.heading, c.ja.meta.heading);
+  const [listEn, hintEn] = mdBlocksOf(c.body);
+  const [listJa, hintJa] = mdBlocksOf(c.ja.body);
+  homeChips = parseListBlock(listEn, 'content/home/ask-me-about.md');
+  homeChipsJa = parseListBlock(listJa, 'content/home/ask-me-about.ja.md');
+  if (homeChips.length !== homeChipsJa.length) throw new Error('content/home/ask-me-about: EN/JA chip count mismatch');
+  regions['ask-me-about'] = [
+    IND + `    <h2 class="home-h" id="home-ama-heading" data-i18n="c.ama.h">${mdEsc(c.meta.heading)}</h2>`,
+    IND + '    <div class="home-chips" id="home-chips"></div>',
+    IND + '    ' + i18nBlock('p', 'c.ama.hint', hintEn, hintJa, 'content/home/ask-me-about.md', ' class="home-chips-hint"'),
+  ].join('\n');
+}
+
+// other-things — heading + list
+{
+  const c = homeCards['other-things'];
+  i18nScalar('c.other.h', c.meta.heading, c.ja.meta.heading);
+  const en = parseListBlock(mdBlocksOf(c.body)[0], 'content/home/other-things.md');
+  const ja = parseListBlock(mdBlocksOf(c.ja.body)[0], 'content/home/other-things.ja.md');
+  if (en.length !== ja.length) throw new Error('content/home/other-things: EN/JA item count mismatch');
+  regions['other-things'] = [
+    IND + `    <h2 class="home-h" id="home-other-heading" data-i18n="c.other.h">${mdEsc(c.meta.heading)}</h2>`,
+    IND + '    <ul class="home-other">',
+    ...en.map((li, i) => IND + '        ' + i18nBlock('li', `c.other.li${i + 1}`, li, ja[i], 'content/home/other-things.md')),
+    IND + '    </ul>',
+  ].join('\n');
+}
+
+// claude-corner — heading + intro + Claude's letter + signature
+{
+  const c = homeCards['claude-corner'];
+  i18nScalar('c.claude.h', c.meta.heading, c.ja.meta.heading);
+  i18nScalar('c.claude.sig', c.meta.sig, c.ja.meta.sig);
+  const en = mdBlocksOf(c.body), ja = mdBlocksOf(c.ja.body);
+  if (en.length !== ja.length) throw new Error('content/home/claude-corner: EN/JA paragraph count mismatch');
+  regions['claude-corner'] = [
+    IND + `<h2 class="home-h" id="home-claude-heading" data-i18n="c.claude.h">${mdEsc(c.meta.heading)}</h2>`,
+    IND + i18nBlock('p', 'c.claude.intro', c.meta.intro, c.ja.meta.intro, 'content/home/claude-corner.md', ' class="home-claude-intro"'),
+    IND + '<div class="home-claude" id="home-claude-body">',
+    ...en.map((p, i) => IND + '    ' + i18nBlock('p', `c.claude.p${i + 1}`, p, ja[i], 'content/home/claude-corner.md')),
+    IND + `    <p class="home-claude-sig" data-i18n="c.claude.sig">${mdEsc(c.meta.sig)}</p>`,
+    IND + '</div>',
+  ].join('\n');
+}
+
+// scripture-rotation — SSR fallback shows the first entry; JS rotates daily
+let homeScripture;
+{
+  const c = homeCards['scripture-rotation'];
+  const t = parseTableBlock(c.body, 'content/home/scripture-rotation.md');
+  homeScripture = t.rows.map(([verse, cite]) => ({ verse, cite }));
+  regions.scripture = [
+    IND + `<blockquote class="home-scripture-q" id="home-scripture-q">${mdEsc(homeScripture[0].verse)}</blockquote>`,
+    IND + `<cite class="home-scripture-c" id="home-scripture-c">— ${mdEsc(homeScripture[0].cite)}</cite>`,
+  ].join('\n');
+}
+
+// footer — tech line
+{
+  const c = homeCards['footer'];
+  regions.footer = '        ' + i18nBlock('p', 'c.footer.tech', mdBlocksOf(c.body)[0], mdBlocksOf(c.ja.body)[0], 'content/home/footer.md', ' class="footer-tech"');
+}
+
+// site — <head> metadata + per-route titles/descriptions
+const site = homeCards['site'].meta;
+const siteJa = homeCards['site'].ja.meta;
+for (const req of ['titleShort', 'title', 'description', 'descriptionShort', 'ogImageAlt',
+  'simsTitle', 'simsDesc', 'projectsTitle', 'projectsDesc', 'blogTitle', 'blogDesc']) {
+  if (site[req] == null) throw new Error('content/home/site.md: missing ' + req);
+}
+i18nScalar('c.site.titleShort', site.titleShort, siteJa.titleShort);
+i18nScalar('c.site.title', site.title, siteJa.title);
+i18nScalar('c.site.description', site.description, siteJa.description);
+i18nScalar('c.site.descriptionShort', site.descriptionShort, siteJa.descriptionShort);
+i18nScalar('c.site.ogImageAlt', site.ogImageAlt, siteJa.ogImageAlt);
+
+const ROUTE_META_GEN = {
+  '/sims': { title: site.simsTitle, desc: site.simsDesc, ogTitle: site.simsTitle },
+  '/projects': { title: site.projectsTitle, desc: site.projectsDesc, ogTitle: site.projectsTitle },
+  '/blog': { title: site.blogTitle, desc: site.blogDesc, ogTitle: site.blogTitle },
+};
+
+// Inject regions + head metadata into index.html (in place, idempotent).
+{
+  let html = readText('index.html');
+  for (const [name, content] of Object.entries(regions)) {
+    const re = new RegExp(`(<!-- content:${name} [^>]*-->)[\\s\\S]*?(<!-- /content:${name} -->)`);
+    if (!re.test(html)) throw new Error('index.html: missing region markers for ' + name);
+    html = html.replace(re, (_, open, close) => `${open}\n${content}\n${IND}${close}`);
+  }
+  const headTag = (re, replacement, what) => {
+    if (!re.test(html)) throw new Error('index.html <head>: could not find ' + what);
+    html = html.replace(re, replacement);
+  };
+  headTag(/<title[^>]*>[^<]*<\/title>/,
+    `<title data-i18n="c.site.titleShort">${mdEsc(site.titleShort)}</title>`, 'title');
+  headTag(/<meta name="description"[^>]*>/,
+    `<meta name="description" data-i18n-content="c.site.description" content="${mdEsc(site.description)}">`, 'meta description');
+  headTag(/<meta property="og:title"[^>]*>/,
+    `<meta property="og:title" data-i18n-content="c.site.title" content="${mdEsc(site.title)}">`, 'og:title');
+  headTag(/<meta property="og:description"[^>]*>/,
+    `<meta property="og:description" data-i18n-content="c.site.description" content="${mdEsc(site.description)}">`, 'og:description');
+  headTag(/<meta property="og:image:alt"[^>]*>/,
+    `<meta property="og:image:alt" data-i18n-content="c.site.ogImageAlt" content="${mdEsc(site.ogImageAlt)}">`, 'og:image:alt');
+  headTag(/<meta name="twitter:title"[^>]*>/,
+    `<meta name="twitter:title" data-i18n-content="c.site.title" content="${mdEsc(site.title)}">`, 'twitter:title');
+  headTag(/<meta name="twitter:description"[^>]*>/,
+    `<meta name="twitter:description" data-i18n-content="c.site.descriptionShort" content="${mdEsc(site.descriptionShort)}">`, 'twitter:description');
+  emit('index.html', html);
+  console.log(`index.html: ${Object.keys(regions).length} content regions + head metadata injected`);
+}
+
+// Inject generated dictionary sections into i18n.js (in place, idempotent).
+{
+  let js = readText('i18n.js');
+  const inject = (lang, entries) => {
+    const start = `// == GENERATED CONTENT (${lang}) — from content/home/, via _build.mjs; edit there ==`;
+    const end = `// == END GENERATED CONTENT (${lang}) ==`;
+    const re = new RegExp(`(${start.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})[\\s\\S]*?(${end.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`);
+    if (!re.test(js)) throw new Error(`i18n.js: missing generated-content markers for ${lang}`);
+    const body = Object.entries(entries).map(([k, v]) => `        ${JSON.stringify(k)}: ${JSON.stringify(v)},`).join('\n');
+    js = js.replace(re, (_, open, close) => `${open}\n${body}\n        ${close}`);
+  };
+  inject('en', i18nEn);
+  inject('ja', i18nJa);
+  emit('i18n.js', js);
+  console.log(`i18n.js: ${Object.keys(i18nEn).length} EN + ${Object.keys(i18nJa).length} JA generated entries`);
+}
+
+// Validate: every data-i18n key referenced in index.html must exist in the
+// final dictionary (hand-written sections + generated ones).
+{
+  const html = readText('index.html');
+  const js = readText('i18n.js');
+  const dictKeys = new Set([...js.matchAll(/^\s*(?:'([^']+)'|"([^"]+)"):/gm)].map(m => m[1] || m[2]));
+  const used = [...html.matchAll(/data-i18n(?:-title|-aria|-content|-alt|-href)?="([^"]+)"/g)].map(m => m[1]);
+  const missing = used.filter(k => !dictKeys.has(k));
+  if (missing.length) throw new Error('index.html references i18n keys missing from i18n.js: ' + missing.join(', '));
+}
+
+// --- worker content module: SSR mirrors + blog/route metadata ---
+
+function ssrCard(p) {
+  const tagSpans = p.tags.map(t => `<span class="tag">${mdEsc(t)}</span>`).join('');
+  if (p.planned) {
+    return `<div class="project-card project-card-planned"><div class="project-card-top"><h3>${mdEsc(p.title)}</h3><span class="project-planned-tag">planned</span></div><p>${mdEsc(p.shortDesc)}</p>${tagSpans}</div>`;
+  }
+  const ext = p.external ? ' target="_blank" rel="noopener noreferrer"' : '';
+  return `<div class="project-card fade-in visible"><a href="${p.href}"${ext}><h3>${mdEsc(p.title)}</h3><p>${mdEsc(p.shortDesc)}</p>${tagSpans}</a></div>`;
+}
+
+function ssrGrid(list) {
+  const major = list.filter(p => p.major);
+  const minor = list.filter(p => !p.major);
+  const parts = (major.length && minor.length)
+    ? ['<h2 class="section-label">Major</h2>', ...major.map(ssrCard), '<h2 class="section-label">Minor</h2>', ...minor.map(ssrCard)]
+    : list.map(ssrCard);
+  return '\n' + parts.join('\n') + '\n';
+}
+
+// JSON-LD ItemList entries; planned cards and cards without seoName are skipped.
+function itemList(list) {
+  return list.filter(p => !p.planned && p.seoName).map((p, i) => ({
+    position: i + 1,
+    name: p.seoName,
+    url: p.seoUrl || (p.external ? p.href : SITE + p.href),
+  }));
+}
+
+const simsData = projectsData.filter(p => p.kind === 'sim');
+const projsData = projectsData.filter(p => p.kind === 'project');
+
+const blogMeta = {};
+for (const p of posts) {
+  blogMeta[p.slug] = { title: `${p.title} | a9l.im`, desc: p.excerpt, ogTitle: `${p.title} | a9l.im` };
+}
+
+{
+  const mod = `// GENERATED by _build.mjs from content/ — do not hand-edit.
+// Imported by _worker.js and bundled into the deployed Worker. Carries the
+// SSR mirrors of the project grids, per-route and per-post SEO metadata,
+// and the JSON-LD item lists for /sims and /projects.
+
+export const ROUTE_META = ${JSON.stringify(ROUTE_META_GEN, null, 2)};
+
+export const BLOG_META = ${JSON.stringify(blogMeta, null, 2)};
+
+export const SIMS_SSR = ${JSON.stringify(ssrGrid(simsData))};
+
+export const PROJECTS_SSR = ${JSON.stringify(ssrGrid(projsData))};
+
+export const SIMS_ITEMLIST = ${JSON.stringify(itemList(simsData), null, 2)};
+
+export const PROJECTS_ITEMLIST = ${JSON.stringify(itemList(projsData), null, 2)};
+`;
+  emit('_content.generated.mjs', mod);
+  console.log('_content.generated.mjs: generated');
+}
+
+if (CHECK) {
+  if (checkFailures.length) {
+    console.error('STALE generated artifacts — edit content/ was not followed by `node _build.mjs`:');
+    for (const f of checkFailures) console.error('  ' + f);
+    process.exit(1);
+  }
+  console.log('--check: all content-derived artifacts are current');
+  process.exit(0);
 }
 
 // --- collect URLs ---
@@ -281,8 +663,7 @@ for (const workId of workIds) {
   add(`/scripture/${workId}`, workLastmod, null, 'monthly', 0.7);
 }
 
-// 2. Blog posts
-const posts = readJSON('posts.json');
+// 2. Blog posts (loaded from content/posts/ above)
 for (const p of posts) {
   const md = `posts/${p.slug}.md`;
   add(`/blog/${p.slug}`, gitLastmod(md) || p.date, null, 'yearly', 0.6);
@@ -374,7 +755,7 @@ console.log(`sitemap.xml: sitemap index (${urls.length} total URLs)`);
 
 const postItems = posts.map(p => {
   const mdSrc = readText(`posts/${p.slug}.md`);
-  const htmlContent = renderMarkdown(mdSrc);
+  const htmlContent = parseMarkdown(mdSrc);
   const firstPara = p.excerpt || mdSrc.split(/\n\n/)[0].replace(/[*_`\[\]()#>!]/g, '').trim();
   return `    <item>
       <title>${escXml(p.title)}</title>
@@ -420,7 +801,7 @@ console.log(`feed.xml: ${posts.length} items`);
 
 const atomEntries = posts.map(p => {
   const mdSrc = readText(`posts/${p.slug}.md`);
-  const htmlContent = renderMarkdown(mdSrc);
+  const htmlContent = parseMarkdown(mdSrc);
   const firstPara = p.excerpt || mdSrc.split(/\n\n/)[0].replace(/[*_`\[\]()#>!]/g, '').trim();
   const categories = (Array.isArray(p.tag) ? p.tag : [p.tag]).filter(Boolean).map(t => `    <category term="${escXml(t)}"/>`).join('\n');
   return `  <entry>
@@ -555,12 +936,22 @@ const homeData = {
   generatedAt: new Date().toISOString(),
   lastDeploy,
   stats: {
-    sims: 8,
+    sims: simsData.filter(p => !p.planned).length,
     posts: posts.length,
     scriptureWorks: workIds.length,
     scriptureChapters: countScriptureChapters(),
     sourceLines: countSourceLines(),
   },
+  // Content-sourced homepage fields (from content/home/), hydrated by src/home.js.
+  now: homeNow,
+  now_ja: homeNowJa,
+  hyperfixation: homeFix,
+  hyperfixation_ja: homeFixJa,
+  predictions: homePred,
+  predictions_ja: homePredJa,
+  askMeAbout: homeChips,
+  askMeAbout_ja: homeChipsJa,
+  scriptureRotation: homeScripture,
 };
 
 writeFileSync(join(ROOT, 'home-data.json'), JSON.stringify(homeData, null, 2) + '\n');

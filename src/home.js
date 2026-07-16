@@ -1,16 +1,16 @@
-// Populates the homepage "command-center" slab from home.json (hand-edited)
-// and home-data.json (build-generated: lastDeploy marker + stats). Everything
-// rendered here goes through createElement/textContent — no innerHTML.
+// Populates the homepage "command-center" slab from home-data.json, which
+// _build.mjs generates from content/home/*.md (plus stats + the lastDeploy
+// marker). Everything rendered here goes through createElement/textContent —
+// no innerHTML.
 //
-// i18n: when window._i18n is present, hand-edited fields with a parallel `_ja`
-// sibling (status_ja, bio_ja, now_ja, hyperfixation_ja, predictions_ja,
-// askMeAbout_ja, colophon_ja) are swapped in for ja. Build-generated fields
-// (stats) stay language-neutral. On language change we re-render everything
-// that's hydrated from home.json.
+// i18n: when window._i18n is present, content fields with a parallel `_ja`
+// sibling (now_ja, hyperfixation_ja, predictions_ja, askMeAbout_ja) are
+// swapped in for ja. Stats stay language-neutral. On language change we
+// re-render everything hydrated from home-data.json.
 
 let _homeInited = false;
 let _homeRendered = false;
-let _homeCache = { home: null, data: null, posts: null };
+let _homeCache = { data: null, posts: null };
 
 function pickLang(obj, base) {
     if (!obj) return null;
@@ -162,7 +162,7 @@ function renderScripture(rotation) {
     if (c) c.textContent = '— ' + (pick.cite || '');
 }
 
-function renderColophon(_text, lastDeploy) {
+function renderColophon(lastDeploy) {
     // Deploy hash + relative time is appended to the shared site footer.
     const root = document.getElementById('footer-deploy');
     if (!root || !lastDeploy) return;
@@ -188,43 +188,35 @@ async function fetchJSON(url) {
 }
 
 function renderFromCache() {
-    const { home, data, posts } = _homeCache;
-    if (home) {
-        const bio = pickLang(home, 'bio');
-        const now = pickLang(home, 'now');
-        renderNow([...(Array.isArray(bio) ? bio : []), ...(Array.isArray(now) ? now : [])]);
-        renderHyperfix(pickLang(home, 'hyperfixation'));
-        renderPredictions(pickLang(home, 'predictions'));
-        renderChips(pickLang(home, 'askMeAbout'));
-        renderScripture(home.scriptureRotation);
+    const { data, posts } = _homeCache;
+    if (data) {
+        renderNow(pickLang(data, 'now'));
+        renderHyperfix(pickLang(data, 'hyperfixation'));
+        renderPredictions(pickLang(data, 'predictions'));
+        renderChips(pickLang(data, 'askMeAbout'));
+        renderScripture(data.scriptureRotation);
+        renderStats(data.stats);
+        renderColophon(data.lastDeploy);
     }
     if (posts) renderPosts(posts);
-    if (data) {
-        renderStats(data.stats);
-        renderColophon(home && pickLang(home, 'colophon'), data.lastDeploy);
-    } else if (home) {
-        const col = pickLang(home, 'colophon');
-        if (col) renderColophon(col, null);
-    }
 }
 
 async function loadAndRender() {
     if (_homeRendered) return;
     _homeRendered = true;
 
-    const [home, data, posts] = await Promise.all([
-        fetchJSON('/home.json'),
+    const [data, posts] = await Promise.all([
         fetchJSON('/home-data.json'),
         fetchJSON('/posts.json'),
     ]);
 
-    _homeCache = { home, data, posts };
+    _homeCache = { data, posts };
     renderFromCache();
 
     // Re-render hydrated content when the language flips. Static markup in
     // index.html is handled by _i18n.applyDOM() automatically; this rerender
-    // covers the JSON-sourced fields (Now, Hyperfix, Predictions, AMA chips,
-    // colophon) and the post titles whose i18n keys live in posts.json.
+    // covers the JSON-sourced fields (Now, Hyperfix, Predictions, AMA chips)
+    // and the post titles whose i18n siblings live in posts.json.
     if (window._i18n && window._i18n.onChange) {
         window._i18n.onChange(function () { renderFromCache(); });
     }

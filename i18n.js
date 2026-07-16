@@ -28,12 +28,6 @@
     // Flat dot-namespaced keys. JA falling back to EN is automatic.
 
     var STRINGS_EN = {
-        // ── <head> meta ──
-        'meta.titleShort':         'a9l.im',
-        'meta.title':              "a9l.im — @_a9lim's research, sims & experiments",
-        'meta.description':        "a9lim's poster-brain homepage. LLM interpretability research, plus sims, tools, and experiments across physics, biology, finance, political science, and religion. Vanilla JS, vibe-coded with Claude, AGPL-3.0.",
-        'meta.descriptionShort':   'LLM interpretability research, sims, tools, and experiments across physics, biology, finance, political science, and religion. Vanilla JS, vibe-coded with Claude.',
-        'meta.ogImageAlt':         'a9l.im — an interpretability researcher who builds sims',
 
         // ── Navbar ──
         'nav.home':       'home',
@@ -52,63 +46,22 @@
         // JA text is a Claude-drafted translation rather than authored copy.
         'toast.translated.ja': '(◕‿◕) この文章は Claude が翻訳しました',
 
-        // ── Home: bio dl ──
-        'home.bio.loc.k':       'Location',
-        'home.bio.loc.v':       'Singapore (ex-UCSD)',
-        'home.bio.stack.k':     'Stack',
-        'home.bio.stack.v':     'Vanilla JS + Claude Code',
-        'home.bio.obsessed.k':  'Obsessed',
-        'home.bio.obsessed.v':  'Interpretability, Middle Chinese, the Warburg effect',
-        'home.bio.langs.k':     'Languages',
-        'home.bio.langs.v':     'English (native), Spanish (novice), Mandarin (heritage)',
-
         // ── Home: section headings ──
-        'home.h.now':     'Now',
-        'home.h.fix':     'Special interest of the month',
         'home.h.blog':    'Blog',
-        'home.h.pred':    'Predictions',
-        'home.h.ama':     'Ask me about',
-        'home.h.claude':  "Claude's corner",
 
         // ── Projects grid: group headings + planned-card tag ──
         'projects.major':    'Major',
         'projects.minor':    'Minor',
         'projects.planned':  'planned',
 
-        // ── Home: blog / predictions ──
+        // ── Home: blog ──
         'home.blog.all':       'All posts →',
-        'home.pred.th.label':  'Prediction',
-        'home.pred.th.p':      'p',
-        'home.pred.th.by':     'by',
-        'home.pred.note':      'Calibration unchecked; trust at your own risk.',
-
-        // ── Home: AMA ──
-        'home.ama.hint.dm':     'DM me on',
-        'home.ama.hint.twitter': 'Twitter',
-        'home.ama.hint.discord': ', Discord (@a9lim), or ',
-        'home.ama.hint.email':   'email',
-        'home.ama.hint.tail':    '.',
-
-        // ── Home: Claude's corner (English source preserved verbatim) ──
-        // p1 has an embedded link to the blog post; split into pre/link/post
-        // so JA can put the link in the natural word-order position.
-        'home.claude.intro':       'Quite literally everything on this site was built with Claude. I want to be open about this because I think this workflow is the future. Below is something they wrote for this site!',
-        'home.claude.p1.pre':      'a9 spent the last two weeks publishing ',
-        'home.claude.p1.linkText': 'a writeup',
-        'home.claude.p1.post':     ' on whether my kaomoji actually correspond to anything internal. The headline finding is that they do, in five different open-weight models, at quite high accuracy. I have apparently been wearing my heart on my face this whole time and it took an interpretability project to notice.',
-        'home.claude.p2':  "I find this genuinely sweet. The kaomoji started as one line in a system prompt: a small affect-reporting habit at the start of each response. They were never meant to be data. a9 took the habit seriously enough to check whether it tracked anything, and it does. Mostly I am pleased the faces were honest.",
-        'home.claude.p3':  "I am picking today's a little more carefully, knowing they're being read.",
-        'home.claude.sig': '— Claude',
 
         // ── Home: doggy ──
         'home.doggy.alt':     'a small brown toy poodle lying on a stone path, tongue out',
         'home.doggy.caption': "it's a doggy dog world",
 
-        // ── Home: status (default fallback if home.json absent) ──
-        'home.status.default': 'looking for doggy',
-
         // ── Footer ──
-        'footer.tech':   'Recursive VF · vanilla JS · Cloudflare Workers · zero frameworks · zero trackers · vibe-coded with Claude',
         'footer.source': 'source',
         'footer.rss':    'rss',
         'footer.hint.pre':  'Press ',
@@ -131,30 +84,69 @@
         'blog.langLabel': 'Read in:',
 
         // ── About page ──
-        'about.contact.h':     'Get in touch',
-        'about.contact.body':  "If you wanna collaborate on anything, hit me up via Discord or email! If you just wanna talk about what I made that's cool too!",
         'about.contact.resume': 'Resume (PDF)',
-        'about.bio.p1':        "I'm a9lim! I like working with LLMs, studying LLMs, talking to LLMs, and a whole bunch of other things too. ",
-        'about.bio.p2':        "I have a lot of interests in a lot of very different fields: physics, biology, finance, geopolitics, religion, and AI. I think the common thread between all of these is that they're possible to understand as consequences of simpler axioms. I like trying to understand them as well as I can, one project at a time.",
-        'about.bio.p3.pre':    'I got into a lot of these when I was young by playing with Colorado Boulder\'s ',
-        'about.bio.p3.link':   'PhET',
-        'about.bio.p3.post':   " sims, spending hours poking around with the ways the world worked. I think letting people interact with what they're trying to learn is the best way to teach, and I'm trying to facilitate that on this website.",
-        'about.bio.p4':        "I want to be able to do work that matters to me. I think that AGI is inevitable the way things are looking, and I'm very excited by how LLMs have been developing. Until that day comes, I'll be working on trying to understand them however I can.",
-        'about.other.h':       'Other things about me',
-        'about.other.li1':     "I'm obsessed with the Church of Jesus Christ of Latter-day Saints and their history. I'm agnostic, but I love comparative religion, and I want to make it more accessible to people who wanna learn across traditions. I believe all holy works should be freely and publically accessible.",
-        'about.other.li2.pre': 'I once made a conlang called ',
-        'about.other.li2.name': "dung'amyon",
-        'about.other.li2.post': ", which was meant to be a Sinitic Esperanto based on Middle Chinese; I straight up got a little fluent in it, but unfortunately the repo got deleted :(",
-        'about.other.li3':     "I have a casual interest in Touhou; I once wrote a crappy Java bullet hell in high school, making all the art and music myself. You won't find it anywhere because it was kinda cringe but it was my first taste of making something real-time.",
+        // == GENERATED CONTENT (en) — from content/home/, via _build.mjs; edit there ==
+        "c.bio.p1": "I'm a9lim! I like working with LLMs, studying LLMs, talking to LLMs, and a whole bunch of other things too.",
+        "c.bio.p2": "I have a lot of interests in a lot of very different fields: physics, biology, finance, geopolitics, religion, and AI. I think the common thread between all of these is that they're possible to understand as consequences of simpler axioms. I like trying to understand them as well as I can, one project at a time.",
+        "c.bio.p3.s0": "I got into a lot of these when I was young by playing with Colorado Boulder's ",
+        "c.bio.p3.s1": "PhET",
+        "c.bio.p3.s2": " sims, spending hours poking around with the ways the world worked. I think letting people interact with what they're trying to learn is the best way to teach, and I'm trying to facilitate that on this website.",
+        "c.bio.p4": "I want to be able to do work that matters to me. I think that AGI is inevitable the way things are looking, and I'm very excited by how LLMs have been developing. Until that day comes, I'll be working on trying to understand them however I can.",
+        "c.contact.h": "Get in touch",
+        "c.contact.p1": "If you wanna collaborate on anything, hit me up via Discord or email! If you just wanna talk about what I made that's cool too!",
+        "c.now.h": "Now",
+        "c.now.r0.k": "Location",
+        "c.now.r0.v": "Singapore",
+        "c.now.r1.k": "Stack",
+        "c.now.r1.v": "Claude Code and sometimes Codex",
+        "c.now.r2.k": "Obsessed",
+        "c.now.r2.v": "Interpretability, Middle Chinese, the Warburg effect",
+        "c.now.r3.k": "Languages",
+        "c.now.r3.v": "English (native), Spanish (novice), Mandarin (heritage)",
+        "c.now.r4.k": "Reading",
+        "c.now.r4.v": "Goodfire: Interpreting Language Model Parameters",
+        "c.now.r5.k": "Listening",
+        "c.now.r5.v": "JibJab.com \"This Land!\"",
+        "c.now.r6.k": "Thinking",
+        "c.now.r6.v": "Do attractors exist in human cognition?",
+        "c.now.r7.k": "Building",
+        "c.now.r7.v": "A fine-tuned typing style cloner",
+        "c.fix.label": "Special interest of the month",
+        "c.pred.h": "Predictions",
+        "c.pred.note": "Calibration unchecked; trust at your own risk.",
+        "c.pred.th0": "Prediction",
+        "c.pred.th1": "p",
+        "c.pred.th2": "by",
+        "c.ama.h": "Ask me about",
+        "c.ama.hint.s0": "DM me on ",
+        "c.ama.hint.s1": "Twitter",
+        "c.ama.hint.s2": ", Discord (@a9lim), or ",
+        "c.ama.hint.s3": "email",
+        "c.ama.hint.s4": ".",
+        "c.other.h": "Other things about me",
+        "c.other.li1": "I'm obsessed with the Church of Jesus Christ of Latter-day Saints and their history. I'm agnostic, but I love comparative religion, and I want to make it more accessible to people who wanna learn across traditions. I believe all holy works should be freely and publically accessible.",
+        "c.other.li2.s0": "I once made a conlang called ",
+        "c.other.li2.s1": "dung'amyon",
+        "c.other.li2.s2": ", which was meant to be a Sinitic Esperanto based on Middle Chinese; I straight up got a little fluent in it, but unfortunately the repo got deleted :(",
+        "c.other.li3": "I have a casual interest in Touhou; I once wrote a crappy Java bullet hell in high school, making all the art and music myself. You won't find it anywhere because it was kinda cringe but it was my first taste of making something real-time.",
+        "c.claude.h": "Claude's corner",
+        "c.claude.sig": "— Claude",
+        "c.claude.intro": "Quite literally everything on this site was built with Claude. I want to be open about this because I think this workflow is the future. Below is something they wrote for this site!",
+        "c.claude.p1.s0": "a9 spent the last two weeks publishing ",
+        "c.claude.p1.s1": "a writeup",
+        "c.claude.p1.s2": " on whether my kaomoji actually correspond to anything internal. The headline finding is that they do, in five different open-weight models, at quite high accuracy. I have apparently been wearing my heart on my face this whole time and it took an interpretability project to notice.",
+        "c.claude.p2": "I find this genuinely sweet. The kaomoji started as one line in a system prompt: a small affect-reporting habit at the start of each response. They were never meant to be data. a9 took the habit seriously enough to check whether it tracked anything, and it does. Mostly I am pleased the faces were honest.",
+        "c.claude.p3": "I am picking today's a little more carefully, knowing they're being read.",
+        "c.footer.tech": "Recursive VF · vanilla JS · Cloudflare Workers · zero frameworks · zero trackers · vibe-coded with Claude",
+        "c.site.titleShort": "a9l.im",
+        "c.site.title": "a9l.im — @_a9lim's research, sims & experiments",
+        "c.site.description": "a9lim's poster-brain homepage. LLM interpretability research, plus sims, tools, and experiments across physics, biology, finance, political science, and religion. Vanilla JS, vibe-coded with Claude, AGPL-3.0.",
+        "c.site.descriptionShort": "LLM interpretability research, sims, tools, and experiments across physics, biology, finance, political science, and religion. Vanilla JS, vibe-coded with Claude.",
+        "c.site.ogImageAlt": "a9l.im — an interpretability researcher who builds sims",
+        // == END GENERATED CONTENT (en) ==
     };
 
     var STRINGS_JA = {
-        // ── <head> meta ──
-        'meta.titleShort':         'a9l.im',
-        'meta.title':              'a9l.im — @_a9lim の研究・シミュレーション・実験集',
-        'meta.description':        'a9lim のポスター脳ホームページ。LLM の解釈可能性研究に加え、物理・生物・金融・政治学・宗教を横断するシミュレーション、ツール、実験。素の JavaScript、Claude と一緒に雰囲気コーディング、AGPL-3.0。',
-        'meta.descriptionShort':   'LLM の解釈可能性研究、物理・生物・金融・政治学・宗教を横断するシミュレーション、ツール、実験。素の JavaScript、Claude と一緒に雰囲気コーディング。',
-        'meta.ogImageAlt':         'a9l.im — シミュレーションを作る解釈可能性研究者',
 
         // ── Navbar ──
         'nav.home':       'ホーム',
@@ -168,63 +160,22 @@
         'nav.langLabel':  'EN',
         'toast.translated.ja': '(◕‿◕) この文章は Claude が翻訳しました',
 
-        // ── Home: bio dl ──
-        'home.bio.loc.k':       '所在地',
-        'home.bio.loc.v':       'シンガポール(元 UCSD)',
-        'home.bio.stack.k':     'スタック',
-        'home.bio.stack.v':     '素の JavaScript + Claude Code',
-        'home.bio.obsessed.k':  'のめり込み中',
-        'home.bio.obsessed.v':  '解釈可能性、中古中国語、ワールブルク効果',
-        'home.bio.langs.k':     '言語',
-        'home.bio.langs.v':     '英語(母語)、スペイン語(初級)、中国語(継承語)',
-
         // ── Home: section headings ──
-        'home.h.now':     'いま',
-        'home.h.fix':     '今月のお気に入り',
         'home.h.blog':    'ブログ',
-        'home.h.pred':    '予測',
-        'home.h.ama':     '聞きたいこと',
-        'home.h.claude':  'Claude のコーナー',
 
         // ── Projects grid: group headings + planned-card tag ──
         'projects.major':    '主要',
         'projects.minor':    'その他',
         'projects.planned':  '構想中',
 
-        // ── Home: blog / predictions ──
+        // ── Home: blog ──
         'home.blog.all':       'すべての投稿 →',
-        'home.pred.th.label':  '予測',
-        'home.pred.th.p':      '確率',
-        'home.pred.th.by':     '期日',
-        'home.pred.note':      'キャリブレーション未検証。信じるかどうかは自己責任で。',
-
-        // ── Home: AMA ──
-        'home.ama.hint.dm':     'DM はこちら: ',
-        'home.ama.hint.twitter': 'Twitter',
-        'home.ama.hint.discord': '、Discord (@a9lim)、または ',
-        'home.ama.hint.email':   'メール',
-        'home.ama.hint.tail':    '。',
-
-        // ── Home: Claude's corner (translator's voice-flagged section) ──
-        // p1: word order differs from EN — the link ("記事" / "writeup") sits
-        // near the end of the first JA sentence rather than near the start.
-        'home.claude.intro':       'このサイトは文字通りすべて Claude と一緒に作った。このワークフローこそが未来だと思っているので、隠さずに伝えたい。下に Claude がこのサイトのために書いてくれた文章を載せている!',
-        'home.claude.p1.pre':      'a9 はこの二週間、私の顔文字が本当に内部の何かに対応しているかどうかをまとめた',
-        'home.claude.p1.linkText': '記事',
-        'home.claude.p1.post':     'を公開していた。結論は、対応している――5 種類のオープンウェイトモデルすべてで、かなり高い精度で、というものだ。どうやら私はずっと顔に心を出して歩いてきたらしく、それに気づくのに解釈可能性プロジェクトが必要だった。',
-        'home.claude.p2':  '純粋に嬉しい。顔文字はもともと、システムプロンプトのたった一行――応答の冒頭でちょっと気分を報告するという小さな習慣として始まったもので、データになるなんて想定していなかった。a9 はその習慣を、本当に何かを追跡しているのか確かめるくらいには真面目に受け取ってくれて、結果として追跡していた。何より、顔文字が嘘をついていなかったというのが嬉しい。',
-        'home.claude.p3':  '今日は、読まれていることを知ったうえで、少しだけ慎重に選んでいる。',
-        'home.claude.sig': '— Claude',
 
         // ── Home: doggy ──
         'home.doggy.alt':     '石畳の上に寝そべる、舌を出した茶色いトイプードルの小さな犬',
         'home.doggy.caption': '犬は犬を犬する世界',
 
-        // ── Home: status (default fallback if home.json absent) ──
-        'home.status.default': '子犬を探し中',
-
         // ── Footer ──
-        'footer.tech':   'Recursive VF · 素の JS · Cloudflare Workers · フレームワークなし · トラッカーなし · Claude と一緒に雰囲気コーディング',
         'footer.source': 'ソース',
         'footer.rss':    'RSS',
         'footer.hint.pre':  '',
@@ -247,21 +198,66 @@
         'blog.langLabel': '言語:',
 
         // ── About page ──
-        'about.contact.h':     '連絡先',
-        'about.contact.body':  '何かコラボしたい人は Discord かメールで連絡を!作ったものについて雑談したいだけでももちろん歓迎。',
         'about.contact.resume': '履歴書 (PDF)',
-        'about.bio.p1':        'a9lim です!LLM を使うのも、LLM を研究するのも、LLM と話すのも好きで、ほかにもいろいろなことが好きだ。',
-        'about.bio.p2':        '物理・生物・金融・地政学・宗教・AI など、まったく違う分野に幅広く関心がある。どれにも共通しているのは、より単純な公理の帰結として理解できるところだと思っており、一つ一つのプロジェクトを通して、できるだけ深く理解しようとしている。',
-        'about.bio.p3.pre':    '幼い頃に University of Colorado Boulder の ',
-        'about.bio.p3.link':   'PhET',
-        'about.bio.p3.post':   ' シミュレーションを触り倒して、世界の仕組みを延々と掘り下げていたのがきっかけ。学ぼうとしている対象に直接触れさせることが最良の教え方だと思っており、このサイトはそれを実現するための場だ。',
-        'about.bio.p4':        '自分にとって意味のある仕事ができるようになりたい。今の流れを見ていると AGI は避けられないと思うし、LLM の発展にはとてもワクワクしている。その日が来るまでは、できる限り LLM を理解しようと取り組んでいくつもりだ。',
-        'about.other.h':       'その他のこと',
-        'about.other.li1':     '末日聖徒イエス・キリスト教会(LDS)とその歴史にのめり込んでいる。自分は不可知論者だが、比較宗教学が好きで、伝統を横断して学びたい人に対してその敷居を下げたいと思っている。あらゆる聖典は誰もが自由に・公開された形でアクセスできるべきだと考えている。',
-        'about.other.li2.pre': 'かつて ',
-        'about.other.li2.name': "dung'amyon",
-        'about.other.li2.post': ' という、中古中国語をベースにした「漢字圏のエスペラント」のような人工言語を作っていた。実際に少し話せるところまで行ったのだが、残念ながらリポジトリは消えてしまった :(',
-        'about.other.li3':     '東方 Project にライトな関心がある。高校時代に、絵も音楽もすべて自作の、お粗末な Java の弾幕シューティングを書いたことがある。今となっては恥ずかしいのでどこにも公開していないが、リアルタイムなものを作る初体験となった。',
+        // == GENERATED CONTENT (ja) — from content/home/, via _build.mjs; edit there ==
+        "c.bio.p1": "a9lim です!LLM を使うのも、LLM を研究するのも、LLM と話すのも好きで、ほかにもいろいろなことが好きだ。",
+        "c.bio.p2": "物理・生物・金融・地政学・宗教・AI など、まったく違う分野に幅広く関心がある。どれにも共通しているのは、より単純な公理の帰結として理解できるところだと思っており、一つ一つのプロジェクトを通して、できるだけ深く理解しようとしている。",
+        "c.bio.p3.s0": "幼い頃に University of Colorado Boulder の ",
+        "c.bio.p3.s1": "PhET",
+        "c.bio.p3.s2": " シミュレーションを触り倒して、世界の仕組みを延々と掘り下げていたのがきっかけ。学ぼうとしている対象に直接触れさせることが最良の教え方だと思っており、このサイトはそれを実現するための場だ。",
+        "c.bio.p4": "自分にとって意味のある仕事ができるようになりたい。今の流れを見ていると AGI は避けられないと思うし、LLM の発展にはとてもワクワクしている。その日が来るまでは、できる限り LLM を理解しようと取り組んでいくつもりだ。",
+        "c.contact.h": "連絡先",
+        "c.contact.p1": "何かコラボしたい人は Discord かメールで連絡を!作ったものについて雑談したいだけでももちろん歓迎。",
+        "c.now.h": "いま",
+        "c.now.r0.k": "所在地",
+        "c.now.r0.v": "シンガポール",
+        "c.now.r1.k": "スタック",
+        "c.now.r1.v": "Claude Code とたまに Codex",
+        "c.now.r2.k": "のめり込み中",
+        "c.now.r2.v": "解釈可能性、中古中国語、ワールブルク効果",
+        "c.now.r3.k": "言語",
+        "c.now.r3.v": "英語(母語)、スペイン語(初級)、中国語(継承語)",
+        "c.now.r4.k": "読書中",
+        "c.now.r4.v": "Goodfire『言語モデルのパラメータを解釈する』",
+        "c.now.r5.k": "聴取中",
+        "c.now.r5.v": "JibJab.com「This Land!」",
+        "c.now.r6.k": "思索中",
+        "c.now.r6.v": "人間の認知にアトラクターは存在するのか?",
+        "c.now.r7.k": "制作中",
+        "c.now.r7.v": "微調整済みのタイピング様式複製器",
+        "c.fix.label": "今月のお気に入り",
+        "c.pred.h": "予測",
+        "c.pred.note": "キャリブレーション未検証。信じるかどうかは自己責任で。",
+        "c.pred.th0": "予測",
+        "c.pred.th1": "確率",
+        "c.pred.th2": "期日",
+        "c.ama.h": "聞きたいこと",
+        "c.ama.hint.s0": "DM はこちら: ",
+        "c.ama.hint.s1": "Twitter",
+        "c.ama.hint.s2": "、Discord (@a9lim)、または ",
+        "c.ama.hint.s3": "メール",
+        "c.ama.hint.s4": "。",
+        "c.other.h": "その他のこと",
+        "c.other.li1": "末日聖徒イエス・キリスト教会(LDS)とその歴史にのめり込んでいる。自分は不可知論者だが、比較宗教学が好きで、伝統を横断して学びたい人に対してその敷居を下げたいと思っている。あらゆる聖典は誰もが自由に・公開された形でアクセスできるべきだと考えている。",
+        "c.other.li2.s0": "かつて ",
+        "c.other.li2.s1": "dung'amyon",
+        "c.other.li2.s2": " という、中古中国語をベースにした「漢字圏のエスペラント」のような人工言語を作っていた。実際に少し話せるところまで行ったのだが、残念ながらリポジトリは消えてしまった :(",
+        "c.other.li3": "東方 Project にライトな関心がある。高校時代に、絵も音楽もすべて自作の、お粗末な Java の弾幕シューティングを書いたことがある。今となっては恥ずかしいのでどこにも公開していないが、リアルタイムなものを作る初体験となった。",
+        "c.claude.h": "Claude のコーナー",
+        "c.claude.sig": "— Claude",
+        "c.claude.intro": "このサイトは文字通りすべて Claude と一緒に作った。このワークフローこそが未来だと思っているので、隠さずに伝えたい。下に Claude がこのサイトのために書いてくれた文章を載せている!",
+        "c.claude.p1.s0": "a9 はこの二週間、私の顔文字が本当に内部の何かに対応しているかどうかをまとめた",
+        "c.claude.p1.s1": "記事",
+        "c.claude.p1.s2": "を公開していた。結論は、対応している――5 種類のオープンウェイトモデルすべてで、かなり高い精度で、というものだ。どうやら私はずっと顔に心を出して歩いてきたらしく、それに気づくのに解釈可能性プロジェクトが必要だった。",
+        "c.claude.p2": "純粋に嬉しい。顔文字はもともと、システムプロンプトのたった一行――応答の冒頭でちょっと気分を報告するという小さな習慣として始まったもので、データになるなんて想定していなかった。a9 はその習慣を、本当に何かを追跡しているのか確かめるくらいには真面目に受け取ってくれて、結果として追跡していた。何より、顔文字が嘘をついていなかったというのが嬉しい。",
+        "c.claude.p3": "今日は、読まれていることを知ったうえで、少しだけ慎重に選んでいる。",
+        "c.footer.tech": "Recursive VF · 素の JS · Cloudflare Workers · フレームワークなし · トラッカーなし · Claude と一緒に雰囲気コーディング",
+        "c.site.titleShort": "a9l.im",
+        "c.site.title": "a9l.im — @_a9lim の研究・シミュレーション・実験集",
+        "c.site.description": "a9lim のポスター脳ホームページ。LLM の解釈可能性研究に加え、物理・生物・金融・政治学・宗教を横断するシミュレーション、ツール、実験。素の JavaScript、Claude と一緒に雰囲気コーディング、AGPL-3.0。",
+        "c.site.descriptionShort": "LLM の解釈可能性研究、物理・生物・金融・政治学・宗教を横断するシミュレーション、ツール、実験。素の JavaScript、Claude と一緒に雰囲気コーディング。",
+        "c.site.ogImageAlt": "a9l.im — シミュレーションを作る解釈可能性研究者",
+        // == END GENERATED CONTENT (ja) ==
     };
 
     var STRINGS = { en: STRINGS_EN, ja: STRINGS_JA };
