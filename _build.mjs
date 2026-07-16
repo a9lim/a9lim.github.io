@@ -169,20 +169,22 @@ function parsePackages(value, rel) {
 }
 
 const projectsData = projectEntries.map(p => {
-  for (const req of ['title', 'kind', 'emoji', 'tags', 'shortDesc']) {
+  for (const req of ['title', 'kind', 'emoji', 'tags']) {
     if (p.meta[req] == null) throw new Error(`content/projects/${p.slug}.md: missing ${req}`);
   }
   if (typeof p.meta.emoji !== 'string' || !p.meta.emoji.trim()) {
     throw new Error(`content/projects/${p.slug}.md: emoji must be a non-empty string`);
   }
   if (!p.ja) throw new Error(`content/projects/${p.slug}.md: missing .ja.md sibling`);
+  const longDesc = p.body.trim();
+  const longDescJa = p.ja.body.trim();
+  if (!longDesc) throw new Error(`content/projects/${p.slug}.md: missing description body`);
+  if (!longDescJa) throw new Error(`content/projects/${p.slug}.ja.md: missing description body`);
   return {
     ...(p.meta.href && { href: p.meta.href }),
     title: p.meta.title,
-    shortDesc: p.meta.shortDesc,
-    shortDesc_ja: p.ja.meta.shortDesc,
-    longDesc: p.body.trim(),
-    longDesc_ja: p.ja.body.trim(),
+    longDesc,
+    longDesc_ja: longDescJa,
     packages: parsePackages(p.meta.packages, `content/projects/${p.slug}.md`),
     tags: p.meta.tags,
     tags_ja: p.ja.meta.tags,
@@ -202,8 +204,6 @@ const projectsData = projectEntries.map(p => {
     const o = ['    {'];
     if (p.href) o.push(`        href: ${JSON.stringify(p.href)},`);
     o.push(`        title: ${JSON.stringify(p.title)},`);
-    o.push(`        shortDesc: ${JSON.stringify(p.shortDesc)},`);
-    o.push(`        shortDesc_ja: ${JSON.stringify(p.shortDesc_ja)},`);
     o.push(`        longDesc: ${JSON.stringify(p.longDesc)},`);
     o.push(`        longDesc_ja: ${JSON.stringify(p.longDesc_ja)},`);
     if (p.packages.length) o.push(`        packages: ${JSON.stringify(p.packages)},`);
@@ -568,10 +568,10 @@ function ssrCard(p) {
     : '';
   const footer = `<div class="project-card-footer">${packageCards}<div class="project-tags">${tagSpans}</div></div>`;
   if (p.planned) {
-    return `<article class="project-card project-card-planned"><div class="project-card-main"><div class="project-card-top">${emoji}<h3 class="project-title">${mdEsc(p.title)}</h3><span class="project-planned-tag">planned</span></div><p>${mdEsc(p.shortDesc)}</p></div>${footer}</article>`;
+    return `<article class="project-card project-card-planned"><div class="project-card-main"><div class="project-card-top">${emoji}<h3 class="project-title">${mdEsc(p.title)}</h3><span class="project-planned-tag">planned</span></div><p>${mdEsc(p.longDesc)}</p></div>${footer}</article>`;
   }
   const ext = p.external ? ' target="_blank" rel="noopener noreferrer"' : '';
-  return `<article class="project-card fade-in visible"><a class="project-card-main" href="${p.href}"${ext}><div class="project-card-top">${emoji}<h3 class="project-title">${mdEsc(p.title)}</h3></div><p>${mdEsc(p.shortDesc)}</p></a>${footer}</article>`;
+  return `<article class="project-card fade-in visible"><a class="project-card-main" href="${p.href}"${ext}><div class="project-card-top">${emoji}<h3 class="project-title">${mdEsc(p.title)}</h3></div><p>${mdEsc(p.longDesc)}</p></a>${footer}</article>`;
 }
 
 function ssrGrid(list) {

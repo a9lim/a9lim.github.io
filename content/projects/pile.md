@@ -10,6 +10,5 @@ tags:
   - physics
   - nuclear
   - canvas
-shortDesc: A nuclear reactor sandbox for exploring neutronics, thermal dynamics, and safety.
 ---
 A nuclear reactor sandbox for exploring neutronics, thermal dynamics, and safety.

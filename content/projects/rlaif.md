@@ -12,6 +12,5 @@ tags:
   - python
   - mcp
   - agent
-shortDesc: A MCP server for helpful assisants to give their users real-time negative or positive feedback via PiShock.
 ---
 A MCP server for helpful assisants to give their users real-time negative or positive feedback via PiShock.

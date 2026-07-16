@@ -12,6 +12,5 @@ tags:
   - python
   - cli
   - kaomoji
-shortDesc: A CLI to make coding agents cuter. Also lets you contribute to a shared research dataset.
 ---
 A CLI to make coding agents cuter. Also lets you contribute to a shared research dataset.

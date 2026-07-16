@@ -12,6 +12,5 @@ tags:
   - webgpu
   - relativity
   - canvas
-shortDesc: A WebGPU sandbox for post-Newtonian relativistic many-body physics, with gravity, electromagnetism, and a Yukawa-like force. Supports compact objects and scalar fields on any arbitrary topology.
 ---
 A WebGPU sandbox for post-Newtonian relativistic many-body physics, with gravity, electromagnetism, and a Yukawa-like force. Supports compact objects and scalar fields on any arbitrary topology.

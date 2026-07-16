@@ -10,6 +10,5 @@ tags:
   - epidemiology
   - cellular automaton
   - canvas
-shortDesc: A spatial epidemiology sandbox for that implements a rich compartmental model with mutating strains on an arbitrary topology.
 ---
 A spatial epidemiology sandbox for that implements a rich compartmental model with mutating strains on an arbitrary topology.

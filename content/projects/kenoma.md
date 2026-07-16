@@ -12,6 +12,5 @@ tags:
   - python
   - llm
   - shell
-shortDesc: An LLM-powered fake shell.
 ---
 An LLM-powered fake shell.

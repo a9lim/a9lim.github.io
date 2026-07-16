@@ -10,6 +10,5 @@ tags:
   - biology
   - biochemistry
   - canvas
-shortDesc: An interactive metabolism simulator for a cyanobacteria-like cell. Includes both respiratory and photosynthetic pathways.
 ---
 An interactive metabolism simulator for a cyanobacteria-like cell. Includes both respiratory and photosynthetic pathways.

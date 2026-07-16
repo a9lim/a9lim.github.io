@@ -10,6 +10,5 @@ tags:
   - politics
   - svg
   - monte carlo
-shortDesc: A redistricting sandbox on a hex map with third parties. Supports election simulations and fairness metrics.
 ---
 A redistricting sandbox on a hex map with third parties. Supports election simulations and fairness metrics.

@@ -11,6 +11,5 @@ tags:
   - webgpu
   - mhd
   - canvas
-shortDesc: A WebGPU 2D magnetohydrodynamics lab with high-fidelity physics. 
 ---
-A WebGPU 2D magnetohydrodynamics lab with high-fidelity physics. 
+A WebGPU 2D magnetohydrodynamics lab with high-fidelity physics.

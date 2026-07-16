@@ -37,6 +37,9 @@ for (const p of PROJECTS) {
   }
 }
 check('project data contains no legacy SVG icon field', PROJECTS.every(p => !Object.hasOwn(p, 'icon')));
+check('project data uses one description field', PROJECTS.every(p =>
+  typeof p.longDesc === 'string' && typeof p.longDesc_ja === 'string'
+  && !Object.hasOwn(p, 'shortDesc') && !Object.hasOwn(p, 'shortDesc_ja')));
 const itemNames = [...gen.SIMS_ITEMLIST, ...gen.PROJECTS_ITEMLIST].map(i => i.name);
 for (const p of PROJECTS.filter(p => !p.planned)) {
   check(`ItemList carries ${p.title}`, itemNames.some(n => n.startsWith(p.title)));

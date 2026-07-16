@@ -12,6 +12,5 @@ tags:
   - discord
   - chatbot
   - nlp
-shortDesc: A Discord bot that uses an LLM to mimic the tone and style of a supplied text corpus, with the ability to respond dynamically and on its own.
 ---
-A Discord bot that uses an LLM to mimic the tone and style of a supplied text corpus, with the ability to respond dynamically and on its own. 
+A Discord bot that uses an LLM to mimic the tone and style of a supplied text corpus, with the ability to respond dynamically and on its own.

@@ -11,6 +11,5 @@ tags:
   - reader
   - text
   - religion
-shortDesc: A holy text archive and reader.
 ---
 A holy text archive and reader.

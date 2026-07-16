@@ -12,6 +12,5 @@ tags:
   - cli
   - agent
   - javascript
-shortDesc: A CLI bridge that lets Codex and Claude Code communicate, with support for multi-turn chats and subagent fleets.
 ---
 A CLI bridge that lets Codex and Claude Code communicate, with support for multi-turn chats and subagent fleets.
