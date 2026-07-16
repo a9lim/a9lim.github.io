@@ -4,7 +4,7 @@ href: https://github.com/a9lim/gaslamp
 kind: project
 order: 70
 external: true
-icon: projGaslamp
+emoji: 🪔
 seoName: Gaslamp — Claude Code ↔ Codex MCP Bridge
 packages:
   - npm | gaslamp | https://www.npmjs.com/package/gaslamp | npm install -g gaslamp

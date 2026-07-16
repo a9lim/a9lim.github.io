@@ -4,7 +4,7 @@ href: /plasma
 kind: sim
 order: 170
 external: false
-icon: projPlasma
+emoji: ☀️
 seoName: Plasma — 2D Resistive MHD Simulator
 tags:
   - physics

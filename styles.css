@@ -461,12 +461,11 @@ a:hover { color: var(--accent-light); }
 
 .project-card-top {
     display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
+    align-items: center;
     gap: 16px;
 }
 
-.project-icon {
+.project-emoji {
     width: 48px;
     height: 48px;
     border-radius: var(--radius);
@@ -475,22 +474,15 @@ a:hover { color: var(--accent-light); }
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
-    transition: transform 0.3s var(--ease-out), box-shadow 0.2s var(--ease-out), background 0.2s var(--ease-out);
+    font-family: var(--font-emoji);
+    font-size: 2rem;
+    line-height: 1;
+    transition: transform 0.3s var(--ease-out);
 }
 
-.project-card:hover .project-icon,
-.project-card:focus-within .project-icon {
+.project-card:hover .project-emoji,
+.project-card:focus-within .project-emoji {
     transform: scale(1.05);
-}
-
-.project-icon svg {
-    width: 24px;
-    height: 24px;
-    stroke: var(--accent);
-    fill: none;
-    stroke-width: 1.8;
-    stroke-linecap: square;
-    stroke-linejoin: miter;
 }
 
 .project-arrow {
@@ -499,7 +491,7 @@ a:hover { color: var(--accent-light); }
     color: var(--text-muted);
     transition: color 0.2s var(--ease-out), transform 0.3s var(--ease-out);
     flex-shrink: 0;
-    margin-top: 4px;
+    margin-left: auto;
 }
 
 .project-arrow svg {
@@ -519,6 +511,7 @@ a:hover { color: var(--accent-light); }
 }
 
 .project-title {
+    flex: 1 1 auto;
     font-family: var(--font-display);
     font-weight: normal;
     font-size: 1.5rem;
@@ -642,8 +635,7 @@ a:hover { color: var(--accent-light); }
     letter-spacing: 0.06em;
     text-transform: uppercase;
     color: var(--text-muted);
-    align-self: flex-start;
-    margin-top: 4px;
+    margin-left: auto;
     flex-shrink: 0;
 }
 

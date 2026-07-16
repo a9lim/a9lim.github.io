@@ -5,7 +5,7 @@ kind: project
 order: 10
 major: true
 external: true
-icon: projSaklas
+emoji: 👁️
 seoName: Saklas — Activation Steering for HuggingFace Transformers
 packages:
   - PyPI | saklas | https://pypi.org/project/saklas/ | pip install saklas

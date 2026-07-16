@@ -5,7 +5,7 @@ kind: project
 order: 90
 major: true
 external: true
-icon: projOgdoad
+emoji: ♾️
 seoName: Ogdoad — Clifford Algebras over Exotic Scalars
 tags:
   - rust

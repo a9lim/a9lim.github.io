@@ -19,7 +19,6 @@ const enSlugs = dir => readdirSync(join(ROOT, dir))
   .filter(f => f.endsWith('.md') && !f.endsWith('.ja.md'))
   .map(f => f.replace(/\.md$/, ''));
 
-globalThis._ICON = new Proxy({}, { get: (_, k) => k });
 const { PROJECTS } = await import(join(ROOT, 'src/projects.js'));
 const gen = await import(join(ROOT, '_content.generated.mjs'));
 const posts = JSON.parse(readFileSync(join(ROOT, 'posts.json'), 'utf8'));
@@ -30,11 +29,14 @@ check('card count matches content files', PROJECTS.length === projSlugs.length,
   `${PROJECTS.length} vs ${projSlugs.length}`);
 for (const p of PROJECTS) {
   const ssr = p.kind === 'sim' ? gen.SIMS_SSR : gen.PROJECTS_SSR;
-  check(`SSR mirror carries ${p.title}`, ssr.includes(`<h3>${p.title.replace(/&/g, '&amp;')}</h3>`));
+  check(`${p.title} has a decorative mark`, typeof p.emoji === 'string' && p.emoji.trim().length > 0);
+  check(`SSR mirror carries ${p.title}`, ssr.includes(`<h3 class="project-title">${p.title.replace(/&/g, '&amp;')}</h3>`));
+  check(`SSR mirror carries ${p.title}'s emoji`, ssr.includes(`<span class="project-emoji" aria-hidden="true">${p.emoji}</span>`));
   for (const pkg of p.packages || []) {
     check(`SSR mirror carries ${p.title}'s ${pkg.registry} link`, ssr.includes(`href="${pkg.href}"`));
   }
 }
+check('project data contains no legacy SVG icon field', PROJECTS.every(p => !Object.hasOwn(p, 'icon')));
 const itemNames = [...gen.SIMS_ITEMLIST, ...gen.PROJECTS_ITEMLIST].map(i => i.name);
 for (const p of PROJECTS.filter(p => !p.planned)) {
   check(`ItemList carries ${p.title}`, itemNames.some(n => n.startsWith(p.title)));

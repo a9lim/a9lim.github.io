@@ -59,10 +59,10 @@ export function renderProjectCards(container, projects) {
             return `<article class="project-card project-card-planned glass">
                 <div class="project-card-main">
                     <div class="project-card-top">
-                        <div class="project-icon" aria-hidden="true">${p.icon}</div>
+                        <span class="project-emoji" aria-hidden="true">${escapeHtml(p.emoji)}</span>
+                        <h3 class="project-title">${escapeHtml(title)}</h3>
                         <span class="project-planned-tag">${escapeHtml(plannedLabel)}</span>
                     </div>
-                    <h3 class="project-title">${escapeHtml(title)}</h3>
                     <p class="project-desc">${escapeHtml(longDesc)}</p>
                 </div>
                 ${footerHtml}
@@ -73,10 +73,10 @@ export function renderProjectCards(container, projects) {
         return `<article class="project-card glass fade-in">
             <a href="${escapeHtml(p.href)}" class="project-card-main"${ext}>
                 <div class="project-card-top">
-                    <div class="project-icon" aria-hidden="true">${p.icon}</div>
+                    <span class="project-emoji" aria-hidden="true">${escapeHtml(p.emoji)}</span>
+                    <h3 class="project-title">${escapeHtml(title)}</h3>
                     <span class="project-arrow" aria-hidden="true">${ARROW_SVG}</span>
                 </div>
-                <h3 class="project-title">${escapeHtml(title)}</h3>
                 <p class="project-desc">${escapeHtml(longDesc)}</p>
             </a>
             ${footerHtml}

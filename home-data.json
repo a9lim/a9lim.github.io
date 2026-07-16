@@ -1,16 +1,16 @@
 {
-  "generatedAt": "2026-07-16T16:40:05.036Z",
+  "generatedAt": "2026-07-16T17:13:32.695Z",
   "lastDeploy": {
-    "hash": "e9aa557",
-    "iso": "2026-07-16T09:20:25-07:00",
-    "subject": "remove old projects"
+    "hash": "fa4187b",
+    "iso": "2026-07-16T09:41:18-07:00",
+    "subject": "feat: rework project and sim cards"
   },
   "stats": {
     "sims": 8,
     "posts": 1,
     "scriptureWorks": 16,
     "scriptureChapters": 2724,
-    "sourceLines": 28623
+    "sourceLines": 28582
   },
   "now": [
     [

@@ -4,7 +4,7 @@ href: /gerry
 kind: sim
 order: 120
 external: false
-icon: projGerry
+emoji: 🗳️
 seoName: Gerry — Gerrymandering & Electoral Fairness Simulator
 tags:
   - politics

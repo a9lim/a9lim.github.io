@@ -4,7 +4,7 @@ href: https://github.com/a9lim/kenoma
 kind: project
 order: 20
 external: true
-icon: projKenoma
+emoji: 👾
 seoName: Kenoma — LLM-Hallucinated Fake Shell
 packages:
   - PyPI | kenoma | https://pypi.org/project/kenoma/ | pip install kenoma

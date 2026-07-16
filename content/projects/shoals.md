@@ -5,7 +5,7 @@ kind: sim
 order: 130
 major: true
 external: false
-icon: projShoals
+emoji: 📈
 seoName: Shoals — Options Trading Simulator
 tags:
   - finance

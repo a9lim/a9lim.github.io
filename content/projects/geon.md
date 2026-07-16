@@ -5,7 +5,7 @@ kind: sim
 order: 100
 major: true
 external: false
-icon: projGeon
+emoji: 🪐
 seoName: Geon — Relativistic Particle Physics Simulator
 tags:
   - physics

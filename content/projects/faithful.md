@@ -4,7 +4,7 @@ href: https://github.com/a9lim/faithful
 kind: project
 order: 190
 external: true
-icon: projFaithful
+emoji: 🙈
 seoName: Faithful — Style-Emulating Discord Chatbot
 packages:
   - PyPI | faithful | https://pypi.org/project/faithful/ | pip install faithful

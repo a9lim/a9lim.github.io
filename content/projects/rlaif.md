@@ -4,7 +4,7 @@ href: https://github.com/a9lim/rlaif
 kind: project
 order: 30
 external: true
-icon: projRlaif
+emoji: ⚡
 seoName: Rlaif — Single-User MCP Server
 packages:
   - PyPI | rlaif-mcp | https://pypi.org/project/rlaif-mcp/ | pip install rlaif-mcp

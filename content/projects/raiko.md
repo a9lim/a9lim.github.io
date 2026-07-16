@@ -4,7 +4,7 @@ href: https://github.com/a9lim/Raiko
 kind: project
 order: 180
 external: true
-icon: projRaiko
+emoji: 🎵
 seoName: Raiko — Discord Music & Chat Bot
 tags:
   - discord

@@ -4,7 +4,7 @@ href: /scripture
 kind: sim
 order: 140
 external: false
-icon: projScripture
+emoji: ⛪️
 seoName: Scripture — Sacred Text Reader
 seoUrl: https://a9l.im/scripture/
 tags:

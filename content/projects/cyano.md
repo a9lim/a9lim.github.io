@@ -4,7 +4,7 @@ href: /cyano
 kind: sim
 order: 110
 external: false
-icon: projCyano
+emoji: 🧫
 seoName: Cyano — Cellular Biochemistry Simulator
 tags:
   - biology

@@ -4,7 +4,7 @@ kind: project
 order: 210
 planned: true
 external: true
-icon: projFaithful
+emoji: 🎭
 tags:
   - python
   - llm

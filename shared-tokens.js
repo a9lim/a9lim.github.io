@@ -101,6 +101,7 @@ const _FONT = {
   sans:    "'Recursive', 'SF Mono', 'Menlo', monospace",
   serif:   "'Recursive', 'SF Mono', 'Menlo', monospace",
   mono:    "'Recursive', 'SF Mono', 'Menlo', monospace",
+  emoji:   "'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji', sans-serif",
 };
 
 // ─── Palette ───
@@ -192,6 +193,7 @@ const _PALETTE = {
   --font-sans:    ${_FONT.sans};
   --font-serif:   ${_FONT.serif};
   --font-mono:    ${_FONT.mono};
+  --font-emoji:   ${_FONT.emoji};
 
 ${gen(L, false)}
 

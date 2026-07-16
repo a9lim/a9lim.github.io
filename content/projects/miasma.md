@@ -4,7 +4,7 @@ href: /miasma
 kind: sim
 order: 150
 external: false
-icon: projMiasma
+emoji: 🦠
 seoName: Miasma — Stochastic Spatial Epidemic Simulator
 tags:
   - epidemiology

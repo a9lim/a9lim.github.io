@@ -4,7 +4,7 @@ href: https://github.com/a9lim/dagwood
 kind: project
 order: 60
 external: true
-icon: projDagwood
+emoji: 🥪
 seoName: Dagwood — DAG-Native Task Tracker
 tags:
   - python
