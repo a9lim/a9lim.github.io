@@ -37,7 +37,7 @@
   pdftitle    = {a9lim - Resume},
   pdfauthor   = {a9lim},
   pdfsubject  = {Resume},
-  pdfkeywords = {a9lim, mechanistic interpretability, AI alignment, Python, PyTorch},
+  pdfkeywords = {a9lim, mechanistic interpretability, AI alignment, sparse crosscoders, Abstract-CoT, Python, PyTorch, WebGPU, WGSL},
 }
 
 \pagestyle{empty}
@@ -105,55 +105,67 @@ Independent interpretability and alignment researcher and open-source developer.
 
 \section*{Experience}
 
-\plainentry{Independent Research Engineer \& Open-Source Developer}{a9l.im}{Feb 2026 - Present}
+\plainentry{Independent Researcher \& Open-Source Developer}{a9l.im}{Feb 2026 - Present}
 \begin{itemize}
-  \item Perform independent interpretability and alignment research from hypothesis to experiments and
-  write-up; publish tools and reproducible evaluation harnesses for open-weight LLMs.
+  \item Conduct independent interpretability and alignment research from hypothesis through experiments
+  and writeup; publish open-source LLM tooling.
 \end{itemize}
 
 \section*{Selected Research}
 
 \entry{Saklas}{https://github.com/a9lim/saklas}{Mechanistic interpretability workbench - Python, PyTorch}{Apr 2026 - Present}
 \begin{itemize}
-  \item Built a local workbench for extracting, probing, and steering LLMs with behavioral manifolds, with 
-  Mahalanobis whitening, support for Jacobian-lens readouts, and role-agnostic chat templates.
-  \item Published a typed Python API, dashboard, and OpenAI/Ollama-compatible server tested on Gemma,
-  Qwen, Mistral, Llama, GLM, gpt-oss, and Talkie. Available on PyPI with CUDA and MPS support.
+  \item Built a local workbench for probing and steering LLMs along curved manifolds.
+  \item Implemented Jacobian-lens readouts and arbitrary-role chat support.
+  \item Published a typed Python API, dashboard, and OpenAI/Ollama-compatible server compatible with most
+  open source LLMs. Available on PyPI with CUDA and MPS support.
 \end{itemize}
 
-\entry{Introspection via Kaomoji}{https://a9l.im/blog/introspection-via-kaomoji}{Representation study and Llmoji corpus - Python, Hugging Face}{Apr 2026 - Present}
+\entry{Introspection via Kaomoji}{https://a9l.im/blog/introspection-via-kaomoji}{Emotional concept representation study - Python, Hugging Face}{Apr 2026 - Jun 2026}
 \begin{itemize}
-  \item Across five open-weight model families, classifying the opening kaomoji could predict the emotional 
-  content of a prompt with 80.6\% accuracy on Gemma versus 11.1\% by chance.
-  \item Procrustes-aligned emotional category centroids to recover shared geometry; built kaomoji 
-  collection tool and published the corpus.
+  \item Across five model families, the emotional category of a prompt was decodable with 99.2\% accuracy
+  from the hidden state; the opening kaomoji alone retained 80.6\% accuracy on Gemma versus 11.1\% by chance.
+  \item Procrustes-aligned emotional category centroids to recover shared geometry; built kaomoji
+  collection tooling and published the \href{https://huggingface.co/datasets/a9lim/llmoji}{corpus on Hugging Face}.
 \end{itemize}
 
-\entry{Elapsed-Time Encoding in LLMs}{https://github.com/a9lim/time-experiment}{Residual-stream probing study - Python, PyTorch}{Jun 2026 - Present}
+\entry{Elapsed-Time Encoding in LLMs}{https://github.com/a9lim/time-experiment}{Ongoing time encoding study - Python, PyTorch}{Jun 2026 - Present}
 \begin{itemize}
   \item Showed elapsed conversational time is linearly encoded at an elicited token ($r=0.88$, about 0.3
-  seconds per token) by using linear probes.
+  seconds per token) using linear probes.
 \end{itemize}
 
-\entry{Neuralese as a Conlang}{https://github.com/a9lim/acot-experiment}{Ongoing Abstract-CoT analysis study - Python, PyTorch}{Jul 2026 - Present}
+\entry{Neuralese as a Conlang}{https://github.com/a9lim/acot-experiment}{Ongoing abstract-CoT analysis study - Python, PyTorch}{Jul 2026 - Present}
 \begin{itemize}
-  \item Implemented Abstract-CoT to test if a reasoning code could be interpreted as a compositional language.
+  \item Implemented Abstract-CoT to test if abstract tokens could be interpreted as a compositional language.
   \item A preliminary 135M run did not successfully learn to use abstract tokens to reason.
 \end{itemize}
 
-\entry{Block Sparse Crosscoders}{https://github.com/a9lim/block-crosscoder-experiment}{Ongoing cross-layer neural geometry study - Python, PyTorch}{Jul 2026 - Present}
+\entry{Block Sparse Crosscoders}{https://github.com/a9lim/block-crosscoder-experiment}{Ongoing cross-layer representation geometry study - Python, PyTorch}{Jul 2026 - Present}
 \begin{itemize}
   \item Synthesized recent work on block sparse autoencoders and sparse crosscoders to extract cross-layer multidimensional features.
 \end{itemize}
 
 \section*{Selected Engineering}
 
+\entry{Geon}{https://a9l.im/geon}{Relativistic N-body simulator - JavaScript, WebGPU}{Feb 2026 - Present}
+\begin{itemize}
+  \item Built a WebGPU backend to render and simulate N-body post-Newtonian physics.
+  \item Implemented Boris integration to approximate Einstein–Infeld–Hoffmann dynamics with scalar fields.
+\end{itemize}
+\entry{Ogdoad}{https://a9l.im/ogdoad}{Research library for recreational mathematics - Rust, Python}{Jun 2026 - Present}
+\begin{itemize}
+  \item Built a library to explore quadratic forms over the surreal numbers and Conway's combinatorial games.
+  \item Implemented Python bindings and a purpose-built language.
+\end{itemize}
+
+\entry{Other Projects}{https://a9l.im/}{Browser simulations and agentic tooling - JavaScript, WebGPU}{Feb 2026 - Present}
 \begin{itemize}
   \item \compactproject{Agent infrastructure.}{\href{https://github.com/a9lim/gaslamp}{Gaslamp}, a
   cross-review CLI for Claude Code and Codex, and \href{https://github.com/a9lim/dagwood}{Dagwood}, a version-controlled
-  DAG task tracker with a MCP.}
-  \item \compactproject{Interactive systems.}{Built eight browser projects spanning relativity, MHD, nuclear engineering,
-  options pricing, metabolism, epidemiology, redistricting, and comparative religion using custom web infrastructure.}
+  DAG-based task tracker with an MCP interface.}
+  \item \compactproject{Additional interactive systems.}{Built seven more browser projects across physics,
+  finance, biology, political science, and comparative religion using vanilla JS.}
 \end{itemize}
 
 \section*{Education}
