@@ -1,6 +1,6 @@
 ---
 heading: Other things about me
 ---
-- I'm obsessed with the Church of Jesus Christ of Latter-day Saints and their history. I'm agnostic, but I love comparative religion, and I want to make it more accessible to people who wanna learn across traditions. I believe all holy works should be freely and publically accessible.
-- I once made a conlang called *dung'amyon*, which was meant to be a Sinitic Esperanto based on Middle Chinese; I straight up got a little fluent in it, but unfortunately the repo got deleted :(
-- I have a casual interest in Touhou; I once wrote a crappy Java bullet hell in high school, making all the art and music myself. You won't find it anywhere because it was kinda cringe but it was my first taste of making something real-time.
+- I'm obsessed with the Church of Jesus Christ of Latter-day Saints and their history. While I'm an atheist, I enjoy comparative religion, and I believe that all holy works should be openly accessible.
+- I used to be big into Linux. Back in middle school, I installed Arch on my school laptop and tried to use I3 for the longest time. I eventually gave up on daily driving it and now I use a Macbook.
+- I like Touhou. I once wrote a crappy bullet hell game in Java all by myself in high school, including all the art and the music. I'm pretty embarrassed by it, but it gave me my first taste of working on reasonably responsive software.

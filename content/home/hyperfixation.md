@@ -1,7 +1,7 @@
 ---
-label: Special interest of the month
-title: Information
-link: https://arxiv.org/abs/0704.0646
-linkLabel: Paper (arxiv)
+label: Topic of the month
+title: Claude and Global Workspace Theory
+link: https://transformer-circuits.pub/2026/workspace/index.html
+linkLabel: Paper (anthropic)
 ---
-Tegmark's mathematical universe treats the entire universe as being pure mathematical structure. I'm still not personally fully bought in, but I've recently begun to appreciate how much everything boils down to information at the end of the day. Through that lens, everything from objects to ideas to minds to models can be thought of as patterns that propagate over time. Making ontology nothing more than applied memetics feels especially elegant to me.
+I've been consistently impressed by the interpretability work Anthropic puts out, and this paper is no exception. J-lens is a very reasonable fix to the pitfalls of logit lens; I'm surprised no one thought of it sooner but it's good that it's now available as a technique. I never made the connection to global workspace theory, however, and while I'm skeptical of some of the comparisons they make, I think it's not completely out there either, though consciousness is a very strong word.

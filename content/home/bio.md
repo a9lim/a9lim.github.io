@@ -1,10 +1,10 @@
 ---
 card: bio
 ---
-I'm a9lim! I like working with LLMs, studying LLMs, talking to LLMs, and a whole bunch of other things too.
+I'm a9lim! I like studying LLMs and how they work, and a smattering of other things too.
 
-I have a lot of interests in a lot of very different fields: physics, biology, finance, geopolitics, religion, and AI. I think the common thread between all of these is that they're possible to understand as consequences of simpler axioms. I like trying to understand them as well as I can, one project at a time.
+I find a lot of niche topics very personally satisfying to explore, across physics, biology, mathematics, geopolitics, religion, and interpretability. My understanding is pretty spiky within each subject, as I like to focus in on certain specific areas, but I try my best to really grasp the things that catch my attention.
 
-I got into a lot of these when I was young by playing with Colorado Boulder's [PhET](https://phet.colorado.edu) sims, spending hours poking around with the ways the world worked. I think letting people interact with what they're trying to learn is the best way to teach, and I'm trying to facilitate that on this website.
+As a kid, my first real forays into recreationally learning things were really just playing with Colorado Boulder's [PhET](https://phet.colorado.edu) simulations. They're still a huge inspiration, and most of the projects on this site are sims I wish I could have poked at growing up.
 
-I want to be able to do work that matters to me. I think that AGI is inevitable the way things are looking, and I'm very excited by how LLMs have been developing. Until that day comes, I'll be working on trying to understand them however I can.
+I want to be able to work on things that matter. I think that ASI is probably going to be achieved within the next decade, and there are a lot of ways it could turn out badly for all of us. I want to contribute to preventing that however I can.

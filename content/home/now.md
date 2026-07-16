@@ -3,11 +3,8 @@ heading: Now
 ---
 | key | value |
 | --- | --- |
-| Location | Singapore |
-| Stack | Claude Code and sometimes Codex |
-| Obsessed | Interpretability, Middle Chinese, the Warburg effect |
+| Location | Ann Arbor |
+| Workflow | Claude Code and Codex |
 | Languages | English (native), Spanish (novice), Mandarin (heritage) |
-| Reading | Goodfire: Interpreting Language Model Parameters |
-| Listening | JibJab.com "This Land!" |
-| Thinking | Do attractors exist in human cognition? |
-| Building | A fine-tuned typing style cloner |
+| Reading | The Inside Story Of Leverage Research 1.0 |
+| Listening | Lightning Seeds - Three Lions |

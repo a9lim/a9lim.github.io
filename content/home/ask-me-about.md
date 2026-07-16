@@ -1,16 +1,14 @@
 ---
 heading: Ask me about
 ---
-- mechinterp
-- steering vectors
-- syncytia
+- interpretability
+- birds
 - elections
 - LDS history
-- comparative religion
-- heston models
+- egregores
+- strange mammals
 - conlangs
 - cyanobacterial metabolism
 - doggy
-- catppuccin sddm
 
 DM me on [Twitter](https://twitter.com/_a9lim), Discord (@a9lim), or [email](mailto:mx@a9l.im).

@@ -3,11 +3,8 @@ heading: いま
 ---
 | key | value |
 | --- | --- |
-| 所在地 | シンガポール |
-| スタック | Claude Code とたまに Codex |
-| のめり込み中 | 解釈可能性、中古中国語、ワールブルク効果 |
+| 所在地 | アナーバー |
+| ワークフロー | Claude Code と Codex |
 | 言語 | 英語(母語)、スペイン語(初級)、中国語(継承語) |
-| 読書中 | Goodfire『言語モデルのパラメータを解釈する』 |
-| 聴取中 | JibJab.com「This Land!」 |
-| 思索中 | 人間の認知にアトラクターは存在するのか? |
-| 制作中 | 微調整済みのタイピング様式複製器 |
+| 読書中 | 『The Inside Story Of Leverage Research 1.0』 |
+| 聴取中 | Lightning Seeds「Three Lions」 |
