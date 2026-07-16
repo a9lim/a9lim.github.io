@@ -6,10 +6,12 @@ order: 40
 external: true
 icon: projLlmoji
 seoName: Llmoji — Kaomoji-Injection CLI for Coding Agents
+packages:
+  - PyPI | llmoji | https://pypi.org/project/llmoji/ | pip install llmoji
 tags:
   - python
   - cli
   - kaomoji
-shortDesc: CLI that gets coding agents to start each message with a kaomoji and ships the synthesized meanings to a shared HuggingFace dataset, with a companion repo for the mechinterp study.
+shortDesc: A CLI that gives coding agents kaomoji voices, then turns their meanings into a shared research corpus.
 ---
-CLI that hooks into Claude Code, Codex, and Hermes to make each agent turn start with a kaomoji, then uses Haiku to synthesize a meaning per face and ships the bundle to the shared a9lim/llmoji HuggingFace dataset. The companion llmoji-study repo runs activation steering and probes on open-weight LMs via saklas, plus an eriskii-style 21-axis replication on the corpus.
+Hooks for Claude Code, Codex, and Hermes collect each face, synthesize its meaning, and publish a dataset for studying agent character and representation.

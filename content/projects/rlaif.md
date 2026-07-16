@@ -6,10 +6,12 @@ order: 30
 external: true
 icon: projRlaif
 seoName: Rlaif — Single-User MCP Server
+packages:
+  - PyPI | rlaif-mcp | https://pypi.org/project/rlaif-mcp/ | pip install rlaif-mcp
 tags:
   - python
   - mcp
   - agent
-shortDesc: Single-user MCP server that exposes a PiShock collar as a tool an agent can call to shock you.
+shortDesc: A safety-capped MCP server for giving agents real-time negative or positive feedback through connected devices.
 ---
-Single-user MCP server with three tools: one fires a shock, two are read-only for device state and the ops log. Caps intensity and duration, enforces a token-bucket rate limit, and requires an explicit consent flag to raise the conservative defaults. Code-level ceilings make the caps unreachable even by editing config. Please use with care.
+Connect PiShock, OpenShock, or Intiface devices to an MCP server with explicit consent, conservative defaults, hard limits, and a readable operations log.

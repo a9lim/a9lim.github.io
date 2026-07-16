@@ -399,6 +399,17 @@ a:hover { color: var(--accent-light); }
     overflow: hidden;
 }
 
+/* The primary project link is separate from optional registry links, so a
+   package card never has to sit inside another anchor. */
+.project-card-main {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    gap: 16px;
+    color: inherit;
+    text-decoration: none;
+}
+
 /* ::before = accent side-line on hover */
 .project-card::before {
     content: '';
@@ -416,13 +427,16 @@ a:hover { color: var(--accent-light); }
 
 /* .visible:hover needed to beat .fade-in.visible (specificity 0,2,0) */
 .project-card:hover,
-.project-card.visible:hover {
+.project-card.visible:hover,
+.project-card:focus-within,
+.project-card.visible:focus-within {
     transform: translateY(-4px);
     box-shadow: var(--shadow-hover);
     color: var(--text);
 }
 
-.project-card:hover::before {
+.project-card:hover::before,
+.project-card:focus-within::before {
     opacity: 1;
     box-shadow: 0 0 12px var(--accent-glow);
 }
@@ -440,7 +454,8 @@ a:hover { color: var(--accent-light); }
     z-index: 3;
 }
 
-.project-card:hover::after {
+.project-card:hover::after,
+.project-card:focus-within::after {
     opacity: 0.7;
 }
 
@@ -463,7 +478,8 @@ a:hover { color: var(--accent-light); }
     transition: transform 0.3s var(--ease-out), box-shadow 0.2s var(--ease-out), background 0.2s var(--ease-out);
 }
 
-.project-card:hover .project-icon {
+.project-card:hover .project-icon,
+.project-card:focus-within .project-icon {
     transform: scale(1.05);
 }
 
@@ -496,7 +512,8 @@ a:hover { color: var(--accent-light); }
     stroke-linejoin: miter;
 }
 
-.project-card:hover .project-arrow {
+.project-card:hover .project-arrow,
+.project-card:focus-within .project-arrow {
     color: var(--accent);
     transform: translate(2px, -2px);
 }
@@ -510,7 +527,8 @@ a:hover { color: var(--accent-light); }
     transition: color 0.2s var(--ease-out);
 }
 
-.project-card:hover .project-title {
+.project-card:hover .project-title,
+.project-card:focus-within .project-title {
     background: linear-gradient(135deg, var(--text), var(--accent-light));
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
@@ -530,6 +548,16 @@ a:hover { color: var(--accent-light); }
     margin-top: 4px;
 }
 
+.project-card-footer {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.project-card-footer .project-tags {
+    margin-top: 0;
+}
+
 .project-tag {
     font-family: var(--font-mono);
     font-size: var(--font-sm);
@@ -543,7 +571,8 @@ a:hover { color: var(--accent-light); }
     transition: opacity 0.2s var(--ease-out), transform 0.3s var(--ease-out), background 0.2s var(--ease-out), box-shadow 0.2s var(--ease-out);
 }
 
-.project-card:hover .project-tag {
+.project-card:hover .project-tag,
+.project-card:focus-within .project-tag {
     opacity: 1;
     transform: translateY(0);
 }
@@ -552,6 +581,45 @@ a:hover { color: var(--accent-light); }
 .project-card:hover .project-tag:nth-child(3) { transition-delay: 0.08s; }
 .project-card:hover .project-tag:nth-child(4) { transition-delay: 0.12s; }
 .project-card:hover .project-tag:nth-child(5) { transition-delay: 0.16s; }
+
+/* Registry cards are deliberately compact secondary actions: distribution
+   details without competing with the project itself. */
+.project-packages {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.project-package {
+    display: inline-flex;
+    align-items: center;
+    width: fit-content;
+    padding: 6px 10px;
+    background: var(--accent-subtle);
+    color: var(--accent);
+    text-decoration: none;
+    transition: transform 0.2s var(--ease-out), background 0.2s var(--ease-out), box-shadow 0.2s var(--ease-out);
+}
+
+.project-package:hover {
+    background: var(--accent);
+    color: var(--text-on-accent);
+    box-shadow: var(--shadow-glow);
+    transform: translateY(-2px);
+}
+
+.project-package-install {
+    color: inherit;
+    font-family: var(--font-mono);
+    font-size: var(--font-sm);
+    white-space: nowrap;
+}
+
+.project-card-main:focus-visible,
+.project-package:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 4px;
+}
 
 /* ── Planned card: non-clickable, subdued, "planned" tag ──── */
 .project-card-planned {

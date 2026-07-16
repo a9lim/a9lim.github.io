@@ -10,6 +10,6 @@ tags:
   - epidemiology
   - cellular automaton
   - canvas
-shortDesc: Stochastic spatial epidemic simulator with multi-strain evolution, hex-grid topology toggle, and intervention painting.
+shortDesc: A spatial epidemic sandbox for watching variants spread, mutate, and respond to locally painted interventions.
 ---
-Stochastic spatial epidemic simulator with a configurable compartmental model, multi-strain evolution under mutation and cross-immunity, six selectable hex-grid topologies, and an intervention-painting layer for vaccination, quarantine, and mobility blocks. Tracks per-strain incidence, R_t, and seroprevalence over time.
+Choose a compartmental model and map topology, then follow strain-level incidence, Rₜ, and immunity as mutation and intervention reshape an outbreak.

@@ -12,6 +12,6 @@ tags:
   - webgpu
   - relativity
   - canvas
-shortDesc: Relativistic N-body simulator with 11 forces, scalar fields, and WebGPU compute shaders.
+shortDesc: A WebGPU physics sandbox for relativistic many-body worlds, from field forces and signal delay to radiating black holes.
 ---
-Relativistic particle simulator with Boris integration, 1PN corrections, and Barnes-Hut O(N log N) spatial partitioning. Includes signal delay via light-cone solving, Higgs and axion scalar fields, pion force carriers, Kerr-Newman black holes with Hawking radiation, and a WebGPU compute pipeline with WGSL shaders.
+Build particle worlds with Boris integration, relativistic corrections, spatial partitioning, scalar fields, force carriers, and compact objects, then watch their dynamics unfold.

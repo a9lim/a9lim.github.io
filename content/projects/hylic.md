@@ -9,6 +9,6 @@ tags:
   - python
   - llm
   - finetuning
-shortDesc: Typing-style finetuning provider: feed it any text corpus, like Faithful, and it serves a model actually finetuned on it instead of just prompted.
+shortDesc: A planned service for training a voice from a corpus, then serving a model shaped by it.
 ---
-Typing-style finetuning provider: feed it any text corpus, like Faithful, and it serves a model actually finetuned on it instead of just prompted.
+A plan to turn any text corpus into a genuinely fine-tuned voice model, rather than only prompting a general model to imitate it.

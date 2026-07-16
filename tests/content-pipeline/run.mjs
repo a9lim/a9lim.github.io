@@ -31,6 +31,9 @@ check('card count matches content files', PROJECTS.length === projSlugs.length,
 for (const p of PROJECTS) {
   const ssr = p.kind === 'sim' ? gen.SIMS_SSR : gen.PROJECTS_SSR;
   check(`SSR mirror carries ${p.title}`, ssr.includes(`<h3>${p.title.replace(/&/g, '&amp;')}</h3>`));
+  for (const pkg of p.packages || []) {
+    check(`SSR mirror carries ${p.title}'s ${pkg.registry} link`, ssr.includes(`href="${pkg.href}"`));
+  }
 }
 const itemNames = [...gen.SIMS_ITEMLIST, ...gen.PROJECTS_ITEMLIST].map(i => i.name);
 for (const p of PROJECTS.filter(p => !p.planned)) {

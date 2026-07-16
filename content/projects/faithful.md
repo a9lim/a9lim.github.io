@@ -6,10 +6,12 @@ order: 190
 external: true
 icon: projFaithful
 seoName: Faithful — Style-Emulating Discord Chatbot
+packages:
+  - PyPI | faithful | https://pypi.org/project/faithful/ | pip install faithful
 tags:
   - discord
   - chatbot
   - nlp
-shortDesc: Discord chatbot that emulates given messages in the style of source material.
+shortDesc: A Discord bot that learns from a supplied corpus and replies in the source material's style.
 ---
-Discord chatbot that emulates a given user. Feed it a corpus of text and it generates responses in the style of the source material.
+Give Faithful a user's text corpus and it generates responses shaped by the voice, rhythm, and habits of that source material.

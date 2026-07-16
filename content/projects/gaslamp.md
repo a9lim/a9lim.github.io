@@ -6,10 +6,12 @@ order: 70
 external: true
 icon: projGaslamp
 seoName: Gaslamp — Claude Code ↔ Codex MCP Bridge
+packages:
+  - npm | gaslamp | https://www.npmjs.com/package/gaslamp | npm install -g gaslamp
 tags:
   - mcp
   - agent
   - javascript
-shortDesc: MCP bridge that hands work between Claude Code and Codex — either agent can call the other for a review, a second opinion, or a fix.
+shortDesc: A two-way MCP bridge that lets Codex and Claude Code hand one another review, diagnosis, or implementation work.
 ---
-MCP bridge that lets Claude Code and Codex hand work to each other — either side passes the lamp for a review, a second opinion, or a fix, reading and writing both ways. It talks to codex mcp-server directly instead of routing through Codex’s experimental app-server broker plus a Claude subagent, the layering that made the stock connector hang about half the time; a thin shim exposes the reverse Codex → Claude channel the stock setup lacks entirely.
+Gaslamp connects the two coding agents directly, turning a one-way connector into a shared loop for passing a task, pressure-testing it, and returning a result.

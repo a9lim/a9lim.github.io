@@ -10,6 +10,6 @@ tags:
   - biology
   - biochemistry
   - canvas
-shortDesc: Cellular metabolism simulator with twelve biochemical pathways, allosteric regulation, and cofactor tracking.
+shortDesc: An interactive metabolism simulator for following pathways, cofactors, and regulation through a living cell.
 ---
-Interactive metabolism simulator mapping glycolysis, Krebs, Calvin, beta-oxidation, and eight more pathways onto a shared metabolite grid. Has a 14-complex electron transport chain, five organism presets, reactive oxygen species, and allosteric enzyme regulation gating every reaction.
+Follow connected pathways from glycolysis to electron transport on one metabolite grid, then change organism presets and regulation to see the cell respond.

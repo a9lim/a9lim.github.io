@@ -11,6 +11,6 @@ tags:
   - reader
   - text
   - religion
-shortDesc: Sacred text reader with sixteen works from multiple traditions, full-text search, concordance, and text-to-speech.
+shortDesc: A cross-tradition sacred-text reader with search, concordances, linked notes, related passages, and read-aloud.
 ---
-Sacred text reader with sixteen works: KJV Old and New Testaments, Apocrypha, Quran (Pickthall), Book of Mormon, Doctrine & Covenants, Pearl of Great Price, Four Books (Legge), Tao Te Ching, Kojiki, Bundahis, Lotus Sutra (Kern), Arda Viraf (Haug & West), Book of Poetry (Legge), Kalevala (Crawford), and Poetic Edda (Bellows). Has concordance, TF-IDF related passages, text-to-speech, verse-linked notes, data export, and full-text search across everything.
+Read sixteen works across traditions, then move through the collection with full-text search, concordances, verse-linked notes, text-to-speech, and export.

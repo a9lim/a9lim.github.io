@@ -11,6 +11,6 @@ tags:
   - webgpu
   - mhd
   - canvas
-shortDesc: 2D resistive magnetohydrodynamics simulator with HLLD Riemann solver, PPM reconstruction, and constrained transport.
+shortDesc: A GPU-powered 2D magnetohydrodynamics lab with high-fidelity fluid numerics and optional astrophysical source physics.
 ---
-WebGPU-only 2D resistive magnetohydrodynamics simulator. Grid-Eulerian finite volume on a Cartesian mesh with HLLD Riemann solver, PPM reconstruction with characteristic-variable limiting, RK3 SSP time integration, and constrained transport on a Yee-style staggered grid. Optional source-physics layer covers tabulated cooling and heating, anisotropic Spitzer conduction, Hall MHD, ambipolar diffusion, Biermann battery, viscosity, self-gravity with geometric multigrid, and grey radiation.
+Evolve resistive MHD on a WebGPU grid with constrained transport, then add cooling, conduction, Hall physics, gravity, radiation, and more.

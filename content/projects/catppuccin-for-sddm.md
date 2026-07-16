@@ -10,6 +10,6 @@ tags:
   - linux
   - theme
   - catppuccin
-shortDesc: Soothing pastel theme for the SDDM display manager with all four flavor variants.
+shortDesc: A polished Catppuccin SDDM theme with all four palettes, dynamic accents, and per-user identities.
 ---
-Catppuccin’s theme for the SDDM display manager. I rewrote it in QtQuick with dynamic accent colors and per-user icon integration, and automated theme generation across all four Catppuccin flavors so maintenance stays cheap.
+A Catppuccin theme for SDDM, generated across every flavor and rewritten in QtQuick for dynamic accents and per-user icons.

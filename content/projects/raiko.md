@@ -10,6 +10,6 @@ tags:
   - discord
   - java
   - music
-shortDesc: Discord music and chat bot with queue management and conversational AI.
+shortDesc: A Discord bot I ran for friends, with music queues, playlists, and a conversational side.
 ---
-Discord music and chat bot I used to run for my friends. Plays audio from YouTube, SoundCloud, and elsewhere, with queue management, playlists, and some conversational AI stuff bolted on.
+A personal Discord music bot that streams from common services, keeps the queue moving, and leaves room for chat and playful automation.

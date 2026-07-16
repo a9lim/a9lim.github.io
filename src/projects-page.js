@@ -42,33 +42,45 @@ export function renderProjectCards(container, projects) {
         const longDesc = _pickField(p, 'longDesc');
         const tags = _pickField(p, 'tags') || [];
         const tagsHtml = tags.map(tag => `<span class="project-tag">${escapeHtml(tag)}</span>`).join('');
+        const packages = p.packages || [];
+        const packagesHtml = packages.length ? `<div class="project-packages" aria-label="Available package registries">
+            ${packages.map(pkg => `<a class="project-package" href="${escapeHtml(pkg.href)}" target="_blank" rel="noopener noreferrer" aria-label="Open ${escapeHtml(pkg.name)} on ${escapeHtml(pkg.registry)}">
+                <code class="project-package-install">${escapeHtml(pkg.install)}</code>
+            </a>`).join('')}
+        </div>` : '';
+        const footerHtml = `<div class="project-card-footer">
+            ${packagesHtml}
+            <div class="project-tags">${tagsHtml}</div>
+        </div>`;
 
-        // Planned entries are non-clickable: a subdued <div> card with a
+        // Planned entries are non-clickable: a subdued <article> card with a
         // "planned" tag and no arrow/link, sorted to the end of the grid.
         if (p.planned) {
-            return `<div class="project-card project-card-planned glass">
-                <div class="project-card-top">
-                    <div class="project-icon" aria-hidden="true">${p.icon}</div>
-                    <span class="project-planned-tag">${escapeHtml(plannedLabel)}</span>
+            return `<article class="project-card project-card-planned glass">
+                <div class="project-card-main">
+                    <div class="project-card-top">
+                        <div class="project-icon" aria-hidden="true">${p.icon}</div>
+                        <span class="project-planned-tag">${escapeHtml(plannedLabel)}</span>
+                    </div>
+                    <h3 class="project-title">${escapeHtml(title)}</h3>
+                    <p class="project-desc">${escapeHtml(longDesc)}</p>
                 </div>
-                <h3 class="project-title">${escapeHtml(title)}</h3>
-                <p class="project-desc">${escapeHtml(longDesc)}</p>
-                <div class="project-tags">${tagsHtml}</div>
-            </div>`;
+                ${footerHtml}
+            </article>`;
         }
 
         const ext = p.external ? ' target="_blank" rel="noopener noreferrer"' : '';
-        return `<a href="${escapeHtml(p.href)}" class="project-card glass fade-in"${ext}>
-            <div class="project-card-top">
-                <div class="project-icon" aria-hidden="true">${p.icon}</div>
-                <span class="project-arrow" aria-hidden="true">${ARROW_SVG}</span>
-            </div>
-            <h3 class="project-title">${escapeHtml(title)}</h3>
-            <p class="project-desc">${escapeHtml(longDesc)}</p>
-            <div class="project-tags">
-                ${tagsHtml}
-            </div>
-        </a>`;
+        return `<article class="project-card glass fade-in">
+            <a href="${escapeHtml(p.href)}" class="project-card-main"${ext}>
+                <div class="project-card-top">
+                    <div class="project-icon" aria-hidden="true">${p.icon}</div>
+                    <span class="project-arrow" aria-hidden="true">${ARROW_SVG}</span>
+                </div>
+                <h3 class="project-title">${escapeHtml(title)}</h3>
+                <p class="project-desc">${escapeHtml(longDesc)}</p>
+            </a>
+            ${footerHtml}
+        </article>`;
     };
 
     // Each grid splits into a flagged "Major" group and a "Minor" group, each

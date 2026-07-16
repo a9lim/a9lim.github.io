@@ -149,6 +149,25 @@ const projectEntries = contentSlugs('content/projects')
   .map(slug => loadContentPair('content/projects', slug))
   .sort((a, b) => (a.meta.order ?? 1e9) - (b.meta.order ?? 1e9));
 
+// Package distributions are intentionally a flat frontmatter list because
+// the content parser only accepts scalar values and scalar lists. Each entry
+// is `Registry | package-name | https://registry.example/package | install`.
+function parsePackages(value, rel) {
+  if (value == null) return [];
+  if (!Array.isArray(value)) throw new Error(`${rel}: packages must be a list`);
+  return value.map((spec, i) => {
+    if (typeof spec !== 'string') throw new Error(`${rel}: packages item ${i + 1} must be a string`);
+    const [registry, name, href, install, ...extra] = spec.split('|').map(s => s.trim());
+    if (extra.length || !registry || !name || !href || !install) {
+      throw new Error(`${rel}: packages item ${i + 1} must be Registry | name | URL | install command`);
+    }
+    let url;
+    try { url = new URL(href); } catch { throw new Error(`${rel}: packages item ${i + 1} has an invalid URL`); }
+    if (url.protocol !== 'https:') throw new Error(`${rel}: packages item ${i + 1} must use an HTTPS URL`);
+    return { registry, name, href, install };
+  });
+}
+
 const projectsData = projectEntries.map(p => {
   for (const req of ['title', 'kind', 'icon', 'tags', 'shortDesc']) {
     if (p.meta[req] == null) throw new Error(`content/projects/${p.slug}.md: missing ${req}`);
@@ -161,6 +180,7 @@ const projectsData = projectEntries.map(p => {
     shortDesc_ja: p.ja.meta.shortDesc,
     longDesc: p.body.trim(),
     longDesc_ja: p.ja.body.trim(),
+    packages: parsePackages(p.meta.packages, `content/projects/${p.slug}.md`),
     tags: p.meta.tags,
     tags_ja: p.ja.meta.tags,
     icon: p.meta.icon,
@@ -183,6 +203,7 @@ const projectsData = projectEntries.map(p => {
     o.push(`        shortDesc_ja: ${JSON.stringify(p.shortDesc_ja)},`);
     o.push(`        longDesc: ${JSON.stringify(p.longDesc)},`);
     o.push(`        longDesc_ja: ${JSON.stringify(p.longDesc_ja)},`);
+    if (p.packages.length) o.push(`        packages: ${JSON.stringify(p.packages)},`);
     o.push(`        tags: ${JSON.stringify(p.tags)},`);
     o.push(`        tags_ja: ${JSON.stringify(p.tags_ja)},`);
     o.push(`        icon: _ICON.${p.icon},`);
@@ -538,11 +559,15 @@ const ROUTE_META_GEN = {
 
 function ssrCard(p) {
   const tagSpans = p.tags.map(t => `<span class="tag">${mdEsc(t)}</span>`).join('');
+  const packageCards = p.packages.length
+    ? `<div class="project-packages" aria-label="Available package registries">${p.packages.map(pkg => `<a class="project-package" href="${mdEsc(pkg.href)}" target="_blank" rel="noopener noreferrer" aria-label="Open ${mdEsc(pkg.name)} on ${mdEsc(pkg.registry)}"><code class="project-package-install">${mdEsc(pkg.install)}</code></a>`).join('')}</div>`
+    : '';
+  const footer = `<div class="project-card-footer">${packageCards}<div class="project-tags">${tagSpans}</div></div>`;
   if (p.planned) {
-    return `<div class="project-card project-card-planned"><div class="project-card-top"><h3>${mdEsc(p.title)}</h3><span class="project-planned-tag">planned</span></div><p>${mdEsc(p.shortDesc)}</p>${tagSpans}</div>`;
+    return `<article class="project-card project-card-planned"><div class="project-card-main"><div class="project-card-top"><h3>${mdEsc(p.title)}</h3><span class="project-planned-tag">planned</span></div><p>${mdEsc(p.shortDesc)}</p></div>${footer}</article>`;
   }
   const ext = p.external ? ' target="_blank" rel="noopener noreferrer"' : '';
-  return `<div class="project-card fade-in visible"><a href="${p.href}"${ext}><h3>${mdEsc(p.title)}</h3><p>${mdEsc(p.shortDesc)}</p>${tagSpans}</a></div>`;
+  return `<article class="project-card fade-in visible"><a class="project-card-main" href="${p.href}"${ext}><h3>${mdEsc(p.title)}</h3><p>${mdEsc(p.shortDesc)}</p></a>${footer}</article>`;
 }
 
 function ssrGrid(list) {
@@ -963,4 +988,3 @@ const resumeBuild = spawnSync('bash', [join(ROOT, 'resume/build.sh')], { stdio: 
 if (resumeBuild.status !== 0) {
   console.error('resume.pdf: build failed (exit ' + resumeBuild.status + ')');
 }
-

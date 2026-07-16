@@ -7,10 +7,12 @@ major: true
 external: true
 icon: projSaklas
 seoName: Saklas — Activation Steering for HuggingFace Transformers
+packages:
+  - PyPI | saklas | https://pypi.org/project/saklas/ | pip install saklas
 tags:
   - python
   - llm
   - interpretability
-shortDesc: Activation steering and trait monitoring for HuggingFace transformer models.
+shortDesc: A local workbench for steering and inspecting transformer behavior, with a Python API, dashboard, server, and TUI.
 ---
-Activation steering for HuggingFace transformers. Pulls contrastive steering vectors and adds them to hidden states when it’s time to generate, so no fine-tuning is needed. Ships with a Python API, an OpenAI-compatible HTTP server, and a terminal UI with live alpha knobs and probe sparklines; supports 55 model architectures.
+Extract and steer behavioral directions without fine-tuning, then inspect the result through a Python API, OpenAI-compatible server, web dashboard, or terminal UI.
