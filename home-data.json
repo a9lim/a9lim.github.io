@@ -1,9 +1,9 @@
 {
-  "generatedAt": "2026-07-16T19:42:21.413Z",
+  "generatedAt": "2026-07-16T19:43:41.676Z",
   "lastDeploy": {
-    "hash": "7b7f7d2",
-    "iso": "2026-07-16T12:38:13-07:00",
-    "subject": "update projects"
+    "hash": "1214212",
+    "iso": "2026-07-16T12:43:18-07:00",
+    "subject": "refactor: unify project descriptions"
   },
   "stats": {
     "sims": 8,
