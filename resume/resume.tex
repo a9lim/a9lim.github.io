@@ -6,7 +6,7 @@
 
 \documentclass[10pt,letterpaper]{article}
 
-\usepackage[letterpaper,top=0.44in,bottom=0.40in,left=0.62in,right=0.62in]{geometry}
+\usepackage[letterpaper,top=0.44in,bottom=0.44in,left=0.44in,right=0.44in]{geometry}
 \usepackage{fontspec}
 \usepackage{xcolor}
 \usepackage{titlesec}
@@ -68,14 +68,14 @@
   \noindent\begin{tabularx}{\linewidth}{@{}X r@{}}
     \textbf{\href{#2}{#1}} & \textcolor{muted}{\small #4} \\
     \textit{#3} & \\
-  \end{tabularx}\vspace{-4pt}%
+  \end{tabularx}\vspace{-1pt}%
 }
 
 \newcommand{\plainentry}[3]{%
   \noindent\begin{tabularx}{\linewidth}{@{}X r@{}}
     \textbf{#1} & \textcolor{muted}{\small #3} \\
     \textit{#2} & \\
-  \end{tabularx}\vspace{-4pt}%
+  \end{tabularx}\vspace{-1pt}%
 }
 
 \newcommand{\compactproject}[2]{%
@@ -111,6 +111,10 @@ Independent interpretability and alignment researcher and open-source developer.
   and writeup; publish open-source LLM tooling.
 \end{itemize}
 
+\section*{Education}
+
+\plainentry{University of California, San Diego}{B.S. Mathematics - GPA 3.75 - completed early}{Sep 2023 - Mar 2026}
+
 \section*{Selected Research}
 
 \entry{Saklas}{https://github.com/a9lim/saklas}{Mechanistic interpretability workbench - Python, PyTorch}{Apr 2026 - Present}
@@ -121,12 +125,12 @@ Independent interpretability and alignment researcher and open-source developer.
   open source LLMs. Available on PyPI with CUDA and MPS support.
 \end{itemize}
 
-\entry{Introspection via Kaomoji}{https://a9l.im/blog/introspection-via-kaomoji}{Emotional concept representation study - Python, Hugging Face}{Apr 2026 - Jun 2026}
+\entry{Introspection via Kaomoji}{https://a9l.im/blog/introspection-via-kaomoji}{Emotional concept representation study - Python}{Apr 2026 - Jun 2026}
 \begin{itemize}
-  \item Across five model families, the emotional category of a prompt was decodable with 99.2\% accuracy
-  from the hidden state; the opening kaomoji alone retained 80.6\% accuracy on Gemma versus 11.1\% by chance.
+  \item The emotional category of a prompt was decodable with 99.2\% accuracy from the hidden state and the
+  opening kaomoji alone retained 80.6\% accuracy on Gemma against 11.1\% by chance.
   \item Procrustes-aligned emotional category centroids to recover shared geometry; built kaomoji
-  collection tooling and published the \href{https://huggingface.co/datasets/a9lim/llmoji}{corpus on Hugging Face}.
+  collection tooling and published the collected corpus.
 \end{itemize}
 
 \entry{Elapsed-Time Encoding in LLMs}{https://github.com/a9lim/time-experiment}{Ongoing time encoding study - Python, PyTorch}{Jun 2026 - Present}
@@ -155,22 +159,18 @@ Independent interpretability and alignment researcher and open-source developer.
 \end{itemize}
 \entry{Ogdoad}{https://a9l.im/ogdoad}{Research library for recreational mathematics - Rust, Python}{Jun 2026 - Present}
 \begin{itemize}
-  \item Built a library to explore quadratic forms over the surreal numbers and Conway's combinatorial games.
-  \item Implemented Python bindings and a purpose-built language.
+  \item Built a Rust library to explore Clifford algebras over the surreal numbers and Conway's combinatorial games.
+  \item Implemented Python bindings and designed a purpose-built language to investigate open problems.
 \end{itemize}
 
 \entry{Other Projects}{https://a9l.im/}{Browser simulations and agentic tooling - JavaScript, WebGPU}{Feb 2026 - Present}
 \begin{itemize}
-  \item \compactproject{Agent infrastructure.}{\href{https://github.com/a9lim/gaslamp}{Gaslamp}, a
+  \item \compactproject{Coding agent infrastructure.}{\href{https://github.com/a9lim/gaslamp}{Gaslamp}, a
   cross-review CLI for Claude Code and Codex, and \href{https://github.com/a9lim/dagwood}{Dagwood}, a version-controlled
   DAG-based task tracker with an MCP interface.}
-  \item \compactproject{Additional interactive systems.}{Built seven more browser projects across physics,
+  \item \compactproject{Interactive simulations.}{Built seven more browser projects across physics,
   finance, biology, political science, and comparative religion using vanilla JS.}
 \end{itemize}
-
-\section*{Education}
-
-\plainentry{University of California, San Diego}{B.S. Mathematics - GPA 3.75 - completed early}{Sep 2023 - Mar 2026}
 
 \section*{Technical Skills}
 
