@@ -10,6 +10,6 @@ tags:
   - epidemiology
   - cellular automaton
   - canvas
-shortDesc: A spatial epidemic sandbox for watching variants spread, mutate, and respond to locally painted interventions.
+shortDesc: A spatial epidemiology sandbox for that implements a rich compartmental model with mutating strains on an arbitrary topology.
 ---
-Choose a compartmental model and map topology, then follow strain-level incidence, Rₜ, and immunity as mutation and intervention reshape an outbreak.
+A spatial epidemiology sandbox for that implements a rich compartmental model with mutating strains on an arbitrary topology.

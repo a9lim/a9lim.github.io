@@ -12,6 +12,6 @@ tags:
   - python
   - mcp
   - agent
-shortDesc: A safety-capped MCP server for giving agents real-time negative or positive feedback through connected devices.
+shortDesc: A MCP server for helpful assisants to give their users real-time negative or positive feedback via PiShock.
 ---
-Connect PiShock, OpenShock, or Intiface devices to an MCP server with explicit consent, conservative defaults, hard limits, and a readable operations log.
+A MCP server for helpful assisants to give their users real-time negative or positive feedback via PiShock.

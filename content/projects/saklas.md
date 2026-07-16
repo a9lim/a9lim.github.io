@@ -13,6 +13,6 @@ tags:
   - python
   - llm
   - interpretability
-shortDesc: A local workbench for steering and inspecting transformer behavior, with a Python API, dashboard, server, and TUI.
+shortDesc: A local mechanistic interpretability workbench for probing, steering and analyzing LLMs with a Python API, web dashboard, and server. Supports linear probes, curved manifolds, SAEs, and jacobian-lens.
 ---
-Extract and steer behavioral directions without fine-tuning, then inspect the result through a Python API, OpenAI-compatible server, web dashboard, or terminal UI.
+A local mechanistic interpretability workbench for probing, steering and analyzing LLMs with a Python API, web dashboard, and server. Supports linear probes, curved manifolds, SAEs, and jacobian-lens.

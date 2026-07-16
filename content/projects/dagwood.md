@@ -10,6 +10,6 @@ tags:
   - python
   - mcp
   - task tracker
-shortDesc: A dependency-native tracker that makes the versioned DAG of work—and its ready-to-start frontier—visible.
+shortDesc: A task tracker that stores work as a DAG for better organization and planning with an MCP server for coding agent integration
 ---
-Tasks and dependencies live in one committed `.dag/dag.toml`; the web canvas, MCP interface, and git history all look at the same actionable graph.
+A task tracker that stores work as a DAG for better organization and planning with an MCP server for coding agent integration

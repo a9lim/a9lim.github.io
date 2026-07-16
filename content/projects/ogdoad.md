@@ -11,6 +11,6 @@ tags:
   - rust
   - python
   - algebra
-shortDesc: A Rust and Python laboratory for Clifford algebras and quadratic forms over unusual scalar systems.
+shortDesc: A Rust and Python laboratory for Clifford algebras over the surreal numbers and nimbers. Also includes support for p-adics, polynomials, and Conway's games.
 ---
-Explore classifications across surreal, nimber, p-adic, finite, and related worlds through a verified Rust core with Python bindings.
+A Rust and Python laboratory for Clifford algebras over the surreal numbers and nimbers. Also includes support for p-adics, polynomials, and Conway's games.

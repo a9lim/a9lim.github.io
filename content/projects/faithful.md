@@ -12,6 +12,6 @@ tags:
   - discord
   - chatbot
   - nlp
-shortDesc: A Discord bot that learns from a supplied corpus and replies in the source material's style.
+shortDesc: A Discord bot that uses an LLM to mimic the tone and style of a supplied text corpus, with the ability to respond dynamically and on its own.
 ---
-Give Faithful a user's text corpus and it generates responses shaped by the voice, rhythm, and habits of that source material.
+A Discord bot that uses an LLM to mimic the tone and style of a supplied text corpus, with the ability to respond dynamically and on its own. 

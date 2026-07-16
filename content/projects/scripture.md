@@ -11,6 +11,6 @@ tags:
   - reader
   - text
   - religion
-shortDesc: A cross-tradition sacred-text reader with search, concordances, linked notes, related passages, and read-aloud.
+shortDesc: A holy text archive and reader.
 ---
-Read sixteen works across traditions, then move through the collection with full-text search, concordances, verse-linked notes, text-to-speech, and export.
+A holy text archive and reader.

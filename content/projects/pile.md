@@ -10,6 +10,6 @@ tags:
   - physics
   - nuclear
   - canvas
-shortDesc: A reactor-and-plant sandbox for exploring thermal, neutron, control, and safety dynamics across three reactor designs.
+shortDesc: A nuclear reactor sandbox for exploring neutronics, thermal dynamics, and safety.
 ---
-Run PWR, RBMK, and molten-salt reactor models that couple neutronics, thermal hydraulics, fuel feedback, controls, protection, and the secondary plant.
+A nuclear reactor sandbox for exploring neutronics, thermal dynamics, and safety.

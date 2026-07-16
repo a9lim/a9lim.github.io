@@ -10,6 +10,6 @@ tags:
   - biology
   - biochemistry
   - canvas
-shortDesc: An interactive metabolism simulator for following pathways, cofactors, and regulation through a living cell.
+shortDesc: An interactive metabolism simulator for a cyanobacteria-like cell. Includes both respiratory and photosynthetic pathways.
 ---
-Follow connected pathways from glycolysis to electron transport on one metabolite grid, then change organism presets and regulation to see the cell respond.
+An interactive metabolism simulator for a cyanobacteria-like cell. Includes both respiratory and photosynthetic pathways.

@@ -12,6 +12,6 @@ tags:
   - webgpu
   - relativity
   - canvas
-shortDesc: A WebGPU physics sandbox for relativistic many-body worlds, from field forces and signal delay to radiating black holes.
+shortDesc: A WebGPU sandbox for post-Newtonian relativistic many-body physics, with gravity, electromagnetism, and a Yukawa-like force. Supports compact objects and scalar fields on any arbitrary topology.
 ---
-Build particle worlds with Boris integration, relativistic corrections, spatial partitioning, scalar fields, force carriers, and compact objects, then watch their dynamics unfold.
+A WebGPU sandbox for post-Newtonian relativistic many-body physics, with gravity, electromagnetism, and a Yukawa-like force. Supports compact objects and scalar fields on any arbitrary topology.

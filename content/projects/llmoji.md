@@ -12,6 +12,6 @@ tags:
   - python
   - cli
   - kaomoji
-shortDesc: A CLI that gives coding agents kaomoji voices, then turns their meanings into a shared research corpus.
+shortDesc: A CLI to make coding agents cuter. Also lets you contribute to a shared research dataset.
 ---
-Hooks for Claude Code, Codex, and Hermes collect each face, synthesize its meaning, and publish a dataset for studying agent character and representation.
+A CLI to make coding agents cuter. Also lets you contribute to a shared research dataset.

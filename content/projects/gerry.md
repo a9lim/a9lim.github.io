@@ -10,6 +10,6 @@ tags:
   - politics
   - svg
   - monte carlo
-shortDesc: A redistricting sandbox: draw a plan on a hex map, then challenge it with election simulations and fairness metrics.
+shortDesc: A redistricting sandbox on a hex map with third parties. Supports election simulations and fairness metrics.
 ---
-Make a district map, run pack-and-crack or fair-draw tools, and see Monte Carlo elections expose how a plan distributes representation.
+A redistricting sandbox on a hex map with third parties. Supports election simulations and fairness metrics.

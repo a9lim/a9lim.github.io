@@ -9,6 +9,6 @@ tags:
   - python
   - llm
   - finetuning
-shortDesc: A planned service for training a voice from a corpus, then serving a model shaped by it.
+shortDesc: An application to fine-tune a model with a provided corpus to mimic its tone and style.
 ---
-A plan to turn any text corpus into a genuinely fine-tuned voice model, rather than only prompting a general model to imitate it.
+An application to fine-tune a model with a provided corpus to mimic its tone and style.

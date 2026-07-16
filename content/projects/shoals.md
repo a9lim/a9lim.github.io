@@ -11,6 +11,6 @@ tags:
   - finance
   - options pricing
   - canvas
-shortDesc: An options-trading sandbox with modeled markets, multi-leg strategies, payoff diagrams, and scenario-driven events.
+shortDesc: A derivatives trading game set in a similar world to ours, with a dynamic, evolving market. 
 ---
-Price American options against evolving volatility, jumps, rates, dividends, and narrative market events; assemble strategies and read their payoff, Greeks, and margin.
+A derivatives trading game set in a similar world to ours, with a dynamic, evolving market. 

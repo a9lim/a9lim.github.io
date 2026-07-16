@@ -12,6 +12,6 @@ tags:
   - python
   - llm
   - shell
-shortDesc: An LLM-powered fake shell that continues believable command output until it reaches your real prompt.
+shortDesc: An LLM-powered fake shell.
 ---
-Kenoma captures your shell prompt as a stop signal, seeds a local model from history or tmux, and lets the completion play at being a terminal.
+An LLM-powered fake shell.
