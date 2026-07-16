@@ -1,16 +1,16 @@
 {
-  "generatedAt": "2026-07-16T15:53:11.844Z",
+  "generatedAt": "2026-07-16T16:20:21.743Z",
   "lastDeploy": {
-    "hash": "b558df7",
-    "iso": "2026-07-16T00:04:24-07:00",
-    "subject": "Update homepage content translations"
+    "hash": "84d53c8",
+    "iso": "2026-07-16T09:19:47-07:00",
+    "subject": "remove old projects"
   },
   "stats": {
     "sims": 8,
     "posts": 1,
     "scriptureWorks": 16,
     "scriptureChapters": 2724,
-    "sourceLines": 28563
+    "sourceLines": 28537
   },
   "now": [
     [

@@ -132,8 +132,8 @@
         "c.footer.tech": "vanilla JS · zero frameworks · zero trackers · vibe-coded with Claude",
         "c.site.titleShort": "a9l.im",
         "c.site.title": "a9l.im",
-        "c.site.description": "a9lim's homepage. Research, sims, tools, and more across various subjects. Built with Claude, free and open source.",
-        "c.site.descriptionShort": "Research, sims, tools, and more across various subjects. Built with Claude, free and open source.",
+        "c.site.description": "a9lim's homepage. Research, sims, tools, and more across various topics. Built with Claude, free and open source.",
+        "c.site.descriptionShort": "Research, sims, tools, and more across various topics. Built with Claude, free and open source.",
         "c.site.ogImageAlt": "a9l.im",
         // == END GENERATED CONTENT (en) ==
     };
