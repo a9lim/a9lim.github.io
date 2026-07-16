@@ -8,6 +8,7 @@
 #
 # Edits to source files are reflected immediately (symlinks). Only re-run
 # this script if you add/remove a top-level path or a scripture subdir.
+# Canonical blog markdown is exposed explicitly at content/posts/.
 
 set -euo pipefail
 
@@ -27,6 +28,9 @@ for item in "$REPO"/*; do
     *) ln -s "$item" "$DEV/$name" ;;
   esac
 done
+
+mkdir "$DEV/content"
+ln -s "$REPO/content/posts" "$DEV/content/posts"
 
 # scripture/ has scripture/raw (45MB PDF) — link sibling-by-sibling instead
 rm -f "$DEV/scripture"

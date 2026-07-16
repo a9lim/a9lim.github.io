@@ -16,7 +16,8 @@ CLAUDE.md
 .DS_Store
 **/.DS_Store
 *.log
-content/
+content/home/
+content/projects/
 _content.generated.mjs
 _dev-assets/
 dev.sh

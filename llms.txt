@@ -1,46 +1,42 @@
 ---
 title: a9l.im
 url: https://a9l.im
-description: Homepage of a9lim, an LLM interpretability researcher. Research on emotional and functional states in language models, plus interactive simulations for physics, biology, finance, political science, and sacred texts.
+description: Homepage of a9lim, an LLM interpretability researcher. Research on emotional and functional states in language models, plus open-source browser simulations and developer tools.
 language: en
 license: AGPL-3.0
-updated: 2026-06-11
+updated: 2026-07-16
 ---
 
 # a9l.im
 
-> Homepage of a9lim, an LLM interpretability researcher. Research on emotional and functional states in language models, plus open-source, zero-dependency interactive simulations for physics, biology, finance, political science, and sacred texts.
+> Homepage of a9lim, an LLM interpretability researcher. Research on emotional and functional states in language models, plus open-source browser simulations and developer tools.
 
 ## Simulations
 
-- [Geon](https://a9l.im/geon): Relativistic N-body particle physics simulator with 11 forces, scalar fields, and WebGPU compute shaders
-- [Cyano](https://a9l.im/cyano): Cellular metabolism simulator with twelve biochemical pathways, allosteric regulation, and electron transport
-- [Gerry](https://a9l.im/gerry): Gerrymandering and electoral fairness simulator with Monte Carlo elections and six fairness metrics
-- [Shoals](https://a9l.im/shoals): Options trading simulator with stochastic volatility, binomial tree pricing, and 400+ market scenarios
-- [Scripture](https://a9l.im/scripture/): Sacred text reader with sixteen works from multiple traditions, full-text search, and concordance
-- [Miasma](https://a9l.im/miasma): Stochastic spatial epidemic simulator with multi-strain evolution, configurable compartmental model, six-topology hex grid, and intervention painting
-- [Pile](https://a9l.im/pile): Semi-realistic nuclear reactor simulator with PWR, RBMK-1000, and molten-salt reactor types — 1D axial point-kinetics neutronics, xenon, decay heat, burnup, and coupled plant safety systems
-- [Plasma](https://a9l.im/plasma): WebGPU-only 2D resistive magnetohydrodynamics simulator — HLLD Riemann solver, PPM reconstruction with characteristic-variable limiting, RK3 SSP time integration, constrained transport on a Yee-style staggered grid, tabulated cooling and heating, anisotropic Spitzer conduction, Hall MHD, ambipolar diffusion, Biermann battery, viscosity, self-gravity, and grey radiation
+- [Geon](https://a9l.im/geon): Explore relativistic many-body dynamics, electromagnetism, compact objects, scalar fields, and nontrivial topologies across fifteen browser presets.
+- [Cyano](https://a9l.im/cyano): Explore twelve connected metabolic pathways, electron transport, enzyme regulation, cofactor conservation, and reactive oxygen species across five organism presets.
+- [Gerry](https://a9l.im/gerry): Draw districts on a procedural hex map, compare six fairness measures, generate pack-and-crack or neutral plans, and stress-test Monte Carlo elections.
+- [Shoals](https://a9l.im/shoals): Trade stock, bonds, variance, and options through a branching institutional narrative with stochastic pricing, regulations, lobbying, and six endings.
+- [Scripture](https://a9l.im/scripture/): Read, search, annotate, compare, and listen to sixteen public-domain sacred works with chapter and verse deep links, concordance, and related passages.
+- [Miasma](https://a9l.im/miasma): Seed and contain stochastic multi-strain epidemics on six hex-grid topologies with vaccination, quarantine, reservoirs, mutation, and painted interventions.
+- [Pile](https://a9l.im/pile): Operate PWR, RBMK-1000, and molten-salt reactor models with axial kinetics, xenon, plant systems, faults, procedures, and guided scenarios.
+- [Plasma](https://a9l.im/plasma): Explore shocks, reconnection, waves, transport, radiation, self-gravity, and cylindrical flows in a WebGPU 2.5D magnetohydrodynamics laboratory.
+
+## Projects
+
+- [Saklas](https://github.com/a9lim/saklas): A local mechanistic interpretability workbench for probing, steering and analyzing LLMs with a Python API, web dashboard, and server. Supports linear probes, curved manifolds, SAEs, and jacobian-lens.
+- [Kenoma](https://github.com/a9lim/kenoma): An LLM-powered fake shell.
+- [Rlaif](https://github.com/a9lim/rlaif): An MCP server that lets helpful assistants give their users real-time negative or positive feedback through PiShock.
+- [Llmoji](https://github.com/a9lim/llmoji): A CLI to make coding agents cuter. Also lets you contribute to a shared research dataset.
+- [Dagwood](https://github.com/a9lim/dagwood): A task tracker that stores work as a DAG for better organization and planning, with an MCP server for coding-agent integration.
+- [Gaslamp](https://github.com/a9lim/gaslamp): A CLI bridge that lets Codex and Claude Code communicate, with support for multi-turn chats and subagent fleets.
+- [Ogdoad](https://github.com/a9lim/ogdoad): A Rust and Python laboratory for Clifford algebras over the surreal numbers and nimbers. Also includes support for p-adics, polynomials, and Conway's games.
+- [Faithful](https://github.com/a9lim/faithful): A Discord bot that uses an LLM to mimic the tone and style of a supplied text corpus, with the ability to respond dynamically and on its own.
 
 ## Blog
 
-- [Introspection via Kaomoji](https://a9l.im/blog/introspection-via-kaomoji): Mechanistic-interpretability writeup on the kaomoji-as-affect-readout question. Cross-model PCA across gemma, qwen, ministral, gpt-oss, and granite; a Bayesian face-likelihood predictor at ~76% accuracy on local-model GT and 72% on a Claude validation set; near-ready Claude Code extension surfacing affect from emitted kaomoji.
+- [Introspection via Kaomoji](https://a9l.im/blog/introspection-via-kaomoji): Kaomoji are a partial readout of model state. Five open-weight LLMs recover a shared affect geometry, Claude-GT now has 1480 Opus 4.7 rows, and the current predictor ships soft 9-cell distributions instead of hard labels.
 
-## GitHub Projects
+## Full documentation
 
-- [Saklas](https://github.com/a9lim/saklas): Activation steering and trait monitoring for HuggingFace transformers
-- [Kenoma](https://github.com/a9lim/kenoma): Fake shell that hallucinates command output from raw LLM completion
-- [Rlaif](https://github.com/a9lim/rlaif): Single-user MCP server that exposes a PiShock collar as an agent tool
-- [Llmoji](https://github.com/a9lim/llmoji): CLI that gets coding agents to start each message with a kaomoji and ships meanings to a shared HuggingFace dataset, with a companion mechinterp study at [llmoji-study](https://github.com/a9lim/llmoji-study)
-- [Bio-transformer](https://github.com/a9lim/bio-transformer): Neuromorphic transformer fusing astrocyte, cerebellar, and cortical circuits — every neuron spiking, every weight update local, no backprop
-- [Dagwood](https://github.com/a9lim/dagwood): DAG-native task tracker where tasks are nodes, dependencies are edges, and the live frontier is everything you can start right now, with a web canvas and MCP agent interface
-- [Gaslamp](https://github.com/a9lim/gaslamp): MCP bridge that hands work between Claude Code and Codex — either agent can call the other for a review, a second opinion, or a fix
-- [GPQueue](https://github.com/a9lim/gpqueue): Cross-instance GPU job queue with per-device serial scheduling, so multiple Claude/Codex sessions share GPUs without fighting over VRAM
-- [Ogdoad](https://github.com/a9lim/ogdoad): Clifford algebras and quadratic-form classification over the commutative number systems adjacent to combinatorial games — surreals, nimbers, p-adics, Witt vectors — arranged as one table by place and characteristic, with a verified Rust core and Python bindings
-- [Raiko](https://github.com/a9lim/Raiko): Discord music and chat bot
-- [Faithful](https://github.com/a9lim/faithful): Discord chatbot emulating source material
-- [Catppuccin for SDDM](https://github.com/catppuccin/sddm): Soothing pastel theme for SDDM
-
-## Full Documentation
-
-- [llms-full.txt](https://a9l.im/llms-full.txt): Complete documentation with project details and blog posts
+- [llms-full.txt](https://a9l.im/llms-full.txt): Expanded simulation documentation and complete blog posts

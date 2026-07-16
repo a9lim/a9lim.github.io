@@ -10,7 +10,7 @@
     "/logo.svg",
     "/og-image.webp",
     "/world-map.svg",
-    "/posts/*",
+    "/content/posts/*",
     "/*.xml",
     "/robots.txt",
     "/geon/*",

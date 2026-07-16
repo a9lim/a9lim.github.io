@@ -64,7 +64,9 @@ function escXml(s) {
 // ═══ content/ pipeline ═══
 // content/ is the hand-edited source of truth for blog posts, project
 // cards, and homepage copy. This section parses it and emits the derived
-// artifacts (posts/*.md, posts.json, src/projects.js, _content.generated.mjs).
+// artifacts (posts.json, src/projects.js, _content.generated.mjs, discovery
+// files, and submodule SEO metadata). Canonical post markdown is served from
+// content/posts/ directly; no stripped duplicate tree is generated.
 // Generated files carry a banner — edit content/, never them.
 
 function fmValue(v) {
@@ -114,19 +116,18 @@ function loadContentPair(dir, slug) {
   return { slug, meta: en.meta, body: en.body, ja };
 }
 
-// --- posts: content/posts/*.md → posts/*.md (frontmatter stripped) + posts.json ---
+// --- posts: content/posts/*.md → posts.json ---
 
 const postEntries = contentSlugs('content/posts')
   .map(slug => loadContentPair('content/posts', slug))
   .sort((a, b) => (a.meta.date < b.meta.date ? 1 : -1));
+const postEntryBySlug = new Map(postEntries.map(p => [p.slug, p]));
 
 const posts = [];
 for (const p of postEntries) {
   for (const req of ['title', 'date', 'tag', 'excerpt']) {
     if (p.meta[req] == null) throw new Error(`content/posts/${p.slug}.md: missing ${req}`);
   }
-  emit('posts/' + p.slug + '.md', p.body);
-  if (p.ja) emit('posts/' + p.slug + '.ja.md', p.ja.body);
   posts.push({
     slug: p.slug,
     title: p.meta.title,
@@ -181,6 +182,7 @@ const projectsData = projectEntries.map(p => {
   if (!longDesc) throw new Error(`content/projects/${p.slug}.md: missing description body`);
   if (!longDescJa) throw new Error(`content/projects/${p.slug}.ja.md: missing description body`);
   return {
+    slug: p.slug,
     ...(p.meta.href && { href: p.meta.href }),
     title: p.meta.title,
     longDesc,
@@ -197,6 +199,105 @@ const projectsData = projectEntries.map(p => {
     seoUrl: p.meta.seoUrl || null,
   };
 });
+
+// --- submodule SEO: {sim}/about.md frontmatter → index + about-panel date ---
+
+function regexEsc(s) {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function setMetaContent(html, attr, value, rel) {
+  const re = new RegExp(`<meta(?=[^>]*\\s${regexEsc(attr)}(?:\\s|/?>))[^>]*>`, 'i');
+  const match = html.match(re);
+  if (!match) throw new Error(`${rel}: missing ${attr}`);
+  if (!/\scontent="[^"]*"/i.test(match[0])) throw new Error(`${rel}: ${attr} has no content attribute`);
+  return html.replace(re, match[0].replace(/\scontent="[^"]*"/i, ` content="${mdEsc(value)}"`));
+}
+
+const simDocs = projectsData
+  .filter(p => p.kind === 'sim' && !p.external && !p.planned)
+  .map(project => {
+    const rel = `${project.slug}/about.md`;
+    const doc = parseFrontmatter(rel);
+    for (const req of ['name', 'title', 'description', 'updated']) {
+      if (doc.meta[req] == null) throw new Error(`${rel}: missing ${req}`);
+    }
+    if (doc.meta.name !== project.title) {
+      throw new Error(`${rel}: name must match content/projects/${project.slug}.md title`);
+    }
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(doc.meta.updated)) {
+      throw new Error(`${rel}: updated must be YYYY-MM-DD`);
+    }
+    if (!doc.body.trim()) throw new Error(`${rel}: missing documentation body`);
+    return { ...doc, project };
+  });
+
+for (const doc of simDocs) {
+  const slug = doc.project.slug;
+  const indexRel = `${slug}/index.html`;
+  let html = readText(indexRel);
+  const titleRe = /<title([^>]*)>[\s\S]*?<\/title>/i;
+  if (!titleRe.test(html)) throw new Error(`${indexRel}: missing title`);
+  html = html.replace(titleRe, `<title$1>${mdEsc(doc.meta.title)} | a9l.im</title>`);
+  for (const attr of ['name="description"', 'property="og:description"', 'name="twitter:description"']) {
+    html = setMetaContent(html, attr, doc.meta.description, indexRel);
+  }
+  for (const attr of ['property="og:title"', 'name="twitter:title"']) {
+    html = setMetaContent(html, attr, doc.meta.title, indexRel);
+  }
+  const i18nMetaKeys = {
+    'name="description"': 'meta.description',
+    'property="og:title"': 'meta.ogTitle',
+    'property="og:description"': 'meta.ogDescription',
+    'name="twitter:title"': 'meta.twitterTitle',
+    'name="twitter:description"': 'meta.twitterDescription',
+  };
+  for (const [attr, key] of Object.entries(i18nMetaKeys)) {
+    const tagRe = new RegExp(`<meta(?=[^>]*\\s${regexEsc(attr)}(?:\\s|/?>))[^>]*>`, 'i');
+    const match = html.match(tagRe);
+    if (match && /data-i18n-content="[^"]*"/.test(match[0])) {
+      html = html.replace(tagRe, match[0].replace(/data-i18n-content="[^"]*"/, `data-i18n-content="${key}"`));
+    }
+  }
+  if (!/"description"\s*:\s*"[^"]*"/.test(html)) throw new Error(`${indexRel}: missing JSON-LD description`);
+  html = html.replace(/("description"\s*:\s*)"[^"]*"/, `$1${JSON.stringify(doc.meta.description)}`);
+  if (!/"dateModified"\s*:\s*"[^"]*"/.test(html)) throw new Error(`${indexRel}: missing JSON-LD dateModified`);
+  html = html.replace(/("dateModified"\s*:\s*)"[^"]*"/, `$1${JSON.stringify(doc.meta.updated)}`);
+  emit(indexRel, html);
+
+  const uiCandidates = [`${slug}/main.js`, `${slug}/src/ui.js`]
+    .filter(rel => existsSync(join(ROOT, rel)))
+    .filter(rel => /lastUpdated\s*:/.test(readText(rel)));
+  if (uiCandidates.length !== 1) {
+    throw new Error(`${slug}: expected exactly one UI source with lastUpdated, found ${uiCandidates.length}`);
+  }
+  const uiRel = uiCandidates[0];
+  const ui = readText(uiRel).replace(
+    /(lastUpdated\s*:\s*['"])[^'"]+(['"])/,
+    `$1${doc.meta.updated}$2`,
+  );
+  emit(uiRel, ui);
+
+  const stringsRel = `${slug}/i18n/strings.js`;
+  if (existsSync(join(ROOT, stringsRel))) {
+    let strings = readText(stringsRel);
+    const values = {
+      'meta.title': `${doc.meta.title} | a9l.im`,
+      'meta.description': doc.meta.description,
+      'meta.ogTitle': doc.meta.title,
+      'meta.ogDescription': doc.meta.description,
+      'meta.twitterTitle': doc.meta.title,
+      'meta.twitterDescription': doc.meta.description,
+    };
+    for (const [key, value] of Object.entries(values)) {
+      const re = new RegExp(`^(\\s*['"]${regexEsc(key)}['"]\\s*:\\s*).*$`, 'm');
+      if (!re.test(strings)) throw new Error(`${stringsRel}: missing English ${key}`);
+      strings = strings.replace(re, `$1${JSON.stringify(value)},`);
+    }
+    emit(stringsRel, strings);
+  }
+}
+console.log(`submodule SEO: ${simDocs.length} about pages synchronized`);
 
 {
   const lines = [];
@@ -485,7 +586,8 @@ let homeScripture;
 const site = homeCards['site'].meta;
 const siteJa = homeCards['site'].ja.meta;
 for (const req of ['titleShort', 'title', 'description', 'descriptionShort', 'ogImageAlt',
-  'simsTitle', 'simsDesc', 'projectsTitle', 'projectsDesc', 'blogTitle', 'blogDesc']) {
+  'discoveryDescription', 'aboutIntro', 'updated', 'simsTitle', 'simsDesc',
+  'projectsTitle', 'projectsDesc', 'blogTitle', 'blogDesc']) {
   if (site[req] == null) throw new Error('content/home/site.md: missing ' + req);
 }
 i18nScalar('c.site.titleShort', site.titleShort, siteJa.titleShort);
@@ -526,6 +628,25 @@ const ROUTE_META_GEN = {
     `<meta name="twitter:title" data-i18n-content="c.site.title" content="${mdEsc(site.title)}">`, 'twitter:title');
   headTag(/<meta name="twitter:description"[^>]*>/,
     `<meta name="twitter:description" data-i18n-content="c.site.descriptionShort" content="${mdEsc(site.descriptionShort)}">`, 'twitter:description');
+
+  const rootLdRe = /<script type="application\/ld\+json">\s*(\{[\s\S]*?\})\s*<\/script>/;
+  const rootLdMatch = html.match(rootLdRe);
+  if (!rootLdMatch) throw new Error('index.html: missing root JSON-LD graph');
+  const rootLd = JSON.parse(rootLdMatch[1]);
+  const website = rootLd['@graph']?.find(node => node['@type'] === 'WebSite');
+  const simList = rootLd['@graph']?.find(node => node['@type'] === 'ItemList' && node.name === 'Simulations');
+  if (!website || !simList) throw new Error('index.html: root JSON-LD graph is missing WebSite or Simulations ItemList');
+  website.description = site.discoveryDescription;
+  website.dateModified = site.updated;
+  simList.itemListElement = projectsData
+    .filter(p => p.kind === 'sim' && !p.planned && p.seoName)
+    .map((p, i) => ({
+      '@type': 'ListItem',
+      position: i + 1,
+      url: p.seoUrl || SITE + p.href,
+      name: p.seoName,
+    }));
+  html = html.replace(rootLdRe, `<script type="application/ld+json">\n${JSON.stringify(rootLd, null, 2)}\n    </script>`);
   emit('index.html', html);
   console.log(`index.html: ${Object.keys(regions).length} content regions + head metadata injected`);
 }
@@ -622,67 +743,132 @@ export const PROJECTS_ITEMLIST = ${JSON.stringify(itemList(projsData), null, 2)}
   console.log('_content.generated.mjs: generated');
 }
 
-if (CHECK) {
-  if (checkFailures.length) {
-    console.error('STALE generated artifacts — edit content/ was not followed by `node _build.mjs`:');
-    for (const f of checkFailures) console.error('  ' + f);
-    process.exit(1);
-  }
-  console.log('--check: all content-derived artifacts are current');
-  process.exit(0);
+function projectUrl(p) {
+  return p.seoUrl || (p.external ? p.href : SITE + p.href);
+}
+
+function projectDescription(p) {
+  const doc = simDocs.find(d => d.project.slug === p.slug);
+  return doc ? doc.meta.description : p.longDesc;
+}
+
+function discoveryList(list) {
+  return list.map(p => `- [${p.title}](${projectUrl(p)}): ${projectDescription(p)}`).join('\n');
+}
+
+const shippedSims = projectsData.filter(p => p.kind === 'sim' && !p.planned);
+const shippedProjects = projectsData.filter(p => p.kind === 'project' && !p.planned);
+const rootAboutBody = [
+  '# About a9l.im',
+  '',
+  site.aboutIntro,
+  '',
+  '## Simulations',
+  '',
+  discoveryList(shippedSims),
+  '',
+  '## Open-source projects',
+  '',
+  discoveryList(shippedProjects),
+  '',
+  '## Technical approach',
+  '',
+  'The portfolio uses vanilla JavaScript, HTML, and CSS with a shared root design system. Cloudflare Workers + Assets provides SPA routing, edge-rendered crawler content, security headers, and caching. Hand-edited copy lives in `content/`; `_build.mjs` derives the browser, feed, sitemap, and machine-readable surfaces.',
+  '',
+  '## Contact',
+  '',
+  'mx@a9l.im | [GitHub](https://github.com/a9lim) | [Twitter](https://twitter.com/_a9lim)',
+  '',
+  '## License',
+  '',
+  'The portfolio and its projects are licensed under AGPL-3.0.',
+  '',
+].join('\n');
+
+const discoveryFrontmatter = (title, url, description) => [
+  '---',
+  `title: ${title}`,
+  `url: ${url}`,
+  `description: ${description}`,
+  'language: en',
+  'license: AGPL-3.0',
+  `updated: ${site.updated}`,
+  '---',
+  '',
+  '',
+].join('\n');
+
+emit('about.md', discoveryFrontmatter('About a9l.im', `${SITE}/about.md`, site.discoveryDescription) + rootAboutBody);
+
+const llms = [
+  discoveryFrontmatter('a9l.im', SITE, site.discoveryDescription).trimEnd(),
+  '',
+  '# a9l.im',
+  '',
+  `> ${site.discoveryDescription}`,
+  '',
+  '## Simulations',
+  '',
+  discoveryList(shippedSims),
+  '',
+  '## Projects',
+  '',
+  discoveryList(shippedProjects),
+  '',
+  '## Blog',
+  '',
+  ...posts.map(p => `- [${p.title}](${SITE}/blog/${p.slug}): ${p.excerpt}`),
+  '',
+  '## Full documentation',
+  '',
+  `- [llms-full.txt](${SITE}/llms-full.txt): Expanded simulation documentation and complete blog posts`,
+  '',
+].join('\n');
+emit('llms.txt', llms);
+console.log(`about.md + llms.txt: ${shippedSims.length} simulations, ${shippedProjects.length} projects`);
+
+{
+  const rows = simDocs.map(doc => {
+    const description = doc.meta.description.replace(/\|/g, '\\|');
+    return `| [${doc.meta.name}](${projectUrl(doc.project)}) | ${description} |`;
+  });
+  const table = ['| Project | Description |', '|---------|-------------|', ...rows].join('\n');
+  let readme = readText('README.md');
+  const re = /(<!-- content:sim-table [^>]*-->)[\s\S]*?(<!-- \/content:sim-table -->)/;
+  if (!re.test(readme)) throw new Error('README.md: missing generated sim-table markers');
+  readme = readme.replace(re, `$1\n${table}\n$2`);
+  emit('README.md', readme);
 }
 
 // --- collect URLs ---
 
 const urls = [];
 
-// Image map: sim paths → [OG image(s)]
-const IMAGE_MAP = {
-  '/':          ['og-image.webp'],
-  '/geon':      ['geon/og-image.webp'],
-  '/cyano':     ['cyano/og-image.webp'],
-  '/gerry':     ['gerry/og-image.webp'],
-  '/shoals':    ['shoals/og-image.webp'],
-  '/scripture/': ['scripture/og-image.webp'],
-  '/miasma':    ['miasma/og-image.webp'],
-  '/pile':      ['pile/og-image.webp'],
-  '/plasma':    ['plasma/og-image.webp'],
-};
+const simPath = doc => new URL(projectUrl(doc.project)).pathname;
+
+// Image metadata follows the canonical simulation registry and about files.
+const IMAGE_MAP = { '/': ['og-image.webp'] };
+const IMAGE_CAPTIONS = { '/': site.discoveryDescription };
+for (const doc of simDocs) {
+  IMAGE_MAP[simPath(doc)] = [`${doc.project.slug}/og-image.webp`];
+  IMAGE_CAPTIONS[simPath(doc)] = doc.meta.description;
+}
 
 function add(path, lastmod, images, changefreq, priority, imageCaption) {
   urls.push({ loc: SITE + path, lastmod: lastmod || today(), images: images || null, changefreq: changefreq || null, priority: priority != null ? priority : null, imageCaption: imageCaption || null });
 }
 
-const IMAGE_CAPTIONS = {
-  '/': 'a9l.im — interactive educational simulations for physics, biology, finance, and political science',
-  '/geon': 'Geon — relativistic N-body particle physics simulator with 11 forces and WebGPU compute shaders',
-  '/cyano': 'Cyano — cellular metabolism simulator with twelve biochemical pathways and electron transport',
-  '/gerry': 'Gerry — gerrymandering and electoral fairness simulator with Monte Carlo elections',
-  '/shoals': 'Shoals — options trading simulator with stochastic volatility and 400+ market scenarios',
-  '/scripture/': 'Scripture — sacred text reader with sixteen works from multiple traditions',
-  '/miasma': 'Miasma — stochastic spatial epidemic simulator with multi-strain evolution and intervention painting',
-  '/pile': 'Pile — semi-realistic nuclear reactor simulator with PWR, RBMK, and molten-salt reactor types',
-  '/plasma': 'Plasma — 2D resistive magnetohydrodynamics simulator with HLLD, PPM, and constrained transport',
-};
-
 // 1. Static routes
 const staticRoutes = [
-  { path: '/',          file: 'index.html',           changefreq: 'weekly',  priority: 1.0 },
-  { path: '/sims',      file: 'index.html',           changefreq: 'monthly', priority: 0.8 },
-  { path: '/projects',  file: 'index.html',           changefreq: 'monthly', priority: 0.8 },
-  { path: '/blog',      file: 'index.html',           changefreq: 'monthly', priority: 0.8 },
-  { path: '/geon',      file: 'geon/index.html',      changefreq: 'monthly', priority: 0.9 },
-  { path: '/cyano',     file: 'cyano/index.html',     changefreq: 'monthly', priority: 0.9 },
-  { path: '/gerry',     file: 'gerry/index.html',     changefreq: 'monthly', priority: 0.9 },
-  { path: '/shoals',    file: 'shoals/index.html',    changefreq: 'monthly', priority: 0.9 },
-  { path: '/scripture/', file: 'scripture/index.html', changefreq: 'monthly', priority: 0.9 },
-  { path: '/miasma',    file: 'miasma/index.html',    changefreq: 'monthly', priority: 0.9 },
-  { path: '/pile',      file: 'pile/index.html',      changefreq: 'monthly', priority: 0.9 },
-  { path: '/plasma',    file: 'plasma/index.html',    changefreq: 'monthly', priority: 0.9 },
+  { path: '/',         lastmod: site.updated, changefreq: 'weekly',  priority: 1.0 },
+  { path: '/sims',     lastmod: site.updated, changefreq: 'monthly', priority: 0.8 },
+  { path: '/projects', lastmod: site.updated, changefreq: 'monthly', priority: 0.8 },
+  { path: '/blog',     lastmod: site.updated, changefreq: 'monthly', priority: 0.8 },
+  ...simDocs.map(doc => ({ path: simPath(doc), lastmod: doc.meta.updated, changefreq: 'monthly', priority: 0.9 })),
 ];
 
 for (const r of staticRoutes) {
-  add(r.path, gitLastmod(r.file), IMAGE_MAP[r.path] || null, r.changefreq, r.priority, IMAGE_CAPTIONS[r.path] || null);
+  add(r.path, r.lastmod, IMAGE_MAP[r.path] || null, r.changefreq, r.priority, IMAGE_CAPTIONS[r.path] || null);
 }
 
 // 1b. Scripture work-level routes
@@ -694,8 +880,7 @@ for (const workId of workIds) {
 
 // 2. Blog posts (loaded from content/posts/ above)
 for (const p of posts) {
-  const md = `posts/${p.slug}.md`;
-  add(`/blog/${p.slug}`, gitLastmod(md) || p.date, null, 'yearly', 0.6);
+  add(`/blog/${p.slug}`, p.updated || p.date, null, 'yearly', 0.6);
 }
 
 // 3. Scripture deep routes
@@ -752,10 +937,10 @@ function renderUrlset(urlList) {
   ].join('\n');
 }
 
-writeFileSync(join(ROOT, 'sitemap-main.xml'), renderUrlset(mainUrls));
+emit('sitemap-main.xml', renderUrlset(mainUrls));
 console.log(`sitemap-main.xml: ${mainUrls.length} URLs`);
 
-writeFileSync(join(ROOT, 'sitemap-scripture.xml'), renderUrlset(scriptureUrls));
+emit('sitemap-scripture.xml', renderUrlset(scriptureUrls));
 console.log(`sitemap-scripture.xml: ${scriptureUrls.length} URLs`);
 
 // Sitemap index
@@ -777,13 +962,13 @@ const sitemapIndex = [
   ''
 ].join('\n');
 
-writeFileSync(join(ROOT, 'sitemap.xml'), sitemapIndex);
+emit('sitemap.xml', sitemapIndex);
 console.log(`sitemap.xml: sitemap index (${urls.length} total URLs)`);
 
 // --- generate feed.xml (RSS 2.0) ---
 
 const postItems = posts.map(p => {
-  const mdSrc = readText(`posts/${p.slug}.md`);
+  const mdSrc = postEntryBySlug.get(p.slug).body;
   const htmlContent = parseMarkdown(mdSrc);
   const firstPara = p.excerpt || mdSrc.split(/\n\n/)[0].replace(/[*_`\[\]()#>!]/g, '').trim();
   return `    <item>
@@ -807,7 +992,7 @@ const rss = `<?xml version="1.0" encoding="UTF-8"?>
   <channel>
     <title>a9l.im</title>
     <link>${SITE}</link>
-    <description>Interactive educational simulations for physics, biology, finance, and political science.</description>
+    <description>${escXml(site.discoveryDescription)}</description>
     <language>en-us</language>
     <lastBuildDate>${latestDate}</lastBuildDate>
     <atom:link href="${SITE}/feed.xml" rel="self" type="application/rss+xml"/>
@@ -823,13 +1008,13 @@ ${postItems.join('\n')}
 </rss>
 `;
 
-writeFileSync(join(ROOT, 'feed.xml'), rss);
+emit('feed.xml', rss);
 console.log(`feed.xml: ${posts.length} items`);
 
 // --- generate feed.atom ---
 
 const atomEntries = posts.map(p => {
-  const mdSrc = readText(`posts/${p.slug}.md`);
+  const mdSrc = postEntryBySlug.get(p.slug).body;
   const htmlContent = parseMarkdown(mdSrc);
   const firstPara = p.excerpt || mdSrc.split(/\n\n/)[0].replace(/[*_`\[\]()#>!]/g, '').trim();
   const categories = (Array.isArray(p.tag) ? p.tag : [p.tag]).filter(Boolean).map(t => `    <category term="${escXml(t)}"/>`).join('\n');
@@ -856,7 +1041,7 @@ const latestIso = isoTimestamp(posts.reduce((max, p) => {
 const atom = `<?xml version="1.0" encoding="UTF-8"?>
 <feed xmlns="http://www.w3.org/2005/Atom">
   <title>a9l.im</title>
-  <subtitle>Interactive educational simulations for physics, biology, finance, and political science.</subtitle>
+  <subtitle>${escXml(site.discoveryDescription)}</subtitle>
   <link href="${SITE}/feed.atom" rel="self" type="application/atom+xml"/>
   <link href="${SITE}" rel="alternate" type="text/html"/>
   <id>${SITE}/</id>
@@ -869,53 +1054,48 @@ ${atomEntries.join('\n')}
 </feed>
 `;
 
-writeFileSync(join(ROOT, 'feed.atom'), atom);
+emit('feed.atom', atom);
 console.log(`feed.atom: ${posts.length} entries`);
 
 // --- generate llms-full.txt ---
 
-const aboutFiles = [
-  { heading: 'Geon', path: 'geon/about.md' },
-  { heading: 'Cyano', path: 'cyano/about.md' },
-  { heading: 'Gerry', path: 'gerry/about.md' },
-  { heading: 'Shoals', path: 'shoals/about.md' },
-  { heading: 'Scripture', path: 'scripture/about.md' },
-  { heading: 'Miasma', path: 'miasma/about.md' },
-  { heading: 'Pile', path: 'pile/about.md' },
-  { heading: 'Plasma', path: 'plasma/about.md' },
-];
-
 const llmsParts = [
+  discoveryFrontmatter('a9l.im Full Documentation', `${SITE}/llms-full.txt`, site.discoveryDescription).trimEnd(),
+  '',
   '# a9l.im — Full Documentation',
   '',
-  '> Free interactive educational simulations for physics, biology, finance, political science, and sacred texts.',
+  `> ${site.discoveryDescription}`,
   '',
   'See also: [llms.txt](https://a9l.im/llms.txt)',
   '',
+  rootAboutBody,
+  '',
 ];
 
-// Site about
-if (existsSync(join(ROOT, 'about.md'))) {
-  llmsParts.push(readText('about.md'), '');
-}
-
 // Project about pages
-for (const a of aboutFiles) {
-  const p = join(ROOT, a.path);
-  if (existsSync(p)) {
-    llmsParts.push(readText(a.path), '');
-  }
+for (const doc of simDocs) {
+  llmsParts.push('---', '', doc.body.trim(), '');
 }
 
 // Blog posts
 llmsParts.push('---', '', '# Blog Posts', '');
 for (const p of posts) {
   llmsParts.push(`## ${p.title}`, '', `*${p.date}*`, '');
-  llmsParts.push(readText(`posts/${p.slug}.md`), '');
+  llmsParts.push(postEntryBySlug.get(p.slug).body.trim(), '');
 }
 
-writeFileSync(join(ROOT, 'llms-full.txt'), llmsParts.join('\n'));
+emit('llms-full.txt', llmsParts.join('\n'));
 console.log('llms-full.txt: generated');
+
+if (CHECK) {
+  if (checkFailures.length) {
+    console.error('STALE generated artifacts — canonical content was not followed by `node _build.mjs`:');
+    for (const f of [...new Set(checkFailures)]) console.error('  ' + f);
+    process.exit(1);
+  }
+  console.log('--check: all deterministic content and SEO artifacts are current');
+  process.exit(0);
+}
 
 // --- generate home-data.json (last-deploy marker + live-ish stats) ---
 

@@ -32,7 +32,7 @@ export const PROJECTS = [
     {
         href: "https://github.com/a9lim/rlaif",
         title: "Rlaif",
-        longDesc: "A MCP server for helpful assisants to give their users real-time negative or positive feedback via PiShock.",
+        longDesc: "An MCP server that lets helpful assistants give their users real-time negative or positive feedback through PiShock.",
         longDesc_ja: "役立つアシスタントが PiShock を通じてユーザーへリアルタイムの負または正のフィードバックを与えるための MCP サーバ。",
         packages: [{"registry":"PyPI","name":"rlaif-mcp","href":"https://pypi.org/project/rlaif-mcp/","install":"pip install rlaif-mcp"}],
         tags: ["python","mcp","agent"],
@@ -56,7 +56,7 @@ export const PROJECTS = [
     {
         href: "https://github.com/a9lim/dagwood",
         title: "Dagwood",
-        longDesc: "A task tracker that stores work as a DAG for better organization and planning with an MCP server for coding agent integration",
+        longDesc: "A task tracker that stores work as a DAG for better organization and planning, with an MCP server for coding-agent integration.",
         longDesc_ja: "作業を DAG として保存し、よりよい整理と計画を可能にするタスクトラッカー。コーディングエージェント連携用の MCP サーバを備える。",
         tags: ["python","mcp","task tracker"],
         tags_ja: ["python","MCP","タスク管理"],

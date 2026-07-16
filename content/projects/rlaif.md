@@ -13,4 +13,4 @@ tags:
   - mcp
   - agent
 ---
-A MCP server for helpful assisants to give their users real-time negative or positive feedback via PiShock.
+An MCP server that lets helpful assistants give their users real-time negative or positive feedback through PiShock.

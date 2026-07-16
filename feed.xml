@@ -3,7 +3,7 @@
   <channel>
     <title>a9l.im</title>
     <link>https://a9l.im</link>
-    <description>Interactive educational simulations for physics, biology, finance, and political science.</description>
+    <description>Homepage of a9lim, an LLM interpretability researcher. Research on emotional and functional states in language models, plus open-source browser simulations and developer tools.</description>
     <language>en-us</language>
     <lastBuildDate>Sun, 10 May 2026 00:00:00 GMT</lastBuildDate>
     <atom:link href="https://a9l.im/feed.xml" rel="self" type="application/rss+xml"/>

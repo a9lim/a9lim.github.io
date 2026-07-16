@@ -217,6 +217,9 @@
   Cloudflare-CDN-Cache-Control: public, max-age=86400
 
 # LLM and discovery files
+/content/posts/*
+  Cache-Control: public, max-age=3600
+  Cloudflare-CDN-Cache-Control: public, max-age=86400
 /llms.txt
   Cache-Control: public, max-age=3600
 /llms-full.txt

@@ -34,6 +34,13 @@ export function mdEsc(s) {
     return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
+/** Remove the minimal YAML frontmatter used by canonical content/*.md files. */
+export function stripFrontmatter(src) {
+    if (!src.startsWith('---\n')) return src;
+    const end = src.indexOf('\n---\n', 4);
+    return end === -1 ? src : src.slice(end + 5);
+}
+
 /** Reject script-scheme URLs; returns '' when unsafe. */
 function mdSafeUrl(u) {
     const l = u.trim().toLowerCase();

@@ -1,13 +1,13 @@
 // ─── Blog Listing & Post Rendering ───
-// Fetches posts.json for the listing and individual .md files from posts/.
+// Fetches posts.json for the listing and canonical .md files from content/posts/.
 // Caches both in memory. Shows shimmer skeletons during loads.
 //
 // i18n: posts whose entry in posts.json has `translations: ["ja"]` get a
-// sibling JA markdown file at /posts/{slug}.ja.md. When window._i18n.getLang()
+// sibling JA markdown file at /content/posts/{slug}.ja.md. When window._i18n.getLang()
 // returns 'ja' we fetch the JA file (and fall back to EN if it 404s). Listing
 // titles/excerpts/tags also pick up `_ja` variants when present.
 
-import { parseMarkdown } from './markdown.js';
+import { parseMarkdown, stripFrontmatter } from './markdown.js';
 import { triggerFadeIns } from './animations.js';
 
 let postsCache = null;   // posts.json result (fetched once)
@@ -254,8 +254,8 @@ export async function showBlogPost(slug, $) {
     const fetchLang = useJa ? 'ja' : 'en';
     const cacheKey = slug + ':' + fetchLang;
     const fetchUrl = useJa
-        ? '/posts/' + encodeURIComponent(slug) + '.ja.md'
-        : '/posts/' + encodeURIComponent(slug) + '.md';
+        ? '/content/posts/' + encodeURIComponent(slug) + '.ja.md'
+        : '/content/posts/' + encodeURIComponent(slug) + '.md';
 
     if (!mdCache[cacheKey]) {
         try {
@@ -266,7 +266,7 @@ export async function showBlogPost(slug, $) {
             // Fall back to EN if the JA sibling is missing.
             if (useJa) {
                 try {
-                    const res2 = await fetchWithTimeout('/posts/' + encodeURIComponent(slug) + '.md', FETCH_TIMEOUT);
+                    const res2 = await fetchWithTimeout('/content/posts/' + encodeURIComponent(slug) + '.md', FETCH_TIMEOUT);
                     if (res2.ok) {
                         mdCache[slug + ':en'] = await res2.text();
                         mdCache[cacheKey] = mdCache[slug + ':en'];
@@ -301,8 +301,8 @@ export async function showBlogPost(slug, $) {
     }
     header += '</div>';
 
-    const rendered = parseMarkdown(mdCache[cacheKey]);
-    // Content is from trusted local markdown files (posts/*.md), not user input
+    const rendered = parseMarkdown(stripFrontmatter(mdCache[cacheKey]));
+    // Content is from trusted local markdown files (content/posts/*.md), not user input
     $.blogContent.innerHTML = header + '<div class="blog-content">' + rendered + '</div>';
 
     if (/\$/.test(mdCache[cacheKey])) {

@@ -1,16 +1,16 @@
 {
-  "generatedAt": "2026-07-16T19:43:41.676Z",
+  "generatedAt": "2026-07-16T23:57:40.777Z",
   "lastDeploy": {
-    "hash": "1214212",
-    "iso": "2026-07-16T12:43:18-07:00",
-    "subject": "refactor: unify project descriptions"
+    "hash": "de5fe68",
+    "iso": "2026-07-16T12:43:48-07:00",
+    "subject": "update projects"
   },
   "stats": {
     "sims": 8,
     "posts": 1,
     "scriptureWorks": 16,
     "scriptureChapters": 2724,
-    "sourceLines": 28535
+    "sourceLines": 28572
   },
   "now": [
     [

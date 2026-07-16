@@ -8,7 +8,7 @@
     <image:image>
       <image:loc>https://a9l.im/og-image.webp</image:loc>
       <image:title>a9l.im</image:title>
-      <image:caption>a9l.im — interactive educational simulations for physics, biology, finance, and political science</image:caption>
+      <image:caption>Homepage of a9lim, an LLM interpretability researcher. Research on emotional and functional states in language models, plus open-source browser simulations and developer tools.</image:caption>
     </image:image>
   </url>
   <url>
@@ -37,7 +37,7 @@
     <image:image>
       <image:loc>https://a9l.im/geon/og-image.webp</image:loc>
       <image:title>geon</image:title>
-      <image:caption>Geon — relativistic N-body particle physics simulator with 11 forces and WebGPU compute shaders</image:caption>
+      <image:caption>Explore relativistic many-body dynamics, electromagnetism, compact objects, scalar fields, and nontrivial topologies across fifteen browser presets.</image:caption>
     </image:image>
   </url>
   <url>
@@ -48,7 +48,7 @@
     <image:image>
       <image:loc>https://a9l.im/cyano/og-image.webp</image:loc>
       <image:title>cyano</image:title>
-      <image:caption>Cyano — cellular metabolism simulator with twelve biochemical pathways and electron transport</image:caption>
+      <image:caption>Explore twelve connected metabolic pathways, electron transport, enzyme regulation, cofactor conservation, and reactive oxygen species across five organism presets.</image:caption>
     </image:image>
   </url>
   <url>
@@ -59,7 +59,7 @@
     <image:image>
       <image:loc>https://a9l.im/gerry/og-image.webp</image:loc>
       <image:title>gerry</image:title>
-      <image:caption>Gerry — gerrymandering and electoral fairness simulator with Monte Carlo elections</image:caption>
+      <image:caption>Draw districts on a procedural hex map, compare six fairness measures, generate pack-and-crack or neutral plans, and stress-test Monte Carlo elections.</image:caption>
     </image:image>
   </url>
   <url>
@@ -70,7 +70,7 @@
     <image:image>
       <image:loc>https://a9l.im/shoals/og-image.webp</image:loc>
       <image:title>shoals</image:title>
-      <image:caption>Shoals — options trading simulator with stochastic volatility and 400+ market scenarios</image:caption>
+      <image:caption>Trade stock, bonds, variance, and options through a branching institutional narrative with stochastic pricing, regulations, lobbying, and six endings.</image:caption>
     </image:image>
   </url>
   <url>
@@ -81,7 +81,7 @@
     <image:image>
       <image:loc>https://a9l.im/scripture/og-image.webp</image:loc>
       <image:title>scripture</image:title>
-      <image:caption>Scripture — sacred text reader with sixteen works from multiple traditions</image:caption>
+      <image:caption>Read, search, annotate, compare, and listen to sixteen public-domain sacred works with chapter and verse deep links, concordance, and related passages.</image:caption>
     </image:image>
   </url>
   <url>
@@ -92,7 +92,7 @@
     <image:image>
       <image:loc>https://a9l.im/miasma/og-image.webp</image:loc>
       <image:title>miasma</image:title>
-      <image:caption>Miasma — stochastic spatial epidemic simulator with multi-strain evolution and intervention painting</image:caption>
+      <image:caption>Seed and contain stochastic multi-strain epidemics on six hex-grid topologies with vaccination, quarantine, reservoirs, mutation, and painted interventions.</image:caption>
     </image:image>
   </url>
   <url>
@@ -103,7 +103,7 @@
     <image:image>
       <image:loc>https://a9l.im/pile/og-image.webp</image:loc>
       <image:title>pile</image:title>
-      <image:caption>Pile — semi-realistic nuclear reactor simulator with PWR, RBMK, and molten-salt reactor types</image:caption>
+      <image:caption>Operate PWR, RBMK-1000, and molten-salt reactor models with axial kinetics, xenon, plant systems, faults, procedures, and guided scenarios.</image:caption>
     </image:image>
   </url>
   <url>
@@ -114,12 +114,12 @@
     <image:image>
       <image:loc>https://a9l.im/plasma/og-image.webp</image:loc>
       <image:title>plasma</image:title>
-      <image:caption>Plasma — 2D resistive magnetohydrodynamics simulator with HLLD, PPM, and constrained transport</image:caption>
+      <image:caption>Explore shocks, reconnection, waves, transport, radiation, self-gravity, and cylindrical flows in a WebGPU 2.5D magnetohydrodynamics laboratory.</image:caption>
     </image:image>
   </url>
   <url>
     <loc>https://a9l.im/blog/introspection-via-kaomoji</loc>
-    <lastmod>2026-05-11</lastmod>
+    <lastmod>2026-05-08</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.6</priority>
   </url>

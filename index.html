@@ -61,114 +61,144 @@
     </script>
 
     <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
     {
-      "@context": "https://schema.org",
-      "@graph": [
+      "@type": "WebSite",
+      "name": "a9l.im",
+      "url": "https://a9l.im",
+      "description": "Homepage of a9lim, an LLM interpretability researcher. Research on emotional and functional states in language models, plus open-source browser simulations and developer tools.",
+      "datePublished": "2026-02-17",
+      "dateModified": "2026-07-16",
+      "inLanguage": "en",
+      "mainEntityOfPage": {
+        "@type": "WebPage",
+        "@id": "https://a9l.im"
+      },
+      "speakable": {
+        "@type": "SpeakableSpecification",
+        "cssSelector": [
+          ".home-bio-prose"
+        ]
+      },
+      "about": [
         {
-          "@type": "WebSite",
-          "name": "a9l.im",
-          "url": "https://a9l.im",
-          "description": "Homepage of a9lim, an LLM interpretability researcher. Hosts research on emotional and functional states in language models, plus interactive simulations across physics, biology, finance, political science, and sacred texts.",
-          "datePublished": "2026-02-17",
-          "dateModified": "2026-06-11",
-          "inLanguage": "en",
-          "mainEntityOfPage": {"@type": "WebPage", "@id": "https://a9l.im"},
-          "speakable": {
-            "@type": "SpeakableSpecification",
-            "cssSelector": [".home-bio-prose"]
-          },
-          "about": [
-            {"@type": "Thing", "@id": "https://www.wikidata.org/wiki/Q413", "name": "Physics"},
-            {"@type": "Thing", "@id": "https://www.wikidata.org/wiki/Q7162", "name": "Genetics"},
-            {"@type": "Thing", "@id": "https://www.wikidata.org/wiki/Q187860", "name": "Option (finance)"},
-            {"@type": "Thing", "@id": "https://www.wikidata.org/wiki/Q476310", "name": "Gerrymandering"},
-            {"@type": "Thing", "@id": "https://www.wikidata.org/wiki/Q179461", "name": "Religious text"}
-          ],
-          "potentialAction": {
-            "@type": "SearchAction",
-            "target": {
-              "@type": "EntryPoint",
-              "urlTemplate": "https://www.google.com/search?q=site:a9l.im+{search_term_string}"
-            },
-            "query-input": "required name=search_term_string"
-          },
-          "author": {
-            "@type": "Person",
-            "@id": "https://a9l.im/#person",
-            "name": "a9lim",
-            "url": "https://a9l.im/",
-            "sameAs": [
-              "https://github.com/a9lim",
-              "https://twitter.com/_a9lim"
-            ]
-          }
+          "@type": "Thing",
+          "@id": "https://www.wikidata.org/wiki/Q413",
+          "name": "Physics"
         },
         {
-          "@type": "ItemList",
-          "name": "Simulations",
-          "itemListElement": [
-            {
-              "@type": "ListItem",
-              "position": 1,
-              "url": "https://a9l.im/geon",
-              "name": "Geon — Relativistic Particle Physics Simulator"
-            },
-            {
-              "@type": "ListItem",
-              "position": 2,
-              "url": "https://a9l.im/cyano",
-              "name": "Cyano — Cellular Biochemistry Simulator"
-            },
-            {
-              "@type": "ListItem",
-              "position": 3,
-              "url": "https://a9l.im/gerry",
-              "name": "Gerry — Gerrymandering & Electoral Fairness Simulator"
-            },
-            {
-              "@type": "ListItem",
-              "position": 4,
-              "url": "https://a9l.im/shoals",
-              "name": "Shoals — Options Trading Simulator"
-            },
-            {
-              "@type": "ListItem",
-              "position": 5,
-              "url": "https://a9l.im/scripture/",
-              "name": "Scripture — Sacred Text Reader"
-            },
-            {
-              "@type": "ListItem",
-              "position": 6,
-              "url": "https://a9l.im/miasma",
-              "name": "Miasma — Stochastic Spatial Epidemic Simulator"
-            },
-            {
-              "@type": "ListItem",
-              "position": 7,
-              "url": "https://a9l.im/pile",
-              "name": "Pile — Nuclear Reactor Simulator"
-            },
-            {
-              "@type": "ListItem",
-              "position": 8,
-              "url": "https://a9l.im/plasma",
-              "name": "Plasma — 2D Resistive MHD Simulator"
-            }
-          ]
+          "@type": "Thing",
+          "@id": "https://www.wikidata.org/wiki/Q7162",
+          "name": "Genetics"
         },
         {
-          "@type": "Organization",
-          "name": "a9l.im",
-          "url": "https://a9l.im",
-          "logo": {"@type": "ImageObject", "url": "https://a9l.im/icon-192.png", "width": 192, "height": 192},
-          "sameAs": [
-            "https://github.com/a9lim",
-            "https://twitter.com/_a9lim"
-          ]
+          "@type": "Thing",
+          "@id": "https://www.wikidata.org/wiki/Q187860",
+          "name": "Option (finance)"
+        },
+        {
+          "@type": "Thing",
+          "@id": "https://www.wikidata.org/wiki/Q476310",
+          "name": "Gerrymandering"
+        },
+        {
+          "@type": "Thing",
+          "@id": "https://www.wikidata.org/wiki/Q179461",
+          "name": "Religious text"
+        }
+      ],
+      "potentialAction": {
+        "@type": "SearchAction",
+        "target": {
+          "@type": "EntryPoint",
+          "urlTemplate": "https://www.google.com/search?q=site:a9l.im+{search_term_string}"
+        },
+        "query-input": "required name=search_term_string"
+      },
+      "author": {
+        "@type": "Person",
+        "@id": "https://a9l.im/#person",
+        "name": "a9lim",
+        "url": "https://a9l.im/",
+        "sameAs": [
+          "https://github.com/a9lim",
+          "https://twitter.com/_a9lim"
+        ]
+      }
+    },
+    {
+      "@type": "ItemList",
+      "name": "Simulations",
+      "itemListElement": [
+        {
+          "@type": "ListItem",
+          "position": 1,
+          "url": "https://a9l.im/geon",
+          "name": "Geon — Relativistic Particle Physics Simulator"
+        },
+        {
+          "@type": "ListItem",
+          "position": 2,
+          "url": "https://a9l.im/cyano",
+          "name": "Cyano — Cellular Biochemistry Simulator"
+        },
+        {
+          "@type": "ListItem",
+          "position": 3,
+          "url": "https://a9l.im/gerry",
+          "name": "Gerry — Gerrymandering & Electoral Fairness Simulator"
+        },
+        {
+          "@type": "ListItem",
+          "position": 4,
+          "url": "https://a9l.im/shoals",
+          "name": "Shoals — Options Trading Simulator"
+        },
+        {
+          "@type": "ListItem",
+          "position": 5,
+          "url": "https://a9l.im/scripture/",
+          "name": "Scripture — Sacred Text Reader"
+        },
+        {
+          "@type": "ListItem",
+          "position": 6,
+          "url": "https://a9l.im/miasma",
+          "name": "Miasma — Stochastic Spatial Epidemic Simulator"
+        },
+        {
+          "@type": "ListItem",
+          "position": 7,
+          "url": "https://a9l.im/pile",
+          "name": "Pile — Nuclear Reactor Simulator"
+        },
+        {
+          "@type": "ListItem",
+          "position": 8,
+          "url": "https://a9l.im/plasma",
+          "name": "Plasma — 2D Resistive MHD Simulator"
         }
       ]
+    },
+    {
+      "@type": "Organization",
+      "name": "a9l.im",
+      "url": "https://a9l.im",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://a9l.im/icon-192.png",
+        "width": 192,
+        "height": 192
+      },
+      "sameAs": [
+        "https://github.com/a9lim",
+        "https://twitter.com/_a9lim"
+      ]
     }
+  ]
+}
     </script>
     <script type="application/ld+json">
     {

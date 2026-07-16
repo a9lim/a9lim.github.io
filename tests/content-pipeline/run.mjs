@@ -4,7 +4,7 @@
 // Run: node tests/content-pipeline/run.mjs
 // (`node _build.mjs --check` separately verifies the artifacts are current.)
 
-import { readFileSync, readdirSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -47,14 +47,43 @@ for (const p of PROJECTS.filter(p => !p.planned)) {
 check('planned cards stay out of ItemLists',
   !PROJECTS.filter(p => p.planned).some(p => itemNames.some(n => n.startsWith(p.title))));
 
-console.log('content/posts ↔ posts.json ↔ posts/ ↔ BLOG_META');
+console.log('content/posts ↔ posts.json ↔ BLOG_META');
 const postSlugs = enSlugs('content/posts');
 check('post count matches content files', posts.length === postSlugs.length);
 for (const p of posts) {
-  check(`posts/${p.slug}.md exists and is frontmatter-free`,
-    !readFileSync(join(ROOT, 'posts', p.slug + '.md'), 'utf8').startsWith('---'));
+  check(`content/posts/${p.slug}.md is canonical and carries frontmatter`,
+    readFileSync(join(ROOT, 'content', 'posts', p.slug + '.md'), 'utf8').startsWith('---\n'));
   check(`BLOG_META carries ${p.slug}`, gen.BLOG_META[p.slug]?.desc === p.excerpt);
 }
+check('legacy generated posts/ directory is gone', !existsSync(join(ROOT, 'posts')));
+const blogClient = readFileSync(join(ROOT, 'src', 'blog.js'), 'utf8');
+const worker = readFileSync(join(ROOT, '_worker.js'), 'utf8');
+check('blog client loads canonical markdown', blogClient.includes('/content/posts/'));
+check('worker loads canonical markdown', worker.includes('/content/posts/'));
+
+console.log('submodule about.md ↔ HTML metadata ↔ about-panel date');
+for (const p of PROJECTS.filter(p => p.kind === 'sim' && !p.external && !p.planned)) {
+  const slug = p.href.replace(/^\//, '').replace(/\/$/, '');
+  const about = readFileSync(join(ROOT, slug, 'about.md'), 'utf8');
+  const meta = Object.fromEntries([...about.matchAll(/^([A-Za-z][\w]*):\s+(.+)$/gm)].map(m => [m[1], m[2]]));
+  const index = readFileSync(join(ROOT, slug, 'index.html'), 'utf8');
+  check(`${p.title} about metadata is complete`, ['name', 'title', 'description', 'updated'].every(k => meta[k]));
+  check(`${p.title} JSON-LD date is current`, index.includes(`"dateModified": "${meta.updated}"`));
+  check(`${p.title} canonical description reaches HTML`, index.includes(meta.description.replace(/&/g, '&amp;').replace(/"/g, '&quot;')));
+  const uiFiles = ['main.js', join('src', 'ui.js')]
+    .map(rel => join(ROOT, slug, rel)).filter(existsSync);
+  check(`${p.title} about panel date is current`, uiFiles.some(rel => readFileSync(rel, 'utf8').includes(`lastUpdated: '${meta.updated}'`)));
+}
+
+console.log('project registry ↔ discovery files');
+const llms = readFileSync(join(ROOT, 'llms.txt'), 'utf8');
+const about = readFileSync(join(ROOT, 'about.md'), 'utf8');
+for (const p of PROJECTS.filter(p => !p.planned)) {
+  check(`llms.txt carries ${p.title}`, llms.includes(`[${p.title}](`));
+  check(`about.md carries ${p.title}`, about.includes(`[${p.title}](`));
+}
+check('planned projects stay out of discovery files',
+  !PROJECTS.filter(p => p.planned).some(p => llms.includes(`[${p.title}](`) || about.includes(`[${p.title}](`)));
 
 console.log('index.html ↔ i18n.js');
 const html = readFileSync(join(ROOT, 'index.html'), 'utf8');

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <feed xmlns="http://www.w3.org/2005/Atom">
   <title>a9l.im</title>
-  <subtitle>Interactive educational simulations for physics, biology, finance, and political science.</subtitle>
+  <subtitle>Homepage of a9lim, an LLM interpretability researcher. Research on emotional and functional states in language models, plus open-source browser simulations and developer tools.</subtitle>
   <link href="https://a9l.im/feed.atom" rel="self" type="application/atom+xml"/>
   <link href="https://a9l.im" rel="alternate" type="text/html"/>
   <id>https://a9l.im/</id>
