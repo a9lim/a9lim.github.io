@@ -6,17 +6,17 @@
 export const ROUTE_META = {
   "/sims": {
     "title": "Simulations | a9l.im",
-    "desc": "Interactive in-browser simulations: relativistic particle physics, cellular metabolism, options trading, redistricting, epidemiology, nuclear reactor operation, and a sacred-text reader. Open-source, zero-dependency.",
+    "desc": "Interactive in-browser simulations: relativistic particle physics, epidemiology, options trading, redistricting, and more. Open-source, zero-dependency.",
     "ogTitle": "Simulations | a9l.im"
   },
   "/projects": {
     "title": "Projects | a9l.im",
-    "desc": "Open-source projects: activation steering for transformers, LLM tooling, MCP servers, Discord bots, and desktop themes.",
+    "desc": "Open-source projects: interpretability on language models, agentic tooling, MCP servers, Discord bots, and more.",
     "ogTitle": "Projects | a9l.im"
   },
   "/blog": {
     "title": "Blog | a9l.im",
-    "desc": "Writeups on LLM interpretability, computational science, and the browser tools and simulations behind this site.",
+    "desc": "Writeups on LLM interpretability, computational science, and the tools behind this site.",
     "ogTitle": "Blog | a9l.im"
   }
 };

@@ -1,5 +1,5 @@
 ---
-heading: Other things about me
+heading: Facts about me
 ---
 - I'm obsessed with the Church of Jesus Christ of Latter-day Saints and their history. While I'm an atheist, I enjoy comparative religion, and I believe that all holy works should be openly accessible.
 - I used to be big into Linux. Back in middle school, I installed Arch on my school laptop and tried to use I3 for the longest time. I eventually gave up on daily driving it and now I use a Macbook.

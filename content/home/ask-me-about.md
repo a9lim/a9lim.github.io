@@ -1,5 +1,5 @@
 ---
-heading: Ask me about
+heading: Topics I like
 ---
 - interpretability
 - birds

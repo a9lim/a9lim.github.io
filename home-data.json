@@ -1,9 +1,9 @@
 {
-  "generatedAt": "2026-07-16T07:03:35.775Z",
+  "generatedAt": "2026-07-16T15:53:11.844Z",
   "lastDeploy": {
-    "hash": "8d8b570",
-    "iso": "2026-07-15T22:43:32-07:00",
-    "subject": "Restructure editable content into content/, compiled by _build.mjs"
+    "hash": "b558df7",
+    "iso": "2026-07-16T00:04:24-07:00",
+    "subject": "Update homepage content translations"
   },
   "stats": {
     "sims": 8,
@@ -59,14 +59,14 @@
   "hyperfixation": {
     "label": "Topic of the month",
     "title": "Claude and Global Workspace Theory",
-    "body": "I've been consistently impressed by the interpretability work Anthropic puts out, and this paper is no exception. J-lens is a very reasonable fix to the pitfalls of logit lens; I'm surprised no one thought of it sooner but it's good that it's now available as a technique. I never made the connection to global workspace theory, however, and while I'm skeptical of some of the comparisons they make, I think it's not completely out there either, though consciousness is a very strong word.",
+    "body": "I've been consistently impressed by the interpretability work Anthropic puts out, and this paper is no exception. J-lens is a very reasonable fix to the pitfalls of logit lens; I'm surprised it hadn't been thought of sooner but I'm excited to use it as an additional technique. I'd never made the connection to global workspace theory, however, and I can see how they'd come to their conclusions though I'm pretty skeptical of a lot of the comparisons they make.",
     "link": "https://transformer-circuits.pub/2026/workspace/index.html",
     "linkLabel": "Paper (anthropic)"
   },
   "hyperfixation_ja": {
     "label": "今月のテーマ",
     "title": "Claude とグローバル・ワークスペース理論",
-    "body": "Anthropic が発表する解釈可能性研究にはいつも感心させられるが、この論文も例外ではない。J-lens は logit lens の落とし穴をうまく補う、きわめて妥当な手法だ。なぜもっと早く誰も考えつかなかったのかと思うほどだが、手法として使えるようになったのはよかった。グローバル・ワークスペース理論とのつながりには気づいていなかった。比較の一部には懐疑的だが、完全に的外れとも思わない。ただし、意識という言葉はかなり強い。",
+    "body": "Anthropic が発表する解釈可能性研究にはいつも感心させられるが、この論文も例外ではない。J-lens は logit lens の落とし穴をうまく補う、きわめて妥当な手法だ。なぜもっと早く考えつかなかったのかと思うが、追加の手法として使えるのが楽しみだ。グローバル・ワークスペース理論とのつながりには気づいていなかったが、彼らがその結論に至る理由はわかる。ただし、比較の多くについてはかなり懐疑的だ。",
     "link": "https://transformer-circuits.pub/2026/workspace/index.html",
     "linkLabel": "論文 (Anthropic)"
   },
@@ -83,7 +83,7 @@
     ],
     [
       "Dogs are uplifted",
-      "0.1",
+      "<0.1",
       "2030-01-01"
     ],
     [
@@ -105,7 +105,7 @@
     ],
     [
       "犬が知性を獲得する",
-      "0.1",
+      "<0.1",
       "2030-01-01"
     ],
     [
