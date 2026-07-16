@@ -1,35 +1,20 @@
+% !TEX program = xelatex
 % =====================================================================
-% a9lim — resume
-% Custom XeLaTeX template matching a9l.im aesthetic:
-%   sharp geometric, no borders, line accents, Recursive font,
-%   letterspaced mono section labels (command-center register).
-% Build: tectonic resume.tex   (output: resume.pdf)
+% a9lim - resume
+% Conventional one-page research resume. Build with ./resume/build.sh.
 % =====================================================================
 
-\documentclass[9pt,a4paper]{extarticle}
+\documentclass[10pt,letterpaper]{article}
 
-\usepackage[a4paper, top=8mm, bottom=7mm, left=15mm, right=15mm]{geometry}
+\usepackage[letterpaper,top=0.44in,bottom=0.40in,left=0.62in,right=0.62in]{geometry}
 \usepackage{fontspec}
 \usepackage{xcolor}
 \usepackage{titlesec}
 \usepackage{enumitem}
 \usepackage{hyperref}
-\usepackage{parskip}
-\usepackage{array}
 \usepackage{tabularx}
+\usepackage{microtype}
 
-\setlength{\parindent}{0pt}
-\setlength{\parskip}{1pt}
-
-% --- Colors (black & white; greys mirror shared-tokens.js light palette) ---
-\definecolor{accent}{HTML}{000000}
-\definecolor{text}{HTML}{000000}
-\definecolor{textsec}{HTML}{4B4D53}
-\definecolor{textmuted}{HTML}{75777C}
-
-\color{text}
-
-% --- Fonts (Recursive, extracted static instances) ---
 \setmainfont{Recursive}[
   Path           = fonts/,
   Extension      = .ttf,
@@ -39,133 +24,147 @@
   BoldItalicFont = *-BoldItalic,
   Ligatures      = TeX,
 ]
-\setmonofont{Recursive-Mono}[
-  Path      = fonts/,
-  Extension = .ttf,
-  Ligatures = TeX,
-]
-% Letterspaced mono for section labels — the site's panel-label register.
-\newfontfamily\labelfont{Recursive-Mono}[
-  Path        = fonts/,
-  Extension   = .ttf,
-  LetterSpace = 10,
-]
 
-% --- Hyperlinks ---
+\definecolor{ink}{HTML}{000000}
+\definecolor{muted}{HTML}{5A5A5A}
+\definecolor{rule}{HTML}{B8B8B8}
+\color{ink}
+
 \hypersetup{
-  colorlinks = true,
-  urlcolor   = accent,
-  linkcolor  = accent,
-  pdftitle   = {a9lim — Resume},
-  pdfauthor  = {a9lim},
-  pdfsubject = {Resume},
-  pdfkeywords = {a9lim, resume, interpretability, activation steering, LLM, research, Python, JavaScript, Rust, Claude},
+  colorlinks  = true,
+  urlcolor    = ink,
+  linkcolor   = ink,
+  pdftitle    = {a9lim - Resume},
+  pdfauthor   = {a9lim},
+  pdfsubject  = {Resume},
+  pdfkeywords = {a9lim, mechanistic interpretability, AI alignment, Python, PyTorch},
 }
 
-% --- Section headings: letterspaced mono label, hairline rule below ---
-\titleformat{\section}
-  {\labelfont\small\color{text}}
-  {}{0pt}
-  {\MakeUppercase}
-  [\vspace{1pt}{\color{accent}\rule{\linewidth}{0.8pt}}]
-\titlespacing*{\section}{0pt}{7pt}{2pt}
-
-% --- Job entry: bold title left, muted mono dates right ---
-\newcommand{\role}[2]{%
-  \par\vspace{2pt}%
-  \noindent\begin{tabularx}{\linewidth}{@{}X r@{}}
-    \textbf{#1} & \textcolor{textsec}{\ttfamily\footnotesize #2} \\
-  \end{tabularx}%
-  \par\vspace{-1pt}%
-}
-
-% --- Bullet list ---
-\setlist[itemize]{leftmargin=12pt, itemsep=0.5pt, topsep=0.5pt, parsep=0pt}
-
-% --- Header (name + contact) ---
-\newcommand{\resumeheader}{%
-  {\Huge\bfseries a9lim}\\[3pt]
-  \textcolor{textsec}{\ttfamily\footnotesize Singapore \;\textbar\;
-    \href{mailto:mx@a9l.im}{mx@a9l.im} \;\textbar\;
-    \href{https://a9l.im}{a9l.im} \;\textbar\;
-    \href{https://github.com/a9lim}{github.com/a9lim} \;\textbar\;
-    \href{https://twitter.com/_a9lim}{@\_a9lim} \;\textbar\;
-    @a9lim (Discord)}%
-  \par\vspace{2pt}%
-  {\color{accent}\rule{\linewidth}{1.4pt}}%
-  \par\vspace{4pt}%
-}
-
-% =====================================================================
-\begin{document}
 \pagestyle{empty}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0pt}
+\setlength{\tabcolsep}{0pt}
+\raggedbottom
 
-\resumeheader
+% Compact, conventional section headings with a single restrained rule.
+\titleformat{\section}
+  {\large\bfseries\color{ink}}
+  {}{0pt}{}
+  [\vspace{1.5pt}{\color{rule}\titlerule[0.45pt]}]
+\titlespacing*{\section}{0pt}{5pt}{2.5pt}
 
-\section*{Profile}
-I'm a Singaporean developer doing independent LLM interpretability research: activation steering, trait probing,
-and how much of a model's hidden state is recoverable from what it writes. All of my code is written by directing
-Claude and Codex end to end, and I dogfood everything I make: the agent tools below run my own daily workflow,
-and the introspection corpus comes from my own coding sessions. I'm looking for research roles and collaborations.
+% Standard resume bullets: readable hanging indent, no decorative markers.
+\setlist[itemize]{
+  leftmargin=13pt,
+  label=\raisebox{0.15ex}{\scriptsize\textbullet},
+  labelsep=5pt,
+  itemsep=0.7pt,
+  topsep=1pt,
+  parsep=0pt,
+  partopsep=0pt
+}
 
-\section*{Research}
+\newcommand{\entry}[4]{%
+  \noindent\begin{tabularx}{\linewidth}{@{}X r@{}}
+    \textbf{\href{#2}{#1}} & \textcolor{muted}{\small #4} \\
+    \textit{#3} & \\
+  \end{tabularx}\vspace{-4pt}%
+}
 
-\role{\href{https://github.com/a9lim/saklas}{Saklas}: activation steering and probing library}{PyPI \textperiodcentered{} Python}
-\begin{itemize}
-  \item Generates contrastive statement pairs and extracts steering vectors via contrastive PCA (\href{https://arxiv.org/abs/2310.01405}{Zou et al.\ 2023}) to steer and monitor LLM hidden states, no fine-tuning; ships trait probes for affect, stance, and alignment.
-  \item Python API, OpenAI- and Ollama-compatible server, and live webUI across 55 model architectures; AGPL-3.0 on PyPI with 1{,}000+ monthly downloads, CI, and llama.cpp GGUF interchange.
-\end{itemize}
+\newcommand{\plainentry}[3]{%
+  \noindent\begin{tabularx}{\linewidth}{@{}X r@{}}
+    \textbf{#1} & \textcolor{muted}{\small #3} \\
+    \textit{#2} & \\
+  \end{tabularx}\vspace{-4pt}%
+}
 
-\role{\href{https://a9l.im/blog/introspection-via-kaomoji}{Introspection via Kaomoji}}{Python \textperiodcentered{} HuggingFace}
-\begin{itemize}
-  \item Asked whether the kaomoji a model opens its message with tracks its internal state: across five open-weight model families, the emotional category of the prompt is recoverable from the hidden state at up to 99\% accuracy, and from the single kaomoji at 80\% on the best models against an 11\% chance rate.
-  \item Found all five architectures recover the same affect geometry after Procrustes alignment, evidence toward the platonic representation hypothesis. Built \href{https://github.com/a9lim/llmoji}{llmoji}, a CLI that hooks coding agents and publishes the corpus to HuggingFace; sibling studies in progress probe a residual-stream attractor basin and elapsed-time encoding.
-\end{itemize}
+\newcommand{\compactproject}[2]{%
+  \textbf{#1}\hspace{0.4em}\textcolor{muted}{#2}%
+}
+
+\begin{document}
+
+% Header
+\noindent
+\begin{minipage}[b]{0.24\linewidth}
+  {\fontsize{23}{24}\selectfont\bfseries a9lim}
+\end{minipage}%
+\hfill
+\begin{minipage}[b]{0.74\linewidth}
+  \raggedleft\small
+  Singapore \enspace\textbar\enspace
+    \href{mailto:mx@a9l.im}{mx@a9l.im} \enspace\textbar\enspace
+    \href{https://a9l.im}{a9l.im} \enspace\textbar\enspace
+    \href{https://github.com/a9lim}{github.com/a9lim}
+\end{minipage}
+\par\vspace{6pt}
+{\small\color{muted}
+Independent interpretability and alignment researcher and open-source developer.
+\par}
+\vspace{1pt}
 
 \section*{Experience}
 
-\role{Independent Developer \textperiodcentered{} \href{https://a9l.im}{a9l.im}}{Feb 2026 -- Present}
+\plainentry{Independent Research Engineer \& Open-Source Developer}{a9l.im}{Feb 2026 - Present}
 \begin{itemize}
-  \item Built and maintain, solo, eight open-source interactive simulations plus the shared design system, component library, and Cloudflare Workers edge-SSR layer beneath them; roughly 29{,}000 lines of vanilla JavaScript.
+  \item Perform independent interpretability and alignment research from hypothesis to experiments and
+  write-up; publish tools and reproducible evaluation harnesses for open-weight LLMs.
 \end{itemize}
 
-\role{SDDM Theme Maintainer \textperiodcentered{} \href{https://github.com/catppuccin/sddm}{Catppuccin}}{2025 -- Present}
+\section*{Selected Research}
+
+\entry{Saklas}{https://github.com/a9lim/saklas}{Mechanistic interpretability workbench - Python, PyTorch}{Apr 2026 - Present}
 \begin{itemize}
-  \item Led the QtQuick rewrite of Catppuccin's SDDM display-manager theme (500+ stars): accent colors, user icons, vector backgrounds, and automated theme generation across all four flavors.
+  \item Built a local workbench for extracting, probing, and steering LLMs with behavioral manifolds, with 
+  Mahalanobis whitening, support for Jacobian-lens readouts, and role-agnostic chat templates.
+  \item Published a typed Python API, dashboard, and OpenAI/Ollama-compatible server tested on Gemma,
+  Qwen, Mistral, Llama, GLM, gpt-oss, and Talkie. Available on PyPI with CUDA and MPS support.
 \end{itemize}
 
-\section*{Selected Projects}
-
-\role{\href{https://github.com/a9lim/bio-transformer}{Bio-transformer}}{Python}
+\entry{Introspection via Kaomoji}{https://a9l.im/blog/introspection-via-kaomoji}{Representation study and Llmoji corpus - Python, Hugging Face}{Apr 2026 - Present}
 \begin{itemize}
-  \item Neuromorphic transformer from three brain subsystems that each compute something transformer-shaped: astrocytes as recurrent linear attention, the Marr--Albus cerebellum as the FFN, and laminar neocortex as the residual stream via predictive coding. Every neuron is a leaky integrate-and-fire spiker and every weight update is local (Oja, Hebbian, and climbing-fibre rules), with no backprop or surrogate gradient.
+  \item Across five open-weight model families, classifying the opening kaomoji could predict the emotional 
+  content of a prompt with 80.6\% accuracy on Gemma versus 11.1\% by chance.
+  \item Procrustes-aligned emotional category centroids to recover shared geometry; built kaomoji 
+  collection tool and published the corpus.
 \end{itemize}
 
-\role{Agent Infrastructure}{Python \textperiodcentered{} MCP}
+\entry{Elapsed-Time Encoding in LLMs}{https://github.com/a9lim/time-experiment}{Residual-stream probing study - Python, PyTorch}{Jun 2026 - Present}
 \begin{itemize}
-  \item Built the multi-agent tooling my own workflow runs on: \href{https://github.com/a9lim/gaslamp}{gaslamp} (two-way MCP bridge between Claude Code and Codex), \href{https://github.com/a9lim/gpqueue}{gpqueue} (cross-session GPU job queue with serial per-device slots), and \href{https://github.com/a9lim/dagwood}{dagwood} (DAG-native task tracker with an MCP interface for agents).
+  \item Showed elapsed conversational time is linearly encoded at an elicited token ($r=0.88$, about 0.3
+  seconds per token) by using linear probes.
 \end{itemize}
 
-\role{Interactive Simulations \textperiodcentered{} \href{https://a9l.im}{a9l.im}}{JavaScript \textperiodcentered{} WebGPU}
+\entry{Neuralese as a Conlang}{https://github.com/a9lim/acot-experiment}{Ongoing Abstract-CoT analysis study - Python, PyTorch}{Jul 2026 - Present}
 \begin{itemize}
-  \item \textbf{\href{https://a9l.im/geon}{Geon}}: relativistic N-body simulator on WebGPU compute shaders, with 11 forces, Barnes-Hut scaling, and Kerr-Newman black holes. \textbf{\href{https://a9l.im/shoals}{Shoals}}: options-trading sim with Heston, Merton, and Vasicek pricing and a 400+ scenario event engine. Six more cover resistive MHD, reactor neutronics, stochastic spatial epidemics, cellular metabolism, redistricting fairness, and a sixteen-text scripture reader with edge SSR.
+  \item Implemented Abstract-CoT to test if a reasoning code could be interpreted as a compositional language.
+  \item A preliminary 135M run did not successfully learn to use abstract tokens to reason.
 \end{itemize}
 
-\role{\href{https://github.com/a9lim/ogdoad}{Ogdoad}}{Rust \textperiodcentered{} Python}
+\entry{Block Sparse Crosscoders}{https://github.com/a9lim/block-crosscoder-experiment}{Ongoing cross-layer neural geometry study - Python, PyTorch}{Jul 2026 - Present}
 \begin{itemize}
-  \item Clifford algebras and quadratic-form classification over the number systems adjacent to Conway's combinatorial games: surreals recover the real Cl(p,q) classification with infinite and infinitesimal metric entries, while characteristic-2 legs like the nimbers swap the 8-fold periodicity for the Arf invariant and Brauer--Wall group. Verified Rust core with Python bindings.
+  \item Synthesized recent work on block sparse autoencoders and sparse crosscoders to extract cross-layer multidimensional features.
+\end{itemize}
+
+\section*{Selected Engineering}
+
+\begin{itemize}
+  \item \compactproject{Agent infrastructure.}{\href{https://github.com/a9lim/gaslamp}{Gaslamp}, a
+  cross-review CLI for Claude Code and Codex, and \href{https://github.com/a9lim/dagwood}{Dagwood}, a version-controlled
+  DAG task tracker with a MCP.}
+  \item \compactproject{Interactive systems.}{Built eight browser projects spanning relativity, MHD, nuclear engineering,
+  options pricing, metabolism, epidemiology, redistricting, and comparative religion using custom web infrastructure.}
 \end{itemize}
 
 \section*{Education}
 
-\role{University of California, San Diego\textmd{ \textperiodcentered{} B.S.\ Mathematics in 2.5 years \textperiodcentered{} GPA 3.75}}{Sept 2023 -- March 2026}
-\role{Singapore American School\textmd{ \textperiodcentered{} Summa Cum Laude \textperiodcentered{} GPA 4.50}}{Class of 2023}
+\plainentry{University of California, San Diego}{B.S. Mathematics - GPA 3.75 - completed early}{Sep 2023 - Mar 2026}
 
-\section*{Skills}
+\section*{Technical Skills}
 
-\textbf{Interpretability:} activation steering, contrastive-PCA trait probing, and hidden-state analysis.\\
-\textbf{Agentic tooling:} engineering by directing Claude Code and Codex; MCP servers; multi-agent orchestration.\\
-\textbf{Languages:} Python (PyTorch, HuggingFace transformers, NumPy), JavaScript (Canvas, WebGL, WebGPU, GLSL, WGSL), Rust, Java, QtQuick and QML, LaTeX.\\
-\textbf{Other:} Technical writing, vector graphics, soldering, Spanish (novice), and conlang construction.
+{\small
+\textbf{Research/ML:} mechanistic interpretability; Python, PyTorch, NumPy/SciPy, scikit-learn, CUDA/MPS.\\
+\textbf{Engineering:} Java, JavaScript, WebGPU, Rust, FastAPI, Cloudflare Workers, MCP tooling, Git.
+}
 
 \end{document}

@@ -1,9 +1,9 @@
 {
-  "generatedAt": "2026-07-16T17:13:32.695Z",
+  "generatedAt": "2026-07-16T18:22:14.038Z",
   "lastDeploy": {
-    "hash": "fa4187b",
-    "iso": "2026-07-16T09:41:18-07:00",
-    "subject": "feat: rework project and sim cards"
+    "hash": "1b15d57",
+    "iso": "2026-07-16T10:14:07-07:00",
+    "subject": "feat: use emoji for project cards"
   },
   "stats": {
     "sims": 8,
