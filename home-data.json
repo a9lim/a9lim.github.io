@@ -1,9 +1,9 @@
 {
-  "generatedAt": "2026-07-17T00:35:51.062Z",
+  "generatedAt": "2026-07-17T21:25:36.126Z",
   "lastDeploy": {
-    "hash": "2fab574",
-    "iso": "2026-07-16T17:30:04-07:00",
-    "subject": "update homepage and Ogdoad registry"
+    "hash": "e35f4ac",
+    "iso": "2026-07-16T17:46:36-07:00",
+    "subject": "remove homepage closing sections"
   },
   "now": [
     [
