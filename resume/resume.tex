@@ -6,7 +6,7 @@
 
 \documentclass[10pt,letterpaper]{article}
 
-\usepackage[letterpaper,top=0.44in,bottom=0.44in,left=0.44in,right=0.44in]{geometry}
+\usepackage[letterpaper,top=0.4in,bottom=0.4in,left=0.4in,right=0.4in]{geometry}
 \usepackage{fontspec}
 \usepackage{xcolor}
 \usepackage{titlesec}
@@ -78,10 +78,6 @@
   \end{tabularx}\vspace{-1pt}%
 }
 
-\newcommand{\compactproject}[2]{%
-  \textbf{#1}\hspace{0.4em}\textcolor{muted}{#2}%
-}
-
 \begin{document}
 
 % Header
@@ -107,15 +103,15 @@ Independent interpretability and alignment researcher and open-source developer.
 
 \plainentry{Independent Researcher \& Open-Source Developer}{a9l.im}{Feb 2026 - Present}
 \begin{itemize}
-  \item Conduct independent interpretability and alignment research from hypothesis through experiments
-  and writeup; publish open-source LLM tooling.
+  \item Conduct independent research from hypothesis through experiments
+  and writeup; publish and maintain open-source projects; maintain website with simulations.
 \end{itemize}
 
 \section*{Education}
 
 \plainentry{University of California, San Diego}{B.S. Mathematics - GPA 3.75 - completed early}{Sep 2023 - Mar 2026}
 
-\section*{Selected Research}
+\section*{Projects}
 
 \entry{Saklas}{https://github.com/a9lim/saklas}{Mechanistic interpretability workbench - Python, PyTorch}{Apr 2026 - Present}
 \begin{itemize}
@@ -124,6 +120,30 @@ Independent interpretability and alignment researcher and open-source developer.
   \item Implemented Jacobian-lens readouts and nonstandard roles in chat templates.
   \item Published a Python API, dashboard, and OpenAI/Ollama-compatible server
 \end{itemize}
+
+\entry{Geon}{https://a9l.im/geon}{Relativistic N-body simulation - JavaScript, WebGPU}{Feb 2026 - Present}
+\begin{itemize}
+  \item Built a WebGPU simulation that models N-body physics with charged rotating massive particles.
+  \item Implemented finite-speed force propagation and Einstein–Infeld–Hoffmann dynamics.
+  \item Implemented force-coupled scalar fields with self-gravity.
+\end{itemize}
+
+\entry{Ogdoad}{https://a9l.im/ogdoad}{Library for recreational mathematics - Rust, Python}{Jun 2026 - Present}
+\begin{itemize}
+  \item Built a Rust library to explore Clifford algebras over the surreal numbers and Conway's combinatorial games.
+  \item Implemented Python tooling and designed a purpose-built language to investigate open problems.
+\end{itemize}
+
+\entry{Other Projects}{https://a9l.im/}{Browser simulations and tooling for agents - JavaScript, WebGPU}{Feb 2026 - Present}
+\begin{itemize}
+  \item \textbf{Coding agent infrastructure.} \href{https://github.com/a9lim/gaslamp}{Gaslamp}, a
+  cross-agent CLI reviewer for Claude Code and Codex, and \href{https://github.com/a9lim/dagwood}{Dagwood},
+  a version-controlled DAG-based task tracker with an MCP.
+  \item \textbf{Interactive simulations.} Built seven more browser projects across physics,
+  finance, biology, political science, and comparative religion.
+\end{itemize}
+
+\section*{Research}
 
 \entry{Introspection via Kaomoji}{https://a9l.im/blog/introspection-via-kaomoji}{Emotional concept representation study - Python}{Apr 2026 - Jun 2026}
 \begin{itemize}
@@ -150,34 +170,11 @@ Independent interpretability and alignment researcher and open-source developer.
   \item Synthesized recent work on block sparse autoencoders and sparse crosscoders to extract cross-layer multidimensional features.
 \end{itemize}
 
-\section*{Selected Engineering}
-
-\entry{Geon}{https://a9l.im/geon}{Relativistic N-body simulator - JavaScript, WebGPU}{Feb 2026 - Present}
-\begin{itemize}
-  \item Built a WebGPU simulation that models N-body physics with charged rotating massive particles.
-  \item Implemented finite-speed force propagation and Einstein–Infeld–Hoffmann dynamics.
-  \item Implemented force-coupled scalar fields with self-gravity.
-\end{itemize}
-\entry{Ogdoad}{https://a9l.im/ogdoad}{Research library for recreational mathematics - Rust, Python}{Jun 2026 - Present}
-\begin{itemize}
-  \item Built a Rust library to explore Clifford algebras over the surreal numbers and Conway's combinatorial games.
-  \item Implemented Python tooling and designed a purpose-built language to investigate open problems.
-\end{itemize}
-
-\entry{Other Projects}{https://a9l.im/}{Browser simulations and agentic tooling - JavaScript, WebGPU}{Feb 2026 - Present}
-\begin{itemize}
-  \item \compactproject{Coding agent infrastructure.}{\href{https://github.com/a9lim/gaslamp}{Gaslamp}, a
-  cross-agent CLI reviewer for Claude Code and Codex, and \href{https://github.com/a9lim/dagwood}{Dagwood},
-  a version-controlled DAG-based task tracker with an MCP.}
-  \item \compactproject{Interactive simulations.}{Built seven more browser projects across physics,
-  finance, biology, political science, and comparative religion using JS and WebGPU.}
-\end{itemize}
-
 \section*{Technical Skills}
 
 {\small
-\textbf{Research/ML:} mechanistic interpretability; Python, PyTorch, NumPy/SciPy, CUDA, MPS.\\
-\textbf{Engineering:} Java, Rust, JavaScript, WebGPU, Git.s
+\textbf{Research/ML:} Python, PyTorch, NumPy/SciPy, CUDA, MPS.\\
+\textbf{Engineering:} Java, Rust, JavaScript, WebGPU, Git.
 }
 
 \end{document}
