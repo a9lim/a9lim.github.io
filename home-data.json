@@ -1,16 +1,9 @@
 {
-  "generatedAt": "2026-07-17T00:29:32.030Z",
+  "generatedAt": "2026-07-17T00:35:51.062Z",
   "lastDeploy": {
-    "hash": "e2e8f86",
-    "iso": "2026-07-16T16:58:49-07:00",
-    "subject": "refactor: consolidate content and SEO sources"
-  },
-  "stats": {
-    "sims": 8,
-    "posts": 1,
-    "scriptureWorks": 16,
-    "scriptureChapters": 2724,
-    "sourceLines": 28562
+    "hash": "2fab574",
+    "iso": "2026-07-16T17:30:04-07:00",
+    "subject": "update homepage and Ogdoad registry"
   },
   "now": [
     [
@@ -139,19 +132,5 @@
     "ケンタウロス",
     "微分幾何",
     "種間協力"
-  ],
-  "scriptureRotation": [
-    {
-      "verse": "By small and simple things are great things brought to pass.",
-      "cite": "Alma 37:6"
-    },
-    {
-      "verse": "The whole of the work of righteousness on earth is one grand whole.",
-      "cite": "D&C 128:15"
-    },
-    {
-      "verse": "The glory of God is intelligence, or, in other words, light and truth.",
-      "cite": "D&C 93:36"
-    }
   ]
 }

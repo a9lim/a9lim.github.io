@@ -343,7 +343,7 @@ ${lines.join('\n')}
 const homeCards = {};
 for (const slug of contentSlugs('content/home')) homeCards[slug] = loadContentPair('content/home', slug);
 for (const req of ['site', 'bio', 'contact', 'now', 'hyperfixation', 'predictions',
-  'ask-me-about', 'other-things', 'claude-corner', 'scripture-rotation', 'footer']) {
+  'ask-me-about', 'other-things', 'footer']) {
   if (!homeCards[req]) throw new Error(`content/home/${req}.md missing`);
 }
 
@@ -550,35 +550,6 @@ let homeChips, homeChipsJa;
     IND + '    <ul class="home-other">',
     ...en.map((li, i) => IND + '        ' + i18nBlock('li', `c.other.li${i + 1}`, li, ja[i], 'content/home/other-things.md')),
     IND + '    </ul>',
-  ].join('\n');
-}
-
-// claude-corner — heading + intro + Claude's letter + signature
-{
-  const c = homeCards['claude-corner'];
-  i18nScalar('c.claude.h', c.meta.heading, c.ja.meta.heading);
-  i18nScalar('c.claude.sig', c.meta.sig, c.ja.meta.sig);
-  const en = mdBlocksOf(c.body), ja = mdBlocksOf(c.ja.body);
-  if (en.length !== ja.length) throw new Error('content/home/claude-corner: EN/JA paragraph count mismatch');
-  regions['claude-corner'] = [
-    IND + `<h2 class="home-h" id="home-claude-heading" data-i18n="c.claude.h">${mdEsc(c.meta.heading)}</h2>`,
-    IND + i18nBlock('p', 'c.claude.intro', c.meta.intro, c.ja.meta.intro, 'content/home/claude-corner.md', ' class="home-claude-intro"'),
-    IND + '<div class="home-claude" id="home-claude-body">',
-    ...en.map((p, i) => IND + '    ' + i18nBlock('p', `c.claude.p${i + 1}`, p, ja[i], 'content/home/claude-corner.md')),
-    IND + `    <p class="home-claude-sig" data-i18n="c.claude.sig">${mdEsc(c.meta.sig)}</p>`,
-    IND + '</div>',
-  ].join('\n');
-}
-
-// scripture-rotation — SSR fallback shows the first entry; JS rotates daily
-let homeScripture;
-{
-  const c = homeCards['scripture-rotation'];
-  const t = parseTableBlock(c.body, 'content/home/scripture-rotation.md');
-  homeScripture = t.rows.map(([verse, cite]) => ({ verse, cite }));
-  regions.scripture = [
-    IND + `<blockquote class="home-scripture-q" id="home-scripture-q">${mdEsc(homeScripture[0].verse)}</blockquote>`,
-    IND + `<cite class="home-scripture-c" id="home-scripture-c">— ${mdEsc(homeScripture[0].cite)}</cite>`,
   ].join('\n');
 }
 
@@ -1103,7 +1074,7 @@ if (CHECK) {
   process.exit(0);
 }
 
-// --- generate home-data.json (last-deploy marker + live-ish stats) ---
+// --- generate home-data.json (content fields + last-deploy marker) ---
 
 function gitLastDeploy() {
   try {
@@ -1118,45 +1089,10 @@ function gitLastDeploy() {
   } catch { return null; }
 }
 
-function countScriptureChapters() {
-  let total = 0;
-  try {
-    for (const workId of workIds) {
-      const manifest = readJSON(`scripture/data/${workId}/manifest.json`);
-      for (const book of manifest.books) total += book.chapters;
-    }
-  } catch { /* ignore */ }
-  return total;
-}
-
-function countSourceLines() {
-  try {
-    const files = execFileSync(
-      'git',
-      ['ls-files', '*.js', '*.css', '*.html'],
-      { cwd: ROOT, encoding: 'utf8' }
-    ).trim().split('\n').filter(Boolean);
-    let total = 0;
-    for (const f of files) {
-      try {
-        total += readText(f).split('\n').length;
-      } catch { /* ignore */ }
-    }
-    return total;
-  } catch { return 0; }
-}
-
 const lastDeploy = gitLastDeploy();
 const homeData = {
   generatedAt: new Date().toISOString(),
   lastDeploy,
-  stats: {
-    sims: simsData.filter(p => !p.planned).length,
-    posts: posts.length,
-    scriptureWorks: workIds.length,
-    scriptureChapters: countScriptureChapters(),
-    sourceLines: countSourceLines(),
-  },
   // Content-sourced homepage fields (from content/home/), hydrated by src/home.js.
   now: homeNow,
   now_ja: homeNowJa,
@@ -1166,11 +1102,10 @@ const homeData = {
   predictions_ja: homePredJa,
   askMeAbout: homeChips,
   askMeAbout_ja: homeChipsJa,
-  scriptureRotation: homeScripture,
 };
 
 writeFileSync(join(ROOT, 'home-data.json'), JSON.stringify(homeData, null, 2) + '\n');
-console.log(`home-data.json: ${homeData.stats.scriptureChapters} scripture chapters, ${homeData.stats.sourceLines} source lines`);
+console.log('home-data.json: homepage content + deploy marker');
 
 // --- build resume.pdf via tectonic (skips gracefully if absent) ---
 

@@ -1,12 +1,12 @@
 // Populates the homepage "command-center" slab from home-data.json, which
-// _build.mjs generates from content/home/*.md (plus stats + the lastDeploy
-// marker). Everything rendered here goes through createElement/textContent —
-// no innerHTML.
+// _build.mjs generates from content/home/*.md plus the lastDeploy marker.
+// Everything rendered here goes through createElement/textContent — no
+// innerHTML.
 //
 // i18n: when window._i18n is present, content fields with a parallel `_ja`
 // sibling (now_ja, hyperfixation_ja, predictions_ja, askMeAbout_ja) are
-// swapped in for ja. Stats stay language-neutral. On language change we
-// re-render everything hydrated from home-data.json.
+// swapped in for ja. On language change we re-render everything hydrated from
+// home-data.json.
 
 let _homeInited = false;
 let _homeRendered = false;
@@ -129,39 +129,6 @@ function renderPosts(posts) {
     }
 }
 
-function renderStats(stats) {
-    const root = document.getElementById('home-stats');
-    if (!root || !stats) return;
-    const parts = [
-        stats.sims + ' sims',
-        stats.posts + ' posts',
-        stats.scriptureWorks + ' texts / ' + stats.scriptureChapters + ' chapters',
-        stats.sourceLines + ' loc',
-        '0 frameworks',
-        '0 trackers',
-        'AGPL-3.0',
-    ];
-    clear(root);
-    for (let i = 0; i < parts.length; i++) {
-        if (i > 0) {
-            const sep = el('span', { class: 'home-stats-sep', 'aria-hidden': 'true', text: ' · ' });
-            root.appendChild(sep);
-        }
-        root.appendChild(el('span', { class: 'home-stats-p', text: parts[i] }));
-    }
-}
-
-function renderScripture(rotation) {
-    if (!Array.isArray(rotation) || !rotation.length) return;
-    // Pick one deterministically per day — visible rotation, no randomness surprise on refresh.
-    const dayIdx = Math.floor(Date.now() / 86400000) % rotation.length;
-    const pick = rotation[dayIdx];
-    const q = document.getElementById('home-scripture-q');
-    const c = document.getElementById('home-scripture-c');
-    if (q) q.textContent = pick.verse || '';
-    if (c) c.textContent = '— ' + (pick.cite || '');
-}
-
 function renderColophon(lastDeploy) {
     // Deploy hash + relative time is appended to the shared site footer.
     const root = document.getElementById('footer-deploy');
@@ -194,8 +161,6 @@ function renderFromCache() {
         renderHyperfix(pickLang(data, 'hyperfixation'));
         renderPredictions(pickLang(data, 'predictions'));
         renderChips(pickLang(data, 'askMeAbout'));
-        renderScripture(data.scriptureRotation);
-        renderStats(data.stats);
         renderColophon(data.lastDeploy);
     }
     if (posts) renderPosts(posts);

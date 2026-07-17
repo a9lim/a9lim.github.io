@@ -96,7 +96,7 @@ check('every data-i18n key in index.html resolves', missing.length === 0, missin
 console.log('home-data.json shape');
 const hd = JSON.parse(readFileSync(join(ROOT, 'home-data.json'), 'utf8'));
 for (const k of ['now', 'now_ja', 'hyperfixation', 'hyperfixation_ja', 'predictions',
-  'predictions_ja', 'askMeAbout', 'askMeAbout_ja', 'scriptureRotation', 'stats']) {
+  'predictions_ja', 'askMeAbout', 'askMeAbout_ja']) {
   check(`home-data has ${k}`, hd[k] != null);
 }
 check('EN/JA now rows align', hd.now.length === hd.now_ja.length);

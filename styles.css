@@ -1583,7 +1583,7 @@ a.contact-social:hover {
 /* ═══════════════════════════════════════════════════════════
    Home — dense personal page
    Left-aligned, info-per-square-inch high, sans body with
-   mono reserved for hashes, numbers, and stats.
+   mono reserved for hashes and numbers.
    ═══════════════════════════════════════════════════════════ */
 .home-wrap {
     max-width: 1080px;
@@ -1945,114 +1945,6 @@ a.contact-social:hover {
     .home-margin-wide {
         grid-column: auto;
     }
-}
-
-/* ── Claude's corner ──────────────────────────────────────── */
-.home-claude-intro {
-    color: var(--text-secondary);
-    font-size: 0.95rem;
-    line-height: 1.65;
-    margin: 0 0 14px;
-}
-
-.home-claude {
-    padding: 16px 18px;
-    background: var(--bg-hover);
-    border-radius: var(--radius);
-    font-size: 0.95rem;
-    color: var(--text-secondary);
-    line-height: 1.6;
-}
-
-.home-claude p {
-    margin: 0 0 10px;
-}
-
-.home-claude p:last-child {
-    margin-bottom: 0;
-}
-
-.home-claude-sig {
-    color: var(--text-muted);
-    font-style: italic;
-    margin-top: 14px;
-}
-
-/* ── Stats strip ──────────────────────────────────────────── */
-.home-stats {
-    margin: 40px 0 28px;
-    padding: 14px 0;
-    font-family: var(--font-mono);
-    font-size: 0.78rem;
-    color: var(--text-muted);
-    text-align: center;
-    letter-spacing: 0.02em;
-}
-
-.home-stats-p {
-    color: var(--text-secondary);
-}
-
-.home-stats-sep {
-    color: var(--text-muted);
-    opacity: 0.4;
-}
-
-/* ── Scripture block (rotating daily) ─────────────────────── */
-.home-scripture {
-    margin: 32px 0 24px;
-    padding: 24px 16px;
-    text-align: center;
-}
-
-.home-scripture-q {
-    font-family: var(--font-sans);
-    font-size: 1.05rem;
-    font-style: italic;
-    color: var(--text);
-    margin: 0 0 8px;
-    line-height: 1.5;
-    text-wrap: balance;
-    padding: 0;
-    background: none;
-    border: none;
-    font-weight: 400;
-}
-
-.home-scripture-c {
-    font-family: var(--font-sans);
-    font-size: 0.85rem;
-    color: var(--text-muted);
-    font-style: normal;
-}
-
-/* ── Doggy ────────────────────────────────────────────────── */
-.home-doggy {
-    display: block;
-    margin: 40px auto 0;
-    max-width: 120px;
-    text-align: center;
-    opacity: 0.75;
-    transition: opacity 0.25s var(--ease-out);
-}
-
-.home-doggy:hover {
-    opacity: 1;
-}
-
-.home-doggy img {
-    display: block;
-    width: 100%;
-    height: auto;
-    border-radius: var(--radius);
-}
-
-.home-doggy figcaption {
-    margin-top: 4px;
-    font-size: 0.72rem;
-    color: var(--text-muted);
-    font-style: italic;
-    letter-spacing: 0.01em;
 }
 
 /* Home-colophon + hint are merged into .site-footer — see Footer section. */
