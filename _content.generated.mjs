@@ -24,7 +24,7 @@ export const ROUTE_META = {
 export const BLOG_META = {
   "introspection-via-kaomoji": {
     "title": "Introspection via Kaomoji | a9l.im",
-    "desc": "Kaomoji are a partial readout of model state. Five open-weight LLMs recover a shared affect geometry, Claude-GT now has 1480 Opus 4.7 rows, and the current predictor ships soft 9-cell distributions instead of hard labels.",
+    "desc": "Kaomoji are a partial readout of model state. Five open-weight LLMs recover the same geometry of emotional concepts.",
     "ogTitle": "Introspection via Kaomoji | a9l.im"
   }
 };
