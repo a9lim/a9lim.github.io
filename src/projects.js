@@ -81,6 +81,7 @@ export const PROJECTS = [
         title: "Ogdoad",
         longDesc: "A Rust and Python laboratory for Clifford algebras over the surreal numbers and nimbers. Also includes support for p-adics, polynomials, and Conway's games.",
         longDesc_ja: "超現実数とニンバー上のクリフォード代数を扱う Rust と Python の実験室。p 進数、多項式、Conway のゲームもサポートする。",
+        packages: [{"registry":"crates.io","name":"ogdoad","href":"https://crates.io/crates/ogdoad/","install":"cargo add ogdoad"}],
         tags: ["rust","python","algebra"],
         tags_ja: ["Rust","python","代数"],
         emoji: "♾️",

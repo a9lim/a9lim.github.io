@@ -515,7 +515,7 @@ let homePred, homePredJa;
   ].join('\n');
 }
 
-// ask-me-about — chips list (JS-hydrated) + contact hint paragraph
+// ask-me-about — chips list (JS-hydrated) + optional contact hint paragraph
 let homeChips, homeChipsJa;
 {
   const c = homeCards['ask-me-about'];
@@ -525,11 +525,17 @@ let homeChips, homeChipsJa;
   homeChips = parseListBlock(listEn, 'content/home/ask-me-about.md');
   homeChipsJa = parseListBlock(listJa, 'content/home/ask-me-about.ja.md');
   if (homeChips.length !== homeChipsJa.length) throw new Error('content/home/ask-me-about: EN/JA chip count mismatch');
-  regions['ask-me-about'] = [
+  if ((hintEn === undefined) !== (hintJa === undefined)) {
+    throw new Error('content/home/ask-me-about: EN/JA hint presence mismatch');
+  }
+  const region = [
     IND + `    <h2 class="home-h" id="home-ama-heading" data-i18n="c.ama.h">${mdEsc(c.meta.heading)}</h2>`,
     IND + '    <div class="home-chips" id="home-chips"></div>',
-    IND + '    ' + i18nBlock('p', 'c.ama.hint', hintEn, hintJa, 'content/home/ask-me-about.md', ' class="home-chips-hint"'),
-  ].join('\n');
+  ];
+  if (hintEn !== undefined) {
+    region.push(IND + '    ' + i18nBlock('p', 'c.ama.hint', hintEn, hintJa, 'content/home/ask-me-about.md', ' class="home-chips-hint"'));
+  }
+  regions['ask-me-about'] = region.join('\n');
 }
 
 // other-things — heading + list

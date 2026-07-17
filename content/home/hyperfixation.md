@@ -4,4 +4,4 @@ title: Claude and Global Workspace Theory
 link: https://transformer-circuits.pub/2026/workspace/index.html
 linkLabel: Paper (anthropic)
 ---
-I've been consistently impressed by the interpretability work Anthropic puts out, and this paper is no exception. J-lens is a very reasonable fix to the pitfalls of logit lens; I'm surprised it hadn't been thought of sooner but I'm excited to use it as an additional technique. I'd never made the connection to global workspace theory, however, and I can see how they'd come to their conclusions though I'm pretty skeptical of a lot of the comparisons they make.
+I've been excited to read every interpretability piece Anthropic puts out, and this paper is no exception. J-lens is a very reasonable fix to the pitfalls of logit lens, and I'm looking forward to seeing it used for more interpretability work going forward. I never personally made the connection between logit lens and global workspace theory, however, and I'm somewhat skeptical of a lot of the comparisons they make. Either way, though, it's good research.

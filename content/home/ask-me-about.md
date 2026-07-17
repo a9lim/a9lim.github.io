@@ -1,14 +1,14 @@
 ---
 heading: Topics I like
 ---
-- interpretability
-- birds
+- birding
 - elections
 - LDS history
 - egregores
 - strange mammals
 - conlangs
-- cyanobacterial metabolism
-- doggy
-
-DM me on [Twitter](https://twitter.com/_a9lim), Discord (@a9lim), or [email](mailto:mx@a9l.im).
+- retrocausality
+- algae
+- centaurs
+- differential geometry
+- interspecies cooperation

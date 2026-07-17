@@ -8,9 +8,9 @@ aboutIntro: a9l.im is a personal research, software, and simulation portfolio by
 updated: 2026-07-16
 ogImageAlt: a9l.im
 simsTitle: Simulations | a9l.im
-simsDesc: Interactive browser simulations: relativistic particle physics, epidemiology, options trading, redistricting, and more. Open-source with zero dependencies.
+simsDesc: Interactive browser simulations: physics, biology, finance, and more. Open-source with zero dependencies.
 projectsTitle: Projects | a9l.im
-projectsDesc: Open-source projects: interpretability on language models, agentic tooling, MCP servers, Discord bots, and more.
+projectsDesc: Open-source projects: interpretability on language models, agentic tooling, recreational math, and more.
 blogTitle: Blog | a9l.im
 blogDesc: Writeups on LLM interpretability, computational science, and the tools behind this site.
 ---
