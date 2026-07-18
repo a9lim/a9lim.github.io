@@ -2,9 +2,8 @@
 /* ═══════════════════════════════════════════════════════════════════
    tests/wgsl-transpile/run.js — End-to-end test runner.
 
-   Walks every .wgsl shader in the repo and feeds it through the
-   transpiler phases that exist today. As phases come online (parser
-   → emitter → runtime), this runner picks them up automatically.
+   Walks every .wgsl shader in initialized repositories and feeds it through
+   the phases explicitly listed in EXPECTED below.
 
    Usage:
      node tests/wgsl-transpile/run.js          # run all shaders

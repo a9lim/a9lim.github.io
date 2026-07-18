@@ -2,9 +2,9 @@
 # Local dev loop for the Cloudflare Worker.
 #
 # Why this exists: `wrangler dev` in 4.87 honors `.assetsignore` for deploys
-# but not for the local asset walk, so it chokes on the 129MB root .git/
-# and the 45MB scripture/raw PDF. We build a symlink farm of just the
-# servable paths and point wrangler at that.
+# but not for the local asset walk, so oversized repository metadata and
+# scripture/raw source material can choke the workerd spawn. We build a
+# symlink farm of just the servable paths and point wrangler at that.
 #
 # Edits to source files are reflected immediately (symlinks). Only re-run
 # this script if you add/remove a top-level path or a scripture subdir.
@@ -32,7 +32,7 @@ done
 mkdir "$DEV/content"
 ln -s "$REPO/content/posts" "$DEV/content/posts"
 
-# scripture/ has scripture/raw (45MB PDF) — link sibling-by-sibling instead
+# scripture/raw is source-only and large — link sibling-by-sibling instead
 rm -f "$DEV/scripture"
 mkdir "$DEV/scripture"
 for item in "$REPO/scripture"/*; do

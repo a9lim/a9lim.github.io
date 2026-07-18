@@ -2,11 +2,10 @@
 /* ═══════════════════════════════════════════════════════════════════
    tests/wgsl-transpile/build-smoke.js — Build-time artifact validation.
 
-   _build.mjs writes pre-transpiled .js artifacts for every entry-point
-   shader in a configured shader directory. This script validates the
-   artifacts the writer produced, without re-running the build (running
-   the build would touch artifact mtimes and skew the skip-on-unchanged
-   invariant test).
+   Dormant integration harness: this validates pre-transpiled .js artifacts
+   if an artifact writer is restored. The current _build.mjs intentionally
+   writes none, so this script is not part of the active test gate and exits
+   non-zero after reporting the absent transpiled/ tree.
 
    The strongest invariant is byte-identical jsSource between artifact
    and fresh transpileWGSL() with the same opts: if those match, the

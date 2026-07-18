@@ -212,6 +212,12 @@
 /sitemap.xml
   Cache-Control: public, max-age=3600
   Cloudflare-CDN-Cache-Control: public, max-age=86400
+/sitemap-main.xml
+  Cache-Control: public, max-age=3600
+  Cloudflare-CDN-Cache-Control: public, max-age=86400
+/sitemap-scripture.xml
+  Cache-Control: public, max-age=3600
+  Cloudflare-CDN-Cache-Control: public, max-age=86400
 /robots.txt
   Cache-Control: public, max-age=86400
   Cloudflare-CDN-Cache-Control: public, max-age=86400

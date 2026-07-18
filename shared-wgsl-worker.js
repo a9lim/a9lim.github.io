@@ -1,4 +1,8 @@
-/* Generic worker runner for pre-transpiled WGSL compute artifacts.
+/* Dormant worker runner for pre-transpiled WGSL compute artifacts.
+
+   No deployed simulation imports this worker and the current root build does
+   not emit the example /transpiled/ modules. It is retained with the runner
+   smoke tests as a future integration seam.
 
    Main-thread shape:
 

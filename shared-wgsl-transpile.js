@@ -1,18 +1,17 @@
 /* ═══════════════════════════════════════════════════════════════════
    shared-wgsl-transpile.js — WGSL → JavaScript transpiler.
 
-   Production path for CPU-fallback compute shaders. Tokenize → parse →
-   resolve → inline/SROA → emit is live; build-time artifacts under
-   /transpiled/ are the preferred browser path.
+   Standalone, tested library for CPU-fallback compute shaders. Tokenize →
+   parse → resolve → inline/SROA → emit is live, but no deployed simulation
+   currently imports this module and the root build emits no /transpiled/
+   artifacts. See tests/wgsl-transpile/README.md before wiring it back in.
 
    ── Why it exists ───────────────────────────────────────────────────
-   WebGPU sims on a9l.im each face the same choice: ship GPU-only and
-   strand the ~30% of visitors without WebGPU on a "your browser
-   needs..." splash, or hand-maintain a parallel CPU backend that
-   silently drifts out of sync with the GPU one (the geon experience).
-   This module is the third option: lex/parse the .wgsl source at
-   build-time or runtime and emit JS that executes the same compute
-   kernels serially. Single source of truth = the .wgsl file.
+   A WebGPU simulation can either require WebGPU or maintain a parallel CPU
+   backend that may drift from its shaders. This module explores a third
+   option: lex/parse repository-owned .wgsl at build time and emit JS that
+   executes the same compute kernels serially. Single source of truth = the
+   .wgsl file. That integration is available as library code, not deployed.
 
    ── API contract ────────────────────────────────────────────────────
      import { compileWGSL } from '/shared-wgsl-transpile.js';
@@ -25,11 +24,10 @@
      });
 
    Bindings are passed by their WGSL identifier name (not group/binding
-   index) — friendlier than tracking bind group layouts. Storage and
-   uniform buffers come in as the caller's choice of representation
-   (flat TypedArray or per-element object); the emitted code uses the
-   runtime's read/write helpers, which dispatch on the binding's
-   declared WGSL type.
+   index) — friendlier than tracking bind group layouts. Uniforms use
+   object-shaped values. Storage representation must match the compile
+   options: object arrays by default, or TypedArrays with `flatStorage`
+   and the corresponding layout options.
 
    ── Architectural sketch ────────────────────────────────────────────
      tokenize(src)            → Token[]
@@ -58,15 +56,14 @@
         No `rt.vec3()` alloc for builtins that are only member-accessed
         (the common case).
 
-   Result: ~33-115× speedup over the polymorphic baseline on the bench
-   harness, across arithmetic-heavy and storage-I/O-dominant kernels.
-   Each transformation has a `opts.polymorphic: true` opt-out for A/B
-   measurement and falls back gracefully when types can't be resolved.
+   The bench harness measures the optimized emitter against the
+   polymorphic baseline. `opts.polymorphic: true` is the A/B opt-out;
+   correctness parity is enforced by the smoke suite.
 
    ── Runtime semantics ──────────────────────────────────────────────
-   CPU is single-threaded, so:
+   A compiled entry executes serially on one JavaScript thread, so:
    - atomicAdd / atomicMax / atomicStore / atomicLoad degrade to plain
-     reads + writes (no contention possible). Workgroup-local atomics
+     reads + writes within that entry. Workgroup-local atomics
      still work correctly because phases between workgroupBarrier()
      calls run all invocations sequentially within one workgroup
      before advancing.
@@ -77,15 +74,14 @@
    - bitcast<u32>(f32) and friends use shared Float32Array / Uint32Array
      views for IEEE-754 round-tripping.
 
-   ── Not yet supported (will land as plasma needs them) ──────────────
+   ── Outside the current tested contract ────────────────────────────
    - Matrix types (mat2x2 etc.)
    - Texture / sampler bindings
-   - Pointer types beyond ptr<storage, array<T>, read|read_write>
-     (function-private pointers, ptr-of-ptr, etc.)
+   - General pointer semantics beyond the corpus-tested lowering paths
    - Vertex / fragment entry points (compute only — render goes
      through canvas-2d or stays GPU-only)
-   - WGSL `loop` construct with explicit continuing block
-   - `switch` statements
+   - Emission of a WGSL `loop` continuing block (the parser accepts it)
+   - Barriers nested inside control flow
    - User-defined operator overloads (none in WGSL spec, but worth
      stating)
 
@@ -9072,13 +9068,11 @@ export function transpileWGSL(source, opts = {}) {
  * Compile WGSL source into an executable JS module object.
  *
  * Security note: this function constructs a JS Function from the
- * emitted source string. That dynamic compilation is intentional —
- * it IS the transpiler — and is only safe because the input is a
- * `.wgsl` file under your own control (build-time author, or runtime
- * fetched from your own origin under the existing CSP). Do not call
- * this on WGSL strings that came from network input you don't trust.
- * Build-time use (`transpileWGSL()` → write sibling `.js` once, ship
- * the artifact) sidesteps the runtime-eval concern entirely.
+ * emitted source string. That dynamic compilation is intentional and is only
+ * safe for repository-owned `.wgsl`; never pass untrusted network input.
+ * The production CSP does not allow `unsafe-eval`, so deployed browser use
+ * must call `transpileWGSL()` at build time and ship a static module rather
+ * than invoking `compileWGSL()` at runtime.
  *
  * @param {string} source
  * @param {object} [opts]

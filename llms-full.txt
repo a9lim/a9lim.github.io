@@ -4,7 +4,7 @@ url: https://a9l.im/llms-full.txt
 description: Homepage of a9lim, an LLM interpretability researcher. Research on emotional and functional states in language models, plus open-source browser simulations and developer tools.
 language: en
 license: AGPL-3.0
-updated: 2026-07-16
+updated: 2026-07-17
 ---
 
 # a9l.im — Full Documentation
@@ -20,10 +20,10 @@ a9l.im is a personal research, software, and simulation portfolio by a9lim. The 
 ## Simulations
 
 - [Geon](https://a9l.im/geon): Explore relativistic many-body dynamics, electromagnetism, compact objects, scalar fields, and nontrivial topologies across fifteen browser presets.
-- [Cyano](https://a9l.im/cyano): Explore twelve connected metabolic pathways, electron transport, enzyme regulation, cofactor conservation, and reactive oxygen species across five organism presets.
+- [Cyano](https://a9l.im/cyano): Trace connected carbon metabolism, electron transport, conserved cofactor pools, enzyme feedback, and reactive oxygen species across five stylized cell presets.
 - [Gerry](https://a9l.im/gerry): Draw districts on a procedural hex map, compare six fairness measures, generate pack-and-crack or neutral plans, and stress-test Monte Carlo elections.
-- [Shoals](https://a9l.im/shoals): Trade stock, bonds, variance, and options through a branching institutional narrative with stochastic pricing, regulations, lobbying, and six endings.
-- [Scripture](https://a9l.im/scripture/): Read, search, annotate, compare, and listen to sixteen public-domain sacred works with chapter and verse deep links, concordance, and related passages.
+- [Shoals](https://a9l.im/shoals): Trade stock, bonds, VXPNT volatility futures, and American options through a branching institutional narrative with stochastic pricing, regulation, lobbying, and six endings.
+- [Scripture](https://a9l.im/scripture/): Read, search, annotate, compare, and listen to sixteen sacred works with chapter and verse deep links, concordance, and related passages.
 - [Miasma](https://a9l.im/miasma): Seed and contain stochastic multi-strain epidemics on six hex-grid topologies with vaccination, quarantine, reservoirs, mutation, and painted interventions.
 - [Pile](https://a9l.im/pile): Operate PWR, RBMK-1000, and molten-salt reactor models with axial kinetics, xenon, plant systems, faults, procedures, and guided scenarios.
 - [Plasma](https://a9l.im/plasma): Explore shocks, reconnection, waves, transport, radiation, self-gravity, and cylindrical flows in a WebGPU 2.5D magnetohydrodynamics laboratory.
@@ -60,15 +60,15 @@ Geon is a real-time N-body simulator that models how particles move under gravit
 
 ## Forces
 
-Geon simulates 11 force types: Newtonian gravity, gravitomagnetism (frame-dragging), Coulomb electrostatics, magnetic (Lorentz) force, Yukawa interaction, Higgs field coupling, axion field coupling, cosmological expansion (Hubble flow), first post-Newtonian correction, spin-orbit coupling, and radiation reaction. Forces are computed pairwise using Barnes-Hut tree acceleration for O(N log N) scaling.
+Geon exposes 11 force and correction families: Newtonian gravity, gravitomagnetism (frame-dragging), Coulomb electrostatics, magnetic (Lorentz) force, Yukawa interaction, Higgs field coupling, axion field coupling, cosmological expansion (Hubble flow), first post-Newtonian correction, spin-orbit coupling, and radiation reaction. Applicable particle and boson interactions can use Barnes-Hut tree acceleration; scalar fields evolve on grids, and external or correction terms run in their own passes.
 
 ## Integration
 
-Particle trajectories are advanced with a Boris integrator, which preserves phase-space volume and handles strong magnetic fields without drift. Relativistic corrections use the 1PN approximation from general relativity.
+Particle trajectories are advanced with a phase-space-volume-preserving Boris rotation and adaptive substeps. Relativistic corrections use a first post-Newtonian approximation rather than a full general-relativistic geodesic solve.
 
 ## Presets
 
-Fifteen curated presets demonstrate specific physical phenomena: Keplerian orbits, electromagnetic confinement, Rutherford scattering, Higgs potential wells, axion halos, Hubble expansion, gravitational wave inspiral, and more. Each preset sets initial conditions and force parameters to illustrate one concept clearly.
+Fifteen curated presets cover Keplerian motion, relativistic precession, binary inspiral, Hawking evaporation, atomic and nuclear toy systems, bremsstrahlung, magnetic dipoles, pion exchange, Higgs and axion fields, Peccei-Quinn dynamics, and cosmological expansion. Each preset sets initial conditions and force parameters for one compact demonstration.
 
 ## Black Hole Physics
 
@@ -84,7 +84,7 @@ Designed for undergraduate physics education. Students can toggle individual for
 
 ## Technical Details
 
-WebGPU compute shaders handle force summation in parallel. Falls back to Canvas 2D on devices without WebGPU support. All computation runs client-side with no server dependency.
+WebGPU compute shaders handle simulation and instanced rendering when available. Devices without WebGPU switch to the CPU physics backend and Canvas 2D renderer. Simulation state and stepping remain client-side in either mode.
 
 ## Topology Modes
 
@@ -96,7 +96,7 @@ Optional signal delay mode computes forces from delayed source positions rather 
 
 ## Accessibility
 
-Geon supports keyboard navigation for all controls, high-contrast mode via the theme toggle, and ARIA labels on all interactive elements. Simulation parameters are adjustable via labeled sliders and toggles. Known hazards include flashing particle trails and continuous motion simulation.
+Geon provides keyboard shortcuts, light and dark themes, labeled simulation controls, and numerical readouts for conserved quantities and selected particles. The canvas contains continuous motion and optional particle trails; users sensitive to motion can pause, single-step, or choose a lower-particle preset.
 
 ## GPU and CPU Backends
 
@@ -106,43 +106,43 @@ WebGPU compute shaders handle pairwise force summation with Barnes-Hut tree acce
 
 # Cyano — Interactive Cellular Metabolism Simulator
 
-Cyano simulates how cells produce and consume energy through biochemical pathways. It models twelve metabolic pathways with allosteric enzyme regulation, cofactor tracking, and reactive oxygen species.
+Cyano is a browser-based cellular-metabolism model. Reactions share one mutable metabolite store, so carbon intermediates, redox cofactors, ATP, the proton gradient, and reactive oxygen species change together as the user advances enzymes or runs autoplay.
 
 ## Pathways
 
-The simulator covers glycolysis, gluconeogenesis, the pentose phosphate pathway, the Krebs (TCA) cycle, beta-oxidation, fatty acid synthesis, the Calvin cycle, the light reactions of photosynthesis, fermentation (both ethanol and lactate), the urea cycle, and amino acid catabolism. Each pathway is connected through shared metabolite pools — ATP, NADH, FADH2, acetyl-CoA, and others.
+The carbon network covers glycolysis and its reverse path, the pentose phosphate pathway, the Calvin cycle, the Krebs cycle, pyruvate dehydrogenase, ethanol fermentation and salvage, beta-oxidation, and a simplified reverse fatty-acid-synthesis path. Respiratory, linear-photosynthetic, and cyclic-photosynthetic electron flow connect those reactions to ATP synthesis, bacteriorhodopsin, nicotinamide nucleotide transhydrogenase, and ROS scavenging.
 
 ## Electron Transport Chain
 
-A 14-complex electron transport chain model traces electrons from NADH and FADH2 through Complexes I-IV and ATP synthase. Proton motive force drives oxidative phosphorylation. The model includes uncoupling, proton leak, and reactive oxygen species (ROS) generation at Complexes I and III.
+Fourteen rendered membrane components include photosystems, respiratory entry points, mobile carriers, cytochrome b6f, cytochrome c oxidase, ATP synthase, bacteriorhodopsin, NNT, and UCP. The model stores a single proton-gradient value rather than separate voltage and pH terms. ATP synthase consumes four gradient units per ATP; passive leak removes 2% every half-second, or 10% with uncoupling enabled.
 
 ## Regulation
 
-Allosteric regulation gates every reaction. Key control points include phosphofructokinase (inhibited by ATP and citrate), pyruvate dehydrogenase (inhibited by acetyl-CoA and NADH), and isocitrate dehydrogenase (activated by ADP). Students can observe how feedback inhibition maintains metabolic homeostasis.
+The dispatcher applies explicit feedback gates before substrate mutation. High ATP inhibits phosphofructokinase and slows citrate synthase; high NADH inhibits isocitrate dehydrogenase and, together with accumulated acetyl-CoA, blocks pyruvate dehydrogenase. NADPH controls the pentose phosphate pathway, FADH2 controls beta-oxidation, and low ATP limits the Calvin cycle.
 
 ## Organism Presets
 
-Five organism presets configure different pathway availability: cyanobacteria combine photosynthesis and respiration; animal cells emphasize mitochondrial respiration; plant chloroplasts expose the light reactions and Calvin cycle; obligate anaerobes rely on fermentation; and archaea use an alternative membrane and electron-transport setup. Each preset reflects a different set of biochemical constraints.
+Five stylized presets configure different pathway and environment subsets: cyanobacterium, animal cell, obligate anaerobe, plant chloroplast, and archaeon. Selecting one resets the shared pools, applies preset-specific ATP/NADH/NADPH/FADH2 ratios, toggles light and oxygen, and locks pathways marked unavailable by that preset.
 
 ## Educational Use
 
-Designed for undergraduate biochemistry. Students can manipulate substrate concentrations, toggle pathways, and observe flux changes through the metabolic network in real time.
+Users can add glucose or fatty acid, toggle five pathway groups plus light, oxygen, and uncoupling, then compare step-by-step reactions with the autoplay schedule. Sidebar readouts expose cofactor ratios, gas and water balances, ATP sources, ROS, cell health, and sixty-second sparklines.
 
 ## Proton Gradient and Chemiosmotic Coupling
 
-The electron transport chain model tracks the proton motive force (PMF) across the inner mitochondrial membrane as the sum of the membrane potential and the pH gradient. ATP synthase couples proton flow back through the membrane to ADP phosphorylation at a ratio of approximately 4 H+ per ATP. Uncoupling proteins dissipate the PMF as heat, reducing ATP yield. Proton leak occurs passively at a base rate of 2%, increasing to 10% when uncoupling is enabled, and is visible in real time through the dashboard.
+Respiratory NADH entry pumps four protons at NDH-1, the shared cytochrome-b6f step pumps four more, and the terminal oxidase pumps two. Photosynthetic flow starts at PSII and can run linearly to FNR or cycle back through the carrier chain. Electron leaks at NDH-1 and the Q-cycle produce ROS stochastically.
 
 ## Cofactor Conservation
 
-The model enforces strict conservation of NAD+/NADH, FAD/FADH2, CoA/acetyl-CoA, and ATP/ADP/AMP pools. Each reaction that consumes a cofactor must have a corresponding regeneration pathway active, or the pool depletes and the pathway stalls. This creates realistic metabolic bottlenecks.
+Four closed cofactor pairs are conserved by fixed totals: ATP/ADP, NAD+/NADH, NADP+/NADPH, and FAD/FADH2. The model does not track AMP or a closed CoA pool. Reactions check their substrates and available cofactor capacity before mutating state, so depleted oxidized or reduced pools can stall a path.
 
 ## Accessibility
 
-Cyano supports keyboard navigation for all controls, high-contrast mode via the theme toggle, and ARIA labels on toolbar buttons and enzyme labels. Metabolite levels are displayed as numerical values in the sidebar dashboard. Known hazards include continuous particle motion in the electron transport chain visualization; step-by-step mode is available as an alternative to autoplay.
+Cyano provides keyboard shortcuts, labeled controls, light/dark/simulation-following themes, and numerical sidebar readouts. Electron, proton, and photon particles create continuous motion during active reactions; step-by-step mode is available instead of autoplay.
 
 ## Fatty Acid Metabolism
 
-Beta-oxidation cleaves two-carbon units from fatty acyl-CoA chains, producing acetyl-CoA, NADH, and FADH2 per cycle. The simulator models chain lengths from C4 to C22 and tracks odd-chain fatty acids that produce propionyl-CoA requiring the methylmalonyl pathway. The reverse direction (fatty acid synthesis) consumes NADPH and ATP, coupling lipogenesis to the pentose phosphate pathway.
+The detailed beta-oxidation view advances four reaction stages. Its batch action models one palmitoyl-CoA-equivalent as eight acetyl-CoA, seven NADH, and seven FADH2; it does not store chain length or odd-chain intermediates. The simplified reverse batch consumes eight acetyl-CoA, fourteen NADPH, and fourteen ATP to restore one fatty-acid unit.
 
 ---
 
@@ -159,7 +159,7 @@ The simulation generates a seeded procedural map of voters affiliated with three
 Six metrics evaluate the drawn map:
 
 - **Efficiency gap**: Measures wasted votes (votes for losing candidates plus excess votes for winners) as a fraction of total votes. The dashboard warns above 7%.
-- **Partisan symmetry**: Tests whether both parties would win the same seat share if they received the same vote share. Asymmetry indicates structural bias.
+- **Partisan symmetry**: Swaps vote totals for each pair of the three parties district by district, recounts seats, and scores how closely each seat-gap reversal matches a symmetric plan.
 - **Competitive districts**: Counts districts where the margin of victory is less than 10%.
 - **Compactness**: Measures how geometrically compact districts are using the Polsby-Popper ratio (area relative to perimeter squared).
 - **Contiguity**: Verifies that every district is a single connected region with no isolated fragments.
@@ -167,7 +167,7 @@ Six metrics evaluate the drawn map:
 
 ## Algorithms
 
-Automated redistricting modes include pack-and-crack, which concentrates opposition voters into a few districts while spreading the rest thin, and a neutral draw. The neutral draw begins with fifteen rounds of Lloyd-style Voronoi relaxation, then assigns cells with a distance-priority multi-source flood fill that penalizes population imbalance. Monte Carlo election stress tests add turnout and preference noise across repeated elections to show how robust a plan is.
+Automated redistricting modes include pack-and-crack, which concentrates opposition voters into a few districts while spreading the rest thin, and a neutral draw. The neutral draw runs fifteen rounds of Lloyd-style Voronoi relaxation, using a distance-priority multi-source flood fill with a soft population-balance penalty at each round and once more after convergence. Monte Carlo election stress tests run 50, 100, or 500 elections with correlated national party swings plus smaller district-level preference noise.
 
 ## Educational Use
 
@@ -179,11 +179,11 @@ Maps are generated from seeded fractal terrain, corridor fields, and density cen
 
 ## Accessibility
 
-Gerry supports keyboard navigation for all controls, high-contrast mode via the theme toggle, and ARIA labels on toolbar buttons and metric displays. District assignments are visible through both color and numerical labels. No flashing content or motion hazards.
+Gerry's buttons, native controls, sidebar tabs, district selectors, and documented shortcuts are keyboard-operable. The map itself exposes an accessible label, but assigning individual hexes still requires a pointer or touch; this is a known gap. Toolbar actions have ARIA labels, and district results are reported as text and numbers alongside the color-coded map. The theme toggle switches between light and dark presentations. Map generation and painting use brief transitions; the shared stylesheet collapses animation and transition durations when the operating system requests reduced motion.
 
 ## Majority-Minority Districts
 
-The simulator tracks districts where a minority group holds a voting majority and reports a simplified Section 2 warning when a sufficiently large, geographically compact minority population lacks an opportunity district. This is an educational diagnostic, not a legal compliance determination. The pack-and-crack mode also makes it possible to see how concentrating or fragmenting a population changes representation.
+The simulator tracks districts where the generated minority population exceeds half the district population. Its required-count readout is a deliberately simplified heuristic: zero below 15% statewide minority share, otherwise `max(1, floor(minorityShare * 8 * 0.5))`. It does not test geographic compactness, communities of interest, racially polarized voting, or the other facts required for a Voting Rights Act analysis, so it is not a legal compliance determination.
 
 ---
 
@@ -197,7 +197,7 @@ Stock prices follow geometric Brownian motion (GBM) with optional Merton jump di
 
 ## Options Chain
 
-The options chain spans 21 strikes and eight expiries, displaying calls and puts with real-time Greeks (delta, gamma, theta, vega, rho). Implied-volatility views show how the market prices risk across strikes and maturities.
+The options chain spans 21 strikes and eight expiries, displaying calls and puts with real-time Greeks (delta, gamma, theta, vega, rho). Each contract is priced with a term- and moneyness-adjusted volatility derived from the current Heston state.
 
 ## Strategy Builder
 
@@ -205,7 +205,7 @@ The multi-leg strategy builder lets users construct spreads, straddles, strangle
 
 ## Instruments and Portfolio
 
-The trading surface includes Lehman stock, bonds, VXPNT variance futures, and American options. Positions share cash, margin, realized and unrealized P&L, Greeks, and price impact. Large trades use an Almgren-Chriss-style temporary and permanent impact overlay without rewriting the underlying stochastic process.
+The trading surface includes PNTH stock, bonds, VXPNT volatility futures, and American options. Positions share cash, margin, realized and unrealized P&L, Greeks, and price impact. Instrument-specific square-root impact overlays decay with cumulative volume; option market-maker rehedging adds stock flow, while very large gross exposure can temporarily shift selected process parameters.
 
 ## Institutional Narrative
 
@@ -221,144 +221,119 @@ The market layer makes option pricing, volatility, time decay, rates, portfolio 
 
 ## Accessibility
 
-Shoals supports keyboard navigation for all controls and dialogs, high-contrast mode via the theme toggle, and ARIA labels on interactive elements. Chart data is accessible through the numerical sidebar displays. All popup dialogs are focus-trapped. No flashing content or motion hazards.
+Shoals provides keyboard shortcuts, light and dark themes, labeled controls, numerical market/portfolio readouts, and focus trapping for narrative popups and the epilogue. The live candlestick chart, sparklines, typewriter treatment, and other animated feedback create continuous motion.
 
 ## Price Impact
 
-The Almgren-Chriss model simulates temporary and permanent price impact from large trades. Temporary impact decays exponentially; permanent impact shifts the equilibrium price based on order flow. Impact is computed as an overlay on the simulated price — it never mutates the underlying stochastic process, preserving model consistency.
+The impact model records decaying cumulative volume separately for stock, bonds, VXPNT futures, and each option contract. It applies square-root fill costs and valuation overlays without directly rewriting the simulated spot path. Delta changes in the player's option book generate market-maker hedge flow, and exposure thresholds add temporary, capped overlays to selected process parameters.
 
 ---
 
 # Scripture — Sacred Text Reader
 
-Scripture is a browser-based reader for sixteen sacred texts from multiple religious traditions. It provides chapter-by-chapter navigation, full-text search, concordance analysis, and verse-linked notes.
+Scripture is a browser reader for sixteen sacred works spanning Abrahamic,
+East Asian, Zoroastrian, Buddhist, Finnish, and Norse traditions. It provides
+chapter navigation, permanent chapter/verse URLs, full-text search, an
+exact-word concordance, TF-IDF related passages, verse-linked notes and
+bookmarks, text-to-speech, reading history, and plaintext downloads.
 
-## Works
+The committed corpus contains 121 books, 2,724 chapter files, and 63,141 verse
+records. “Verse record” is the reader’s common storage unit; in poetry and
+prose works it can represent a line or paragraph rather than a canonically
+numbered scriptural verse.
 
-The reader includes: King James Version Old Testament and New Testament, KJV Apocrypha, Quran (Pickthall translation), Book of Mormon, Doctrine and Covenants, Pearl of Great Price, the Four Books of Confucianism (Legge translation), Tao Te Ching (Legge), Kojiki (Chamberlain translation), Bundahishn (West translation), Lotus Sutra (Kern translation), Arda Viraf (Haug & West), Book of Poetry (Legge), Kalevala (Crawford translation), and the Poetic Edda (Bellows translation).
+## Corpus inventory
 
-## Features
+These counts are derived from `data/works.json`, each work manifest, and the
+committed chapter JSON.
 
-- **Full-text search** across all sixteen works with highlighted results and context snippets
-- **Concordance** showing word frequency and distribution across works using TF-IDF for related passage discovery
-- **Verse-linked notes** for personal annotation tied to specific verses
-- **Text-to-speech** for listening to passages
-- **Data export and import** for notes, bookmarks, display preferences, and reading history
-- **Deep linking** to any chapter via URL (e.g., `/scripture/ot/gen-1` for Genesis 1)
+| Work (`id`) | Edition / translator | Chapters | Verse records |
+|-------------|----------------------|---------:|--------------:|
+| Old Testament (`ot`) | King James text | 929 | 23,145 |
+| Apocrypha (`apoc`) | King James Version (1769 metadata) | 173 | 5,720 |
+| New Testament (`nt`) | King James text | 260 | 7,957 |
+| Quran (`quran`) | Marmaduke Pickthall (1930) | 114 | 6,236 |
+| Book of Mormon (`bom`) | project PDF extraction | 239 | 6,604 |
+| Doctrine and Covenants (`dc`) | 138 sections + 2 Official Declarations | 140 | 3,656 |
+| Pearl of Great Price (`pgp`) | five constituent books | 16 | 635 |
+| The Four Books (`fourbooks`) | James Legge (1861 metadata) | 50 | 1,984 |
+| Kojiki (`kj`) | Basil Hall Chamberlain (1919) | 173 | 308 |
+| Tao Te Ching (`ttc`) | James Legge (1891) | 81 | 236 |
+| Bundahishn (`bund`) | Edward William West (1897 metadata) | 34 | 597 |
+| Lotus Sutra (`lotus`) | Hendrik Kern | 27 | 1,265 |
+| Book of Poetry (`bop`) | James Legge (1876) | 301 | 1,140 |
+| Kalevala (`kv`) | John Martin Crawford (1888), including proem record | 51 | 1,393 |
+| Poetic Edda (`poe`) | Henry Adams Bellows (1936 metadata) | 35 | 1,959 |
+| Arda Viraf (`viraf`) | Martin Haug & Edward William West (1872) | 101 | 306 |
 
-## Data
+## Search, concordance, and related passages
 
-All text data is stored as static JSON files, loaded on demand per chapter. No server-side processing or database — the entire application runs client-side. Scripture data totals approximately 50 MB across all sixteen works.
+Full-text search loads a prebuilt global index and can filter results by work,
+book, and chapter. Matching substrings are highlighted in their record text.
 
-## Educational Use
+The concordance is a separate exact-word index. Clicking an indexed word in
+the reading pane opens its occurrence count and linked references; the full
+overlay groups every matching record by work. It does not use TF-IDF.
 
-Designed for comparative religious studies. Students can read texts side by side, search for shared themes across traditions, and use the concordance to trace how specific terms are used differently in different canons.
+Related Passages uses a precomputed TF-IDF cosine-similarity index. It compares
+chapter vocabulary after English stop-word removal, excludes the current
+chapter and other chapters from the same book, and stores up to five matches
+above the configured similarity threshold. This is a lexical discovery aid,
+not a claim of historical, theological, or semantic equivalence.
 
-## Works by Tradition
+## Notes, bookmarks, and listening
 
-### Christian
+Click a verse number to add a markdown note, toggle a bookmark, copy text,
+copy a permanent link, or start reading aloud. Notes and bookmarks can be
+filtered in the sidebar. Browser SpeechSynthesis provides sequential
+text-to-speech with active-record highlighting.
 
-| Work | Translator | Year | Approx. Chapters | Approx. Verses |
-|------|-----------|------|-------------------|----------------|
-| Old Testament (`ot`) | King James Version | 1611 | 929 | 23,145 |
-| New Testament (`nt`) | King James Version | 1611 | 260 | 7,957 |
-| Apocrypha (`apoc`) | King James Version | 1611 | 183 | 6,081 |
+Notes, bookmarks, display preferences, and reading history live in browser
+`localStorage`. JSON export/import supports backup, merge, and replacement.
+The reader has no user account or application database. The parent hosting
+Worker records aggregate page-view metadata, but the reader code does not send
+personal notes, bookmarks, or reading history to it.
 
-### Islamic
+## Data and delivery
 
-| Work | Translator | Year | Approx. Chapters | Approx. Verses |
-|------|-----------|------|-------------------|----------------|
-| Quran (`quran`) | Marmaduke Pickthall | 1930 | 114 | 6,236 |
+Chapter content is committed as static JSON and fetched on demand. Search,
+concordance, and related-passage indexes are precomputed by the extraction
+pipeline. Production deep routes are served through the parent Cloudflare
+Worker, which injects crawlable work/chapter/verse HTML and route-specific
+JSON-LD before the client application takes over.
 
-### Latter-day Saint
-
-| Work | Translator | Year | Approx. Chapters | Approx. Verses |
-|------|-----------|------|-------------------|----------------|
-| Book of Mormon (`bom`) | Joseph Smith | 1830 | 239 | 6,604 |
-| Doctrine and Covenants (`dc`) | — | 1835 | 138 | 3,654 |
-| Pearl of Great Price (`pgp`) | — | 1851 | 9 | 337 |
-
-### Confucian
-
-| Work | Translator | Year | Approx. Chapters | Approx. Verses |
-|------|-----------|------|-------------------|----------------|
-| The Four Books (`fourbooks`) | James Legge | 1893 | 58 | ~2,500 |
-| Book of Poetry (`bop`) | James Legge | 1876 | 305 | ~3,000 |
-
-### Taoist
-
-| Work | Translator | Year | Approx. Chapters | Approx. Verses |
-|------|-----------|------|-------------------|----------------|
-| Tao Te Ching (`ttc`) | James Legge | 1891 | 81 | ~81 |
-
-### Shinto / Japanese
-
-| Work | Translator | Year | Approx. Chapters | Approx. Verses |
-|------|-----------|------|-------------------|----------------|
-| Kojiki (`kj`) | Basil Hall Chamberlain | 1919 | ~180 | ~1,500 |
-
-### Zoroastrian
-
-| Work | Translator | Year | Approx. Chapters | Approx. Verses |
-|------|-----------|------|-------------------|----------------|
-| Bundahishn (`bund`) | Edward William West | 1880 | 34 | ~700 |
-| Arda Viraf (`viraf`) | Martin Haug & E.W. West | 1872 | 101 | ~400 |
-
-### Buddhist
-
-| Work | Translator | Year | Approx. Chapters | Approx. Verses |
-|------|-----------|------|-------------------|----------------|
-| Lotus Sutra (`lotus`) | Hendrik Kern | 1884 | 27 | ~1,200 |
-
-### Finnish
-
-| Work | Translator | Year | Approx. Chapters | Approx. Verses |
-|------|-----------|------|-------------------|----------------|
-| Kalevala (`kv`) | John Martin Crawford | 1888 | 50 | ~22,800 |
-
-### Norse
-
-| Work | Translator | Year | Approx. Chapters | Approx. Verses |
-|------|-----------|------|-------------------|----------------|
-| Poetic Edda (`poe`) | Henry Adams Bellows | 1923 | ~35 | ~2,500 |
-
-## Deep Linking
-
-Every chapter is addressable by URL. The pattern is `/scripture/{workId}/{chapterId}`. Append `:{verse}` to link directly to a specific verse.
-
-**Example URLs:**
+Every chapter is addressable as `/scripture/{workId}/{chapterId}`. Append
+`:{verse}` for a record-level link. Examples:
 
 - Genesis 1: `/scripture/ot/gen-1`
 - Genesis 1:26: `/scripture/ot/gen-1:26`
-- Surah 19 (Maryam): `/scripture/quran/quran-19`
+- Surah 19: `/scripture/quran/quran-19`
 - 1 Nephi 3: `/scripture/bom/1-ne-3`
 - Tao Te Ching 42: `/scripture/ttc/ttc-42`
-- D&C 76: `/scripture/dc/dc-76`
-- Kalevala Runo 1: `/scripture/kv/kv-1`
-- Poetic Edda, Voluspa: `/scripture/poe/vol-1`
-- Lotus Sutra Chapter 2: `/scripture/lotus/lotus-2`
-
-## TF-IDF Concordance
-
-The concordance uses TF-IDF (term frequency–inverse document frequency) to surface related passages across works. When you click a word in the reader, the concordance shows where that word appears with the highest relative frequency, not just the highest raw count. This means a word that appears ten times in a short chapter ranks higher than one that appears twenty times in a long chapter, and a word common to only a few works is weighted more heavily than one spread evenly across all sixteen.
-
-The precomputed similarity index (`similarity.json`) stores the top related chapters for each chapter, enabling instant "Related Passages" suggestions without runtime computation.
 
 ## Accessibility
 
-Scripture supports keyboard navigation throughout: Tab moves between controls, Enter activates verse actions, and arrow keys navigate chapters. The reading pane has a skip-to-content link. All overlays (search, concordance) are focus-trapped ARIA dialogs. Dynamic content regions use aria-live for screen reader announcements. High-contrast mode is available via the theme toggle. No flashing content or motion hazards.
+The reader has a skip-to-content link, keyboard-reachable controls,
+previous/next chapter shortcuts, focus-trapped search and concordance dialogs,
+ARIA labels, live regions for dynamic results, and light/dark themes. Verse
+actions can be opened from the keyboard, and text-to-speech can be paused or
+stopped. There is no flashing content.
 
-## Public Domain Status
+## Licensing
 
-All sixteen texts are in the public domain. The King James Version (1611), the Legge translations (1876–1893), the Chamberlain Kojiki (1919), the West Bundahishn (1880), the Haug & West Arda Viraf (1872), the Kern Lotus Sutra (1884), the Crawford Kalevala (1888), the Bellows Poetic Edda (1923), the Pickthall Quran (1930), the Book of Mormon (1830), Doctrine and Covenants (1835), and Pearl of Great Price (1851) are all past copyright expiration in the United States and most jurisdictions worldwide.
+The application source is AGPL-3.0. Generated text downloads and their
+structured arrangement are licensed CC BY-SA 4.0; see `text/LICENSE`. The
+underlying historic source texts are treated as public-domain inputs. The
+structured corpus should therefore be described with its CC BY-SA license,
+not the Public Domain Mark.
 
 ---
 
 # Miasma
 
-Miasma is a spatial epidemic simulator on a hex grid. I built it because there's a hantavirus outbreak happening in my corner of California right now, and I wanted to actually feel the dynamics of an epidemic instead of just reading the curves in a paper. The textbook SEIR model is a system of ODEs that smears every person into one well-mixed pool; that's mathematically clean, but it loses everything that makes a real outbreak feel like an outbreak: the wavefront, the holes in the wavefront, the way a quarantine ring either catches the wave or doesn't, the way a vaccine campaign that's a week too late looks indistinguishable from one that's on time until it suddenly doesn't.
+Miasma is a spatial epidemic simulator on a hex grid. A hantavirus outbreak in my corner of California prompted it: I wanted to actually feel the dynamics of an epidemic instead of just reading the curves in a paper. The textbook SEIR model is a system of ODEs that smears every person into one well-mixed pool; that's mathematically clean, but it loses everything that makes a real outbreak feel like an outbreak: the wavefront, the holes in the wavefront, the way a quarantine ring either catches the wave or doesn't, the way a vaccine campaign that's a week too late looks indistinguishable from one that's on time until it suddenly doesn't.
 
-Hex grids give you isotropic diffusion. Six neighbors, no rook-vs-bishop asymmetry, no jagged wavefronts pretending to be smooth. Every cell carries a compartment (susceptible, exposed, infectious, recovered, deceased, vaccinated, maternal-immunity, plus an optional zombie compartment for the absurd preset), an age that increments every tick, a health value that degrades during infection, and up to four simultaneous strain loads that sum to one. Strains can mutate, recombine, and cross-react with prior exposure through a per-cell bloom-filter record. Newborns enter with maternal antibodies that decay back to susceptible over a window. Empty cells repopulate from neighbor density. The whole thing is a closed-system population dynamics model wrapped around a stochastic compartmental core.
+Hex grids give you isotropic diffusion. Six neighbors, no rook-vs-bishop asymmetry, no jagged wavefronts pretending to be smooth. Every occupied cell carries one of eight compartments (susceptible, exposed, infectious, recovered, deceased, vaccinated, maternal-immunity, or Z), an age that increments every tick, a health value that degrades during infection, and up to four simultaneous strain loads that sum to one. Z is structurally present but disabled by default; the zombie-apocalypse, oncoviral-transformation, and absurd presets enable it. Strains can mutate, recombine, and cross-react with prior exposure through a per-cell bloom-filter record. Newborns enter with maternal antibodies that decay back to susceptible over a window, deceased cells can be disposed into empty occupancy, and empty cells repopulate from neighbor density. The result is a fixed spatial lattice with stochastic compartment and occupancy dynamics.
 
 An optional animal reservoir runs its own SIR layer on the same hex grid, orthogonal to the human compartments. It carries the same demography the human population does — animals age, breed into empty cells from inhabited neighbors, and die of age-ramped natural mortality on top of disease — and its transmission, recovery, and mortality rates are per-strain: an infectious animal carries a strain id, and animal-to-animal spread reads that strain's reservoir β/γ/μ off the registry. Spillover is bidirectional and strain-aware: an infectious animal hands its own strain to a co-located susceptible human, and an infectious human hands its primary strain back to a co-located susceptible animal. Hantavirus and plague presets lean on this; vanilla SEIR turns the reservoir off entirely.
 
@@ -378,7 +353,7 @@ Three intents, really. The textbook SEIR view is for learning: see Kermack-McKen
 
 ## Accessibility
 
-Miasma supports keyboard navigation for all controls, high-contrast mode via the theme toggle, and ARIA labels on toolbar buttons and compartment readouts. Compartment counts render as numerical values alongside the colored hex map, so colorblind users can read the state directly off the sidebar. Known hazards: rapid color changes across the hex grid during fast-forward playback may be uncomfortable for some users. Please pause the sim or drop playback speed if needed. The strain panel pairs the lineage forest with text rows and a detail inspector, so parentage and genome values remain readable without relying on the canvas alone.
+Miasma's toolbar, sidebar tabs, selectors, sliders, and documented paint-mode shortcuts are keyboard-operable. The main canvas has an accessible label, but placing brush strokes on particular cells still requires a pointer or touch; lineage-forest node selection is also pointer-driven. Toolbar actions and generated controls carry ARIA labels, while compartment counts, status counts, the animal census, and observed Re render as text alongside the colored map. The theme toggle switches between light and dark presentations. Known hazards: rapid color changes across the hex grid during fast-forward playback may be uncomfortable for some users. Please pause the sim or drop playback speed if needed. The strain panel pairs its visual lineage forest with text rows and a detail inspector, so parentage and genome values remain readable without selecting nodes on the canvas.
 
 ---
 
@@ -388,19 +363,19 @@ Pile is a semi-realistic nuclear reactor simulator that runs in your browser. Th
 
 The three reactor types are a Westinghouse-class pressurized water reactor at 3411 MWth, a graphite-moderated RBMK-1000 at 3200 MWth with boiling water in pressure tubes and a direct turbine cycle, and a molten salt reactor modeled at MSRE scale with fuel dissolved in FLiBe. The default state is hot full-power equilibrium: delayed precursors, iodine, xenon, decay heat, burnup, and RBMK operating void are populated and then snapshotted as reactivity references so the initial reactor is critical by construction without pretending those inventories are absent. The PWR is strongly negative-feedback; its four-loop reference plant is collapsed to one representative primary loop and steam generator in the interactive model. The RBMK has graphite-temperature feedback, a low-power positive void coefficient, steam quality separated from void fraction, graphite-tipped rods whose lower section can add positive reactivity during insertion, and two modeled plant-side loops that each collapse four physical main circulation pumps into one running and one standby pump. The MSR has very strong fuel-temperature feedback, circulating delayed-neutron precursors that decay partly outside the core, off-gas xenon removal, an intermediate salt loop, and a freeze plug that can drain fuel salt into a passively cooled drain tank.
 
-The PWR plant model is the most developed. It includes CVCS charging/letdown and boration, reactor-coolant-pump seal failure, ECCS with HHSI/LHSI/accumulators/RHR, RWST and containment-sump suction, a dynamic pressurizer with PORV/safety-valves/PRT, a representative steam generator with three-element feedwater control, AFW trains, main feedwater and condensate pumps, regenerative feedwater heaters, SG tube plugging/rupture, MSIVs/ADVs/condenser bypass, staged turbine-generator/load rejection, EDGs, batteries, switchyard undervoltage relays, CCW/SW, large-dry containment sprays and fan coolers, and spent-fuel-pool cooling. RBMK and MSR currently keep simpler balance-of-plant branches while retaining the core physics that distinguishes them.
+The PWR plant model includes CVCS charging/letdown and boration, reactor-coolant-pump seal failure, ECCS with HHSI/LHSI/accumulators/RHR, RWST and containment-sump suction, a dynamic pressurizer with PORV/safety-valves/PRT, a representative steam generator with three-element feedwater control, AFW trains, main feedwater and condensate pumps, regenerative feedwater heaters, SG tube plugging/rupture, MSIVs/ADVs/condenser bypass, staged turbine-generator/load rejection, EDGs, batteries, switchyard undervoltage relays, CCW/SW, large-dry containment sprays and fan coolers, and spent-fuel-pool cooling. The RBMK branch has its own two-loop Main Circulation Circuit, per-loop drum control, DREG-backed electrical supply and turbo-generator rundown, split ECCS, Accident Localization System suppression pool, graphite-gas and CPS-cooling auxiliaries, main feedwater pumps, and pressure-tube-break fault. The MSR branch uses the MSRE's air-cooled radiator and blower rather than a turbine, with freeze protection, off-gas xenon removal, a sealed reactor cell, and online redox/corrosion chemistry.
 
 The reactor protection system runs scram and warning channels in parallel: high local flux, short positive period, low DNBR for water-cooled cores, high coolant outlet temperature, pressurizer pressure and level, steam-generator level, containment pressure, actual reactor coolant flow, turbine overspeed, seal LOCA, manual scram, and loss of off-site power, plus warning-only channels such as ORM, flow excursion, SI/RWST/NPSH, CVCS, EDG, battery, grid/vital-AC, CCW/SW, AFW, MFW, SGTR, secondary valves, containment spray/temperature, and spent-fuel-pool state. The annunciator panel latches channels until reset. The reactivity stack decomposes rods, boron, Doppler, moderator, void, xenon, and burnup effects as signed live contributions, so power maneuvers visibly turn into xenon and temperature-coefficient problems rather than magic numbers.
 
 ## Faults and procedures
 
-The plant is presented as an interactive schematic: clicking any component opens an inspector with that component's readouts, controls, and — where applicable — fault injection. The current operator-training layer is deliberately smaller than the future scenario engine. PWR balance-of-plant failures that already have physics behind them include a stuck-open PORV, closed AFW discharge MOVs, loss of component/service water, loss of spent-fuel-pool cooling, EDG failure, and main-feedwater trip; direct plant actions include per-loop RCP trips, loop isolation, SGTR injection, feedwater-heater isolation, load rejection, and turbine-governor fault. Each lives in the inspector of the component it belongs to. These are command-level injections rather than scripted replays: you choose the failure, watch the plant respond, then use the procedure action bundles to stabilize it.
+The plant is presented as an interactive schematic: clicking any component opens an inspector with that component's readouts, controls, and — where applicable — fault injection. PWR failures include a stuck-open PORV, closed AFW discharge MOVs, loss of component/service water, loss of spent-fuel-pool cooling, EDG failure, main-feedwater trip, SGTR, load rejection, turbine-governor failure, RCP trips, and loop isolation. The RBMK inspectors expose loss of offsite power, diesel failure, MCP/loop actions, main-feedwater and auxiliary-cooling trips, manual ECCS, and a pressure-tube break. The MSR inspectors expose fuel-pump and off-gas loss, freeze-heater/plug actions, radiator/blower controls, and redox control. These are command-level injections rather than scripted replays: you choose the failure and watch the coupled plant respond.
 
-The procedure action bundles live in the reactor-core inspector and collect the immediate actions of a response procedure into one button. E-0 scrams the reactor and forces AFW/SI. E-1 closes the PORV block valve, fires SI, and disables pressurizer heaters. E-1.3 aligns sump recirculation and RHR. The SBO action starts the EDGs, sheds vital loads, starts AFW, and verifies the turbine-driven AFW block valve open. Spent-fuel-pool cooling restoration and diverse makeup are operated from the spent-fuel-pool inspector. Two guided scenarios currently sit above those primitives: load following and MSR overpower. A broader library with additional timelines, objectives, and start-state presets remains deferred.
+The PWR procedure action bundles live in the reactor-core inspector and collect the immediate actions of a response procedure into one button. E-0 scrams the reactor and forces AFW/SI. E-1 closes the PORV block valve, fires SI, and disables pressurizer heaters. E-1.3 aligns sump recirculation and RHR. The SBO action starts the EDGs, sheds vital loads, starts AFW, and verifies the turbine-driven AFW block valve open. Spent-fuel-pool cooling restoration and diverse makeup are operated from the spent-fuel-pool inspector. The guided-scenario engine currently ships two objective-tracked exercises — PWR load following and MSR overpower — and already supports scripted events for future replay scenarios.
 
 ## Accessibility
 
-The toolbar, the left-rail controls, and every component inspector are keyboard-operable; sliders accept arrow keys and Home/End, and buttons are reachable in tab order. The scram action is bound to Shift+S regardless of focus, and the time-acceleration control has standard keyboard navigation. Selecting a component on the plant schematic currently uses a pointer (wheel to zoom, drag to pan); keyboard selection of schematic components is a known gap. Color-coded displays -- fuel temperature, coolant temperature, reactivity sign -- are also disambiguated by position and numeric value. The high-contrast theme toggle is in the toolbar. ARIA labels are applied to the major interactive controls. Known hazards: the plant schematic, trend plots, and readouts animate while the simulator is running, and newly latched trips blink briefly before going solid. Use pause or single-step to stop motion.
+The toolbar, the left-rail controls, and every open component inspector are keyboard-operable; sliders accept arrow keys and Home/End, and buttons are reachable in tab order. The scram action is bound to Shift+S regardless of focus, and the time-acceleration control has standard keyboard navigation. Selecting a component on the plant schematic currently uses a pointer (wheel to zoom, drag to pan); keyboard selection of schematic components is a known gap. Color-coded displays -- fuel temperature, coolant temperature, reactivity sign -- are also disambiguated by position and numeric value. The toolbar theme control switches between light and dark presentations. ARIA labels are applied to the major interactive controls and graphical readouts. Known hazards: the plant schematic, trend plots, and readouts animate while the simulator is running, and newly latched trips blink briefly before going solid. Use pause or single-step to stop motion.
 
 ## License
 
@@ -453,7 +428,7 @@ guard terms, while extended presets opt into the source physics.
 ## Hidden presets
 
 The preset dropdown intentionally surfaces only the eleven presets that are
-useful as exploratory starting points. Nine more are kept in
+useful as exploratory starting points. Ten more are kept in
 `src/presets.js` for the validation harness and for hand-driven testing:
 
 * `alfven-cpaw` and `acoustic-wave-hydro` are linear convergence rigs.
@@ -485,13 +460,13 @@ the `tests/physics-validation.{html,py}` matrix.
 The simulator is written for readers with some exposure to vector calculus,
 partial differential equations, and electromagnetism. Fluid dynamics helps,
 but the controls are also useful for exploratory play: change the preset,
-switch scalar diagnostics, click a probe point, and compare how the fields
+switch scalar diagnostics, hover a probe point, and compare how the fields
 organize themselves.
 
 ## Accessibility
 
 The app uses keyboard-reachable controls, ARIA labels on the canvas and panel,
-high-contrast theme support through the site design system, and text labels
+light and dark themes through the site design system, and text labels
 for all major controls. The simulation is animated and can be paused, stepped,
 or reset. It does not use sound.
 

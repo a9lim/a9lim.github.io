@@ -30,6 +30,9 @@ User-agent: PerplexityBot
 Allow: /
 Crawl-delay: 10
 
+User-agent: Perplexity-User
+Allow: /
+
 User-agent: Google-Extended
 Allow: /
 

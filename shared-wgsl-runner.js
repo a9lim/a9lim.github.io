@@ -1,4 +1,8 @@
-/* Runtime helper for pre-transpiled WGSL compute artifacts.
+/* Dormant runtime helper for pre-transpiled WGSL compute artifacts.
+
+   No deployed simulation imports this module and the current root build does
+   not emit /transpiled/ artifacts. This contract remains tested by
+   tests/wgsl-transpile/runner-smoke.js for a future explicit integration.
 
    Usage:
 

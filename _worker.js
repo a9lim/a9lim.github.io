@@ -16,22 +16,22 @@ const WORK_TITLES = {
 
 // ─── Scripture work schema metadata (for CreativeWork JSON-LD) ───
 const WORK_SCHEMA = {
-  ot:        { translator: 'King James Version', lang: 'en', year: 1611, wikidata: 'Q19786', description: 'The Old Testament of the King James Bible, first published in 1611, covering Genesis through Malachi.', sameAs: ['https://en.wikipedia.org/wiki/Old_Testament', 'https://www.sacred-texts.com/bib/kjv/index.htm'] },
-  nt:        { translator: 'King James Version', lang: 'en', year: 1611, wikidata: 'Q18813', description: 'The New Testament of the King James Bible, covering the Gospels, Acts, Epistles, and Revelation.', sameAs: ['https://en.wikipedia.org/wiki/New_Testament', 'https://www.sacred-texts.com/bib/kjv/index.htm'] },
-  apoc:      { translator: 'King James Version', lang: 'en', year: 1611, wikidata: 'Q170207', description: 'The Apocrypha of the King James Bible, including Tobit, Judith, Wisdom, Sirach, Baruch, and the books of Maccabees.', sameAs: ['https://en.wikipedia.org/wiki/Biblical_apocrypha'] },
+  ot:        { edition: 'King James Version', lang: 'en', year: 1611, wikidata: 'Q19786', description: 'The Old Testament of the King James Bible, first published in 1611, covering Genesis through Malachi.', sameAs: ['https://en.wikipedia.org/wiki/Old_Testament', 'https://www.sacred-texts.com/bib/kjv/index.htm'] },
+  nt:        { edition: 'King James Version', lang: 'en', year: 1611, wikidata: 'Q18813', description: 'The New Testament of the King James Bible, covering the Gospels, Acts, Epistles, and Revelation.', sameAs: ['https://en.wikipedia.org/wiki/New_Testament', 'https://www.sacred-texts.com/bib/kjv/index.htm'] },
+  apoc:      { edition: 'King James Version', lang: 'en', year: 1611, wikidata: 'Q170207', description: 'The Apocrypha of the King James Bible, including Tobit, Judith, Wisdom, Sirach, Baruch, and the books of Maccabees.', sameAs: ['https://en.wikipedia.org/wiki/Biblical_apocrypha'] },
   quran:     { translator: 'Marmaduke Pickthall', translatorWikidata: 'Q1191104', lang: 'en', year: 1930, wikidata: 'Q428', description: 'The Meaning of the Glorious Koran, an English translation by Marmaduke Pickthall first published in 1930.', sameAs: ['https://en.wikipedia.org/wiki/Quran', 'https://www.sacred-texts.com/isl/pick/index.htm'] },
   bom:       { translator: 'Joseph Smith', translatorWikidata: 'Q47102', author: { '@type': 'Person', name: 'Joseph Smith', '@id': 'https://www.wikidata.org/wiki/Q47102' }, lang: 'en', year: 1830, wikidata: 'Q459842', description: 'The Book of Mormon, first published in 1830, a sacred text of the Latter-day Saint movement.', sameAs: ['https://en.wikipedia.org/wiki/Book_of_Mormon'] },
   dc:        { author: { '@type': 'Person', name: 'Joseph Smith', '@id': 'https://www.wikidata.org/wiki/Q47102' }, lang: 'en', year: 1835, wikidata: 'Q462463', description: 'The Doctrine and Covenants, a collection of revelations and declarations forming part of the Latter-day Saint canon.', sameAs: ['https://en.wikipedia.org/wiki/Doctrine_and_Covenants'] },
   pgp:       { author: { '@type': 'Person', name: 'Joseph Smith', '@id': 'https://www.wikidata.org/wiki/Q47102' }, lang: 'en', year: 1851, wikidata: 'Q459864', description: 'The Pearl of Great Price, a selection of writings by Joseph Smith including the Book of Moses and Book of Abraham.', sameAs: ['https://en.wikipedia.org/wiki/Pearl_of_Great_Price_(Mormonism)'] },
-  fourbooks: { translator: 'James Legge', translatorWikidata: 'Q1287990', author: { '@type': 'Person', name: 'Confucius', '@id': 'https://www.wikidata.org/wiki/Q4604', description: 'attributed' }, lang: 'en', year: 1893, wikidata: 'Q1412581', description: 'The Four Books of Confucianism — the Analects, Mencius, Great Learning, and Doctrine of the Mean — translated by James Legge.', sameAs: ['https://en.wikipedia.org/wiki/Four_Books_and_Five_Classics', 'https://www.sacred-texts.com/cfu/index.htm'] },
+  fourbooks: { translator: 'James Legge', translatorWikidata: 'Q1287990', lang: 'en', year: 1861, wikidata: 'Q1412581', description: 'The Four Books of Confucianism — the Analects, Mencius, Great Learning, and Doctrine of the Mean — translated by James Legge.', sameAs: ['https://en.wikipedia.org/wiki/Four_Books_and_Five_Classics', 'https://www.sacred-texts.com/cfu/index.htm'] },
   kj:        { translator: 'Basil Hall Chamberlain', translatorWikidata: 'Q810029', author: { '@type': 'Person', name: 'Ō no Yasumaro', '@id': 'https://www.wikidata.org/wiki/Q384705', description: 'compiler' }, lang: 'en', year: 1919, wikidata: 'Q813031', description: 'The Kojiki (Record of Ancient Matters), Japan\'s oldest chronicle, translated by Basil Hall Chamberlain.', sameAs: ['https://en.wikipedia.org/wiki/Kojiki', 'https://www.sacred-texts.com/shi/kj/index.htm'] },
   ttc:       { translator: 'James Legge', translatorWikidata: 'Q1287990', author: { '@type': 'Person', name: 'Laozi', '@id': 'https://www.wikidata.org/wiki/Q9333' }, lang: 'en', year: 1891, wikidata: 'Q134425', description: 'The Tao Te Ching by Laozi, foundational text of Taoism, translated by James Legge.', sameAs: ['https://en.wikipedia.org/wiki/Tao_Te_Ching', 'https://www.sacred-texts.com/tao/taote.htm'] },
-  bund:      { translator: 'Edward William West', translatorWikidata: 'Q5345914', author: { '@type': 'Person', name: 'Zarathustra', '@id': 'https://www.wikidata.org/wiki/Q35811', description: 'attributed' }, lang: 'en', year: 1880, wikidata: 'Q1005362', description: 'The Bundahishn (Creation), a Zoroastrian text on cosmogony and cosmology, translated by E. W. West.', sameAs: ['https://en.wikipedia.org/wiki/Bundahishn', 'https://www.sacred-texts.com/zor/sbe05/index.htm'] },
-  lotus:     { translator: 'Hendrik Kern', translatorWikidata: 'Q571426', author: { '@type': 'Person', name: 'Gautama Buddha', '@id': 'https://www.wikidata.org/wiki/Q9441', description: 'attributed' }, lang: 'en', year: 1884, wikidata: 'Q861212', description: 'The Lotus Sutra (Saddharma Pundarika), a foundational Mahayana Buddhist scripture, translated by Hendrik Kern.', sameAs: ['https://en.wikipedia.org/wiki/Lotus_Sutra', 'https://www.sacred-texts.com/bud/lotus/index.htm'] },
+  bund:      { translator: 'Edward William West', translatorWikidata: 'Q5345914', lang: 'en', year: 1897, wikidata: 'Q1005362', description: 'The Bundahishn (Creation), a Zoroastrian text on cosmogony and cosmology, translated by E. W. West.', sameAs: ['https://en.wikipedia.org/wiki/Bundahishn', 'https://www.sacred-texts.com/zor/sbe05/index.htm'] },
+  lotus:     { translator: 'Hendrik Kern', translatorWikidata: 'Q571426', lang: 'en', year: 1884, wikidata: 'Q861212', description: 'The Lotus Sutra (Saddharma Pundarika), a foundational Mahayana Buddhist scripture, translated by Hendrik Kern.', sameAs: ['https://en.wikipedia.org/wiki/Lotus_Sutra', 'https://www.sacred-texts.com/bud/lotus/index.htm'] },
   bop:       { translator: 'James Legge', translatorWikidata: 'Q1287990', lang: 'en', year: 1876, wikidata: 'Q465108', description: 'The Book of Poetry (Shijing), the oldest collection of Chinese poetry, translated by James Legge.', sameAs: ['https://en.wikipedia.org/wiki/Classic_of_Poetry', 'https://www.sacred-texts.com/cfu/bop/index.htm'] },
   kv:        { translator: 'John Martin Crawford', translatorWikidata: 'Q6246984', author: { '@type': 'Person', name: 'Elias Lönnrot', '@id': 'https://www.wikidata.org/wiki/Q153159', description: 'compiler' }, lang: 'en', year: 1888, wikidata: 'Q130924', description: 'The Kalevala, the Finnish national epic compiled by Elias Lönnrot, translated by John Martin Crawford.', sameAs: ['https://en.wikipedia.org/wiki/Kalevala', 'https://www.sacred-texts.com/neu/kveng/index.htm'] },
-  poe:       { translator: 'Henry Adams Bellows', translatorWikidata: 'Q11336703', lang: 'en', year: 1923, wikidata: 'Q205874', description: 'The Poetic Edda, a collection of Old Norse mythological and heroic poems, translated by Henry Adams Bellows.', sameAs: ['https://en.wikipedia.org/wiki/Poetic_Edda', 'https://www.sacred-texts.com/neu/poe/index.htm'] },
-  viraf:     { translator: 'Martin Haug & Edward William West', translatorWikidata: 'Q5345914', author: { '@type': 'Person', name: 'Zarathustra', '@id': 'https://www.wikidata.org/wiki/Q35811', description: 'attributed' }, lang: 'en', year: 1872, wikidata: 'Q1062327', description: 'The Book of Arda Viraf, a Zoroastrian text describing a visionary journey through heaven and hell.', sameAs: ['https://en.wikipedia.org/wiki/Book_of_Arda_Viraf'] },
+  poe:       { translator: 'Henry Adams Bellows', translatorWikidata: 'Q11336703', lang: 'en', year: 1936, wikidata: 'Q205874', description: 'The Poetic Edda, a collection of Old Norse mythological and heroic poems, translated by Henry Adams Bellows.', sameAs: ['https://en.wikipedia.org/wiki/Poetic_Edda', 'https://www.sacred-texts.com/neu/poe/index.htm'] },
+  viraf:     { translators: [{ name: 'Martin Haug' }, { name: 'Edward William West', wikidata: 'Q5345914' }], lang: 'en', year: 1872, wikidata: 'Q1062327', description: 'The Book of Arda Viraf, a Zoroastrian text describing a visionary journey through heaven and hell, translated by Martin Haug and Edward William West.', sameAs: ['https://en.wikipedia.org/wiki/Book_of_Arda_Viraf'] },
 };
 
 // ─── Named entity mentions for scripture works (GEO entity linking) ───
@@ -41,7 +41,6 @@ const WORK_MENTIONS = {
     { '@type': 'Person', '@id': 'https://www.wikidata.org/wiki/Q9077', name: 'Moses' },
     { '@type': 'Person', '@id': 'https://www.wikidata.org/wiki/Q41370', name: 'David' },
     { '@type': 'Person', '@id': 'https://www.wikidata.org/wiki/Q188794', name: 'Isaiah' },
-    { '@type': 'Person', '@id': 'https://www.wikidata.org/wiki/Q302', name: 'Jesus' },
     { '@type': 'Person', '@id': 'https://www.wikidata.org/wiki/Q37085', name: 'Solomon' },
     { '@type': 'Person', '@id': 'https://www.wikidata.org/wiki/Q830183', name: 'Eve' },
     { '@type': 'Person', '@id': 'https://www.wikidata.org/wiki/Q81422', name: 'Noah' },
@@ -223,6 +222,7 @@ const SECURITY_HEADERS = {
   'Cross-Origin-Opener-Policy': 'same-origin',
   'Content-Security-Policy': "default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdn.plot.ly https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; font-src 'self' https://cdn.jsdelivr.net; img-src 'self' data: blob:; connect-src 'self'; worker-src 'self' blob:; base-uri 'self'; frame-ancestors 'self'",
   'Content-Language': 'en',
+  'X-Robots-Tag': 'index, follow',
 };
 
 // Wrap a response with security + cache headers.
@@ -383,9 +383,29 @@ function fmtDate(iso) {
   return m[d.getMonth()] + ' ' + d.getDate() + ', ' + d.getFullYear();
 }
 
+function translatorSchema(ws) {
+  if (ws.translators) {
+    return ws.translators.map(t => ({
+      '@type': 'Person',
+      name: t.name,
+      ...(t.wikidata && { '@id': `https://www.wikidata.org/wiki/${t.wikidata}` }),
+    }));
+  }
+  return ws.translator
+    ? { '@type': 'Person', name: ws.translator, ...(ws.translatorWikidata && { '@id': `https://www.wikidata.org/wiki/${ws.translatorWikidata}` }) }
+    : undefined;
+}
+
+function workCredit(ws) {
+  const translatorNames = ws.translators?.map(t => t.name).join(' & ') || ws.translator;
+  if (translatorNames) return `${translatorNames} translation${ws.year ? `, ${ws.year}` : ''}`;
+  if (ws.edition) return `${ws.edition}${ws.year ? `, ${ws.year}` : ''}`;
+  return ws.year ? String(ws.year) : '';
+}
+
 const SCRIPTURE_WORKS_SSR = Object.entries(WORK_TITLES).map(([id, title]) => {
   const ws = WORK_SCHEMA[id] || {};
-  const detail = ws.translator ? `${ws.translator} translation, ${ws.year}` : (ws.year ? String(ws.year) : '');
+  const detail = workCredit(ws);
   return `<a href="/scripture/${id}" class="work-link"><strong>${title}</strong>${detail ? ` <span>(${detail})</span>` : ''}</a>`;
 }).join('\n');
 
@@ -423,11 +443,12 @@ export default {
         const workTitle = WORK_TITLES[workId];
         if (workTitle) {
           const ws = WORK_SCHEMA[workId] || {};
-          const translatorPerson = ws.translator ? { '@type': 'Person', name: ws.translator, ...(ws.translatorWikidata && { '@id': `https://www.wikidata.org/wiki/${ws.translatorWikidata}` }) } : undefined;
-          const creatorPerson = translatorPerson || ws.author;
+          const translatorEntity = translatorSchema(ws);
+          const creatorEntity = translatorEntity || ws.author;
+          const credit = workCredit(ws);
           const meta = {
             title: `${workTitle} | a9l.im`,
-            desc: `Read the ${workTitle}${ws.translator ? ' (' + ws.translator + ' translation, ' + ws.year + ')' : ''} \u2014 full-text search, concordance, verse notes, and cross-tradition comparisons.`,
+            desc: `Read the ${workTitle}${credit ? ' (' + credit + ')' : ''} \u2014 full-text search, concordance, verse notes, and cross-tradition comparisons.`,
             ogTitle: `${workTitle} | a9l.im`,
             canonical: `https://a9l.im/scripture/${workId}`,
             jsonLd: JSON.stringify({
@@ -450,7 +471,7 @@ export default {
                   ...(ws.description && { description: ws.description }),
                   ...(ws.sameAs && { sameAs: ws.sameAs }),
                   ...(ws.wikidata && { translationOfWork: { '@type': 'Book', '@id': `https://www.wikidata.org/wiki/${ws.wikidata}` } }),
-                  ...(translatorPerson && { translator: translatorPerson }),
+                  ...(translatorEntity && { translator: translatorEntity }),
                   ...(ws.author && { author: ws.author }),
                   ...(ws.year && { datePublished: String(ws.year) }),
                   ...(WORK_MENTIONS[workId] && { mentions: WORK_MENTIONS[workId] }),
@@ -458,7 +479,7 @@ export default {
                     { '@type': 'ReadAction', target: `https://a9l.im/scripture/${workId}` },
                     { '@type': 'SearchAction', target: { '@type': 'EntryPoint', urlTemplate: `https://a9l.im/scripture/?q={search_term_string}` }, 'query-input': 'required name=search_term_string' },
                   ],
-                  license: 'https://creativecommons.org/publicdomain/mark/1.0/',
+                  license: 'https://creativecommons.org/licenses/by-sa/4.0/',
                   contentRating: 'General',
                 },
                 {
@@ -466,9 +487,9 @@ export default {
                   name: `${workTitle} — Full Text`,
                   description: ws.description || `Complete text of the ${workTitle}`,
                   url: `https://a9l.im/scripture/${workId}`,
-                  license: 'https://creativecommons.org/publicdomain/mark/1.0/',
+                  license: 'https://creativecommons.org/licenses/by-sa/4.0/',
                   inLanguage: ws.lang || 'en',
-                  ...(creatorPerson && { creator: creatorPerson }),
+                  ...(creatorEntity && { creator: creatorEntity }),
                   distribution: {
                     '@type': 'DataDownload',
                     encodingFormat: 'application/json',
@@ -512,7 +533,7 @@ export default {
               if (book) {
                 const chapterLabel = `${book.name} ${chapterNum}`;
                 const ws = WORK_SCHEMA[workId] || {};
-                const translatorPerson = ws.translator ? { '@type': 'Person', name: ws.translator, ...(ws.translatorWikidata && { '@id': `https://www.wikidata.org/wiki/${ws.translatorWikidata}` }) } : undefined;
+                const translatorEntity = translatorSchema(ws);
                 const bookSchema = {
                   '@type': 'Book',
                   name: workTitle,
@@ -521,7 +542,7 @@ export default {
                   ...(ws.description && { description: ws.description }),
                   ...(ws.sameAs && { sameAs: ws.sameAs }),
                   ...(ws.wikidata && { translationOfWork: { '@type': 'Book', '@id': `https://www.wikidata.org/wiki/${ws.wikidata}` } }),
-                  ...(translatorPerson && { translator: translatorPerson }),
+                  ...(translatorEntity && { translator: translatorEntity }),
                   ...(ws.author && { author: ws.author }),
                   inLanguage: ws.lang || 'en',
                   ...(ws.year && { datePublished: String(ws.year) }),
@@ -566,7 +587,7 @@ export default {
                     inLanguage: ws.lang || 'en',
                     isPartOf: bookSchema,
                     audience: { '@type': 'Audience', audienceType: 'Students, scholars, readers of sacred texts' },
-                    ...(translatorPerson && { translator: translatorPerson }),
+                    ...(translatorEntity && { translator: translatorEntity }),
                   },
                 ];
 
@@ -609,7 +630,7 @@ export default {
                           text: verseText,
                           inLanguage: ws.lang || 'en',
                           position: parseInt(verseNum, 10),
-                          ...(translatorPerson && { author: translatorPerson }),
+                          ...(translatorEntity && { translator: translatorEntity }),
                           isPartOf: { '@type': 'CreativeWork', name: chapterLabel, url: chapterUrl, isPartOf: { '@type': 'Book', name: workTitle, '@id': `https://a9l.im/scripture/${workId}` } },
                         };
                         if (WORK_MENTIONS[workId]) quotation.mentions = WORK_MENTIONS[workId];
@@ -639,7 +660,7 @@ export default {
                           text: allVerses[0],
                           inLanguage: ws.lang || 'en',
                           position: 1,
-                          ...(translatorPerson && { author: translatorPerson }),
+                          ...(translatorEntity && { translator: translatorEntity }),
                           isPartOf: { '@type': 'CreativeWork', name: chapterLabel, url: chapterUrl, isPartOf: { '@type': 'Book', name: workTitle, '@id': `https://a9l.im/scripture/${workId}` } },
                         });
                       }
@@ -659,7 +680,7 @@ export default {
       if (pathname === '/scripture' || pathname === '/scripture/') {
         const indexMeta = {
           title: 'Scripture | a9l.im',
-          desc: 'Read sixteen sacred texts spanning Abrahamic, East Asian, Zoroastrian, Buddhist, and Nordic traditions. Full-text search, concordance, verse notes, and cross-tradition comparisons.',
+          desc: 'Read sixteen sacred texts spanning Abrahamic, East Asian, Zoroastrian, Buddhist, Finnish, and Norse traditions. Full-text search, concordance, verse notes, and cross-tradition comparisons.',
           ogTitle: 'Scripture | a9l.im',
           canonical: 'https://a9l.im/scripture/',
           jsonLd: JSON.stringify({
@@ -688,12 +709,12 @@ export default {
               {
                 '@type': 'Dataset',
                 name: 'Sacred Text Corpus — 16 Works',
-                description: 'A corpus of sixteen sacred texts spanning Abrahamic, East Asian, Zoroastrian, Buddhist, and Nordic traditions, in English translation.',
+                description: 'A corpus of sixteen sacred texts spanning Abrahamic, East Asian, Zoroastrian, Buddhist, Finnish, and Norse traditions, in English translation.',
                 url: 'https://a9l.im/scripture/',
                 creator: { '@type': 'Person', name: 'a9lim', url: 'https://a9l.im/', '@id': 'https://a9l.im/#person' },
-                license: 'https://creativecommons.org/publicdomain/mark/1.0/',
+                license: 'https://creativecommons.org/licenses/by-sa/4.0/',
                 inLanguage: 'en',
-                temporalCoverage: '1611/1930',
+                temporalCoverage: '1611/1936',
                 spatialCoverage: [
                   { '@type': 'Place', name: 'Middle East', '@id': 'https://www.wikidata.org/wiki/Q7204' },
                   { '@type': 'Place', name: 'East Asia', '@id': 'https://www.wikidata.org/wiki/Q27231' },

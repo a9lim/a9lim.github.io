@@ -3,8 +3,8 @@
 
    This intentionally runs a small, host-owned slice of the actual plasma
    compute shaders through the JS transpiler. It is not a full simulator
-   stepper; it is a stable perf tripwire for the kernels most likely to run
-   on the CPU fallback path:
+   stepper and Plasma does not ship a CPU fallback; it is a performance
+   tripwire for kernels representative of a possible future fallback:
 
      - colormap: flat vec4 read/write and scalar normalization
      - lic-normalize: bitcast + scalar postprocess

@@ -4,7 +4,7 @@ url: https://a9l.im/about.md
 description: Homepage of a9lim, an LLM interpretability researcher. Research on emotional and functional states in language models, plus open-source browser simulations and developer tools.
 language: en
 license: AGPL-3.0
-updated: 2026-07-16
+updated: 2026-07-17
 ---
 
 # About a9l.im
@@ -14,10 +14,10 @@ a9l.im is a personal research, software, and simulation portfolio by a9lim. The 
 ## Simulations
 
 - [Geon](https://a9l.im/geon): Explore relativistic many-body dynamics, electromagnetism, compact objects, scalar fields, and nontrivial topologies across fifteen browser presets.
-- [Cyano](https://a9l.im/cyano): Explore twelve connected metabolic pathways, electron transport, enzyme regulation, cofactor conservation, and reactive oxygen species across five organism presets.
+- [Cyano](https://a9l.im/cyano): Trace connected carbon metabolism, electron transport, conserved cofactor pools, enzyme feedback, and reactive oxygen species across five stylized cell presets.
 - [Gerry](https://a9l.im/gerry): Draw districts on a procedural hex map, compare six fairness measures, generate pack-and-crack or neutral plans, and stress-test Monte Carlo elections.
-- [Shoals](https://a9l.im/shoals): Trade stock, bonds, variance, and options through a branching institutional narrative with stochastic pricing, regulations, lobbying, and six endings.
-- [Scripture](https://a9l.im/scripture/): Read, search, annotate, compare, and listen to sixteen public-domain sacred works with chapter and verse deep links, concordance, and related passages.
+- [Shoals](https://a9l.im/shoals): Trade stock, bonds, VXPNT volatility futures, and American options through a branching institutional narrative with stochastic pricing, regulation, lobbying, and six endings.
+- [Scripture](https://a9l.im/scripture/): Read, search, annotate, compare, and listen to sixteen sacred works with chapter and verse deep links, concordance, and related passages.
 - [Miasma](https://a9l.im/miasma): Seed and contain stochastic multi-strain epidemics on six hex-grid topologies with vaccination, quarantine, reservoirs, mutation, and painted interventions.
 - [Pile](https://a9l.im/pile): Operate PWR, RBMK-1000, and molten-salt reactor models with axial kinetics, xenon, plant systems, faults, procedures, and guided scenarios.
 - [Plasma](https://a9l.im/plasma): Explore shocks, reconnection, waves, transport, radiation, self-gravity, and cylindrical flows in a WebGPU 2.5D magnetohydrodynamics laboratory.

@@ -30,16 +30,15 @@
     }
   ],
   "shortcuts": [
-    {"name": "Projects", "url": "/projects", "description": "Browse simulations"},
+    {"name": "Projects", "url": "/projects", "description": "Browse open-source projects"},
     {"name": "Blog", "url": "/blog", "description": "Read articles"},
     {"name": "Scripture", "url": "/scripture", "description": "Sacred text reader"},
     {"name": "Miasma", "url": "/miasma", "description": "Stochastic spatial epidemic simulator on a hex grid"},
     {"name": "Pile", "url": "/pile", "description": "Nuclear reactor simulator with PWR, RBMK, and MSR types"},
-    {"name": "Plasma", "url": "/plasma", "description": "2D resistive magnetohydrodynamics simulator"}
+    {"name": "Plasma", "url": "/plasma", "description": "2.5D resistive magnetohydrodynamics simulator"}
   ],
   "screenshots": [
-    {"src": "/og-image.webp", "sizes": "1200x630", "type": "image/webp", "form_factor": "wide"},
-    {"src": "/og-image.webp", "sizes": "630x630", "type": "image/webp", "form_factor": "narrow"}
+    {"src": "/og-image.webp", "sizes": "1200x630", "type": "image/webp", "form_factor": "wide"}
   ],
   "share_target": {
     "action": "/scripture/",
