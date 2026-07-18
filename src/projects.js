@@ -92,8 +92,8 @@ export const PROJECTS = [
     {
         href: "/geon",
         title: "Geon",
-        longDesc: "A WebGPU sandbox for post-Newtonian relativistic many-body physics, with gravity, electromagnetism, Yukawa-like interactions, compact objects, scalar fields, and three periodic topologies.",
-        longDesc_ja: "重力、電磁気、湯川型相互作用、コンパクト天体、スカラー場、3種類の周期トポロジーを備えた、ポストニュートン近似による相対論的多体系の WebGPU サンドボックス。",
+        longDesc: "A WebGPU sandbox for post-Newtonian relativistic many-body physics, with gravity, electromagnetism, and a Yukawa-like force. Supports compact objects and scalar fields on any arbitrary topology.",
+        longDesc_ja: "重力、電磁気、湯川型の力を備えた、ポストニュートン近似による相対論的多体系の WebGPU サンドボックス。任意のトポロジー上のコンパクト天体とスカラー場をサポートする。",
         tags: ["physics","webgpu","relativity","canvas"],
         tags_ja: ["物理","WebGPU","相対論","Canvas"],
         emoji: "🪐",
@@ -149,8 +149,8 @@ export const PROJECTS = [
     {
         href: "/miasma",
         title: "Miasma",
-        longDesc: "A spatial epidemiology sandbox with a rich compartmental model and mutating strains across six hex-grid topologies.",
-        longDesc_ja: "6種類の六角格子トポロジー上で、変異する株を含む豊かなコンパートメントモデルを実装した空間疫学サンドボックス。",
+        longDesc: "A spatial epidemiology sandbox for that implements a rich compartmental model with mutating strains on an arbitrary topology.",
+        longDesc_ja: "任意のトポロジー上で、変異する株を含む豊かなコンパートメントモデルを実装した空間疫学サンドボックス。",
         tags: ["epidemiology","cellular automaton","canvas"],
         tags_ja: ["疫学","セルオートマトン","Canvas"],
         emoji: "🦠",
@@ -171,8 +171,8 @@ export const PROJECTS = [
     {
         href: "/plasma",
         title: "Plasma",
-        longDesc: "A WebGPU 2.5D resistive-magnetohydrodynamics lab for shocks, reconnection, waves, transport, radiation, self-gravity, and cylindrical flows.",
-        longDesc_ja: "衝撃波、磁気再結合、波動、輸送、放射、自己重力、円筒座標流を探究できる WebGPU 2.5D 抵抗性磁気流体力学ラボ。",
+        longDesc: "A WebGPU 2D magnetohydrodynamics lab with high-fidelity physics.",
+        longDesc_ja: "高精度物理を備えた WebGPU 2D 磁気流体力学ラボ。",
         tags: ["physics","webgpu","mhd","canvas"],
         tags_ja: ["物理","WebGPU","磁気流体","Canvas"],
         emoji: "☀️",

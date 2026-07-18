@@ -1,9 +1,9 @@
 {
-  "generatedAt": "2026-07-18T01:09:08.107Z",
+  "generatedAt": "2026-07-18T01:23:13.900Z",
   "lastDeploy": {
-    "hash": "0975193",
-    "iso": "2026-07-17T14:54:42-07:00",
-    "subject": "update projects"
+    "hash": "a292bc1",
+    "iso": "2026-07-17T18:09:50-07:00",
+    "subject": "docs: refresh backend documentation and SEO"
   },
   "now": [
     [
