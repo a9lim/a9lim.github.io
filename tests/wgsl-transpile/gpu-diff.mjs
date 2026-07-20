@@ -36,13 +36,13 @@ import { createServer } from 'node:http';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { existsSync } from 'node:fs';
-import { compileWGSL, runtime } from '../../shared-wgsl-transpile.js';
+import { compileWGSL, runtime } from '../../lib/wgsl/transpile.js';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const REPO = resolve(HERE, '../..');
 const QUIET = process.argv.includes('--quiet');
 const CHROME = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
-const PUPPETEER = resolve(REPO, 'og/node_modules/puppeteer/lib/esm/puppeteer/puppeteer.js');
+const PUPPETEER = resolve(REPO, 'tools/og/node_modules/puppeteer/lib/esm/puppeteer/puppeteer.js');
 const EPS = 1e-4;
 
 // ── Kernel specs ──────────────────────────────────────────────────
@@ -168,7 +168,7 @@ function diff(gpu, cpu) {
 
 async function main() {
     if (!existsSync(CHROME)) { console.error(`✗ Google Chrome not found at ${CHROME} — GPU diff needs real Chrome (WebGPU).`); process.exit(1); }
-    if (!existsSync(resolve(REPO, 'og/node_modules/puppeteer'))) { console.error('✗ puppeteer not installed (expected in og/).'); process.exit(1); }
+    if (!existsSync(resolve(REPO, 'tools/og/node_modules/puppeteer'))) { console.error('✗ puppeteer not installed (expected in tools/og/).'); process.exit(1); }
     const puppeteer = (await import(PUPPETEER)).default;
     const server = createServer((_req, res) => { res.setHeader('Content-Type', 'text/html'); res.end('<!doctype html><html><body>gpu-diff</body></html>'); }).listen(0);
     const port = server.address().port;

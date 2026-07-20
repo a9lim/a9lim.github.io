@@ -18,7 +18,7 @@ import { join, relative, dirname }    from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { tokenize, parse, emit, compileWGSL, resolveModule, WGSLError }
-    from '../../shared-wgsl-transpile.js';
+    from '../../lib/wgsl/transpile.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = join(__dirname, '..', '..');

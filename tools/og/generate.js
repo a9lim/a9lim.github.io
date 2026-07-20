@@ -3,10 +3,10 @@ import { fileURLToPath } from 'url';
 import path from 'path';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const ROOT = path.resolve(__dirname, '..');
+const ROOT = path.resolve(__dirname, '..', '..');
 
 const CARDS = [
-  { html: 'a9lim.html', output: path.join(ROOT, 'og-image.webp'),          waitReady: true },
+  { html: 'a9lim.html', output: path.join(ROOT, 'static', 'og-image.webp'), waitReady: true },
   { html: 'shoals.html',     output: path.join(ROOT, 'shoals', 'og-image.webp'),   waitReady: false },
   { html: 'geon.html',       output: path.join(ROOT, 'geon', 'og-image.webp'),     waitReady: false },
   { html: 'metabolism.html',  output: path.join(ROOT, 'cyano', 'og-image.webp'),    waitReady: false },
@@ -41,8 +41,8 @@ for (const card of CARDS) {
 
 // Generate PWA icons (192x192 and 512x512 PNG)
 const ICONS = [
-  { size: 512, output: path.join(ROOT, 'icon-512.png') },
-  { size: 192, output: path.join(ROOT, 'icon-192.png') },
+  { size: 512, output: path.join(ROOT, 'static', 'icon-512.png') },
+  { size: 192, output: path.join(ROOT, 'static', 'icon-192.png') },
 ];
 
 for (const icon of ICONS) {

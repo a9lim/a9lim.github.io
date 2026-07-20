@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import worker from '../../_worker.js';
+import worker from '../../../worker/index.js';
 
 const payload = {
     schema_version: 1,

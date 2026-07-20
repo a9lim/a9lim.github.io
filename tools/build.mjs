@@ -5,9 +5,11 @@ import { execFileSync, spawnSync } from 'node:child_process';
 import { dirname, join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createHash } from 'node:crypto';
-import { parseMarkdown, mdEsc } from './src/markdown.js';
+import { parseMarkdown, mdEsc } from '../site/src/markdown.js';
 
-const ROOT = dirname(fileURLToPath(import.meta.url));
+const ROOT = dirname(dirname(fileURLToPath(import.meta.url)));
+const DIST = join(ROOT, 'dist');
+const BUILD = join(ROOT, '.build');
 const SITE = 'https://a9l.im';
 
 // --check: verify the deterministic content-derived artifacts are current
@@ -17,10 +19,27 @@ const checkFailures = [];
 
 // Write a content-derived artifact — or, under --check, diff it against disk.
 function emit(rel, content) {
-  if (!CHECK) { writeFileSync(join(ROOT, rel), content); return; }
+  const output = join(DIST, rel);
+  if (!CHECK) {
+    mkdirSync(dirname(output), { recursive: true });
+    writeFileSync(output, content);
+    return;
+  }
   let current = null;
-  try { current = readText(rel); } catch { /* missing counts as stale */ }
+  try { current = readFileSync(output, 'utf8'); } catch { /* missing counts as stale */ }
   if (current !== content) checkFailures.push(rel);
+}
+
+function emitInternal(rel, content) {
+  const output = join(BUILD, rel);
+  if (!CHECK) {
+    mkdirSync(dirname(output), { recursive: true });
+    writeFileSync(output, content);
+    return;
+  }
+  let current = null;
+  try { current = readFileSync(output, 'utf8'); } catch { /* missing counts as stale */ }
+  if (current !== content) checkFailures.push(`.build/${rel}`);
 }
 
 // --- helpers ---
@@ -586,7 +605,7 @@ const ROUTE_META_GEN = {
 
 // Inject regions + head metadata into index.html (in place, idempotent).
 {
-  let html = readText('index.html');
+  let html = readText('site/index.html');
   for (const [name, content] of Object.entries(regions)) {
     const re = new RegExp(`(<!-- content:${name} [^>]*-->)[\\s\\S]*?(<!-- /content:${name} -->)`);
     if (!re.test(html)) throw new Error('index.html: missing region markers for ' + name);
@@ -635,7 +654,7 @@ const ROUTE_META_GEN = {
 
 // Inject generated dictionary sections into i18n.js (in place, idempotent).
 {
-  let js = readText('i18n.js');
+  let js = readText('site/i18n.js');
   const inject = (lang, entries) => {
     const start = `// == GENERATED CONTENT (${lang}) — from content/home/, via _build.mjs; edit there ==`;
     const end = `// == END GENERATED CONTENT (${lang}) ==`;
@@ -653,8 +672,8 @@ const ROUTE_META_GEN = {
 // Validate: every data-i18n key referenced in index.html must exist in the
 // final dictionary (hand-written sections + generated ones).
 {
-  const html = readText('index.html');
-  const js = readText('i18n.js');
+  const html = readFileSync(join(DIST, 'index.html'), 'utf8');
+  const js = readFileSync(join(DIST, 'i18n.js'), 'utf8');
   const dictKeys = new Set([...js.matchAll(/^\s*(?:'([^']+)'|"([^"]+)"):/gm)].map(m => m[1] || m[2]));
   const used = [...html.matchAll(/data-i18n(?:-title|-aria|-content|-alt|-href)?="([^"]+)"/g)].map(m => m[1]);
   const missing = used.filter(k => !dictKeys.has(k));
@@ -721,7 +740,7 @@ export const SIMS_ITEMLIST = ${JSON.stringify(itemList(simsData), null, 2)};
 
 export const PROJECTS_ITEMLIST = ${JSON.stringify(itemList(projsData), null, 2)};
 `;
-  emit('_content.generated.mjs', mod);
+  emitInternal('content.generated.mjs', mod);
   console.log('_content.generated.mjs: generated');
 }
 
@@ -1109,12 +1128,12 @@ const homeData = {
   askMeAbout_ja: homeChipsJa,
 };
 
-writeFileSync(join(ROOT, 'home-data.json'), JSON.stringify(homeData, null, 2) + '\n');
+writeFileSync(join(DIST, 'home-data.json'), JSON.stringify(homeData, null, 2) + '\n');
 console.log('home-data.json: homepage content + deploy marker');
 
 // --- build resume.pdf via tectonic (skips gracefully if absent) ---
 
-const resumeBuild = spawnSync('bash', [join(ROOT, 'resume/build.sh')], { stdio: 'inherit' });
+const resumeBuild = spawnSync('bash', [join(ROOT, 'content/resume/build.sh'), join(DIST, 'resume.pdf')], { stdio: 'inherit' });
 if (resumeBuild.status !== 0) {
   console.error('resume.pdf: build failed (exit ' + resumeBuild.status + ')');
 }

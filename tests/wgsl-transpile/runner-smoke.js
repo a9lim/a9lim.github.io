@@ -5,8 +5,8 @@ import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { WGSLBufferPool, createWGSLRunner } from '../../shared-wgsl-runner.js';
-import { transpileWGSL } from '../../shared-wgsl-transpile.js';
+import { WGSLBufferPool, createWGSLRunner } from '../../lib/wgsl/runner.js';
+import { transpileWGSL } from '../../lib/wgsl/transpile.js';
 
 let pass = 0, fail = 0;
 function check(name, cond, detail = '') {

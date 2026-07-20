@@ -1,7 +1,7 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "a9lim",
-  "main": "_worker.js",
+  "main": "worker/index.js",
   "compatibility_date": "2026-04-05",
   "observability": {
     "enabled": true
@@ -20,7 +20,7 @@
       "binding": "SURVEYS_DB",
       "database_name": "a9lim-surveys",
       "database_id": "94280c38-af96-4d89-b9c8-1b507af82a34",
-      "migrations_dir": "migrations"
+      "migrations_dir": "db/migrations"
     }
   ]
 }

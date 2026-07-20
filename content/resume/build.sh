@@ -1,10 +1,11 @@
 #!/usr/bin/env bash
-# Builds resume.pdf from resume.tex via tectonic and moves it to repo root.
-# Invoked by _build.mjs (graceful skip if tectonic missing).
+# Builds resume.pdf from resume.tex into the requested output path.
+# Invoked by tools/build.mjs (graceful skip if tectonic is absent).
 
 set -euo pipefail
 
 cd "$(dirname "$0")"
+OUTPUT_PATH="${1:-../../dist/resume.pdf}"
 
 TECTONIC=""
 for p in tectonic /opt/homebrew/bin/tectonic /usr/local/bin/tectonic; do
@@ -17,5 +18,6 @@ if [ -z "$TECTONIC" ]; then
 fi
 
 "$TECTONIC" --chatter=minimal resume.tex
-mv resume.pdf ../resume.pdf
-echo "resume: ../resume.pdf"
+mkdir -p "$(dirname "$OUTPUT_PATH")"
+mv resume.pdf "$OUTPUT_PATH"
+echo "resume: $OUTPUT_PATH"

@@ -27,12 +27,12 @@ import { join, dirname, resolve, relative } from 'node:path';
 import { createHash } from 'node:crypto';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import { transpileWGSL, runtime } from '../../shared-wgsl-transpile.js';
+import { transpileWGSL, runtime } from '../../lib/wgsl/transpile.js';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = resolve(HERE, '../..');
 const TRANSPILED_ROOT = join(REPO_ROOT, 'transpiled');
-const TRANSPILER_SHA = sha256Hex(readFileSync(join(REPO_ROOT, 'shared-wgsl-transpile.js'), 'utf8'));
+const TRANSPILER_SHA = sha256Hex(readFileSync(join(REPO_ROOT, 'lib/wgsl/transpile.js'), 'utf8'));
 
 let pass = 0, fail = 0;
 function check(name, cond, detail = '') {

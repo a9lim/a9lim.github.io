@@ -41,7 +41,7 @@
    semantics, this is a measurement tool).
    ─────────────────────────────────────────────────────────────────── */
 
-import { compileWGSL } from '../../shared-wgsl-transpile.js';
+import { compileWGSL } from '../../lib/wgsl/transpile.js';
 
 // ── Bench parameters ──────────────────────────────────────────────
 const N     = +process.env.BENCH_N     || 10000;

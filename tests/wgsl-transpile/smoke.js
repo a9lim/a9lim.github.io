@@ -13,7 +13,7 @@
 
 import fs from 'node:fs';
 import { compileWGSL, transpileWGSL, tokenize, parse, resolveModule, emit, runtime }
-    from '../../shared-wgsl-transpile.js';
+    from '../../lib/wgsl/transpile.js';
 
 let pass = 0, fail = 0;
 function check(name, cond, detail = '') {

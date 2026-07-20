@@ -18,39 +18,8 @@ const ROOT = dirname(dirname(fileURLToPath(import.meta.url)));
 const DIST = join(ROOT, 'dist');
 const PROJECTS = ['cyano', 'geon', 'gerry', 'miasma', 'pile', 'plasma', 'scripture', 'shoals'];
 
-const ROOT_FILES = [
-  '404.html',
-  'LICENSE',
-  'README.md',
-  '_headers',
-  '_routes.json',
-  'about.md',
-  'doggy.JPG',
-  'favicon.ico',
-  'feed.atom',
-  'feed.xml',
-  'home-data.json',
-  'i18n.js',
-  'icon-192.png',
-  'icon-512.png',
-  'index.html',
-  'llms-full.txt',
-  'llms.txt',
-  'logo.svg',
-  'main.js',
-  'manifest.json',
-  'og-image.webp',
-  'opensearch.xml',
-  'posts.json',
-  'resume.pdf',
-  'robots.txt',
-  'sitemap-main.xml',
-  'sitemap-scripture.xml',
-  'sitemap.xml',
-  'styles.css',
-];
-
-const ROOT_TREES = ['.well-known', 'blog-assets', 'content/posts', 'fonts', 'src'];
+const ROOT_FILES = ['LICENSE', 'README.md'];
+const SITE_FILES = ['404.html', 'i18n.js', 'main.js', 'styles.css'];
 
 function trackedFiles(cwd, pathspec = '.') {
   return execFileSync('git', ['ls-files', '-z', '--', pathspec], { cwd, encoding: 'utf8' })
@@ -102,9 +71,14 @@ for (const rel of ROOT_FILES) {
   copied += 1;
 }
 
-for (const rel of ROOT_TREES) {
-  copied += copyTrackedTree(ROOT, rel, join(DIST, rel));
+for (const rel of SITE_FILES) {
+  copyPath(join(ROOT, 'site', rel), join(DIST, rel));
+  copied += 1;
 }
+
+copied += copyTrackedTree(ROOT, 'site/src', join(DIST, 'src'), rel => rel !== 'site/src/projects.js');
+copied += copyTrackedTree(ROOT, 'static', DIST);
+copied += copyTrackedTree(ROOT, 'content/posts', join(DIST, 'content/posts'));
 
 for (const name of readdirSync(ROOT).filter(name => /^shared-.*\.(?:css|js)$/.test(name))) {
   copyPath(join(ROOT, name), join(DIST, name));

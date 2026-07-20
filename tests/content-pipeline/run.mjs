@@ -2,13 +2,15 @@
 // Consistency checks for the content/ pipeline. Verifies that the generated
 // artifacts agree with each other and with the content/ source tree.
 // Run: node tests/content-pipeline/run.mjs
-// (`node _build.mjs --check` separately verifies the artifacts are current.)
+// (`node tools/build.mjs --check` separately verifies the artifacts are current.)
 
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
+const DIST = join(ROOT, 'dist');
+const BUILD = join(ROOT, '.build');
 let failures = 0;
 function check(name, ok, detail = '') {
   if (ok) { console.log('  ok: ' + name); return; }
@@ -19,9 +21,9 @@ const enSlugs = dir => readdirSync(join(ROOT, dir))
   .filter(f => f.endsWith('.md') && !f.endsWith('.ja.md'))
   .map(f => f.replace(/\.md$/, ''));
 
-const { PROJECTS } = await import(join(ROOT, 'src/projects.js'));
-const gen = await import(join(ROOT, '_content.generated.mjs'));
-const posts = JSON.parse(readFileSync(join(ROOT, 'posts.json'), 'utf8'));
+const { PROJECTS } = await import(join(DIST, 'src/projects.js'));
+const gen = await import(join(BUILD, 'content.generated.mjs'));
+const posts = JSON.parse(readFileSync(join(DIST, 'posts.json'), 'utf8'));
 
 console.log('content/projects ↔ src/projects.js ↔ _content.generated.mjs');
 const projSlugs = enSlugs('content/projects');
@@ -56,8 +58,8 @@ for (const p of posts) {
   check(`BLOG_META carries ${p.slug}`, gen.BLOG_META[p.slug]?.desc === p.excerpt);
 }
 check('legacy generated posts/ directory is gone', !existsSync(join(ROOT, 'posts')));
-const blogClient = readFileSync(join(ROOT, 'src', 'blog.js'), 'utf8');
-const worker = readFileSync(join(ROOT, '_worker.js'), 'utf8');
+const blogClient = readFileSync(join(ROOT, 'site', 'src', 'blog.js'), 'utf8');
+const worker = readFileSync(join(ROOT, 'worker', 'index.js'), 'utf8');
 check('blog client loads canonical markdown', blogClient.includes('/content/posts/'));
 check('worker loads canonical markdown', worker.includes('/content/posts/'));
 
@@ -66,18 +68,18 @@ for (const p of PROJECTS.filter(p => p.kind === 'sim' && !p.external && !p.plann
   const slug = p.href.replace(/^\//, '').replace(/\/$/, '');
   const about = readFileSync(join(ROOT, slug, 'about.md'), 'utf8');
   const meta = Object.fromEntries([...about.matchAll(/^([A-Za-z][\w]*):\s+(.+)$/gm)].map(m => [m[1], m[2]]));
-  const index = readFileSync(join(ROOT, slug, 'index.html'), 'utf8');
+  const index = readFileSync(join(DIST, slug, 'index.html'), 'utf8');
   check(`${p.title} about metadata is complete`, ['name', 'title', 'description', 'updated'].every(k => meta[k]));
   check(`${p.title} JSON-LD date is current`, index.includes(`"dateModified": "${meta.updated}"`));
   check(`${p.title} canonical description reaches HTML`, index.includes(meta.description.replace(/&/g, '&amp;').replace(/"/g, '&quot;')));
   const uiFiles = ['main.js', join('src', 'ui.js')]
-    .map(rel => join(ROOT, slug, rel)).filter(existsSync);
+    .map(rel => join(DIST, slug, rel)).filter(existsSync);
   check(`${p.title} about panel date is current`, uiFiles.some(rel => readFileSync(rel, 'utf8').includes(`lastUpdated: '${meta.updated}'`)));
 }
 
 console.log('project registry ↔ discovery files');
-const llms = readFileSync(join(ROOT, 'llms.txt'), 'utf8');
-const about = readFileSync(join(ROOT, 'about.md'), 'utf8');
+const llms = readFileSync(join(DIST, 'llms.txt'), 'utf8');
+const about = readFileSync(join(DIST, 'about.md'), 'utf8');
 for (const p of PROJECTS.filter(p => !p.planned)) {
   check(`llms.txt carries ${p.title}`, llms.includes(`[${p.title}](`));
   check(`about.md carries ${p.title}`, about.includes(`[${p.title}](`));
@@ -86,15 +88,15 @@ check('planned projects stay out of discovery files',
   !PROJECTS.filter(p => p.planned).some(p => llms.includes(`[${p.title}](`) || about.includes(`[${p.title}](`)));
 
 console.log('index.html ↔ i18n.js');
-const html = readFileSync(join(ROOT, 'index.html'), 'utf8');
-const i18n = readFileSync(join(ROOT, 'i18n.js'), 'utf8');
+const html = readFileSync(join(DIST, 'index.html'), 'utf8');
+const i18n = readFileSync(join(DIST, 'i18n.js'), 'utf8');
 const dictKeys = new Set([...i18n.matchAll(/^\s*(?:'([^']+)'|"([^"]+)"):/gm)].map(m => m[1] || m[2]));
 const used = [...html.matchAll(/data-i18n(?:-title|-aria|-content|-alt|-href)?="([^"]+)"/g)].map(m => m[1]);
 const missing = [...new Set(used.filter(k => !dictKeys.has(k)))];
 check('every data-i18n key in index.html resolves', missing.length === 0, missing.join(', '));
 
 console.log('home-data.json shape');
-const hd = JSON.parse(readFileSync(join(ROOT, 'home-data.json'), 'utf8'));
+const hd = JSON.parse(readFileSync(join(DIST, 'home-data.json'), 'utf8'));
 for (const k of ['now', 'now_ja', 'hyperfixation', 'hyperfixation_ja', 'predictions',
   'predictions_ja', 'askMeAbout', 'askMeAbout_ja']) {
   check(`home-data has ${k}`, hd[k] != null);
