@@ -6,7 +6,13 @@ const payload = {
     schema_version: 1,
     submission_id: '6b812c60-4a67-49d1-8e34-524c0ff16283',
     month: '2026-07',
-    demographics: { age: '21-40', country: 'USA' },
+    demographics: {
+        age: '18-24',
+        sex_assigned_at_birth: 'female',
+        gender: 'woman',
+        country: 'USA',
+        education: 'bachelors',
+    },
     battery: { depth_percent: 37, keys: ['neo300'], values: true, omib: true, rotation: true },
     responses: { 'ipip-008e50816285': 4, 'omib-001': '11110000000000000000', 'rotation-2-3-3-2-0y0': 'same' },
     quality_flags: {
@@ -57,6 +63,7 @@ test('survey endpoint accepts a schema-valid same-origin contribution', async ()
     assert.equal(calls.length, 1);
     assert.equal(calls[0].values[0], payload.submission_id);
     assert.equal(calls[0].values[2].length, 7);
+    assert.deepEqual(JSON.parse(calls[0].values[3]), payload.demographics);
     assert.equal(calls[0].values[8], 'CC0-1.0');
 });
 
@@ -66,6 +73,10 @@ test('survey endpoint rejects cross-origin and malformed requests', async () => 
     assert.equal((await worker.fetch(request({ ...payload, license: 'CC-BY-4.0' }), env, {})).status, 422);
     assert.equal((await worker.fetch(request({ ...payload, battery: { ...payload.battery, depth_percent: 19 } }), env, {})).status, 422);
     assert.equal((await worker.fetch(request({ ...payload, battery: { ...payload.battery, keys: ['mini'] } }), env, {})).status, 422);
+    assert.equal((await worker.fetch(request({ ...payload, demographics: { age: '10-20' } }), env, {})).status, 422);
+    assert.equal((await worker.fetch(request({ ...payload, demographics: { age: '21-40' } }), env, {})).status, 422);
+    assert.equal((await worker.fetch(request({ ...payload, demographics: { ethnicity: 'example' } }), env, {})).status, 422);
+    assert.equal((await worker.fetch(request({ ...payload, demographics: { sexuality: 'example' } }), env, {})).status, 422);
     assert.equal((await worker.fetch(request(payload, { method: 'GET' }), env, {})).status, 405);
 });
 

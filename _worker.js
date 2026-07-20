@@ -416,8 +416,9 @@ const SURVEY_RATE_WINDOW_MS = 5 * 60 * 1000;
 const surveyRateWindow = new Map();
 const SURVEY_KEYS = new Set(['neo300', 'bfas', 'hexaco']);
 const SURVEY_DEMOGRAPHICS = {
-  age: new Set(['10-20', '21-40', '41-60', '61-95']),
-  gender: new Set(['female', 'male']),
+  age: new Set(['18-24', '25-34', '35-44', '45-54', '55-64', '65+']),
+  sex_assigned_at_birth: new Set(['female', 'male', 'x-or-another']),
+  gender: new Set(['woman', 'man', 'nonbinary', 'another-gender']),
   country: new Set(['Afghanist', 'Albania', 'Australia', 'Canada', 'China', 'Finland', 'France', 'Germany', 'Hong Kong', 'India', 'Ireland', 'Malaysia', 'Mexico', 'Netherlan', 'New Zeala', 'Norway', 'Philippin', 'Romania', 'Singapore', 'South Afr', 'South Kor', 'Sweden', 'UK', 'USA']),
   education: new Set(['secondary-or-less', 'some-college', 'bachelors', 'postgraduate']),
 };
