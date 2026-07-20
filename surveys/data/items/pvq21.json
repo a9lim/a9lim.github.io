@@ -1,0 +1,165 @@
+{
+  "schema_version": 1,
+  "name": "ESS Human Values Scale (PVQ-21)",
+  "prompt": "How much like you is this person?",
+  "adaptation": "The ESS male/female portraits were adapted to singular they; meaning and item order are preserved.",
+  "license": {
+    "name": "CC BY-SA 4.0",
+    "url": "https://creativecommons.org/licenses/by-sa/4.0/"
+  },
+  "source": "https://www.europeansocialsurvey.org/sites/default/files/2023-06/ESS_core_questionnaire_human_values.pdf",
+  "choices": [
+    {
+      "value": 6,
+      "label": "Very much like me"
+    },
+    {
+      "value": 5,
+      "label": "Like me"
+    },
+    {
+      "value": 4,
+      "label": "Somewhat like me"
+    },
+    {
+      "value": 3,
+      "label": "A little like me"
+    },
+    {
+      "value": 2,
+      "label": "Not like me"
+    },
+    {
+      "value": 1,
+      "label": "Not like me at all"
+    }
+  ],
+  "items": [
+    {
+      "id": "pvq-01",
+      "order": 1,
+      "scale": "self-direction",
+      "text": "Thinking up new ideas and being creative is important to them. They like to do things in their own original way."
+    },
+    {
+      "id": "pvq-02",
+      "order": 2,
+      "scale": "power",
+      "text": "It is important to them to be rich. They want to have a lot of money and expensive things."
+    },
+    {
+      "id": "pvq-03",
+      "order": 3,
+      "scale": "universalism",
+      "text": "They think it is important that every person in the world be treated equally. They want justice for everybody, even for people they don't know."
+    },
+    {
+      "id": "pvq-04",
+      "order": 4,
+      "scale": "achievement",
+      "text": "It is very important to them to show their abilities. They want people to admire what they do."
+    },
+    {
+      "id": "pvq-05",
+      "order": 5,
+      "scale": "security",
+      "text": "It is important to them to live in secure surroundings. They avoid anything that might endanger their safety."
+    },
+    {
+      "id": "pvq-06",
+      "order": 6,
+      "scale": "stimulation",
+      "text": "They like surprises and are always looking for new things to do. They think it is important to do lots of different things in life."
+    },
+    {
+      "id": "pvq-07",
+      "order": 7,
+      "scale": "conformity",
+      "text": "They believe that people should do what they're told. They think people should follow rules at all times, even when no one is watching."
+    },
+    {
+      "id": "pvq-08",
+      "order": 8,
+      "scale": "universalism",
+      "text": "It is important to them to listen to people who are different from them. Even when they disagree, they still want to understand them."
+    },
+    {
+      "id": "pvq-09",
+      "order": 9,
+      "scale": "tradition",
+      "text": "They think it's important not to ask for more than what they have. They believe people should be satisfied with what they have."
+    },
+    {
+      "id": "pvq-10",
+      "order": 10,
+      "scale": "hedonism",
+      "text": "Having a good time is important to them. They like to spoil themselves."
+    },
+    {
+      "id": "pvq-11",
+      "order": 11,
+      "scale": "self-direction",
+      "text": "It is important to them to make their own decisions about what they do. They like to be free to plan and choose their activities."
+    },
+    {
+      "id": "pvq-12",
+      "order": 12,
+      "scale": "benevolence",
+      "text": "It is very important to them to help the people around them. They want to care for other people."
+    },
+    {
+      "id": "pvq-13",
+      "order": 13,
+      "scale": "achievement",
+      "text": "Being very successful is important to them. They like to impress other people."
+    },
+    {
+      "id": "pvq-14",
+      "order": 14,
+      "scale": "security",
+      "text": "It is very important to them that their country be safe from threats from within and without. They are concerned that social order be protected."
+    },
+    {
+      "id": "pvq-15",
+      "order": 15,
+      "scale": "stimulation",
+      "text": "They look for adventures and like to take risks. They want to have an exciting life."
+    },
+    {
+      "id": "pvq-16",
+      "order": 16,
+      "scale": "conformity",
+      "text": "It is important to them always to behave properly. They want to avoid doing anything people would say is wrong."
+    },
+    {
+      "id": "pvq-17",
+      "order": 17,
+      "scale": "power",
+      "text": "It is important to them to be in charge and tell others what to do. They want people to do what they say."
+    },
+    {
+      "id": "pvq-18",
+      "order": 18,
+      "scale": "benevolence",
+      "text": "It is important to them to be loyal to their friends. They want to devote themselves to people close to them."
+    },
+    {
+      "id": "pvq-19",
+      "order": 19,
+      "scale": "universalism",
+      "text": "They strongly believe that people should care for nature. Looking after the environment is important to them."
+    },
+    {
+      "id": "pvq-20",
+      "order": 20,
+      "scale": "tradition",
+      "text": "Religious belief is important to them. They try hard to do what their religion requires."
+    },
+    {
+      "id": "pvq-21",
+      "order": 21,
+      "scale": "hedonism",
+      "text": "They seek every chance they can to have fun. It is important to them to do things that give them pleasure."
+    }
+  ]
+}

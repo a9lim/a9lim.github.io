@@ -1,0 +1,3744 @@
+{
+  "schema_version": 1,
+  "response_format": "accuracy-5",
+  "choices": [
+    {
+      "value": 1,
+      "label": "Very inaccurate"
+    },
+    {
+      "value": 2,
+      "label": "Moderately inaccurate"
+    },
+    {
+      "value": 3,
+      "label": "Neither accurate nor inaccurate"
+    },
+    {
+      "value": 4,
+      "label": "Moderately accurate"
+    },
+    {
+      "value": 5,
+      "label": "Very accurate"
+    }
+  ],
+  "license": {
+    "name": "Public domain",
+    "url": "https://ipip.ori.org/newPermission.htm"
+  },
+  "items": [
+    {
+      "id": "ipip-008e50816285",
+      "text": "Talk to a lot of different people at parties.",
+      "sources": [
+        "IPIP-NEO-300",
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-0119080f81d1",
+      "text": "Am willing to take risks.",
+      "sources": [
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-0205a511d986",
+      "text": "Am not bothered by disorder.",
+      "sources": [
+        "IPIP-NEO-300",
+        "BFAS",
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-024f6f33ed44",
+      "text": "Am not easily disturbed by events.",
+      "sources": [
+        "IPIP-NEO-300",
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-029f4640b96d",
+      "text": "Love flowers.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-0365645cd57c",
+      "text": "Reveal little about myself.",
+      "sources": [
+        "BFAS"
+      ]
+    },
+    {
+      "id": "ipip-060f7588bab8",
+      "text": "Formulate ideas clearly.",
+      "sources": [
+        "BFAS"
+      ]
+    },
+    {
+      "id": "ipip-069409019e53",
+      "text": "Tend to vote for liberal political candidates.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-07013d9d7502",
+      "text": "Try to forgive and forget.",
+      "sources": [
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-073f9dfa0346",
+      "text": "Seek status.",
+      "sources": [
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-07605d077583",
+      "text": "Believe in one true religion.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-076832c134ef",
+      "text": "Am sensitive to the needs of others.",
+      "sources": [
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-081e16463a2f",
+      "text": "Am inclined to forgive others.",
+      "sources": [
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-0888780cf924",
+      "text": "Tell other people what they want to hear so that they will do what I want them to do.",
+      "sources": [
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-090e280e789a",
+      "text": "Am relaxed most of the time.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-0938ace43891",
+      "text": "Know that my ideas sometimes surprise people.",
+      "sources": [
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-0a01d8ccde43",
+      "text": "Am a person whose moods go up and down easily.",
+      "sources": [
+        "BFAS"
+      ]
+    },
+    {
+      "id": "ipip-0a72fd4b9557",
+      "text": "Am the life of the party.",
+      "sources": [
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-0b163ccdf0ad",
+      "text": "Believe in human goodness.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-0badea2bdfda",
+      "text": "Rarely worry.",
+      "sources": [
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-0bb887fde12c",
+      "text": "Enjoy being part of a group.",
+      "sources": [
+        "IPIP-NEO-300",
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-0c52d3f44627",
+      "text": "Can't be bothered with other's needs.",
+      "sources": [
+        "BFAS"
+      ]
+    },
+    {
+      "id": "ipip-0c549e88be6d",
+      "text": "Love to reflect on things.",
+      "sources": [
+        "BFAS"
+      ]
+    },
+    {
+      "id": "ipip-0c65b10e5289",
+      "text": "Keep my cool.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-0d483ba71576",
+      "text": "Have a sharp tongue.",
+      "sources": [
+        "IPIP-NEO-300",
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-0dba210d3c3e",
+      "text": "Love luxury.",
+      "sources": [
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-0de6ffc8a9e9",
+      "text": "Don't put my mind on the task at hand.",
+      "sources": [
+        "BFAS"
+      ]
+    },
+    {
+      "id": "ipip-0e3f5a576e7f",
+      "text": "Enjoy being thought of as a normal \"mainstream\" person.",
+      "sources": [
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-0ebe404c019c",
+      "text": "Am afraid that I will do the wrong thing.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-1103d8beddd4",
+      "text": "Love to think up new ways of doing things.",
+      "sources": [
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-114c0d4dba15",
+      "text": "Think highly of myself.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-1181025e0cd0",
+      "text": "React strongly to criticism.",
+      "sources": [
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-11bb5743424d",
+      "text": "Don't know much about history.",
+      "sources": [
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-134610ae480b",
+      "text": "Start tasks right away.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-13df32ca9ff2",
+      "text": "Am filled with doubts about things.",
+      "sources": [
+        "BFAS"
+      ]
+    },
+    {
+      "id": "ipip-13e8b8b1e21d",
+      "text": "Love to help others.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-14599d651a4f",
+      "text": "React slowly.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-14aa22c871e3",
+      "text": "Believe that there is no absolute right or wrong.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-151ce26a0044",
+      "text": "Think that all will be well.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-1536f594047c",
+      "text": "Smile a lot.",
+      "sources": [
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-155a801ab0d1",
+      "text": "Get upset by unpleasant thoughts that come into my mind.",
+      "sources": [
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-15e1695b3777",
+      "text": "Demand quality.",
+      "sources": [
+        "IPIP-NEO-300",
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-16b57a672929",
+      "text": "Stick to my chosen path.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-172d970983b5",
+      "text": "Dislike new foods.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-1808050857bf",
+      "text": "Dislike being the center of attention.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-1831477d6350",
+      "text": "Leave my belongings around.",
+      "sources": [
+        "IPIP-NEO-300",
+        "BFAS",
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-1841c3b27f70",
+      "text": "Make people feel uncomfortable.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-186d63ae9570",
+      "text": "Finish what I start.",
+      "sources": [
+        "BFAS"
+      ]
+    },
+    {
+      "id": "ipip-18aff1fab3dc",
+      "text": "Feel desperate.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-19d932630ee5",
+      "text": "Am easily discouraged.",
+      "sources": [
+        "BFAS"
+      ]
+    },
+    {
+      "id": "ipip-19efb0f976c0",
+      "text": "Can't stand being contradicted.",
+      "sources": [
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-1a1c87eea59d",
+      "text": "Don't see the consequences of things.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-1ac3718231ef",
+      "text": "Try not to think about the needy.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-1b34ed4d84bb",
+      "text": "Am very pleased with myself.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-1b49484244ef",
+      "text": "Seek danger.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-1b4e3261c705",
+      "text": "Am not bothered by difficult social situations.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-1b5bbf016850",
+      "text": "Suspect that my facial expressions give me away when I feel sad.",
+      "sources": [
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-1b73fdd84866",
+      "text": "Distrust people.",
+      "sources": [
+        "IPIP-NEO-300",
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-1bee9287c0e7",
+      "text": "Don't think that I'm better than other people.",
+      "sources": [
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-1c0490cae7e4",
+      "text": "Am full of ideas.",
+      "sources": [
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-1c0fe6ad7cf6",
+      "text": "Do the opposite of what is asked.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-1cce9d09a023",
+      "text": "Am never at a loss for words.",
+      "sources": [
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-1d3e3fa53a63",
+      "text": "Learn things slowly.",
+      "sources": [
+        "BFAS"
+      ]
+    },
+    {
+      "id": "ipip-1d76f9a6236e",
+      "text": "Use flattery to get ahead.",
+      "sources": [
+        "IPIP-NEO-300",
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-1df8a0aa7e2c",
+      "text": "Do not have a good imagination.",
+      "sources": [
+        "IPIP-NEO-300",
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-1f973951548d",
+      "text": "Remain calm under pressure.",
+      "sources": [
+        "IPIP-NEO-300",
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-1fe7feadc93a",
+      "text": "Radiate joy.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-2046ba79f57a",
+      "text": "Let people push me around to help them feel important.",
+      "sources": [
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-20bdcd36c712",
+      "text": "Make people feel welcome.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-2159fe9d2e50",
+      "text": "Am not easily annoyed.",
+      "sources": [
+        "IPIP-NEO-300",
+        "BFAS"
+      ]
+    },
+    {
+      "id": "ipip-2164b2f951a1",
+      "text": "Swim against the current.",
+      "sources": [
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-229ef01d0cf8",
+      "text": "Cheat on people who have trusted me.",
+      "sources": [
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-22ad489f19bc",
+      "text": "Enjoy intellectual games.",
+      "sources": [
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-22b3731cd5e0",
+      "text": "Come up with good solutions.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-22bb8f68c452",
+      "text": "Stop when work becomes too difficult.",
+      "sources": [
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-22d80001883e",
+      "text": "Become overwhelmed by events.",
+      "sources": [
+        "IPIP-NEO-300",
+        "BFAS"
+      ]
+    },
+    {
+      "id": "ipip-23925ffe4b59",
+      "text": "Find it necessary to please the people who have power.",
+      "sources": [
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-23fb45a73444",
+      "text": "Am usually active and full of energy.",
+      "sources": [
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-24113f265193",
+      "text": "Am out for my own personal gain.",
+      "sources": [
+        "BFAS",
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-24848a531f27",
+      "text": "Am hard to convince.",
+      "sources": [
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-2496b520b918",
+      "text": "Look at the bright side of life.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-24fef4d26fa5",
+      "text": "Am passionate about causes.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-25361833ba37",
+      "text": "Am not easily bothered by things.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-25451b183060",
+      "text": "Want to be left alone.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-25873e1e56af",
+      "text": "Dislike imperfect work.",
+      "sources": [
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-260de0bea257",
+      "text": "Go on binges.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-26f02f4d6ef3",
+      "text": "Can't stand weak people.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-27a5d142d037",
+      "text": "Am able to control my cravings.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-27c25e96a5b2",
+      "text": "Know how to get things done.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-2876f153a9ba",
+      "text": "Have difficulty starting tasks.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-28819d6a5222",
+      "text": "Love surprise parties.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-29275789bc39",
+      "text": "Seek support.",
+      "sources": [
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-2938f402cb91",
+      "text": "Rush into things.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-2940ba15d604",
+      "text": "Begin to panic when there is danger.",
+      "sources": [
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-2aa01668ea5a",
+      "text": "See myself as a good leader.",
+      "sources": [
+        "BFAS"
+      ]
+    },
+    {
+      "id": "ipip-2abadac41376",
+      "text": "Can't stand confrontations.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-2ae498e67f9b",
+      "text": "Willing to try anything once.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-2bbd928facac",
+      "text": "Waste my time.",
+      "sources": [
+        "IPIP-NEO-300",
+        "BFAS"
+      ]
+    },
+    {
+      "id": "ipip-2d0913ec3910",
+      "text": "Want everything to be \"just right.\"",
+      "sources": [
+        "IPIP-NEO-300",
+        "BFAS",
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-2daf53fe8195",
+      "text": "Seem to derive less enjoyment from interacting with people than others do.",
+      "sources": [
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-2dd99b36f784",
+      "text": "Laugh a lot.",
+      "sources": [
+        "BFAS",
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-2e7342b15a3d",
+      "text": "Have an intense, boisterous laugh.",
+      "sources": [
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-2ea760080a03",
+      "text": "Enjoy being part of a loud crowd.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-2ec383b0812a",
+      "text": "Warm up quickly to others.",
+      "sources": [
+        "IPIP-NEO-300",
+        "BFAS"
+      ]
+    },
+    {
+      "id": "ipip-2f6c7085e3dc",
+      "text": "Think quickly.",
+      "sources": [
+        "BFAS"
+      ]
+    },
+    {
+      "id": "ipip-2ff0910afa77",
+      "text": "Can be stirred up easily.",
+      "sources": [
+        "BFAS"
+      ]
+    },
+    {
+      "id": "ipip-314d628448cb",
+      "text": "Am afraid to draw attention to myself.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-317d4912d111",
+      "text": "Look down on others.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-320902542b4a",
+      "text": "Consider myself an average person.",
+      "sources": [
+        "IPIP-NEO-300",
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-32c33fdb317d",
+      "text": "Become frustrated and angry with people when they don't live up to my expectations.",
+      "sources": [
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-338176a0c85d",
+      "text": "Can handle complex problems.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-3412d35cfdf6",
+      "text": "Love to read challenging material.",
+      "sources": [
+        "IPIP-NEO-300",
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-343d95f19889",
+      "text": "Get others to do my duties.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-34687ff32d3b",
+      "text": "Am not easily affected by my emotions.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-3484adf2ed7c",
+      "text": "Don't understand things.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-34f0d2abad0e",
+      "text": "Pretend to be concerned for others.",
+      "sources": [
+        "IPIP-NEO-300",
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-3680effc9fce",
+      "text": "Don't worry about things that have already happened.",
+      "sources": [
+        "IPIP-NEO-300",
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-37028b8ac44c",
+      "text": "Know the answers to many questions.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-37c78d9de8cb",
+      "text": "Wish to stay young forever.",
+      "sources": [
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-38197efb1b0c",
+      "text": "Get upset if others change the way that I have arranged things.",
+      "sources": [
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-38b5cc05591c",
+      "text": "Take control of things.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-38d7fbb43692",
+      "text": "Don't understand people who get emotional.",
+      "sources": [
+        "IPIP-NEO-300",
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-3af609cca8bf",
+      "text": "Get irritated easily.",
+      "sources": [
+        "IPIP-NEO-300",
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-3b56eedb2bef",
+      "text": "Anticipate the needs of others.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-3b57ff4d3ba7",
+      "text": "Put on a show to impress people.",
+      "sources": [
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-3b8bbe78828c",
+      "text": "Prefer to be alone.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-3ba06de2619d",
+      "text": "Am exacting in my work.",
+      "sources": [
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-3bf6ef4a0aa2",
+      "text": "Don't know why I do some of the things I do.",
+      "sources": [
+        "IPIP-NEO-300",
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-3c6ae0cc588e",
+      "text": "Try to avoid complex people.",
+      "sources": [
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-3cf6393c823c",
+      "text": "Keep in the background.",
+      "sources": [
+        "IPIP-NEO-300",
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-3d889063a926",
+      "text": "Like to take my time.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-3ec781eb240f",
+      "text": "Immediately feel sad when hearing of an unhappy event.",
+      "sources": [
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-3eea3e9f3aec",
+      "text": "Like to get lost in thought.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-3f258cc052f5",
+      "text": "Dislike changes.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-40a733b7d5b6",
+      "text": "Try to impress others.",
+      "sources": [
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-41364689404a",
+      "text": "Wait for others to lead the way.",
+      "sources": [
+        "IPIP-NEO-300",
+        "BFAS"
+      ]
+    },
+    {
+      "id": "ipip-4155e1b6388d",
+      "text": "Push myself very hard to succeed.",
+      "sources": [
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-41700b4dc487",
+      "text": "Respect authority.",
+      "sources": [
+        "BFAS"
+      ]
+    },
+    {
+      "id": "ipip-41875f1880a5",
+      "text": "Get caught up in my problems.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-41e477a05f00",
+      "text": "Get things done quickly.",
+      "sources": [
+        "BFAS"
+      ]
+    },
+    {
+      "id": "ipip-4244d5200e84",
+      "text": "Love action.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-4341a57a7e8e",
+      "text": "Like to tidy up.",
+      "sources": [
+        "IPIP-NEO-300",
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-43673b039077",
+      "text": "Rarely feel depressed.",
+      "sources": [
+        "BFAS",
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-438f9f068bd9",
+      "text": "Avoid mistakes.",
+      "sources": [
+        "IPIP-NEO-300",
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-4423317d08ba",
+      "text": "Quickly lose interest in the tasks I start.",
+      "sources": [
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-4425beb3dcce",
+      "text": "Steal things.",
+      "sources": [
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-443bb424be60",
+      "text": "Rarely put people under pressure.b",
+      "sources": [
+        "BFAS"
+      ]
+    },
+    {
+      "id": "ipip-443d47d2dd62",
+      "text": "Hate being the center of attention.",
+      "sources": [
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-44538cbcfbe8",
+      "text": "Am easily annoyed.",
+      "sources": [
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-446a5346ea6e",
+      "text": "Tend to vote for conservative political candidates.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-44ed4ae0cddc",
+      "text": "Love to daydream.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-454804a68742",
+      "text": "Like to visit new places.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-456397f379ef",
+      "text": "Can handle a lot of information.",
+      "sources": [
+        "IPIP-NEO-300",
+        "BFAS"
+      ]
+    },
+    {
+      "id": "ipip-459acdfea008",
+      "text": "Rarely complain.",
+      "sources": [
+        "IPIP-NEO-300",
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-459d8bee64ce",
+      "text": "Rebel against authority.",
+      "sources": [
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-45fe22904ddb",
+      "text": "Have frequent mood swings.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-46da8e3a5d93",
+      "text": "Would never go riding down a stretch of rapids in a canoe.",
+      "sources": [
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-46e583aaaf09",
+      "text": "Act impulsively when something is bothering me.",
+      "sources": [
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-49cfa1a4f33a",
+      "text": "Am always busy.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-4a8b8266ebbd",
+      "text": "Don't finish the things that I start.",
+      "sources": [
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-4abda7cd3f4b",
+      "text": "Do just enough work to get by.",
+      "sources": [
+        "IPIP-NEO-300",
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-4b3fb45a0322",
+      "text": "Would never take things that aren't mine.",
+      "sources": [
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-4b860515aed3",
+      "text": "Would feel very badly for a long time if I were to steal from someone.",
+      "sources": [
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-4bbed49418c1",
+      "text": "Trust others.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-4bd4eccd7468",
+      "text": "Do a lot in my spare time.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-4c5d6e7e61ad",
+      "text": "Would not enjoy being a famous celebrity.",
+      "sources": [
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-4c9a1f890d01",
+      "text": "Switch my loyalties when I feel like it.",
+      "sources": [
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-4d110d05f4cc",
+      "text": "Am seldom bothered by the apparent suffering of strangers.",
+      "sources": [
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-4d7074974339",
+      "text": "Take no time for others.",
+      "sources": [
+        "IPIP-NEO-300",
+        "BFAS"
+      ]
+    },
+    {
+      "id": "ipip-4e6c71012041",
+      "text": "Am likely to show off if I get the chance.",
+      "sources": [
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-4f3352b41e5c",
+      "text": "Dislike myself.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-4f640792653b",
+      "text": "Get back at others.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-4f751c683754",
+      "text": "Keep things tidy.",
+      "sources": [
+        "BFAS",
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-4fd92098486d",
+      "text": "Need a push to get started.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-50494373a6aa",
+      "text": "See beauty in things that others might not notice.",
+      "sources": [
+        "IPIP-NEO-300",
+        "BFAS",
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-51777b4b3f30",
+      "text": "Rarely enjoy being with people.",
+      "sources": [
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-518946c658b9",
+      "text": "Believe in an eye for an eye.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-518a8b780f3c",
+      "text": "Contradict others.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-523bfb98900f",
+      "text": "Believe that we coddle criminals too much.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-52f9fc270807",
+      "text": "Avoid philosophical discussions.",
+      "sources": [
+        "IPIP-NEO-300",
+        "BFAS"
+      ]
+    },
+    {
+      "id": "ipip-53196908097f",
+      "text": "Believe that people are basically moral.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-533b27e30698",
+      "text": "Have a rich vocabulary.",
+      "sources": [
+        "IPIP-NEO-300",
+        "BFAS",
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-5392a9787cc0",
+      "text": "Am not embarrassed easily.",
+      "sources": [
+        "IPIP-NEO-300",
+        "BFAS"
+      ]
+    },
+    {
+      "id": "ipip-5394ff5214ed",
+      "text": "Need reassurance.",
+      "sources": [
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-5496155acfbb",
+      "text": "Am often in a bad mood.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-54e77b52f6ff",
+      "text": "Carry the conversation to a higher level.",
+      "sources": [
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-5521072ef5ab",
+      "text": "Make myself the center of attention.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-5633af14019a",
+      "text": "React quickly.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-567e444e5cfc",
+      "text": "Seek conflict.",
+      "sources": [
+        "BFAS"
+      ]
+    },
+    {
+      "id": "ipip-56f2f0314e22",
+      "text": "Am easily distracted.",
+      "sources": [
+        "BFAS"
+      ]
+    },
+    {
+      "id": "ipip-572019d38652",
+      "text": "Plunge into tasks with all my heart.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-579aff924853",
+      "text": "Have a lot of fun.",
+      "sources": [
+        "IPIP-NEO-300",
+        "BFAS",
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-5898605c16f0",
+      "text": "Face danger confidently.",
+      "sources": [
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-59dd2f51d187",
+      "text": "Say little.",
+      "sources": [
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-5a4518d640ab",
+      "text": "Find that it takes a lot to make me feel angry at someone.",
+      "sources": [
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-5a59e268a9d7",
+      "text": "Like to act on a whim.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-5aee8ff14f37",
+      "text": "Trust what people say.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-5c4e9a28c411",
+      "text": "Am a creature of habit.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-5f47d22aa737",
+      "text": "Work hard.",
+      "sources": [
+        "IPIP-NEO-300",
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-5f542e6c31df",
+      "text": "Break rules.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-5faa08fd772f",
+      "text": "Have difficulty imagining things.",
+      "sources": [
+        "IPIP-NEO-300",
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-5fe5a0c775a3",
+      "text": "Value cooperation over competition.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-612db8169534",
+      "text": "Have little to contribute.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-614dfebab8db",
+      "text": "Try to understand myself.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-62135eea837b",
+      "text": "Hold back my opinions.",
+      "sources": [
+        "IPIP-NEO-300",
+        "BFAS"
+      ]
+    },
+    {
+      "id": "ipip-6310eae5a4c8",
+      "text": "Like to do things for others.",
+      "sources": [
+        "BFAS"
+      ]
+    },
+    {
+      "id": "ipip-63f60037a636",
+      "text": "Don't pretend to be more than I am.",
+      "sources": [
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-64a414b15cd8",
+      "text": "Feel threatened easily.",
+      "sources": [
+        "BFAS"
+      ]
+    },
+    {
+      "id": "ipip-65ab52df1d94",
+      "text": "Would hate to be considered odd or strange.",
+      "sources": [
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-65bf03e92597",
+      "text": "Seldom joke around.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-687c2a8da54c",
+      "text": "Am indifferent to the feelings of others.",
+      "sources": [
+        "IPIP-NEO-300",
+        "BFAS"
+      ]
+    },
+    {
+      "id": "ipip-68e2edfcc544",
+      "text": "Set high standards for myself and others.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-6a8be806c2ba",
+      "text": "Get back at people who insult me.",
+      "sources": [
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-6b1a64bc3466",
+      "text": "Do not like art.",
+      "sources": [
+        "IPIP-NEO-300",
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-6c4c3b7278dc",
+      "text": "Need protection.",
+      "sources": [
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-6c587cb504a6",
+      "text": "Criticize others' shortcomings.",
+      "sources": [
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-6d618233aa42",
+      "text": "Speak softly.",
+      "sources": [
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-6e45c3b05652",
+      "text": "Have little to say.",
+      "sources": [
+        "IPIP-NEO-300",
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-6e699f272bea",
+      "text": "Am not interested in other people's problems.",
+      "sources": [
+        "IPIP-NEO-300",
+        "BFAS"
+      ]
+    },
+    {
+      "id": "ipip-6e9cdbeeb1ec",
+      "text": "Turn my back on others.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-6f7bc1c201c7",
+      "text": "Often feel blue.",
+      "sources": [
+        "IPIP-NEO-300",
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-70a96992d12e",
+      "text": "Tell the truth.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-710a1d5bb232",
+      "text": "Do not enjoy watching dance performances.",
+      "sources": [
+        "IPIP-NEO-300",
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-71648aa5377f",
+      "text": "Like to be viewed as proper and conventional.",
+      "sources": [
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-71c71a029804",
+      "text": "Don't mind being the center of attention.",
+      "sources": [
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-72050d08ad4d",
+      "text": "Believe that too much tax money goes to support artists.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-72208fc8f5b8",
+      "text": "Would fear walking in a high-crime part of a city.",
+      "sources": [
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-7272fde513b7",
+      "text": "Am not bothered by messy people.",
+      "sources": [
+        "IPIP-NEO-300",
+        "BFAS"
+      ]
+    },
+    {
+      "id": "ipip-72c5e4ac84e1",
+      "text": "Am easy to satisfy.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-74be359a1b87",
+      "text": "Sympathize with others' feelings.",
+      "sources": [
+        "BFAS"
+      ]
+    },
+    {
+      "id": "ipip-75b6482bf9be",
+      "text": "Dislike talking about myself.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-7715476238c1",
+      "text": "Avoid crowds.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-775218167404",
+      "text": "Dislike routine.",
+      "sources": [
+        "BFAS"
+      ]
+    },
+    {
+      "id": "ipip-778662353fed",
+      "text": "Enjoy examining myself and my life.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-780d0e8780f2",
+      "text": "Sympathize with the homeless.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-781a720e2d83",
+      "text": "Am deeply moved by others' misfortunes.",
+      "sources": [
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-791ad776287f",
+      "text": "Would be afraid to give a speech in public.",
+      "sources": [
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-79d497dc9d04",
+      "text": "Take things as they come.",
+      "sources": [
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-7a892f8481b1",
+      "text": "Feel comfortable around people.",
+      "sources": [
+        "IPIP-NEO-300",
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-7a8d4d7791e2",
+      "text": "Love order and regularity.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-7af6d2f898b7",
+      "text": "Rarely cry during sad movies.",
+      "sources": [
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-7bcc869847a2",
+      "text": "Am hard to get to know.",
+      "sources": [
+        "IPIP-NEO-300",
+        "BFAS",
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-7d887f4eeafa",
+      "text": "Jump into things without thinking.",
+      "sources": [
+        "IPIP-NEO-300",
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-7e13eb271ddc",
+      "text": "Often need help.",
+      "sources": [
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-7efb9c8cd0bc",
+      "text": "Have a vivid imagination.",
+      "sources": [
+        "IPIP-NEO-300",
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-7f7a121ecd25",
+      "text": "Act comfortably with others.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-7febaf441355",
+      "text": "Seldom feel weepy while reading the sad part of a story.",
+      "sources": [
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-803181a17aa6",
+      "text": "Have a low opinion of myself.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-80dadda5a385",
+      "text": "Adapt easily to new situations.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-80e142e7b35b",
+      "text": "Take charge.",
+      "sources": [
+        "IPIP-NEO-300",
+        "BFAS"
+      ]
+    },
+    {
+      "id": "ipip-80f5df4e13e2",
+      "text": "Seldom feel blue.",
+      "sources": [
+        "IPIP-NEO-300",
+        "BFAS"
+      ]
+    },
+    {
+      "id": "ipip-8148a1cfe7ee",
+      "text": "Have a high opinion of myself.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-82ce0db80953",
+      "text": "Do not like concerts.",
+      "sources": [
+        "IPIP-NEO-300",
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-82e7cbcefbe6",
+      "text": "Seldom experience sudden intuitive insights.",
+      "sources": [
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-8314c15f6aa1",
+      "text": "Prefer to eat at expensive restaurants.",
+      "sources": [
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-833fe3e6289a",
+      "text": "Follow a schedule.",
+      "sources": [
+        "BFAS"
+      ]
+    },
+    {
+      "id": "ipip-83835339d76c",
+      "text": "Find it difficult to get down to work.",
+      "sources": [
+        "IPIP-NEO-300",
+        "BFAS"
+      ]
+    },
+    {
+      "id": "ipip-841d836848b6",
+      "text": "Cheat to get ahead.",
+      "sources": [
+        "IPIP-NEO-300",
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-84e8f61ad139",
+      "text": "Like to begin new things.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-8670ca0249c8",
+      "text": "Complete tasks successfully.",
+      "sources": [
+        "IPIP-NEO-300",
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-870e6507ef9f",
+      "text": "Never splurge.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-872bba0ca3ff",
+      "text": "Involve others in what I am doing.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-87553e74835e",
+      "text": "Pay my bills on time.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-875738024d0f",
+      "text": "Indulge in my fantasies.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-87956cb9c527",
+      "text": "Stumble over my words.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-879ed7282739",
+      "text": "Worry about things.",
+      "sources": [
+        "IPIP-NEO-300",
+        "BFAS",
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-87d11fef4e9f",
+      "text": "Tell people about it when I'm irritated.",
+      "sources": [
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-886e5d03e168",
+      "text": "Am wary of others.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-88a1b8acfb56",
+      "text": "Am able to stand up for myself.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-8936f1e74864",
+      "text": "Mess things up.",
+      "sources": [
+        "BFAS"
+      ]
+    },
+    {
+      "id": "ipip-8a5d2271d948",
+      "text": "Show my feelings when I'm happy.",
+      "sources": [
+        "BFAS"
+      ]
+    },
+    {
+      "id": "ipip-8aed1767752e",
+      "text": "Want every detail taken care of.",
+      "sources": [
+        "BFAS",
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-8bf408a2ef9e",
+      "text": "Make friends easily.",
+      "sources": [
+        "IPIP-NEO-300",
+        "BFAS",
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-8c831cebdd64",
+      "text": "Am hard to satisfy.",
+      "sources": [
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-8ca663b1f820",
+      "text": "Break my promises.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-8ca72ecdc3c9",
+      "text": "Love my enemies.",
+      "sources": [
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-8dc231460188",
+      "text": "Play a role in order to impress people.",
+      "sources": [
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-8e7cb1e77178",
+      "text": "Get easily agitated.",
+      "sources": [
+        "BFAS"
+      ]
+    },
+    {
+      "id": "ipip-8edf9b84237e",
+      "text": "Rarely overindulge.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-8eee71d29b5a",
+      "text": "Often make last-minute plans.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-8fb00515976b",
+      "text": "Can talk others into doing things.",
+      "sources": [
+        "IPIP-NEO-300",
+        "BFAS"
+      ]
+    },
+    {
+      "id": "ipip-907f84606a31",
+      "text": "Make careless mistakes.",
+      "sources": [
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-90b6ad7b8630",
+      "text": "Laugh aloud.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-910bd9433750",
+      "text": "Am not really interested in others.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-91b6b868767e",
+      "text": "Am quick to understand things.",
+      "sources": [
+        "BFAS"
+      ]
+    },
+    {
+      "id": "ipip-9211b619f93b",
+      "text": "Put little time and effort into my work.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-92ecf8808f1f",
+      "text": "Carry out my plans.",
+      "sources": [
+        "IPIP-NEO-300",
+        "BFAS"
+      ]
+    },
+    {
+      "id": "ipip-9306d1e2ca65",
+      "text": "See that rules are observed.",
+      "sources": [
+        "BFAS"
+      ]
+    },
+    {
+      "id": "ipip-9345fbe513f9",
+      "text": "Make rash decisions.",
+      "sources": [
+        "IPIP-NEO-300",
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-93a96efaed0a",
+      "text": "Turn plans into actions.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-93ae789581d8",
+      "text": "Am calm even in tense situations.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-93cbdc348b38",
+      "text": "Seldom get emotional.",
+      "sources": [
+        "IPIP-NEO-300",
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-9462e778a4d9",
+      "text": "Am always on the go.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-94744c5d5820",
+      "text": "Feel that I'm unable to deal with things.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-94ba2af54f53",
+      "text": "Pay attention to details.",
+      "sources": [
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-951d4bd8f14e",
+      "text": "Pay too little attention to details.",
+      "sources": [
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-961bf35d68cf",
+      "text": "Often feel uncomfortable around others.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-96b94e0936fb",
+      "text": "Am good at taking advice.",
+      "sources": [
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-9751bba4aeec",
+      "text": "Have a good word for everyone.",
+      "sources": [
+        "IPIP-NEO-300",
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-993f0f17a77c",
+      "text": "Do crazy things.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-995b24737bc5",
+      "text": "Can manage many things at the same time.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-99817390a44a",
+      "text": "Seldom daydream.",
+      "sources": [
+        "IPIP-NEO-300",
+        "BFAS"
+      ]
+    },
+    {
+      "id": "ipip-9983d5fc8c2c",
+      "text": "Am nice to people I should be angry at.",
+      "sources": [
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-99d1de53f389",
+      "text": "Bottle up my feelings.",
+      "sources": [
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-9a257289d8ab",
+      "text": "Prefer to just let things happen.",
+      "sources": [
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-9b636bdc1a67",
+      "text": "Act wild and crazy.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-9ba57f762f48",
+      "text": "Get angry easily.",
+      "sources": [
+        "IPIP-NEO-300",
+        "BFAS",
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-9c9893692d3d",
+      "text": "Return extra change when a cashier makes a mistake.",
+      "sources": [
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-9daa35b01998",
+      "text": "Make a fool of myself.",
+      "sources": [
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-9db0fcc2db0a",
+      "text": "Don't have a soft side.",
+      "sources": [
+        "BFAS"
+      ]
+    },
+    {
+      "id": "ipip-9e87e1b3f182",
+      "text": "Believe that I am better than others.",
+      "sources": [
+        "IPIP-NEO-300",
+        "BFAS",
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-9ef72fe98e95",
+      "text": "Am not highly motivated to succeed.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-9efb17dd4957",
+      "text": "Believe that we should be tough on crime.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-9f6f9251dbb5",
+      "text": "Am the first to act.",
+      "sources": [
+        "BFAS"
+      ]
+    },
+    {
+      "id": "ipip-a12ca4772c64",
+      "text": "Yell at people.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-a17c6aef117e",
+      "text": "Do things that others find strange.",
+      "sources": [
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-a1b77612eb24",
+      "text": "Act without thinking.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-a1caa25e4464",
+      "text": "Act like different people in different situations.",
+      "sources": [
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-a21f530e69d9",
+      "text": "Don't strive for elegance in my appearance.",
+      "sources": [
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-a22bbbff5142",
+      "text": "Experience my emotions intensely.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-a2784b13f543",
+      "text": "Try to lead others.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-a2b0c0b752f9",
+      "text": "Would not enjoy a job that involves a lot of social interaction.",
+      "sources": [
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-a439029d0402",
+      "text": "Can't make up my mind.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-a4465aa3e8eb",
+      "text": "Love life.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-a4d1c8a545f9",
+      "text": "Show my sadness.",
+      "sources": [
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-a586fe52f13c",
+      "text": "Avoid imposing my will on others.a",
+      "sources": [
+        "BFAS"
+      ]
+    },
+    {
+      "id": "ipip-a62b20c1b404",
+      "text": "Find it hard to forgive others.",
+      "sources": [
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-a766296ffd7e",
+      "text": "Don't like the idea of change.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-a77d02544093",
+      "text": "Don't bother worrying about political and social problems.",
+      "sources": [
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-a7b5bd121725",
+      "text": "Tremble in dangerous situations.",
+      "sources": [
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-a8740447a305",
+      "text": "Amuse my friends.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-aafe06c9a0be",
+      "text": "Like to do frightening things.",
+      "sources": [
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-ab23f699953f",
+      "text": "Am hard to reason with.",
+      "sources": [
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-ab8fded8872d",
+      "text": "Leave a mess in my room.",
+      "sources": [
+        "IPIP-NEO-300",
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-ac3bb4d5eaea",
+      "text": "Express childlike joy.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-acfc0d822b85",
+      "text": "Find political discussions interesting.",
+      "sources": [
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-ad6c0afe6808",
+      "text": "Tire out quickly.",
+      "sources": [
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-ad98a0ba2f41",
+      "text": "Am considered to be kind of eccentric.",
+      "sources": [
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-adf3e2950a2e",
+      "text": "Seek adventure.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-ae2dd3e93d53",
+      "text": "Have excellent ideas.",
+      "sources": [
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-ae4d07751d9e",
+      "text": "Listen to my conscience.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-b07c67c93299",
+      "text": "Talk a lot.",
+      "sources": [
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-b0d151ddfab2",
+      "text": "Enjoy wild flights of fantasy.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-b1f43a5026fe",
+      "text": "Prefer to stick with things that I know.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-b24fe67d5271",
+      "text": "Do not like poetry.",
+      "sources": [
+        "IPIP-NEO-300",
+        "BFAS",
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-b315b26c47a5",
+      "text": "Get started quickly on doing a job.",
+      "sources": [
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-b3178b226466",
+      "text": "Excel in what I do.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-b37b542f1c07",
+      "text": "Inquire about others' well-being.",
+      "sources": [
+        "BFAS"
+      ]
+    },
+    {
+      "id": "ipip-b3d9399e4be2",
+      "text": "Cheer people up.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-b4384bf9c034",
+      "text": "Speak ill of others.",
+      "sources": [
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-b4f65f7d49a5",
+      "text": "Rarely feel angry with people.",
+      "sources": [
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-b506dda623f9",
+      "text": "Usually like to spend my free time with people.",
+      "sources": [
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-b60449a95f45",
+      "text": "Am not interested in theoretical discussions.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-b8991c06ffdc",
+      "text": "Don't like to draw attention to myself.",
+      "sources": [
+        "IPIP-NEO-300",
+        "BFAS",
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-b94ced748d3b",
+      "text": "Believe people should fend for themselves.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-b9a00995f25e",
+      "text": "Get stressed out easily.",
+      "sources": [
+        "IPIP-NEO-300",
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-b9cfc985d695",
+      "text": "Hold a grudge.",
+      "sources": [
+        "IPIP-NEO-300",
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-bafaede66342",
+      "text": "Would never go hang gliding or bungee jumping.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-bbe3b30898ed",
+      "text": "Let things proceed at their own pace.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-bc172d028388",
+      "text": "Am quick to judge others.",
+      "sources": [
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-bc2d79686350",
+      "text": "Know how to cope.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-bc6c82887c09",
+      "text": "Do things according to a plan.",
+      "sources": [
+        "IPIP-NEO-300",
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-bd31ae595255",
+      "text": "Feel that my life lacks direction.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-be98326dc06e",
+      "text": "Always know what I am doing.",
+      "sources": [
+        "BFAS"
+      ]
+    },
+    {
+      "id": "ipip-bf41e63c5bd8",
+      "text": "Suspect hidden motives in others.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-bf6877ad1f98",
+      "text": "Avoid difficult reading material.",
+      "sources": [
+        "IPIP-NEO-300",
+        "BFAS",
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-bf927bc58513",
+      "text": "Am often down in the dumps.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-bfdec8f1043f",
+      "text": "Stick to the rules.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-c03c33430bc6",
+      "text": "Would love to explore strange places.",
+      "sources": [
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-c0518cedad79",
+      "text": "Love dangerous situations.",
+      "sources": [
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-c0bc8a1f4007",
+      "text": "Avoid contacts with others.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-c0f9385e296d",
+      "text": "Am not easily amused.",
+      "sources": [
+        "IPIP-NEO-300",
+        "BFAS"
+      ]
+    },
+    {
+      "id": "ipip-c23c79ecba5b",
+      "text": "Have trouble guessing how others will react.",
+      "sources": [
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-c26e789b81e6",
+      "text": "Feel others' emotions.",
+      "sources": [
+        "IPIP-NEO-300",
+        "BFAS",
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-c281ba3d0ae3",
+      "text": "Need the approval of others.",
+      "sources": [
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-c2e9e8d306b2",
+      "text": "Admire a really clever scam.",
+      "sources": [
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-c3238593015d",
+      "text": "Feel comfortable with myself.",
+      "sources": [
+        "IPIP-NEO-300",
+        "BFAS"
+      ]
+    },
+    {
+      "id": "ipip-c32ebf8a261c",
+      "text": "Handle tasks smoothly.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-c366c6bd9572",
+      "text": "Believe that criminals should receive help rather than punishment.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-c3e723bc0954",
+      "text": "Am good at making impromptu speeches.",
+      "sources": [
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-c453e4d8c890",
+      "text": "Know how to captivate people.",
+      "sources": [
+        "BFAS"
+      ]
+    },
+    {
+      "id": "ipip-c47899692c36",
+      "text": "Do things I later regret.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-c49bdd9618c7",
+      "text": "Get to work at once.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-c510821ef2ca",
+      "text": "Interested in many things.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-c634f1a2be21",
+      "text": "Am attached to conventional ways.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-c6825f8a9e97",
+      "text": "Have read the great literary classics.",
+      "sources": [
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-c734fe5c3356",
+      "text": "Want everything to add up perfectly.",
+      "sources": [
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-c7bdce6c5f93",
+      "text": "Feel healthy and vibrant most of the time.",
+      "sources": [
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-c86c1dc711e4",
+      "text": "Am afraid of many things.",
+      "sources": [
+        "IPIP-NEO-300",
+        "BFAS"
+      ]
+    },
+    {
+      "id": "ipip-c8827ea598bf",
+      "text": "Love a good fight.",
+      "sources": [
+        "IPIP-NEO-300",
+        "BFAS"
+      ]
+    },
+    {
+      "id": "ipip-c8f9774a70f0",
+      "text": "Love to chat.",
+      "sources": [
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-ca0bf8cac1e4",
+      "text": "Often forget to put things back in their proper place.",
+      "sources": [
+        "IPIP-NEO-300",
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-ca17b878cb39",
+      "text": "Have a strong need for power.",
+      "sources": [
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-ca99a8df6c62",
+      "text": "Have difficulty understanding abstract ideas.",
+      "sources": [
+        "IPIP-NEO-300",
+        "BFAS"
+      ]
+    },
+    {
+      "id": "ipip-caebc3c57c44",
+      "text": "Enjoy feeling \"close to the earth.\"",
+      "sources": [
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-cb8811bbcec4",
+      "text": "Am more capable than most others.",
+      "sources": [
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-cca988ce965a",
+      "text": "Do more than what's expected of me.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-cd420def4172",
+      "text": "Am comfortable in unfamiliar situations.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-cec3e6c72ba8",
+      "text": "Get deeply immersed in music.",
+      "sources": [
+        "BFAS",
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-cf6ab9f9655f",
+      "text": "Take an interest in other people's lives.",
+      "sources": [
+        "BFAS"
+      ]
+    },
+    {
+      "id": "ipip-cf74a8c8a62a",
+      "text": "Seldom notice the emotional aspects of paintings and pictures.",
+      "sources": [
+        "BFAS",
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-cfb803ccf8fa",
+      "text": "Change my mood a lot.",
+      "sources": [
+        "BFAS"
+      ]
+    },
+    {
+      "id": "ipip-d001c30de88e",
+      "text": "Don't talk a lot.",
+      "sources": [
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-d00eff6406b1",
+      "text": "When interacting with a group of people, am often bothered by at least one of them.",
+      "sources": [
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-d132e8e6b1c4",
+      "text": "Choose my words with care.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-d13bb4d6f783",
+      "text": "Rarely notice my emotional reactions.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-d16c62e9dee0",
+      "text": "Use others for my own ends.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-d1d26cca40b1",
+      "text": "Rarely get caught up in the excitement.",
+      "sources": [
+        "BFAS"
+      ]
+    },
+    {
+      "id": "ipip-d20390cbe31d",
+      "text": "Feel that I have a lot of inner strength.",
+      "sources": [
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-d3f40d4af475",
+      "text": "Get chores done right away.",
+      "sources": [
+        "IPIP-NEO-300",
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-d4411ecabf9c",
+      "text": "Don't like crowded events.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-d4952e101aa9",
+      "text": "Often eat too much.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-d59bbec6721c",
+      "text": "Love excitement.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-d5e2e922ee6a",
+      "text": "Believe that people are essentially evil.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-d61f68236f56",
+      "text": "Prefer variety to routine.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-d6786dbad2a4",
+      "text": "Misrepresent the facts.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-d6c9f3773e08",
+      "text": "Spend time reflecting on things.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-d7d23519efda",
+      "text": "Keep my emotions under control.",
+      "sources": [
+        "BFAS"
+      ]
+    },
+    {
+      "id": "ipip-d7ed5527f4c1",
+      "text": "Hang around doing nothing.",
+      "sources": [
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-d8461f0a2ea6",
+      "text": "Dislike loud music.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-d8b3588e7cea",
+      "text": "Will not probe deeply into a subject.",
+      "sources": [
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-d99e6c760501",
+      "text": "Never spend more than I can afford.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-d9e1409753a5",
+      "text": "Postpone decisions.",
+      "sources": [
+        "IPIP-NEO-300",
+        "BFAS"
+      ]
+    },
+    {
+      "id": "ipip-d9e4e00d7940",
+      "text": "Continue until everything is perfect.",
+      "sources": [
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-da2ae45b18a1",
+      "text": "Experience very few emotional highs and lows.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-da4c15b6a88b",
+      "text": "Would be good at rescuing people from a burning building.",
+      "sources": [
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-da7e38a2310f",
+      "text": "Am interested in science.",
+      "sources": [
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-db158a769a65",
+      "text": "Am concerned about others.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-db412db3675b",
+      "text": "Maintain high energy throughout the day.",
+      "sources": [
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-dc38b8ed5398",
+      "text": "Believe laws should be strictly enforced.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-dc62b033457f",
+      "text": "Detect mistakes.",
+      "sources": [
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-dce0b06d1558",
+      "text": "Love to eat.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-dd57c4e7d352",
+      "text": "Obstruct others' plans.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-dd8a18b4927a",
+      "text": "Feel that most people can't be trusted.",
+      "sources": [
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-dda1d81b0bf8",
+      "text": "Like to take it easy.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-dee2f8a3b2b0",
+      "text": "Would not regret my behavior if I were to take advantage of someone impulsively.",
+      "sources": [
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-df5e58082616",
+      "text": "Try to follow the rules.",
+      "sources": [
+        "IPIP-NEO-300",
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-df760f0d2860",
+      "text": "Am always prepared.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-dff798ecc09a",
+      "text": "Keep others at a distance.",
+      "sources": [
+        "IPIP-NEO-300",
+        "BFAS",
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-e08cf3bb8153",
+      "text": "See myself as an average person.",
+      "sources": [
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-e158d248d063",
+      "text": "Seldom get lost in thought.",
+      "sources": [
+        "IPIP-NEO-300",
+        "BFAS"
+      ]
+    },
+    {
+      "id": "ipip-e1d95bc5a41d",
+      "text": "Lack the talent for influencing people.",
+      "sources": [
+        "BFAS"
+      ]
+    },
+    {
+      "id": "ipip-e1f049cec64b",
+      "text": "Rarely get irritated.",
+      "sources": [
+        "IPIP-NEO-300",
+        "BFAS",
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-e2018cb4d785",
+      "text": "Hate to seem pushy.",
+      "sources": [
+        "IPIP-NEO-300",
+        "BFAS"
+      ]
+    },
+    {
+      "id": "ipip-e2585a456868",
+      "text": "Fear for the worst.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-e3050619b073",
+      "text": "Lose my temper.",
+      "sources": [
+        "IPIP-NEO-300",
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-e3749eb37112",
+      "text": "Get even with others.",
+      "sources": [
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-e3b98f658e89",
+      "text": "Enjoy thinking about things.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-e44e7179133b",
+      "text": "Am sure of my ground.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-e57612dc5903",
+      "text": "Let myself be influenced by others.",
+      "sources": [
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-e5ff0de4e837",
+      "text": "Am a physical coward.",
+      "sources": [
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-e6a35172f5de",
+      "text": "Want to be liked.",
+      "sources": [
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-e6c8a329f7f6",
+      "text": "Can't do without the company of others.",
+      "sources": [
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-e6ce4e795025",
+      "text": "Like to attract attention.",
+      "sources": [
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-e72d13972640",
+      "text": "Like to stand during the national anthem.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-e75728fd49cb",
+      "text": "Would never cheat on my taxes.",
+      "sources": [
+        "IPIP-NEO-300",
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-e919fb6048c1",
+      "text": "Am easily intimidated.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-e96fbd9c5597",
+      "text": "Get overwhelmed by emotions.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-ebfc2c8cefd9",
+      "text": "Suffer from others' sorrows.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-ec82f1f08bab",
+      "text": "Do too little work.",
+      "sources": [
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-ed07a524d318",
+      "text": "Put people under pressure.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-ed37dd3683d1",
+      "text": "Seek to influence others.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-ed8bbc7525b6",
+      "text": "Know how to get around the rules.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-edd8f0a93048",
+      "text": "Am just an ordinary person.",
+      "sources": [
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-ee366e472d75",
+      "text": "Am not interested in abstract ideas.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-ee7ebbda6b24",
+      "text": "Boast about my virtues.",
+      "sources": [
+        "IPIP-NEO-300",
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-eee54f237834",
+      "text": "Like music.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-ef1693487cea",
+      "text": "Am usually a patient person.",
+      "sources": [
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-ef1ff86e3be4",
+      "text": "Seldom toot my own horn.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-ef294882ae16",
+      "text": "Like order.",
+      "sources": [
+        "IPIP-NEO-300",
+        "BFAS",
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-f03636c3a455",
+      "text": "Do not enjoy going to art museums.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-f067dda2a2a2",
+      "text": "Believe that others have good intentions.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-f209c7ba71cb",
+      "text": "Make plans and stick to them.",
+      "sources": [
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-f3b5f268789b",
+      "text": "Easily resist temptations.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-f3dd27b0b728",
+      "text": "Cry during movies.",
+      "sources": [
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-f4ac5db53838",
+      "text": "Often worry about things that turn out to be unimportant.",
+      "sources": [
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-f4f41b6cf05d",
+      "text": "Find fault with everything.",
+      "sources": [
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-f5572ffa1615",
+      "text": "Have leadership abilities.",
+      "sources": [
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-f5879e267cb8",
+      "text": "Rarely lose my composure.",
+      "sources": [
+        "BFAS"
+      ]
+    },
+    {
+      "id": "ipip-f5bbf7b7ab01",
+      "text": "Have an eye for detail.",
+      "sources": [
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-f5f3626a96fb",
+      "text": "Need a creative outlet.",
+      "sources": [
+        "BFAS"
+      ]
+    },
+    {
+      "id": "ipip-f5f9a0b02845",
+      "text": "Come up with something new.",
+      "sources": [
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-f6584e552d0c",
+      "text": "Misjudge situations.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-f65dbb8a2e64",
+      "text": "Tend to dislike soft-hearted people.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-f6ebe8526036",
+      "text": "Love large parties.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-f7890a395d37",
+      "text": "Get upset easily.",
+      "sources": [
+        "IPIP-NEO-300",
+        "BFAS",
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-f829f442b39f",
+      "text": "Seldom get mad.",
+      "sources": [
+        "IPIP-NEO-300",
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-f984cc3230ed",
+      "text": "Only feel comfortable with friends.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-f9ae1c5e43ec",
+      "text": "Accept people as they are.",
+      "sources": [
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-f9e966cd0541",
+      "text": "Believe in the importance of art.",
+      "sources": [
+        "IPIP-NEO-300",
+        "BFAS",
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-fa22f7f3096b",
+      "text": "Take advantage of others.",
+      "sources": [
+        "IPIP-NEO-300",
+        "BFAS"
+      ]
+    },
+    {
+      "id": "ipip-fa9486cbc368",
+      "text": "Like to solve complex problems.",
+      "sources": [
+        "IPIP-NEO-300",
+        "BFAS"
+      ]
+    },
+    {
+      "id": "ipip-faa6309528ea",
+      "text": "Would like to have more power than other people.",
+      "sources": [
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-fb193b0a7ff7",
+      "text": "Insult people.",
+      "sources": [
+        "IPIP-NEO-300",
+        "BFAS"
+      ]
+    },
+    {
+      "id": "ipip-fb4fbbd30a86",
+      "text": "Seek quiet.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-fc3fd796bbd9",
+      "text": "Am mainly interested in money.",
+      "sources": [
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-fcea644a11bf",
+      "text": "Have a strong personality.",
+      "sources": [
+        "BFAS",
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-fd032b7dd916",
+      "text": "Have great stamina.",
+      "sources": [
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-fd4a76d139b1",
+      "text": "Do things without thinking of the consequences.",
+      "sources": [
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-fd6fc8190271",
+      "text": "Enjoy being reckless.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-fd7df77e0834",
+      "text": "Enjoy the beauty of nature.",
+      "sources": [
+        "IPIP-NEO-300",
+        "BFAS"
+      ]
+    },
+    {
+      "id": "ipip-fd8bf09782d9",
+      "text": "Laugh my way through life.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-fe17ce4a98df",
+      "text": "Readily overcome setbacks.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-ff03374fecf3",
+      "text": "Feel sympathy for those who are worse off than myself.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-ff05e0de2ccf",
+      "text": "Am annoyed by others' mistakes.",
+      "sources": [
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-ff0dee125a56",
+      "text": "Like to be thought of as a normal kind of person.",
+      "sources": [
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-ff1fc95e4224",
+      "text": "Adjust easily.",
+      "sources": [
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-ff31fb7485d4",
+      "text": "Like a leisurely lifestyle.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-ff3f5e533f3b",
+      "text": "Find it difficult to approach others.",
+      "sources": [
+        "IPIP-NEO-300",
+        "IPIP-HEXACO"
+      ]
+    },
+    {
+      "id": "ipip-ff52696e4013",
+      "text": "Go straight for the goal.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-ff5f865c0498",
+      "text": "Keep my promises.",
+      "sources": [
+        "IPIP-NEO-300"
+      ]
+    },
+    {
+      "id": "ipip-ff71374bebed",
+      "text": "Panic easily.",
+      "sources": [
+        "IPIP-NEO-300",
+        "IPIP-HEXACO"
+      ]
+    }
+  ]
+}

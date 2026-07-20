@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "generated": "2026-07-19",
+  "source_hashes": {
+    "BFASKeys.raw": "389e7b5a7989564990c91e394d18c4e8fd4ee8e94105ce952756e74c551e2576",
+    "newHEXACO_PI_key.raw": "d26090d9041adaea8d6fdc08417a1143d7befd8dc470231134edfb765e4b3a19",
+    "IPIP300-120ComparisonTable.raw": "a8d4c6051715a4e619f1a339f310c1419e33b4af58a4241731130fe93906548d",
+    "neo300.xlsx": "fe6365561c8f812fa2ddf305efe24f10e190ba7b8a168f48def5112753a31aff",
+    "omib-item-data.xlsx": "ace35c7212c22a88c61d25b51e37b9fe25eeafd4fb6e910048d2cef5e2687bfd",
+    "IPIP300.dat": "1bbb7189f5f0f2883bb4493f956cf639178c5c8ee95319fd3881f6d9d2f189a3"
+  },
+  "bfas_replacements": [
+    {
+      "removed": "Am not a very enthusiastic person.",
+      "reason": "Newly written BFAS item (footnote c).",
+      "replacement": "Am not easily amused.",
+      "replacement_source": "IPIP-NEO E6 Cheerfulness."
+    },
+    {
+      "removed": "Do not have an assertive personality.",
+      "reason": "BFI-derived item (footnote d).",
+      "replacement": "Don't like to draw attention to myself.",
+      "replacement_source": "IPIP-NEO E3 Assertiveness."
+    }
+  ],
+  "norms": {
+    "ipip": "Empirical quantiles; cells require n >= 1,000.",
+    "pvq21": "Not generated: ESS API download requires a registered user ID.",
+    "omib": "2PL calibration supplied by the instrument authors.",
+    "rotation": "Validation-sample 2PL approximation; explicitly labeled in the UI."
+  }
+}

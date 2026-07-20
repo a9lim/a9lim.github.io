@@ -1,0 +1,737 @@
+{
+  "schema_version": 1,
+  "id": "bfas",
+  "name": "Big Five Aspect Scales",
+  "citation": "DeYoung, Quilty, & Peterson (2007). Between facets and domains.",
+  "license": {
+    "name": "Public domain",
+    "url": "https://ipip.ori.org/newPermission.htm"
+  },
+  "priority_method": "Sign-balanced source order; no public item-level calibration sample was used.",
+  "warnings": [
+    "Two non-IPIP items were replaced with public-domain IPIP equivalents; see data manifest."
+  ],
+  "domains": [
+    {
+      "id": "neuroticism",
+      "name": "Neuroticism",
+      "facets": [
+        "volatility",
+        "withdrawal"
+      ],
+      "full_item_count": 20
+    },
+    {
+      "id": "agreeableness",
+      "name": "Agreeableness",
+      "facets": [
+        "compassion",
+        "politeness"
+      ],
+      "full_item_count": 20
+    },
+    {
+      "id": "conscientiousness",
+      "name": "Conscientiousness",
+      "facets": [
+        "industriousness",
+        "orderliness"
+      ],
+      "full_item_count": 20
+    },
+    {
+      "id": "extraversion",
+      "name": "Extraversion",
+      "facets": [
+        "enthusiasm",
+        "assertiveness"
+      ],
+      "full_item_count": 20
+    },
+    {
+      "id": "openness-intellect",
+      "name": "Openness / Intellect",
+      "facets": [
+        "intellect",
+        "openness"
+      ],
+      "full_item_count": 20
+    }
+  ],
+  "scales": [
+    {
+      "id": "volatility",
+      "name": "Volatility",
+      "domain": "neuroticism",
+      "alpha": 0.85,
+      "full_item_count": 10
+    },
+    {
+      "id": "withdrawal",
+      "name": "Withdrawal",
+      "domain": "neuroticism",
+      "alpha": 0.84,
+      "full_item_count": 10
+    },
+    {
+      "id": "compassion",
+      "name": "Compassion",
+      "domain": "agreeableness",
+      "alpha": 0.84,
+      "full_item_count": 10
+    },
+    {
+      "id": "politeness",
+      "name": "Politeness",
+      "domain": "agreeableness",
+      "alpha": 0.75,
+      "full_item_count": 10
+    },
+    {
+      "id": "industriousness",
+      "name": "Industriousness",
+      "domain": "conscientiousness",
+      "alpha": 0.81,
+      "full_item_count": 10
+    },
+    {
+      "id": "orderliness",
+      "name": "Orderliness",
+      "domain": "conscientiousness",
+      "alpha": 0.8,
+      "full_item_count": 10
+    },
+    {
+      "id": "enthusiasm",
+      "name": "Enthusiasm",
+      "domain": "extraversion",
+      "alpha": 0.81,
+      "full_item_count": 10
+    },
+    {
+      "id": "assertiveness",
+      "name": "Assertiveness",
+      "domain": "extraversion",
+      "alpha": 0.85,
+      "full_item_count": 10
+    },
+    {
+      "id": "intellect",
+      "name": "Intellect",
+      "domain": "openness-intellect",
+      "alpha": 0.84,
+      "full_item_count": 10
+    },
+    {
+      "id": "openness",
+      "name": "Openness",
+      "domain": "openness-intellect",
+      "alpha": 0.78,
+      "full_item_count": 10
+    }
+  ],
+  "items": [
+    {
+      "item_id": "ipip-9ba57f762f48",
+      "scale": "volatility",
+      "direction": 1,
+      "priority_rank": 1
+    },
+    {
+      "item_id": "ipip-f7890a395d37",
+      "scale": "volatility",
+      "direction": 1,
+      "priority_rank": 3
+    },
+    {
+      "item_id": "ipip-cfb803ccf8fa",
+      "scale": "volatility",
+      "direction": 1,
+      "priority_rank": 5
+    },
+    {
+      "item_id": "ipip-0a01d8ccde43",
+      "scale": "volatility",
+      "direction": 1,
+      "priority_rank": 7
+    },
+    {
+      "item_id": "ipip-8e7cb1e77178",
+      "scale": "volatility",
+      "direction": 1,
+      "priority_rank": 9
+    },
+    {
+      "item_id": "ipip-2ff0910afa77",
+      "scale": "volatility",
+      "direction": 1,
+      "priority_rank": 10
+    },
+    {
+      "item_id": "ipip-e1f049cec64b",
+      "scale": "volatility",
+      "direction": -1,
+      "priority_rank": 2
+    },
+    {
+      "item_id": "ipip-d7d23519efda",
+      "scale": "volatility",
+      "direction": -1,
+      "priority_rank": 4
+    },
+    {
+      "item_id": "ipip-f5879e267cb8",
+      "scale": "volatility",
+      "direction": -1,
+      "priority_rank": 6
+    },
+    {
+      "item_id": "ipip-2159fe9d2e50",
+      "scale": "volatility",
+      "direction": -1,
+      "priority_rank": 8
+    },
+    {
+      "item_id": "ipip-13df32ca9ff2",
+      "scale": "withdrawal",
+      "direction": 1,
+      "priority_rank": 1
+    },
+    {
+      "item_id": "ipip-64a414b15cd8",
+      "scale": "withdrawal",
+      "direction": 1,
+      "priority_rank": 3
+    },
+    {
+      "item_id": "ipip-879ed7282739",
+      "scale": "withdrawal",
+      "direction": 1,
+      "priority_rank": 5
+    },
+    {
+      "item_id": "ipip-19d932630ee5",
+      "scale": "withdrawal",
+      "direction": 1,
+      "priority_rank": 7
+    },
+    {
+      "item_id": "ipip-22d80001883e",
+      "scale": "withdrawal",
+      "direction": 1,
+      "priority_rank": 9
+    },
+    {
+      "item_id": "ipip-c86c1dc711e4",
+      "scale": "withdrawal",
+      "direction": 1,
+      "priority_rank": 10
+    },
+    {
+      "item_id": "ipip-80f5df4e13e2",
+      "scale": "withdrawal",
+      "direction": -1,
+      "priority_rank": 2
+    },
+    {
+      "item_id": "ipip-c3238593015d",
+      "scale": "withdrawal",
+      "direction": -1,
+      "priority_rank": 4
+    },
+    {
+      "item_id": "ipip-43673b039077",
+      "scale": "withdrawal",
+      "direction": -1,
+      "priority_rank": 6
+    },
+    {
+      "item_id": "ipip-5392a9787cc0",
+      "scale": "withdrawal",
+      "direction": -1,
+      "priority_rank": 8
+    },
+    {
+      "item_id": "ipip-c26e789b81e6",
+      "scale": "compassion",
+      "direction": 1,
+      "priority_rank": 1
+    },
+    {
+      "item_id": "ipip-b37b542f1c07",
+      "scale": "compassion",
+      "direction": 1,
+      "priority_rank": 3
+    },
+    {
+      "item_id": "ipip-74be359a1b87",
+      "scale": "compassion",
+      "direction": 1,
+      "priority_rank": 5
+    },
+    {
+      "item_id": "ipip-cf6ab9f9655f",
+      "scale": "compassion",
+      "direction": 1,
+      "priority_rank": 7
+    },
+    {
+      "item_id": "ipip-6310eae5a4c8",
+      "scale": "compassion",
+      "direction": 1,
+      "priority_rank": 9
+    },
+    {
+      "item_id": "ipip-6e699f272bea",
+      "scale": "compassion",
+      "direction": -1,
+      "priority_rank": 2
+    },
+    {
+      "item_id": "ipip-0c52d3f44627",
+      "scale": "compassion",
+      "direction": -1,
+      "priority_rank": 4
+    },
+    {
+      "item_id": "ipip-687c2a8da54c",
+      "scale": "compassion",
+      "direction": -1,
+      "priority_rank": 6
+    },
+    {
+      "item_id": "ipip-4d7074974339",
+      "scale": "compassion",
+      "direction": -1,
+      "priority_rank": 8
+    },
+    {
+      "item_id": "ipip-9db0fcc2db0a",
+      "scale": "compassion",
+      "direction": -1,
+      "priority_rank": 10
+    },
+    {
+      "item_id": "ipip-41700b4dc487",
+      "scale": "politeness",
+      "direction": 1,
+      "priority_rank": 1
+    },
+    {
+      "item_id": "ipip-e2018cb4d785",
+      "scale": "politeness",
+      "direction": 1,
+      "priority_rank": 3
+    },
+    {
+      "item_id": "ipip-a586fe52f13c",
+      "scale": "politeness",
+      "direction": 1,
+      "priority_rank": 5
+    },
+    {
+      "item_id": "ipip-443bb424be60",
+      "scale": "politeness",
+      "direction": 1,
+      "priority_rank": 7
+    },
+    {
+      "item_id": "ipip-fb193b0a7ff7",
+      "scale": "politeness",
+      "direction": -1,
+      "priority_rank": 2
+    },
+    {
+      "item_id": "ipip-9e87e1b3f182",
+      "scale": "politeness",
+      "direction": -1,
+      "priority_rank": 4
+    },
+    {
+      "item_id": "ipip-fa22f7f3096b",
+      "scale": "politeness",
+      "direction": -1,
+      "priority_rank": 6
+    },
+    {
+      "item_id": "ipip-567e444e5cfc",
+      "scale": "politeness",
+      "direction": -1,
+      "priority_rank": 8
+    },
+    {
+      "item_id": "ipip-c8827ea598bf",
+      "scale": "politeness",
+      "direction": -1,
+      "priority_rank": 9
+    },
+    {
+      "item_id": "ipip-24113f265193",
+      "scale": "politeness",
+      "direction": -1,
+      "priority_rank": 10
+    },
+    {
+      "item_id": "ipip-92ecf8808f1f",
+      "scale": "industriousness",
+      "direction": 1,
+      "priority_rank": 1
+    },
+    {
+      "item_id": "ipip-186d63ae9570",
+      "scale": "industriousness",
+      "direction": 1,
+      "priority_rank": 3
+    },
+    {
+      "item_id": "ipip-41e477a05f00",
+      "scale": "industriousness",
+      "direction": 1,
+      "priority_rank": 5
+    },
+    {
+      "item_id": "ipip-be98326dc06e",
+      "scale": "industriousness",
+      "direction": 1,
+      "priority_rank": 7
+    },
+    {
+      "item_id": "ipip-2bbd928facac",
+      "scale": "industriousness",
+      "direction": -1,
+      "priority_rank": 2
+    },
+    {
+      "item_id": "ipip-83835339d76c",
+      "scale": "industriousness",
+      "direction": -1,
+      "priority_rank": 4
+    },
+    {
+      "item_id": "ipip-8936f1e74864",
+      "scale": "industriousness",
+      "direction": -1,
+      "priority_rank": 6
+    },
+    {
+      "item_id": "ipip-0de6ffc8a9e9",
+      "scale": "industriousness",
+      "direction": -1,
+      "priority_rank": 8
+    },
+    {
+      "item_id": "ipip-d9e1409753a5",
+      "scale": "industriousness",
+      "direction": -1,
+      "priority_rank": 9
+    },
+    {
+      "item_id": "ipip-56f2f0314e22",
+      "scale": "industriousness",
+      "direction": -1,
+      "priority_rank": 10
+    },
+    {
+      "item_id": "ipip-ef294882ae16",
+      "scale": "orderliness",
+      "direction": 1,
+      "priority_rank": 1
+    },
+    {
+      "item_id": "ipip-4f751c683754",
+      "scale": "orderliness",
+      "direction": 1,
+      "priority_rank": 3
+    },
+    {
+      "item_id": "ipip-833fe3e6289a",
+      "scale": "orderliness",
+      "direction": 1,
+      "priority_rank": 5
+    },
+    {
+      "item_id": "ipip-2d0913ec3910",
+      "scale": "orderliness",
+      "direction": 1,
+      "priority_rank": 7
+    },
+    {
+      "item_id": "ipip-9306d1e2ca65",
+      "scale": "orderliness",
+      "direction": 1,
+      "priority_rank": 9
+    },
+    {
+      "item_id": "ipip-8aed1767752e",
+      "scale": "orderliness",
+      "direction": 1,
+      "priority_rank": 10
+    },
+    {
+      "item_id": "ipip-1831477d6350",
+      "scale": "orderliness",
+      "direction": -1,
+      "priority_rank": 2
+    },
+    {
+      "item_id": "ipip-7272fde513b7",
+      "scale": "orderliness",
+      "direction": -1,
+      "priority_rank": 4
+    },
+    {
+      "item_id": "ipip-0205a511d986",
+      "scale": "orderliness",
+      "direction": -1,
+      "priority_rank": 6
+    },
+    {
+      "item_id": "ipip-775218167404",
+      "scale": "orderliness",
+      "direction": -1,
+      "priority_rank": 8
+    },
+    {
+      "item_id": "ipip-8bf408a2ef9e",
+      "scale": "enthusiasm",
+      "direction": 1,
+      "priority_rank": 1
+    },
+    {
+      "item_id": "ipip-2ec383b0812a",
+      "scale": "enthusiasm",
+      "direction": 1,
+      "priority_rank": 3
+    },
+    {
+      "item_id": "ipip-8a5d2271d948",
+      "scale": "enthusiasm",
+      "direction": 1,
+      "priority_rank": 5
+    },
+    {
+      "item_id": "ipip-579aff924853",
+      "scale": "enthusiasm",
+      "direction": 1,
+      "priority_rank": 7
+    },
+    {
+      "item_id": "ipip-2dd99b36f784",
+      "scale": "enthusiasm",
+      "direction": 1,
+      "priority_rank": 9
+    },
+    {
+      "item_id": "ipip-7bcc869847a2",
+      "scale": "enthusiasm",
+      "direction": -1,
+      "priority_rank": 2
+    },
+    {
+      "item_id": "ipip-dff798ecc09a",
+      "scale": "enthusiasm",
+      "direction": -1,
+      "priority_rank": 4
+    },
+    {
+      "item_id": "ipip-0365645cd57c",
+      "scale": "enthusiasm",
+      "direction": -1,
+      "priority_rank": 6
+    },
+    {
+      "item_id": "ipip-d1d26cca40b1",
+      "scale": "enthusiasm",
+      "direction": -1,
+      "priority_rank": 8
+    },
+    {
+      "item_id": "ipip-c0f9385e296d",
+      "scale": "enthusiasm",
+      "direction": -1,
+      "replacement_for": "Am not a very enthusiastic person",
+      "priority_rank": 10
+    },
+    {
+      "item_id": "ipip-80e142e7b35b",
+      "scale": "assertiveness",
+      "direction": 1,
+      "priority_rank": 1
+    },
+    {
+      "item_id": "ipip-fcea644a11bf",
+      "scale": "assertiveness",
+      "direction": 1,
+      "priority_rank": 3
+    },
+    {
+      "item_id": "ipip-c453e4d8c890",
+      "scale": "assertiveness",
+      "direction": 1,
+      "priority_rank": 5
+    },
+    {
+      "item_id": "ipip-2aa01668ea5a",
+      "scale": "assertiveness",
+      "direction": 1,
+      "priority_rank": 7
+    },
+    {
+      "item_id": "ipip-8fb00515976b",
+      "scale": "assertiveness",
+      "direction": 1,
+      "priority_rank": 9
+    },
+    {
+      "item_id": "ipip-9f6f9251dbb5",
+      "scale": "assertiveness",
+      "direction": 1,
+      "priority_rank": 10
+    },
+    {
+      "item_id": "ipip-b8991c06ffdc",
+      "scale": "assertiveness",
+      "direction": -1,
+      "replacement_for": "Do not have an assertive personality",
+      "priority_rank": 2
+    },
+    {
+      "item_id": "ipip-e1d95bc5a41d",
+      "scale": "assertiveness",
+      "direction": -1,
+      "priority_rank": 4
+    },
+    {
+      "item_id": "ipip-41364689404a",
+      "scale": "assertiveness",
+      "direction": -1,
+      "priority_rank": 6
+    },
+    {
+      "item_id": "ipip-62135eea837b",
+      "scale": "assertiveness",
+      "direction": -1,
+      "priority_rank": 8
+    },
+    {
+      "item_id": "ipip-91b6b868767e",
+      "scale": "intellect",
+      "direction": 1,
+      "priority_rank": 1
+    },
+    {
+      "item_id": "ipip-456397f379ef",
+      "scale": "intellect",
+      "direction": 1,
+      "priority_rank": 3
+    },
+    {
+      "item_id": "ipip-fa9486cbc368",
+      "scale": "intellect",
+      "direction": 1,
+      "priority_rank": 5
+    },
+    {
+      "item_id": "ipip-533b27e30698",
+      "scale": "intellect",
+      "direction": 1,
+      "priority_rank": 7
+    },
+    {
+      "item_id": "ipip-2f6c7085e3dc",
+      "scale": "intellect",
+      "direction": 1,
+      "priority_rank": 9
+    },
+    {
+      "item_id": "ipip-060f7588bab8",
+      "scale": "intellect",
+      "direction": 1,
+      "priority_rank": 10
+    },
+    {
+      "item_id": "ipip-ca99a8df6c62",
+      "scale": "intellect",
+      "direction": -1,
+      "priority_rank": 2
+    },
+    {
+      "item_id": "ipip-52f9fc270807",
+      "scale": "intellect",
+      "direction": -1,
+      "priority_rank": 4
+    },
+    {
+      "item_id": "ipip-bf6877ad1f98",
+      "scale": "intellect",
+      "direction": -1,
+      "priority_rank": 6
+    },
+    {
+      "item_id": "ipip-1d3e3fa53a63",
+      "scale": "intellect",
+      "direction": -1,
+      "priority_rank": 8
+    },
+    {
+      "item_id": "ipip-fd7df77e0834",
+      "scale": "openness",
+      "direction": 1,
+      "priority_rank": 1
+    },
+    {
+      "item_id": "ipip-f9e966cd0541",
+      "scale": "openness",
+      "direction": 1,
+      "priority_rank": 3
+    },
+    {
+      "item_id": "ipip-0c549e88be6d",
+      "scale": "openness",
+      "direction": 1,
+      "priority_rank": 5
+    },
+    {
+      "item_id": "ipip-cec3e6c72ba8",
+      "scale": "openness",
+      "direction": 1,
+      "priority_rank": 7
+    },
+    {
+      "item_id": "ipip-50494373a6aa",
+      "scale": "openness",
+      "direction": 1,
+      "priority_rank": 9
+    },
+    {
+      "item_id": "ipip-f5f3626a96fb",
+      "scale": "openness",
+      "direction": 1,
+      "priority_rank": 10
+    },
+    {
+      "item_id": "ipip-b24fe67d5271",
+      "scale": "openness",
+      "direction": -1,
+      "priority_rank": 2
+    },
+    {
+      "item_id": "ipip-e158d248d063",
+      "scale": "openness",
+      "direction": -1,
+      "priority_rank": 4
+    },
+    {
+      "item_id": "ipip-99817390a44a",
+      "scale": "openness",
+      "direction": -1,
+      "priority_rank": 6
+    },
+    {
+      "item_id": "ipip-cf74a8c8a62a",
+      "scale": "openness",
+      "direction": -1,
+      "priority_rank": 8
+    }
+  ]
+}

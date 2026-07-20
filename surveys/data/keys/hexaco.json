@@ -1,0 +1,1692 @@
+{
+  "schema_version": 1,
+  "id": "hexaco",
+  "name": "IPIP-HEXACO",
+  "citation": "Ashton, Lee, & Goldberg (2007). The IPIP-HEXACO scales.",
+  "license": {
+    "name": "Public domain",
+    "url": "https://ipip.ori.org/newPermission.htm"
+  },
+  "priority_method": "Sign-balanced source order; no public item-level calibration sample was used.",
+  "warnings": [],
+  "domains": [
+    {
+      "id": "H",
+      "name": "Honesty-Humility",
+      "facets": [
+        "h-sinc",
+        "h-fair",
+        "h-gree",
+        "h-mode"
+      ],
+      "full_item_count": 40
+    },
+    {
+      "id": "E",
+      "name": "Emotionality",
+      "facets": [
+        "e-fear",
+        "e-anxi",
+        "e-depe",
+        "e-sent"
+      ],
+      "full_item_count": 40
+    },
+    {
+      "id": "X",
+      "name": "Extraversion",
+      "facets": [
+        "x-expr",
+        "x-socb",
+        "x-soci",
+        "x-live"
+      ],
+      "full_item_count": 40
+    },
+    {
+      "id": "A",
+      "name": "Agreeableness",
+      "facets": [
+        "a-forg",
+        "a-gent",
+        "a-flex",
+        "a-pati"
+      ],
+      "full_item_count": 40
+    },
+    {
+      "id": "C",
+      "name": "Conscientiousness",
+      "facets": [
+        "c-orga",
+        "c-dili",
+        "c-perf",
+        "c-prud"
+      ],
+      "full_item_count": 40
+    },
+    {
+      "id": "O",
+      "name": "Openness to Experience",
+      "facets": [
+        "o-aesa",
+        "o-inqu",
+        "o-crea",
+        "o-unco"
+      ],
+      "full_item_count": 40
+    }
+  ],
+  "scales": [
+    {
+      "id": "h-sinc",
+      "name": "Sincerity",
+      "domain": "H",
+      "alpha": 0.81,
+      "full_item_count": 10
+    },
+    {
+      "id": "h-fair",
+      "name": "Fairness",
+      "domain": "H",
+      "alpha": 0.77,
+      "full_item_count": 10
+    },
+    {
+      "id": "h-gree",
+      "name": "Greed Avoidance",
+      "domain": "H",
+      "alpha": 0.69,
+      "full_item_count": 10
+    },
+    {
+      "id": "h-mode",
+      "name": "Modesty",
+      "domain": "H",
+      "alpha": 0.81,
+      "full_item_count": 10
+    },
+    {
+      "id": "e-fear",
+      "name": "Fearfulness",
+      "domain": "E",
+      "alpha": 0.84,
+      "full_item_count": 10
+    },
+    {
+      "id": "e-anxi",
+      "name": "Anxiety",
+      "domain": "E",
+      "alpha": 0.85,
+      "full_item_count": 10
+    },
+    {
+      "id": "e-depe",
+      "name": "Dependence",
+      "domain": "E",
+      "alpha": 0.73,
+      "full_item_count": 10
+    },
+    {
+      "id": "e-sent",
+      "name": "Sentimentality",
+      "domain": "E",
+      "alpha": 0.79,
+      "full_item_count": 10
+    },
+    {
+      "id": "x-expr",
+      "name": "Expressiveness",
+      "domain": "X",
+      "alpha": 0.84,
+      "full_item_count": 10
+    },
+    {
+      "id": "x-socb",
+      "name": "Social Boldness",
+      "domain": "X",
+      "alpha": 0.86,
+      "full_item_count": 10
+    },
+    {
+      "id": "x-soci",
+      "name": "Sociability",
+      "domain": "X",
+      "alpha": 0.85,
+      "full_item_count": 10
+    },
+    {
+      "id": "x-live",
+      "name": "Liveliness",
+      "domain": "X",
+      "alpha": 0.82,
+      "full_item_count": 10
+    },
+    {
+      "id": "a-forg",
+      "name": "Forgiveness",
+      "domain": "A",
+      "alpha": 0.78,
+      "full_item_count": 10
+    },
+    {
+      "id": "a-gent",
+      "name": "Gentleness",
+      "domain": "A",
+      "alpha": 0.81,
+      "full_item_count": 10
+    },
+    {
+      "id": "a-flex",
+      "name": "Flexibility",
+      "domain": "A",
+      "alpha": 0.73,
+      "full_item_count": 10
+    },
+    {
+      "id": "a-pati",
+      "name": "Patience",
+      "domain": "A",
+      "alpha": 0.88,
+      "full_item_count": 10
+    },
+    {
+      "id": "c-orga",
+      "name": "Organization",
+      "domain": "C",
+      "alpha": 0.85,
+      "full_item_count": 10
+    },
+    {
+      "id": "c-dili",
+      "name": "Diligence",
+      "domain": "C",
+      "alpha": 0.81,
+      "full_item_count": 10
+    },
+    {
+      "id": "c-perf",
+      "name": "Perfectionism",
+      "domain": "C",
+      "alpha": 0.8,
+      "full_item_count": 10
+    },
+    {
+      "id": "c-prud",
+      "name": "Prudence",
+      "domain": "C",
+      "alpha": 0.8,
+      "full_item_count": 10
+    },
+    {
+      "id": "o-aesa",
+      "name": "Aesthetic Appreciation",
+      "domain": "O",
+      "alpha": 0.83,
+      "full_item_count": 10
+    },
+    {
+      "id": "o-inqu",
+      "name": "Inquisitiveness",
+      "domain": "O",
+      "alpha": 0.78,
+      "full_item_count": 10
+    },
+    {
+      "id": "o-crea",
+      "name": "Creativity",
+      "domain": "O",
+      "alpha": 0.85,
+      "full_item_count": 10
+    },
+    {
+      "id": "o-unco",
+      "name": "Unconventionality",
+      "domain": "O",
+      "alpha": 0.84,
+      "full_item_count": 10
+    }
+  ],
+  "items": [
+    {
+      "item_id": "ipip-63f60037a636",
+      "scale": "h-sinc",
+      "direction": 1,
+      "priority_rank": 1
+    },
+    {
+      "item_id": "ipip-1d76f9a6236e",
+      "scale": "h-sinc",
+      "direction": -1,
+      "priority_rank": 2
+    },
+    {
+      "item_id": "ipip-0888780cf924",
+      "scale": "h-sinc",
+      "direction": -1,
+      "priority_rank": 3
+    },
+    {
+      "item_id": "ipip-3b57ff4d3ba7",
+      "scale": "h-sinc",
+      "direction": -1,
+      "priority_rank": 4
+    },
+    {
+      "item_id": "ipip-4c9a1f890d01",
+      "scale": "h-sinc",
+      "direction": -1,
+      "priority_rank": 5
+    },
+    {
+      "item_id": "ipip-8dc231460188",
+      "scale": "h-sinc",
+      "direction": -1,
+      "priority_rank": 6
+    },
+    {
+      "item_id": "ipip-34f0d2abad0e",
+      "scale": "h-sinc",
+      "direction": -1,
+      "priority_rank": 7
+    },
+    {
+      "item_id": "ipip-a1caa25e4464",
+      "scale": "h-sinc",
+      "direction": -1,
+      "priority_rank": 8
+    },
+    {
+      "item_id": "ipip-23925ffe4b59",
+      "scale": "h-sinc",
+      "direction": -1,
+      "priority_rank": 9
+    },
+    {
+      "item_id": "ipip-2046ba79f57a",
+      "scale": "h-sinc",
+      "direction": -1,
+      "priority_rank": 10
+    },
+    {
+      "item_id": "ipip-4b3fb45a0322",
+      "scale": "h-fair",
+      "direction": 1,
+      "priority_rank": 1
+    },
+    {
+      "item_id": "ipip-e75728fd49cb",
+      "scale": "h-fair",
+      "direction": 1,
+      "priority_rank": 3
+    },
+    {
+      "item_id": "ipip-9c9893692d3d",
+      "scale": "h-fair",
+      "direction": 1,
+      "priority_rank": 5
+    },
+    {
+      "item_id": "ipip-4b860515aed3",
+      "scale": "h-fair",
+      "direction": 1,
+      "priority_rank": 7
+    },
+    {
+      "item_id": "ipip-df5e58082616",
+      "scale": "h-fair",
+      "direction": 1,
+      "priority_rank": 9
+    },
+    {
+      "item_id": "ipip-c2e9e8d306b2",
+      "scale": "h-fair",
+      "direction": -1,
+      "priority_rank": 2
+    },
+    {
+      "item_id": "ipip-841d836848b6",
+      "scale": "h-fair",
+      "direction": -1,
+      "priority_rank": 4
+    },
+    {
+      "item_id": "ipip-4425beb3dcce",
+      "scale": "h-fair",
+      "direction": -1,
+      "priority_rank": 6
+    },
+    {
+      "item_id": "ipip-229ef01d0cf8",
+      "scale": "h-fair",
+      "direction": -1,
+      "priority_rank": 8
+    },
+    {
+      "item_id": "ipip-dee2f8a3b2b0",
+      "scale": "h-fair",
+      "direction": -1,
+      "priority_rank": 10
+    },
+    {
+      "item_id": "ipip-4c5d6e7e61ad",
+      "scale": "h-gree",
+      "direction": 1,
+      "priority_rank": 1
+    },
+    {
+      "item_id": "ipip-a21f530e69d9",
+      "scale": "h-gree",
+      "direction": 1,
+      "priority_rank": 3
+    },
+    {
+      "item_id": "ipip-0dba210d3c3e",
+      "scale": "h-gree",
+      "direction": -1,
+      "priority_rank": 2
+    },
+    {
+      "item_id": "ipip-ca17b878cb39",
+      "scale": "h-gree",
+      "direction": -1,
+      "priority_rank": 4
+    },
+    {
+      "item_id": "ipip-073f9dfa0346",
+      "scale": "h-gree",
+      "direction": -1,
+      "priority_rank": 5
+    },
+    {
+      "item_id": "ipip-fc3fd796bbd9",
+      "scale": "h-gree",
+      "direction": -1,
+      "priority_rank": 6
+    },
+    {
+      "item_id": "ipip-37c78d9de8cb",
+      "scale": "h-gree",
+      "direction": -1,
+      "priority_rank": 7
+    },
+    {
+      "item_id": "ipip-40a733b7d5b6",
+      "scale": "h-gree",
+      "direction": -1,
+      "priority_rank": 8
+    },
+    {
+      "item_id": "ipip-8314c15f6aa1",
+      "scale": "h-gree",
+      "direction": -1,
+      "priority_rank": 9
+    },
+    {
+      "item_id": "ipip-24113f265193",
+      "scale": "h-gree",
+      "direction": -1,
+      "priority_rank": 10
+    },
+    {
+      "item_id": "ipip-1bee9287c0e7",
+      "scale": "h-mode",
+      "direction": 1,
+      "priority_rank": 1
+    },
+    {
+      "item_id": "ipip-e08cf3bb8153",
+      "scale": "h-mode",
+      "direction": 1,
+      "priority_rank": 3
+    },
+    {
+      "item_id": "ipip-edd8f0a93048",
+      "scale": "h-mode",
+      "direction": 1,
+      "priority_rank": 5
+    },
+    {
+      "item_id": "ipip-320902542b4a",
+      "scale": "h-mode",
+      "direction": 1,
+      "priority_rank": 7
+    },
+    {
+      "item_id": "ipip-faa6309528ea",
+      "scale": "h-mode",
+      "direction": -1,
+      "priority_rank": 2
+    },
+    {
+      "item_id": "ipip-9e87e1b3f182",
+      "scale": "h-mode",
+      "direction": -1,
+      "priority_rank": 4
+    },
+    {
+      "item_id": "ipip-e6ce4e795025",
+      "scale": "h-mode",
+      "direction": -1,
+      "priority_rank": 6
+    },
+    {
+      "item_id": "ipip-cb8811bbcec4",
+      "scale": "h-mode",
+      "direction": -1,
+      "priority_rank": 8
+    },
+    {
+      "item_id": "ipip-4e6c71012041",
+      "scale": "h-mode",
+      "direction": -1,
+      "priority_rank": 9
+    },
+    {
+      "item_id": "ipip-ee7ebbda6b24",
+      "scale": "h-mode",
+      "direction": -1,
+      "priority_rank": 10
+    },
+    {
+      "item_id": "ipip-e5ff0de4e837",
+      "scale": "e-fear",
+      "direction": 1,
+      "priority_rank": 1
+    },
+    {
+      "item_id": "ipip-2940ba15d604",
+      "scale": "e-fear",
+      "direction": 1,
+      "priority_rank": 3
+    },
+    {
+      "item_id": "ipip-72208fc8f5b8",
+      "scale": "e-fear",
+      "direction": 1,
+      "priority_rank": 5
+    },
+    {
+      "item_id": "ipip-a7b5bd121725",
+      "scale": "e-fear",
+      "direction": 1,
+      "priority_rank": 7
+    },
+    {
+      "item_id": "ipip-46da8e3a5d93",
+      "scale": "e-fear",
+      "direction": 1,
+      "priority_rank": 9
+    },
+    {
+      "item_id": "ipip-aafe06c9a0be",
+      "scale": "e-fear",
+      "direction": -1,
+      "priority_rank": 2
+    },
+    {
+      "item_id": "ipip-5898605c16f0",
+      "scale": "e-fear",
+      "direction": -1,
+      "priority_rank": 4
+    },
+    {
+      "item_id": "ipip-c0518cedad79",
+      "scale": "e-fear",
+      "direction": -1,
+      "priority_rank": 6
+    },
+    {
+      "item_id": "ipip-da4c15b6a88b",
+      "scale": "e-fear",
+      "direction": -1,
+      "priority_rank": 8
+    },
+    {
+      "item_id": "ipip-0119080f81d1",
+      "scale": "e-fear",
+      "direction": -1,
+      "priority_rank": 10
+    },
+    {
+      "item_id": "ipip-f4ac5db53838",
+      "scale": "e-anxi",
+      "direction": 1,
+      "priority_rank": 1
+    },
+    {
+      "item_id": "ipip-879ed7282739",
+      "scale": "e-anxi",
+      "direction": 1,
+      "priority_rank": 3
+    },
+    {
+      "item_id": "ipip-b9a00995f25e",
+      "scale": "e-anxi",
+      "direction": 1,
+      "priority_rank": 5
+    },
+    {
+      "item_id": "ipip-155a801ab0d1",
+      "scale": "e-anxi",
+      "direction": 1,
+      "priority_rank": 7
+    },
+    {
+      "item_id": "ipip-ff71374bebed",
+      "scale": "e-anxi",
+      "direction": 1,
+      "priority_rank": 9
+    },
+    {
+      "item_id": "ipip-0badea2bdfda",
+      "scale": "e-anxi",
+      "direction": -1,
+      "priority_rank": 2
+    },
+    {
+      "item_id": "ipip-43673b039077",
+      "scale": "e-anxi",
+      "direction": -1,
+      "priority_rank": 4
+    },
+    {
+      "item_id": "ipip-024f6f33ed44",
+      "scale": "e-anxi",
+      "direction": -1,
+      "priority_rank": 6
+    },
+    {
+      "item_id": "ipip-1f973951548d",
+      "scale": "e-anxi",
+      "direction": -1,
+      "priority_rank": 8
+    },
+    {
+      "item_id": "ipip-3680effc9fce",
+      "scale": "e-anxi",
+      "direction": -1,
+      "priority_rank": 10
+    },
+    {
+      "item_id": "ipip-5394ff5214ed",
+      "scale": "e-depe",
+      "direction": 1,
+      "priority_rank": 1
+    },
+    {
+      "item_id": "ipip-e57612dc5903",
+      "scale": "e-depe",
+      "direction": 1,
+      "priority_rank": 2
+    },
+    {
+      "item_id": "ipip-c281ba3d0ae3",
+      "scale": "e-depe",
+      "direction": 1,
+      "priority_rank": 3
+    },
+    {
+      "item_id": "ipip-6c4c3b7278dc",
+      "scale": "e-depe",
+      "direction": 1,
+      "priority_rank": 4
+    },
+    {
+      "item_id": "ipip-7e13eb271ddc",
+      "scale": "e-depe",
+      "direction": 1,
+      "priority_rank": 5
+    },
+    {
+      "item_id": "ipip-a4d1c8a545f9",
+      "scale": "e-depe",
+      "direction": 1,
+      "priority_rank": 6
+    },
+    {
+      "item_id": "ipip-1b5bbf016850",
+      "scale": "e-depe",
+      "direction": 1,
+      "priority_rank": 7
+    },
+    {
+      "item_id": "ipip-29275789bc39",
+      "scale": "e-depe",
+      "direction": 1,
+      "priority_rank": 8
+    },
+    {
+      "item_id": "ipip-e6c8a329f7f6",
+      "scale": "e-depe",
+      "direction": 1,
+      "priority_rank": 9
+    },
+    {
+      "item_id": "ipip-e6a35172f5de",
+      "scale": "e-depe",
+      "direction": 1,
+      "priority_rank": 10
+    },
+    {
+      "item_id": "ipip-c26e789b81e6",
+      "scale": "e-sent",
+      "direction": 1,
+      "priority_rank": 1
+    },
+    {
+      "item_id": "ipip-3ec781eb240f",
+      "scale": "e-sent",
+      "direction": 1,
+      "priority_rank": 3
+    },
+    {
+      "item_id": "ipip-f3dd27b0b728",
+      "scale": "e-sent",
+      "direction": 1,
+      "priority_rank": 5
+    },
+    {
+      "item_id": "ipip-076832c134ef",
+      "scale": "e-sent",
+      "direction": 1,
+      "priority_rank": 7
+    },
+    {
+      "item_id": "ipip-781a720e2d83",
+      "scale": "e-sent",
+      "direction": 1,
+      "priority_rank": 9
+    },
+    {
+      "item_id": "ipip-7af6d2f898b7",
+      "scale": "e-sent",
+      "direction": -1,
+      "priority_rank": 2
+    },
+    {
+      "item_id": "ipip-7febaf441355",
+      "scale": "e-sent",
+      "direction": -1,
+      "priority_rank": 4
+    },
+    {
+      "item_id": "ipip-4d110d05f4cc",
+      "scale": "e-sent",
+      "direction": -1,
+      "priority_rank": 6
+    },
+    {
+      "item_id": "ipip-38d7fbb43692",
+      "scale": "e-sent",
+      "direction": -1,
+      "priority_rank": 8
+    },
+    {
+      "item_id": "ipip-93cbdc348b38",
+      "scale": "e-sent",
+      "direction": -1,
+      "priority_rank": 10
+    },
+    {
+      "item_id": "ipip-b07c67c93299",
+      "scale": "x-expr",
+      "direction": 1,
+      "priority_rank": 1
+    },
+    {
+      "item_id": "ipip-1cce9d09a023",
+      "scale": "x-expr",
+      "direction": 1,
+      "priority_rank": 3
+    },
+    {
+      "item_id": "ipip-0a72fd4b9557",
+      "scale": "x-expr",
+      "direction": 1,
+      "priority_rank": 5
+    },
+    {
+      "item_id": "ipip-87d11fef4e9f",
+      "scale": "x-expr",
+      "direction": 1,
+      "priority_rank": 7
+    },
+    {
+      "item_id": "ipip-2e7342b15a3d",
+      "scale": "x-expr",
+      "direction": 1,
+      "priority_rank": 9
+    },
+    {
+      "item_id": "ipip-d001c30de88e",
+      "scale": "x-expr",
+      "direction": -1,
+      "priority_rank": 2
+    },
+    {
+      "item_id": "ipip-b8991c06ffdc",
+      "scale": "x-expr",
+      "direction": -1,
+      "priority_rank": 4
+    },
+    {
+      "item_id": "ipip-59dd2f51d187",
+      "scale": "x-expr",
+      "direction": -1,
+      "priority_rank": 6
+    },
+    {
+      "item_id": "ipip-99d1de53f389",
+      "scale": "x-expr",
+      "direction": -1,
+      "priority_rank": 8
+    },
+    {
+      "item_id": "ipip-6d618233aa42",
+      "scale": "x-expr",
+      "direction": -1,
+      "priority_rank": 10
+    },
+    {
+      "item_id": "ipip-c3e723bc0954",
+      "scale": "x-socb",
+      "direction": 1,
+      "priority_rank": 1
+    },
+    {
+      "item_id": "ipip-71c71a029804",
+      "scale": "x-socb",
+      "direction": 1,
+      "priority_rank": 3
+    },
+    {
+      "item_id": "ipip-7a892f8481b1",
+      "scale": "x-socb",
+      "direction": 1,
+      "priority_rank": 5
+    },
+    {
+      "item_id": "ipip-f5572ffa1615",
+      "scale": "x-socb",
+      "direction": 1,
+      "priority_rank": 7
+    },
+    {
+      "item_id": "ipip-fcea644a11bf",
+      "scale": "x-socb",
+      "direction": 1,
+      "priority_rank": 9
+    },
+    {
+      "item_id": "ipip-791ad776287f",
+      "scale": "x-socb",
+      "direction": -1,
+      "priority_rank": 2
+    },
+    {
+      "item_id": "ipip-3cf6393c823c",
+      "scale": "x-socb",
+      "direction": -1,
+      "priority_rank": 4
+    },
+    {
+      "item_id": "ipip-ff3f5e533f3b",
+      "scale": "x-socb",
+      "direction": -1,
+      "priority_rank": 6
+    },
+    {
+      "item_id": "ipip-443d47d2dd62",
+      "scale": "x-socb",
+      "direction": -1,
+      "priority_rank": 8
+    },
+    {
+      "item_id": "ipip-6e45c3b05652",
+      "scale": "x-socb",
+      "direction": -1,
+      "priority_rank": 10
+    },
+    {
+      "item_id": "ipip-b506dda623f9",
+      "scale": "x-soci",
+      "direction": 1,
+      "priority_rank": 1
+    },
+    {
+      "item_id": "ipip-008e50816285",
+      "scale": "x-soci",
+      "direction": 1,
+      "priority_rank": 3
+    },
+    {
+      "item_id": "ipip-c8f9774a70f0",
+      "scale": "x-soci",
+      "direction": 1,
+      "priority_rank": 5
+    },
+    {
+      "item_id": "ipip-8bf408a2ef9e",
+      "scale": "x-soci",
+      "direction": 1,
+      "priority_rank": 7
+    },
+    {
+      "item_id": "ipip-0bb887fde12c",
+      "scale": "x-soci",
+      "direction": 1,
+      "priority_rank": 9
+    },
+    {
+      "item_id": "ipip-2daf53fe8195",
+      "scale": "x-soci",
+      "direction": -1,
+      "priority_rank": 2
+    },
+    {
+      "item_id": "ipip-51777b4b3f30",
+      "scale": "x-soci",
+      "direction": -1,
+      "priority_rank": 4
+    },
+    {
+      "item_id": "ipip-a2b0c0b752f9",
+      "scale": "x-soci",
+      "direction": -1,
+      "priority_rank": 6
+    },
+    {
+      "item_id": "ipip-7bcc869847a2",
+      "scale": "x-soci",
+      "direction": -1,
+      "priority_rank": 8
+    },
+    {
+      "item_id": "ipip-dff798ecc09a",
+      "scale": "x-soci",
+      "direction": -1,
+      "priority_rank": 10
+    },
+    {
+      "item_id": "ipip-db412db3675b",
+      "scale": "x-live",
+      "direction": 1,
+      "priority_rank": 1
+    },
+    {
+      "item_id": "ipip-fd032b7dd916",
+      "scale": "x-live",
+      "direction": 1,
+      "priority_rank": 3
+    },
+    {
+      "item_id": "ipip-23fb45a73444",
+      "scale": "x-live",
+      "direction": 1,
+      "priority_rank": 5
+    },
+    {
+      "item_id": "ipip-1536f594047c",
+      "scale": "x-live",
+      "direction": 1,
+      "priority_rank": 6
+    },
+    {
+      "item_id": "ipip-c7bdce6c5f93",
+      "scale": "x-live",
+      "direction": 1,
+      "priority_rank": 7
+    },
+    {
+      "item_id": "ipip-2dd99b36f784",
+      "scale": "x-live",
+      "direction": 1,
+      "priority_rank": 8
+    },
+    {
+      "item_id": "ipip-d20390cbe31d",
+      "scale": "x-live",
+      "direction": 1,
+      "priority_rank": 9
+    },
+    {
+      "item_id": "ipip-579aff924853",
+      "scale": "x-live",
+      "direction": 1,
+      "priority_rank": 10
+    },
+    {
+      "item_id": "ipip-ad6c0afe6808",
+      "scale": "x-live",
+      "direction": -1,
+      "priority_rank": 2
+    },
+    {
+      "item_id": "ipip-6f7bc1c201c7",
+      "scale": "x-live",
+      "direction": -1,
+      "priority_rank": 4
+    },
+    {
+      "item_id": "ipip-8ca72ecdc3c9",
+      "scale": "a-forg",
+      "direction": 1,
+      "priority_rank": 1
+    },
+    {
+      "item_id": "ipip-07013d9d7502",
+      "scale": "a-forg",
+      "direction": 1,
+      "priority_rank": 3
+    },
+    {
+      "item_id": "ipip-081e16463a2f",
+      "scale": "a-forg",
+      "direction": 1,
+      "priority_rank": 5
+    },
+    {
+      "item_id": "ipip-9983d5fc8c2c",
+      "scale": "a-forg",
+      "direction": 1,
+      "priority_rank": 7
+    },
+    {
+      "item_id": "ipip-a62b20c1b404",
+      "scale": "a-forg",
+      "direction": -1,
+      "priority_rank": 2
+    },
+    {
+      "item_id": "ipip-b9cfc985d695",
+      "scale": "a-forg",
+      "direction": -1,
+      "priority_rank": 4
+    },
+    {
+      "item_id": "ipip-6a8be806c2ba",
+      "scale": "a-forg",
+      "direction": -1,
+      "priority_rank": 6
+    },
+    {
+      "item_id": "ipip-e3749eb37112",
+      "scale": "a-forg",
+      "direction": -1,
+      "priority_rank": 8
+    },
+    {
+      "item_id": "ipip-1b73fdd84866",
+      "scale": "a-forg",
+      "direction": -1,
+      "priority_rank": 9
+    },
+    {
+      "item_id": "ipip-dd8a18b4927a",
+      "scale": "a-forg",
+      "direction": -1,
+      "priority_rank": 10
+    },
+    {
+      "item_id": "ipip-459acdfea008",
+      "scale": "a-gent",
+      "direction": 1,
+      "priority_rank": 1
+    },
+    {
+      "item_id": "ipip-79d497dc9d04",
+      "scale": "a-gent",
+      "direction": 1,
+      "priority_rank": 3
+    },
+    {
+      "item_id": "ipip-f9ae1c5e43ec",
+      "scale": "a-gent",
+      "direction": 1,
+      "priority_rank": 5
+    },
+    {
+      "item_id": "ipip-9751bba4aeec",
+      "scale": "a-gent",
+      "direction": 1,
+      "priority_rank": 7
+    },
+    {
+      "item_id": "ipip-32c33fdb317d",
+      "scale": "a-gent",
+      "direction": -1,
+      "priority_rank": 2
+    },
+    {
+      "item_id": "ipip-bc172d028388",
+      "scale": "a-gent",
+      "direction": -1,
+      "priority_rank": 4
+    },
+    {
+      "item_id": "ipip-f4f41b6cf05d",
+      "scale": "a-gent",
+      "direction": -1,
+      "priority_rank": 6
+    },
+    {
+      "item_id": "ipip-b4384bf9c034",
+      "scale": "a-gent",
+      "direction": -1,
+      "priority_rank": 8
+    },
+    {
+      "item_id": "ipip-0d483ba71576",
+      "scale": "a-gent",
+      "direction": -1,
+      "priority_rank": 9
+    },
+    {
+      "item_id": "ipip-6c587cb504a6",
+      "scale": "a-gent",
+      "direction": -1,
+      "priority_rank": 10
+    },
+    {
+      "item_id": "ipip-ff1fc95e4224",
+      "scale": "a-flex",
+      "direction": 1,
+      "priority_rank": 1
+    },
+    {
+      "item_id": "ipip-96b94e0936fb",
+      "scale": "a-flex",
+      "direction": 1,
+      "priority_rank": 3
+    },
+    {
+      "item_id": "ipip-d00eff6406b1",
+      "scale": "a-flex",
+      "direction": -1,
+      "priority_rank": 2
+    },
+    {
+      "item_id": "ipip-1181025e0cd0",
+      "scale": "a-flex",
+      "direction": -1,
+      "priority_rank": 4
+    },
+    {
+      "item_id": "ipip-38197efb1b0c",
+      "scale": "a-flex",
+      "direction": -1,
+      "priority_rank": 5
+    },
+    {
+      "item_id": "ipip-24848a531f27",
+      "scale": "a-flex",
+      "direction": -1,
+      "priority_rank": 6
+    },
+    {
+      "item_id": "ipip-ff05e0de2ccf",
+      "scale": "a-flex",
+      "direction": -1,
+      "priority_rank": 7
+    },
+    {
+      "item_id": "ipip-19efb0f976c0",
+      "scale": "a-flex",
+      "direction": -1,
+      "priority_rank": 8
+    },
+    {
+      "item_id": "ipip-8c831cebdd64",
+      "scale": "a-flex",
+      "direction": -1,
+      "priority_rank": 9
+    },
+    {
+      "item_id": "ipip-ab23f699953f",
+      "scale": "a-flex",
+      "direction": -1,
+      "priority_rank": 10
+    },
+    {
+      "item_id": "ipip-5a4518d640ab",
+      "scale": "a-pati",
+      "direction": 1,
+      "priority_rank": 1
+    },
+    {
+      "item_id": "ipip-b4f65f7d49a5",
+      "scale": "a-pati",
+      "direction": 1,
+      "priority_rank": 3
+    },
+    {
+      "item_id": "ipip-ef1693487cea",
+      "scale": "a-pati",
+      "direction": 1,
+      "priority_rank": 5
+    },
+    {
+      "item_id": "ipip-e1f049cec64b",
+      "scale": "a-pati",
+      "direction": 1,
+      "priority_rank": 7
+    },
+    {
+      "item_id": "ipip-f829f442b39f",
+      "scale": "a-pati",
+      "direction": 1,
+      "priority_rank": 9
+    },
+    {
+      "item_id": "ipip-44538cbcfbe8",
+      "scale": "a-pati",
+      "direction": -1,
+      "priority_rank": 2
+    },
+    {
+      "item_id": "ipip-9ba57f762f48",
+      "scale": "a-pati",
+      "direction": -1,
+      "priority_rank": 4
+    },
+    {
+      "item_id": "ipip-3af609cca8bf",
+      "scale": "a-pati",
+      "direction": -1,
+      "priority_rank": 6
+    },
+    {
+      "item_id": "ipip-e3050619b073",
+      "scale": "a-pati",
+      "direction": -1,
+      "priority_rank": 8
+    },
+    {
+      "item_id": "ipip-f7890a395d37",
+      "scale": "a-pati",
+      "direction": -1,
+      "priority_rank": 10
+    },
+    {
+      "item_id": "ipip-4f751c683754",
+      "scale": "c-orga",
+      "direction": 1,
+      "priority_rank": 1
+    },
+    {
+      "item_id": "ipip-d3f40d4af475",
+      "scale": "c-orga",
+      "direction": 1,
+      "priority_rank": 3
+    },
+    {
+      "item_id": "ipip-ef294882ae16",
+      "scale": "c-orga",
+      "direction": 1,
+      "priority_rank": 5
+    },
+    {
+      "item_id": "ipip-4341a57a7e8e",
+      "scale": "c-orga",
+      "direction": 1,
+      "priority_rank": 7
+    },
+    {
+      "item_id": "ipip-2d0913ec3910",
+      "scale": "c-orga",
+      "direction": 1,
+      "priority_rank": 9
+    },
+    {
+      "item_id": "ipip-ab8fded8872d",
+      "scale": "c-orga",
+      "direction": -1,
+      "priority_rank": 2
+    },
+    {
+      "item_id": "ipip-1831477d6350",
+      "scale": "c-orga",
+      "direction": -1,
+      "priority_rank": 4
+    },
+    {
+      "item_id": "ipip-4a8b8266ebbd",
+      "scale": "c-orga",
+      "direction": -1,
+      "priority_rank": 6
+    },
+    {
+      "item_id": "ipip-ca0bf8cac1e4",
+      "scale": "c-orga",
+      "direction": -1,
+      "priority_rank": 8
+    },
+    {
+      "item_id": "ipip-0205a511d986",
+      "scale": "c-orga",
+      "direction": -1,
+      "priority_rank": 10
+    },
+    {
+      "item_id": "ipip-4155e1b6388d",
+      "scale": "c-dili",
+      "direction": 1,
+      "priority_rank": 1
+    },
+    {
+      "item_id": "ipip-b315b26c47a5",
+      "scale": "c-dili",
+      "direction": 1,
+      "priority_rank": 3
+    },
+    {
+      "item_id": "ipip-3ba06de2619d",
+      "scale": "c-dili",
+      "direction": 1,
+      "priority_rank": 5
+    },
+    {
+      "item_id": "ipip-5f47d22aa737",
+      "scale": "c-dili",
+      "direction": 1,
+      "priority_rank": 7
+    },
+    {
+      "item_id": "ipip-8670ca0249c8",
+      "scale": "c-dili",
+      "direction": 1,
+      "priority_rank": 9
+    },
+    {
+      "item_id": "ipip-4abda7cd3f4b",
+      "scale": "c-dili",
+      "direction": -1,
+      "priority_rank": 2
+    },
+    {
+      "item_id": "ipip-22bb8f68c452",
+      "scale": "c-dili",
+      "direction": -1,
+      "priority_rank": 4
+    },
+    {
+      "item_id": "ipip-ec82f1f08bab",
+      "scale": "c-dili",
+      "direction": -1,
+      "priority_rank": 6
+    },
+    {
+      "item_id": "ipip-d7ed5527f4c1",
+      "scale": "c-dili",
+      "direction": -1,
+      "priority_rank": 8
+    },
+    {
+      "item_id": "ipip-4423317d08ba",
+      "scale": "c-dili",
+      "direction": -1,
+      "priority_rank": 10
+    },
+    {
+      "item_id": "ipip-94ba2af54f53",
+      "scale": "c-perf",
+      "direction": 1,
+      "priority_rank": 1
+    },
+    {
+      "item_id": "ipip-d9e4e00d7940",
+      "scale": "c-perf",
+      "direction": 1,
+      "priority_rank": 3
+    },
+    {
+      "item_id": "ipip-f5bbf7b7ab01",
+      "scale": "c-perf",
+      "direction": 1,
+      "priority_rank": 5
+    },
+    {
+      "item_id": "ipip-8aed1767752e",
+      "scale": "c-perf",
+      "direction": 1,
+      "priority_rank": 6
+    },
+    {
+      "item_id": "ipip-25873e1e56af",
+      "scale": "c-perf",
+      "direction": 1,
+      "priority_rank": 7
+    },
+    {
+      "item_id": "ipip-c734fe5c3356",
+      "scale": "c-perf",
+      "direction": 1,
+      "priority_rank": 8
+    },
+    {
+      "item_id": "ipip-dc62b033457f",
+      "scale": "c-perf",
+      "direction": 1,
+      "priority_rank": 9
+    },
+    {
+      "item_id": "ipip-15e1695b3777",
+      "scale": "c-perf",
+      "direction": 1,
+      "priority_rank": 10
+    },
+    {
+      "item_id": "ipip-951d4bd8f14e",
+      "scale": "c-perf",
+      "direction": -1,
+      "priority_rank": 2
+    },
+    {
+      "item_id": "ipip-9a257289d8ab",
+      "scale": "c-perf",
+      "direction": -1,
+      "priority_rank": 4
+    },
+    {
+      "item_id": "ipip-438f9f068bd9",
+      "scale": "c-prud",
+      "direction": 1,
+      "priority_rank": 1
+    },
+    {
+      "item_id": "ipip-f209c7ba71cb",
+      "scale": "c-prud",
+      "direction": 1,
+      "priority_rank": 3
+    },
+    {
+      "item_id": "ipip-bc6c82887c09",
+      "scale": "c-prud",
+      "direction": 1,
+      "priority_rank": 5
+    },
+    {
+      "item_id": "ipip-7d887f4eeafa",
+      "scale": "c-prud",
+      "direction": -1,
+      "priority_rank": 2
+    },
+    {
+      "item_id": "ipip-fd4a76d139b1",
+      "scale": "c-prud",
+      "direction": -1,
+      "priority_rank": 4
+    },
+    {
+      "item_id": "ipip-9345fbe513f9",
+      "scale": "c-prud",
+      "direction": -1,
+      "priority_rank": 6
+    },
+    {
+      "item_id": "ipip-46e583aaaf09",
+      "scale": "c-prud",
+      "direction": -1,
+      "priority_rank": 7
+    },
+    {
+      "item_id": "ipip-907f84606a31",
+      "scale": "c-prud",
+      "direction": -1,
+      "priority_rank": 8
+    },
+    {
+      "item_id": "ipip-3bf6ef4a0aa2",
+      "scale": "c-prud",
+      "direction": -1,
+      "priority_rank": 9
+    },
+    {
+      "item_id": "ipip-9daa35b01998",
+      "scale": "c-prud",
+      "direction": -1,
+      "priority_rank": 10
+    },
+    {
+      "item_id": "ipip-f9e966cd0541",
+      "scale": "o-aesa",
+      "direction": 1,
+      "priority_rank": 1
+    },
+    {
+      "item_id": "ipip-cec3e6c72ba8",
+      "scale": "o-aesa",
+      "direction": 1,
+      "priority_rank": 3
+    },
+    {
+      "item_id": "ipip-50494373a6aa",
+      "scale": "o-aesa",
+      "direction": 1,
+      "priority_rank": 5
+    },
+    {
+      "item_id": "ipip-caebc3c57c44",
+      "scale": "o-aesa",
+      "direction": 1,
+      "priority_rank": 7
+    },
+    {
+      "item_id": "ipip-c6825f8a9e97",
+      "scale": "o-aesa",
+      "direction": 1,
+      "priority_rank": 9
+    },
+    {
+      "item_id": "ipip-6b1a64bc3466",
+      "scale": "o-aesa",
+      "direction": -1,
+      "priority_rank": 2
+    },
+    {
+      "item_id": "ipip-cf74a8c8a62a",
+      "scale": "o-aesa",
+      "direction": -1,
+      "priority_rank": 4
+    },
+    {
+      "item_id": "ipip-b24fe67d5271",
+      "scale": "o-aesa",
+      "direction": -1,
+      "priority_rank": 6
+    },
+    {
+      "item_id": "ipip-82ce0db80953",
+      "scale": "o-aesa",
+      "direction": -1,
+      "priority_rank": 8
+    },
+    {
+      "item_id": "ipip-710a1d5bb232",
+      "scale": "o-aesa",
+      "direction": -1,
+      "priority_rank": 10
+    },
+    {
+      "item_id": "ipip-da7e38a2310f",
+      "scale": "o-inqu",
+      "direction": 1,
+      "priority_rank": 1
+    },
+    {
+      "item_id": "ipip-c03c33430bc6",
+      "scale": "o-inqu",
+      "direction": 1,
+      "priority_rank": 3
+    },
+    {
+      "item_id": "ipip-22ad489f19bc",
+      "scale": "o-inqu",
+      "direction": 1,
+      "priority_rank": 5
+    },
+    {
+      "item_id": "ipip-3412d35cfdf6",
+      "scale": "o-inqu",
+      "direction": 1,
+      "priority_rank": 7
+    },
+    {
+      "item_id": "ipip-acfc0d822b85",
+      "scale": "o-inqu",
+      "direction": 1,
+      "priority_rank": 9
+    },
+    {
+      "item_id": "ipip-533b27e30698",
+      "scale": "o-inqu",
+      "direction": 1,
+      "priority_rank": 10
+    },
+    {
+      "item_id": "ipip-11bb5743424d",
+      "scale": "o-inqu",
+      "direction": -1,
+      "priority_rank": 2
+    },
+    {
+      "item_id": "ipip-bf6877ad1f98",
+      "scale": "o-inqu",
+      "direction": -1,
+      "priority_rank": 4
+    },
+    {
+      "item_id": "ipip-a77d02544093",
+      "scale": "o-inqu",
+      "direction": -1,
+      "priority_rank": 6
+    },
+    {
+      "item_id": "ipip-d8b3588e7cea",
+      "scale": "o-inqu",
+      "direction": -1,
+      "priority_rank": 8
+    },
+    {
+      "item_id": "ipip-7efb9c8cd0bc",
+      "scale": "o-crea",
+      "direction": 1,
+      "priority_rank": 1
+    },
+    {
+      "item_id": "ipip-f5f9a0b02845",
+      "scale": "o-crea",
+      "direction": 1,
+      "priority_rank": 3
+    },
+    {
+      "item_id": "ipip-54e77b52f6ff",
+      "scale": "o-crea",
+      "direction": 1,
+      "priority_rank": 5
+    },
+    {
+      "item_id": "ipip-1c0490cae7e4",
+      "scale": "o-crea",
+      "direction": 1,
+      "priority_rank": 7
+    },
+    {
+      "item_id": "ipip-1103d8beddd4",
+      "scale": "o-crea",
+      "direction": 1,
+      "priority_rank": 9
+    },
+    {
+      "item_id": "ipip-ae2dd3e93d53",
+      "scale": "o-crea",
+      "direction": 1,
+      "priority_rank": 10
+    },
+    {
+      "item_id": "ipip-1df8a0aa7e2c",
+      "scale": "o-crea",
+      "direction": -1,
+      "priority_rank": 2
+    },
+    {
+      "item_id": "ipip-5faa08fd772f",
+      "scale": "o-crea",
+      "direction": -1,
+      "priority_rank": 4
+    },
+    {
+      "item_id": "ipip-c23c79ecba5b",
+      "scale": "o-crea",
+      "direction": -1,
+      "priority_rank": 6
+    },
+    {
+      "item_id": "ipip-82e7cbcefbe6",
+      "scale": "o-crea",
+      "direction": -1,
+      "priority_rank": 8
+    },
+    {
+      "item_id": "ipip-ad98a0ba2f41",
+      "scale": "o-unco",
+      "direction": 1,
+      "priority_rank": 1
+    },
+    {
+      "item_id": "ipip-0938ace43891",
+      "scale": "o-unco",
+      "direction": 1,
+      "priority_rank": 3
+    },
+    {
+      "item_id": "ipip-a17c6aef117e",
+      "scale": "o-unco",
+      "direction": 1,
+      "priority_rank": 5
+    },
+    {
+      "item_id": "ipip-459d8bee64ce",
+      "scale": "o-unco",
+      "direction": 1,
+      "priority_rank": 7
+    },
+    {
+      "item_id": "ipip-2164b2f951a1",
+      "scale": "o-unco",
+      "direction": 1,
+      "priority_rank": 9
+    },
+    {
+      "item_id": "ipip-65ab52df1d94",
+      "scale": "o-unco",
+      "direction": -1,
+      "priority_rank": 2
+    },
+    {
+      "item_id": "ipip-0e3f5a576e7f",
+      "scale": "o-unco",
+      "direction": -1,
+      "priority_rank": 4
+    },
+    {
+      "item_id": "ipip-71648aa5377f",
+      "scale": "o-unco",
+      "direction": -1,
+      "priority_rank": 6
+    },
+    {
+      "item_id": "ipip-ff0dee125a56",
+      "scale": "o-unco",
+      "direction": -1,
+      "priority_rank": 8
+    },
+    {
+      "item_id": "ipip-3c6ae0cc588e",
+      "scale": "o-unco",
+      "direction": -1,
+      "priority_rank": 10
+    }
+  ]
+}

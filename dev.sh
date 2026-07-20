@@ -24,7 +24,7 @@ for item in "$REPO"/*; do
   name=$(basename "$item")
   case "$name" in
     .git|.github|.claude|.wrangler|_dev-assets|node_modules) continue ;;
-    _worker.js|_build.mjs|_content.generated.mjs|content|AGENTS.md|CLAUDE.md|dev.sh|deploy.sh) continue ;;
+    _worker.js|_build.mjs|_content.generated.mjs|content|migrations|surveys|AGENTS.md|CLAUDE.md|dev.sh|deploy.sh) continue ;;
     *) ln -s "$item" "$DEV/$name" ;;
   esac
 done
@@ -55,6 +55,14 @@ cat > "$REPO/wrangler.dev.jsonc" <<EOF
   },
   "analytics_engine_datasets": [
     { "binding": "VIEWS", "dataset": "a9lim_views" }
+  ],
+  "d1_databases": [
+    {
+      "binding": "SURVEYS_DB",
+      "database_name": "a9lim-surveys",
+      "database_id": "94280c38-af96-4d89-b9c8-1b507af82a34",
+      "migrations_dir": "migrations"
+    }
   ]
 }
 EOF
