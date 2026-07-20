@@ -26,9 +26,14 @@ function emit(rel, content) {
 // --- helpers ---
 
 function gitLastmod(filePath) {
+  const [head, ...tail] = filePath.split('/');
+  const nestedRoot = join(ROOT, head);
+  const nestedGit = join(nestedRoot, '.git');
+  const cwd = tail.length && existsSync(nestedGit) ? nestedRoot : ROOT;
+  const trackedPath = cwd === ROOT ? filePath : tail.join('/');
   try {
-    const iso = execFileSync('git', ['log', '-1', '--format=%aI', '--', filePath], {
-      cwd: ROOT, encoding: 'utf8'
+    const iso = execFileSync('git', ['log', '-1', '--format=%aI', '--', trackedPath], {
+      cwd, encoding: 'utf8'
     }).trim();
     return iso ? iso.slice(0, 10) : null;
   } catch { return null; }

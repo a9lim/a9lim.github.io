@@ -1,9 +1,9 @@
 {
-  "generatedAt": "2026-07-18T01:23:13.900Z",
+  "generatedAt": "2026-07-20T02:56:19.846Z",
   "lastDeploy": {
-    "hash": "a292bc1",
-    "iso": "2026-07-17T18:09:50-07:00",
-    "subject": "docs: refresh backend documentation and SEO"
+    "hash": "6a5f7bb",
+    "iso": "2026-07-20T11:40:41+09:00",
+    "subject": "Merge pull request #2 from a9lim/dev"
   },
   "now": [
     [
