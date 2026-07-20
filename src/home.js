@@ -197,16 +197,12 @@ function initCheatsheet() {
         ['t',   'toggle theme'],
         ['?',   'this cheatsheet'],
         ['esc', 'close overlay'],
-        ['konami', 'try it'],
     ];
 
     let overlay = null;
     let prevFocus = null;
     let gPending = false;
     let gTimer = null;
-    // Konami state
-    const KONAMI = ['ArrowUp','ArrowUp','ArrowDown','ArrowDown','ArrowLeft','ArrowRight','ArrowLeft','ArrowRight','b','a'];
-    let kBuf = [];
 
     function build() {
         const wrap = el('div', { class: 'home-cheat', role: 'dialog', 'aria-modal': 'true', 'aria-label': 'Keyboard shortcuts' });
@@ -252,15 +248,6 @@ function initCheatsheet() {
 
         if (e.key === 'Escape' && overlay) { close(); return; }
         if (e.key === '?' && !e.ctrlKey && !e.metaKey) { e.preventDefault(); overlay ? close() : open(); return; }
-
-        // Konami
-        kBuf.push(e.key.length === 1 ? e.key.toLowerCase() : e.key);
-        if (kBuf.length > KONAMI.length) kBuf.shift();
-        if (kBuf.length === KONAMI.length && kBuf.every((k, i) => k === KONAMI[i])) {
-            kBuf = [];
-            location.href = '/asteroids';
-            return;
-        }
 
         // Theme toggle
         if (e.key === 't' && !e.ctrlKey && !e.metaKey && !e.altKey) {
