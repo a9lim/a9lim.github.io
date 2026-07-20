@@ -1176,9 +1176,10 @@ const homeData = {
 writeFileSync(join(DIST, 'home-data.json'), JSON.stringify(homeData, null, 2) + '\n');
 console.log('home-data.json: homepage content + deploy marker');
 
-// --- build resume.pdf via tectonic (skips gracefully if absent) ---
+// --- build resume.pdf via Tectonic ---
 
-const resumeBuild = spawnSync('bash', [join(ROOT, 'content/resume/build.sh'), join(DIST, 'resume.pdf')], { stdio: 'inherit' });
-if (resumeBuild.status !== 0) {
-  console.error('resume.pdf: build failed (exit ' + resumeBuild.status + ')');
-}
+const resumeOutput = join(DIST, 'resume.pdf');
+const resumeBuild = spawnSync('bash', [join(ROOT, 'content/resume/build.sh'), resumeOutput], { stdio: 'inherit' });
+if (resumeBuild.error) throw resumeBuild.error;
+if (resumeBuild.status !== 0) throw new Error('resume.pdf: build failed (exit ' + resumeBuild.status + ')');
+if (!existsSync(resumeOutput)) throw new Error('resume.pdf: build reported success without producing an artifact');
