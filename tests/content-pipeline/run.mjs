@@ -66,7 +66,7 @@ check('worker loads canonical markdown', worker.includes('/content/posts/'));
 console.log('submodule about.md ↔ HTML metadata ↔ about-panel date');
 for (const p of PROJECTS.filter(p => p.kind === 'sim' && !p.external && !p.planned)) {
   const slug = p.href.replace(/^\//, '').replace(/\/$/, '');
-  const about = readFileSync(join(ROOT, slug, 'about.md'), 'utf8');
+  const about = readFileSync(join(ROOT, 'projects', slug, 'about.md'), 'utf8');
   const meta = Object.fromEntries([...about.matchAll(/^([A-Za-z][\w]*):\s+(.+)$/gm)].map(m => [m[1], m[2]]));
   const index = readFileSync(join(DIST, slug, 'index.html'), 'utf8');
   check(`${p.title} about metadata is complete`, ['name', 'title', 'description', 'updated'].every(k => meta[k]));

@@ -1760,7 +1760,7 @@ function testStructSroaAndPointerInlining() {
 
 function testCorpusDerivedDispatchShader() {
     console.log('test: corpus-derived geon dispatch shader executes');
-    const path = new URL('../../geon/src/gpu/shaders/dispatch-args.wgsl', import.meta.url);
+    const path = new URL('../../projects/geon/src/gpu/shaders/dispatch-args.wgsl', import.meta.url);
     const src = `
         const MAX_PHOTONS: u32 = 1024u;
         const PION_POOL_CAP: u32 = 512u;

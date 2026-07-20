@@ -78,15 +78,18 @@ for (const rel of SITE_FILES) {
 
 copied += copyTrackedTree(ROOT, 'site/src', join(DIST, 'src'), rel => rel !== 'site/src/projects.js');
 copied += copyTrackedTree(ROOT, 'static', DIST);
+copied += copyTrackedTree(ROOT, 'shared', join(DIST, 'shared'));
 copied += copyTrackedTree(ROOT, 'content/posts', join(DIST, 'content/posts'));
 
-for (const name of readdirSync(ROOT).filter(name => /^shared-.*\.(?:css|js)$/.test(name))) {
-  copyPath(join(ROOT, name), join(DIST, name));
+// Keep the former public URLs for one migration cycle. Source and consumers
+// use /shared/*; these aliases can be removed after caches and inbound links age.
+for (const name of readdirSync(join(ROOT, 'shared')).filter(name => /\.(?:css|js)$/.test(name))) {
+  copyPath(join(ROOT, 'shared', name), join(DIST, `shared-${name}`));
   copied += 1;
 }
 
 for (const project of PROJECTS) {
-  const source = join(ROOT, project);
+  const source = join(ROOT, 'projects', project);
   copied += copyTrackedTree(source, '.', join(DIST, project), isDeployableProjectFile);
 }
 

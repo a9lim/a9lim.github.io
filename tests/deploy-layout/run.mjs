@@ -31,6 +31,8 @@ for (const required of [
   'styles.css',
   'posts.json',
   'content/posts/introspection-via-kaomoji.md',
+  'shared/base.css',
+  'shared/tokens.js',
   'shared-base.css',
   'shared-tokens.js',
   'geon/index.html',

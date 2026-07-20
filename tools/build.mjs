@@ -45,17 +45,26 @@ function emitInternal(rel, content) {
 // --- helpers ---
 
 function gitLastmod(filePath) {
-  const [head, ...tail] = filePath.split('/');
-  const nestedRoot = join(ROOT, head);
-  const nestedGit = join(nestedRoot, '.git');
-  const cwd = tail.length && existsSync(nestedGit) ? nestedRoot : ROOT;
-  const trackedPath = cwd === ROOT ? filePath : tail.join('/');
+  const parts = filePath.split('/');
+  let cwd = ROOT;
+  let trackedPath = filePath;
+  for (let i = parts.length - 1; i > 0; i--) {
+    const candidate = join(ROOT, ...parts.slice(0, i));
+    if (!existsSync(join(candidate, '.git'))) continue;
+    cwd = candidate;
+    trackedPath = parts.slice(i).join('/');
+    break;
+  }
   try {
     const iso = execFileSync('git', ['log', '-1', '--format=%aI', '--', trackedPath], {
       cwd, encoding: 'utf8'
     }).trim();
     return iso ? iso.slice(0, 10) : null;
   } catch { return null; }
+}
+
+function projectSource(slug, rel = '') {
+  return ['projects', slug, rel].filter(Boolean).join('/');
 }
 
 function today() {
@@ -241,7 +250,7 @@ function setMetaContent(html, attr, value, rel) {
 const simDocs = projectsData
   .filter(p => p.kind === 'sim' && !p.external && !p.planned)
   .map(project => {
-    const rel = `${project.slug}/about.md`;
+    const rel = projectSource(project.slug, 'about.md');
     const doc = parseFrontmatter(rel);
     for (const req of ['name', 'title', 'description', 'updated']) {
       if (doc.meta[req] == null) throw new Error(`${rel}: missing ${req}`);
@@ -259,7 +268,7 @@ const simDocs = projectsData
 for (const doc of simDocs) {
   const slug = doc.project.slug;
   const indexRel = `${slug}/index.html`;
-  let html = readText(indexRel);
+  let html = readText(projectSource(slug, 'index.html'));
   const titleRe = /<title([^>]*)>[\s\S]*?<\/title>/i;
   if (!titleRe.test(html)) throw new Error(`${indexRel}: missing title`);
   html = html.replace(titleRe, `<title$1>${mdEsc(doc.meta.title)} | a9l.im</title>`);
@@ -290,21 +299,22 @@ for (const doc of simDocs) {
   emit(indexRel, html);
 
   const uiCandidates = [`${slug}/main.js`, `${slug}/src/ui.js`]
-    .filter(rel => existsSync(join(ROOT, rel)))
-    .filter(rel => /lastUpdated\s*:/.test(readText(rel)));
+    .filter(rel => existsSync(join(ROOT, projectSource(slug, rel.slice(slug.length + 1)))))
+    .filter(rel => /lastUpdated\s*:/.test(readText(projectSource(slug, rel.slice(slug.length + 1)))));
   if (uiCandidates.length !== 1) {
     throw new Error(`${slug}: expected exactly one UI source with lastUpdated, found ${uiCandidates.length}`);
   }
   const uiRel = uiCandidates[0];
-  const ui = readText(uiRel).replace(
+  const ui = readText(projectSource(slug, uiRel.slice(slug.length + 1))).replace(
     /(lastUpdated\s*:\s*['"])[^'"]+(['"])/,
     `$1${doc.meta.updated}$2`,
   );
   emit(uiRel, ui);
 
   const stringsRel = `${slug}/i18n/strings.js`;
-  if (existsSync(join(ROOT, stringsRel))) {
-    let strings = readText(stringsRel);
+  const stringsSource = projectSource(slug, 'i18n/strings.js');
+  if (existsSync(join(ROOT, stringsSource))) {
+    let strings = readText(stringsSource);
     const values = {
       'meta.title': `${doc.meta.title} | a9l.im`,
       'meta.description': doc.meta.description,
@@ -873,9 +883,9 @@ for (const r of staticRoutes) {
 }
 
 // 1b. Scripture work-level routes
-const workIds = readJSON('scripture/data/works.json');
+const workIds = readJSON('projects/scripture/data/works.json');
 for (const workId of workIds) {
-  const workLastmod = gitLastmod(`scripture/data/${workId}/manifest.json`);
+  const workLastmod = gitLastmod(`projects/scripture/data/${workId}/manifest.json`);
   add(`/scripture/${workId}`, workLastmod, null, 'monthly', 0.7);
 }
 
@@ -887,8 +897,8 @@ for (const p of posts) {
 // 3. Scripture deep routes
 
 for (const workId of workIds) {
-  const manifest = readJSON(`scripture/data/${workId}/manifest.json`);
-  const workLastmod = gitLastmod(`scripture/data/${workId}/manifest.json`);
+  const manifest = readJSON(`projects/scripture/data/${workId}/manifest.json`);
+  const workLastmod = gitLastmod(`projects/scripture/data/${workId}/manifest.json`);
 
   for (const book of manifest.books) {
     const start = book.start || 1;

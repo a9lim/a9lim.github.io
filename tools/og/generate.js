@@ -7,14 +7,14 @@ const ROOT = path.resolve(__dirname, '..', '..');
 
 const CARDS = [
   { html: 'a9lim.html', output: path.join(ROOT, 'static', 'og-image.webp'), waitReady: true },
-  { html: 'shoals.html',     output: path.join(ROOT, 'shoals', 'og-image.webp'),   waitReady: false },
-  { html: 'geon.html',       output: path.join(ROOT, 'geon', 'og-image.webp'),     waitReady: false },
-  { html: 'metabolism.html',  output: path.join(ROOT, 'cyano', 'og-image.webp'),    waitReady: false },
-  { html: 'redistricting.html', output: path.join(ROOT, 'gerry', 'og-image.webp'), waitReady: false },
-  { html: 'scripture.html',    output: path.join(ROOT, 'scripture', 'og-image.webp'), waitReady: false },
-  { html: 'miasma.html',       output: path.join(ROOT, 'miasma', 'og-image.webp'),    waitReady: false },
-  { html: 'pile.html',         output: path.join(ROOT, 'pile', 'og-image.webp'),      waitReady: false },
-  { html: 'plasma.html',       output: path.join(ROOT, 'plasma', 'og-image.webp'),    waitReady: false },
+  { html: 'shoals.html', output: path.join(ROOT, 'projects', 'shoals', 'og-image.webp'), waitReady: false },
+  { html: 'geon.html', output: path.join(ROOT, 'projects', 'geon', 'og-image.webp'), waitReady: false },
+  { html: 'metabolism.html', output: path.join(ROOT, 'projects', 'cyano', 'og-image.webp'), waitReady: false },
+  { html: 'redistricting.html', output: path.join(ROOT, 'projects', 'gerry', 'og-image.webp'), waitReady: false },
+  { html: 'scripture.html', output: path.join(ROOT, 'projects', 'scripture', 'og-image.webp'), waitReady: false },
+  { html: 'miasma.html', output: path.join(ROOT, 'projects', 'miasma', 'og-image.webp'), waitReady: false },
+  { html: 'pile.html', output: path.join(ROOT, 'projects', 'pile', 'og-image.webp'), waitReady: false },
+  { html: 'plasma.html', output: path.join(ROOT, 'projects', 'plasma', 'og-image.webp'), waitReady: false },
 ];
 
 const browser = await puppeteer.launch({ headless: true });

@@ -21,7 +21,7 @@ import { createHash } from 'node:crypto';
 import { compileWGSL } from '../../lib/wgsl/transpile.js';
 
 const ROOT = path.resolve(new URL('../..', import.meta.url).pathname);
-const SHADER_DIR = path.join(ROOT, 'plasma/src/gpu/shaders');
+const SHADER_DIR = path.join(ROOT, 'projects/plasma/src/gpu/shaders');
 const TRANSPILER_PATH = path.join(ROOT, 'lib/wgsl/transpile.js');
 const ITERS = +(process.env.PLASMA_BENCH_ITERS || 5);
 const WARMUP = +(process.env.PLASMA_BENCH_WARMUP || 2);

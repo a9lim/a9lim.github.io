@@ -28,32 +28,32 @@
 
 # Early Hints — preload critical resources for root SPA
 /
-  Link: </shared-tokens.js>; rel=preload; as=script
-  Link: </shared-base.css>; rel=preload; as=style
+  Link: </shared/tokens.js>; rel=preload; as=script
+  Link: </shared/base.css>; rel=preload; as=style
   Link: </styles.css>; rel=preload; as=style
   Link: </main.js>; rel=modulepreload
   Link: </fonts/recursive-variable.woff2>; rel=preload; as=font; crossorigin
 /sims
-  Link: </shared-tokens.js>; rel=preload; as=script
-  Link: </shared-base.css>; rel=preload; as=style
+  Link: </shared/tokens.js>; rel=preload; as=script
+  Link: </shared/base.css>; rel=preload; as=style
   Link: </styles.css>; rel=preload; as=style
   Link: </main.js>; rel=modulepreload
   Link: </fonts/recursive-variable.woff2>; rel=preload; as=font; crossorigin
 /projects
-  Link: </shared-tokens.js>; rel=preload; as=script
-  Link: </shared-base.css>; rel=preload; as=style
+  Link: </shared/tokens.js>; rel=preload; as=script
+  Link: </shared/base.css>; rel=preload; as=style
   Link: </styles.css>; rel=preload; as=style
   Link: </main.js>; rel=modulepreload
   Link: </fonts/recursive-variable.woff2>; rel=preload; as=font; crossorigin
 /blog
-  Link: </shared-tokens.js>; rel=preload; as=script
-  Link: </shared-base.css>; rel=preload; as=style
+  Link: </shared/tokens.js>; rel=preload; as=script
+  Link: </shared/base.css>; rel=preload; as=style
   Link: </styles.css>; rel=preload; as=style
   Link: </main.js>; rel=modulepreload
   Link: </fonts/recursive-variable.woff2>; rel=preload; as=font; crossorigin
 /blog/*
-  Link: </shared-tokens.js>; rel=preload; as=script
-  Link: </shared-base.css>; rel=preload; as=style
+  Link: </shared/tokens.js>; rel=preload; as=script
+  Link: </shared/base.css>; rel=preload; as=style
   Link: </styles.css>; rel=preload; as=style
   Link: </main.js>; rel=modulepreload
   Link: </fonts/recursive-variable.woff2>; rel=preload; as=font; crossorigin
@@ -63,37 +63,42 @@
 /geon/*
   Link: <https://cdn.jsdelivr.net>; rel=preconnect; crossorigin
 /cyano/*
-  Link: </shared-tokens.js>; rel=preload; as=script
-  Link: </shared-base.css>; rel=preload; as=style
+  Link: </shared/tokens.js>; rel=preload; as=script
+  Link: </shared/base.css>; rel=preload; as=style
   Link: </cyano/styles.css>; rel=preload; as=style
   Link: </cyano/main.js>; rel=modulepreload
   Link: </fonts/recursive-variable.woff2>; rel=preload; as=font; crossorigin
   Link: <https://cdn.jsdelivr.net>; rel=preconnect; crossorigin
 /shoals/*
-  Link: </shared-tokens.js>; rel=preload; as=script
-  Link: </shared-base.css>; rel=preload; as=style
+  Link: </shared/tokens.js>; rel=preload; as=script
+  Link: </shared/base.css>; rel=preload; as=style
   Link: </shoals/styles.css>; rel=preload; as=style
   Link: </shoals/main.js>; rel=modulepreload
   Link: </fonts/recursive-variable.woff2>; rel=preload; as=font; crossorigin
   Link: <https://cdn.jsdelivr.net>; rel=preconnect; crossorigin
 /gerry/*
-  Link: </shared-tokens.js>; rel=preload; as=script
-  Link: </shared-base.css>; rel=preload; as=style
+  Link: </shared/tokens.js>; rel=preload; as=script
+  Link: </shared/base.css>; rel=preload; as=style
   Link: </gerry/styles.css>; rel=preload; as=style
   Link: </gerry/main.js>; rel=modulepreload
   Link: </fonts/recursive-variable.woff2>; rel=preload; as=font; crossorigin
 /miasma/*
-  Link: </shared-tokens.js>; rel=preload; as=script
-  Link: </shared-base.css>; rel=preload; as=style
+  Link: </shared/tokens.js>; rel=preload; as=script
+  Link: </shared/base.css>; rel=preload; as=style
   Link: </miasma/styles.css>; rel=preload; as=style
   Link: </miasma/main.js>; rel=modulepreload
 /pile/*
-  Link: </shared-tokens.js>; rel=preload; as=script
-  Link: </shared-base.css>; rel=preload; as=style
+  Link: </shared/tokens.js>; rel=preload; as=script
+  Link: </shared/base.css>; rel=preload; as=style
   Link: </pile/styles.css>; rel=preload; as=style
   Link: </pile/main.js>; rel=modulepreload
 
 # Shared design system — short browser TTL, CDN caches until next deploy
+/shared/*
+  Cache-Control: public, max-age=86400, stale-while-revalidate=604800
+  Cloudflare-CDN-Cache-Control: public, max-age=31536000, immutable
+
+# One-cycle compatibility aliases for the former root-level URLs.
 /shared-*.js
   Cache-Control: public, max-age=86400, stale-while-revalidate=604800
   Cloudflare-CDN-Cache-Control: public, max-age=31536000, immutable
