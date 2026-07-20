@@ -1,9 +1,62 @@
 // ─── SPA Path Router ───
 // Routes: /, /sims, /projects, /blog, /blog/{slug}.
-// Cloudflare Pages _redirects serves index.html for these paths.
+// The Worker serves index.html for these paths and injects first-response SEO.
 // A delegated click handler on document intercepts [data-page] links.
 
+import { HOME_META, ROUTE_META, BLOG_META } from './route-meta.js';
+
 const PAGES = ['home', 'sims', 'projects', 'blog'];
+const SITE = 'https://a9l.im';
+
+function localized(meta) {
+    if (!meta) return null;
+    const lang = window._i18n && window._i18n.getLang ? window._i18n.getLang() : 'en';
+    if (lang === 'en') return meta;
+    return {
+        ...meta,
+        title: meta['title_' + lang] || meta.title,
+        desc: meta['desc_' + lang] || meta.desc,
+        ogTitle: meta['ogTitle_' + lang] || meta.ogTitle,
+        twitterDesc: meta['twitterDesc_' + lang] || meta.twitterDesc,
+    };
+}
+
+function setMeta(selector, value) {
+    const element = document.head.querySelector(selector);
+    if (element && value) element.setAttribute('content', value);
+}
+
+function updateRouteMetadata(page, slug) {
+    const pathname = page === 'home' ? '/' : '/' + page + (slug ? '/' + slug : '');
+    let meta = page === 'home'
+        ? HOME_META
+        : page === 'blog' && slug
+            ? BLOG_META[slug]
+            : ROUTE_META[pathname];
+
+    if (!meta && page === 'blog' && slug) {
+        const pretty = slug.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+        meta = {
+            title: `${pretty} | a9l.im`,
+            desc: ROUTE_META['/blog'].desc,
+            ogTitle: `${pretty} | a9l.im`,
+        };
+    }
+    meta = localized(meta);
+    if (!meta) return;
+
+    const canonical = page === 'home' ? SITE : SITE + pathname;
+    document.title = meta.title;
+    setMeta('meta[name="description"]', meta.desc);
+    setMeta('meta[property="og:title"]', meta.ogTitle || meta.title);
+    setMeta('meta[property="og:description"]', meta.desc);
+    setMeta('meta[property="og:url"]', canonical);
+    setMeta('meta[property="og:type"]', page === 'blog' && slug ? 'article' : 'website');
+    setMeta('meta[name="twitter:title"]', meta.ogTitle || meta.title);
+    setMeta('meta[name="twitter:description"]', meta.twitterDesc || meta.desc);
+    const canonicalLink = document.head.querySelector('link[rel="canonical"]');
+    if (canonicalLink) canonicalLink.setAttribute('href', canonical);
+}
 
 export function parsePath() {
     const raw = location.pathname.replace(/^\//, '').replace(/\/$/, '');
@@ -49,6 +102,8 @@ export function navigateTo(page, slug, deps) {
     } else {
         triggerFadeIns(target);
     }
+
+    updateRouteMetadata(page, slug);
 }
 
 export function initRouter(deps) {
@@ -58,6 +113,13 @@ export function initRouter(deps) {
     }
 
     window.addEventListener('popstate', onRoute);
+
+    if (window._i18n && window._i18n.onChange) {
+        window._i18n.onChange(() => {
+            const { page, slug } = parsePath();
+            updateRouteMetadata(page, slug);
+        });
+    }
 
     document.addEventListener('click', (e) => {
         const link = e.target.closest('[data-page]');

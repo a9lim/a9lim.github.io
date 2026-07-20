@@ -246,10 +246,14 @@
 
     function applyDOM(root) {
         root = root || document;
+        // Head translation keys describe the home page. Dynamic routes get
+        // their metadata from the Worker and the SPA router.
+        var isHome = window.location.pathname === '/' || window.location.pathname === '';
         // textContent swap
         var text = root.querySelectorAll('[data-i18n]');
         for (var i = 0; i < text.length; i++) {
             var el = text[i];
+            if (!isHome && el.tagName === 'TITLE') continue;
             var v = t(el.dataset.i18n);
             if (el.textContent !== v) el.textContent = v;
         }
@@ -263,10 +267,14 @@
         for (i = 0; i < arias.length; i++) {
             arias[i].setAttribute('aria-label', t(arias[i].dataset.i18nAria));
         }
-        // meta tag content attribute (description, og:title, etc.)
-        var metas = root.querySelectorAll('[data-i18n-content]');
-        for (i = 0; i < metas.length; i++) {
-            metas[i].setAttribute('content', t(metas[i].dataset.i18nContent));
+        // These data attributes describe the home page. On a Worker-rewritten
+        // route, preserve route-specific metadata; the SPA router updates it
+        // when navigation happens without a reload.
+        if (isHome) {
+            var metas = root.querySelectorAll('[data-i18n-content]');
+            for (i = 0; i < metas.length; i++) {
+                metas[i].setAttribute('content', t(metas[i].dataset.i18nContent));
+            }
         }
         // <img alt="…">
         var alts = root.querySelectorAll('[data-i18n-alt]');
@@ -274,8 +282,10 @@
             alts[i].setAttribute('alt', t(alts[i].dataset.i18nAlt));
         }
         // <link rel="canonical">/<title> + <html lang>
-        var titleEl = document.querySelector('title[data-i18n]');
-        if (titleEl) titleEl.textContent = t(titleEl.dataset.i18n);
+        if (isHome) {
+            var titleEl = document.querySelector('title[data-i18n]');
+            if (titleEl) titleEl.textContent = t(titleEl.dataset.i18n);
+        }
     }
 
     function setLang(lang) {

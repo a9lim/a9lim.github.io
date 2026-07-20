@@ -50,9 +50,12 @@ function copyTrackedTree(cwd, pathspec, destinationRoot, filter = () => true) {
 
 function isDeployableProjectFile(rel) {
   const parts = rel.split('/');
-  if (parts.includes('node_modules') || parts.includes('.git')) return false;
-  if (parts.includes('.DS_Store')) return false;
+  if (parts.some(part => part.startsWith('.'))) return false;
+  if (parts.includes('node_modules')) return false;
+  if (parts.includes('docs') || parts.includes('tests') || parts.includes('extract')) return false;
   if (rel === 'AGENTS.md' || rel === 'CLAUDE.md') return false;
+  if (rel === 'AUDIT.md' || rel === 'HANDOFF.md') return false;
+  if (/^test_.*\.mjs$/.test(rel)) return false;
   if (rel === 'raw' || rel.startsWith('raw/')) return false;
   return true;
 }

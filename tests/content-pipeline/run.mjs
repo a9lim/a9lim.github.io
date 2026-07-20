@@ -22,6 +22,7 @@ const enSlugs = dir => readdirSync(join(ROOT, dir))
   .map(f => f.replace(/\.md$/, ''));
 
 const { PROJECTS } = await import(join(DIST, 'src/projects.js'));
+const clientMeta = await import(join(DIST, 'src/route-meta.js'));
 const gen = await import(join(BUILD, 'content.generated.mjs'));
 const posts = JSON.parse(readFileSync(join(DIST, 'posts.json'), 'utf8'));
 
@@ -57,6 +58,10 @@ for (const p of posts) {
     readFileSync(join(ROOT, 'content', 'posts', p.slug + '.md'), 'utf8').startsWith('---\n'));
   check(`BLOG_META carries ${p.slug}`, gen.BLOG_META[p.slug]?.desc === p.excerpt);
 }
+check('browser and Worker route metadata agree',
+  JSON.stringify(clientMeta.ROUTE_META) === JSON.stringify(gen.ROUTE_META));
+check('browser and Worker blog metadata agree',
+  JSON.stringify(clientMeta.BLOG_META) === JSON.stringify(gen.BLOG_META));
 check('legacy generated posts/ directory is gone', !existsSync(join(ROOT, 'posts')));
 const blogClient = readFileSync(join(ROOT, 'site', 'src', 'blog.js'), 'utf8');
 const worker = readFileSync(join(ROOT, 'worker', 'index.js'), 'utf8');

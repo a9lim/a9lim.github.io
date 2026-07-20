@@ -10,7 +10,25 @@
     "directory": "dist",
     "binding": "ASSETS",
     "not_found_handling": "none",
-    "html_handling": "auto-trailing-slash"
+    "html_handling": "auto-trailing-slash",
+    "run_worker_first": [
+      "/sims",
+      "/projects",
+      "/blog",
+      "/blog/*",
+      "/scripture",
+      "/scripture/*",
+      "/about",
+      "/about/",
+      "/resume",
+      "/resume/",
+      "/api/*",
+      "!/scripture/*.js",
+      "!/scripture/*.css",
+      "!/scripture/*.md",
+      "!/scripture/data/*",
+      "!/scripture/text/*"
+    ]
   },
   "analytics_engine_datasets": [
     { "binding": "VIEWS", "dataset": "a9lim_views" }
