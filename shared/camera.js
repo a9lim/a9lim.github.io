@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════
-   shared-camera.js — Reusable viewport/camera module
+   shared/camera.js — Reusable viewport/camera module
    for the three a9l.im simulation projects (geon, cyano, gerry).
    Supports Canvas 2D and SVG viewBox rendering, mouse/touch/button input.
    ═══════════════════════════════════════════════ */

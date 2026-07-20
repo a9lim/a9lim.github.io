@@ -2,7 +2,7 @@
    a9l.im — Portfolio Site Styles
    "Volcanic Glass" — obsidian depth, warm magma
    accents, real elevation, fluid spring animations.
-   Colors/fonts injected by shared-tokens.js.
+   Colors/fonts injected by shared/tokens.js.
    ═══════════════════════════════════════════════ */
 
 /* Override shared 52px toolbar for portfolio layout */
@@ -1022,7 +1022,7 @@ a:hover { color: var(--accent-light); }
 :root:not([data-theme="dark"]) .blog-content .theme-dark { display: none; }
 
 /* Image switcher: emitted from ```switcher labels="..." ...```. The
-   button group reuses shared-base.css `.mode-toggles` + `.mode-btn`
+   button group reuses shared/base.css `.mode-toggles` + `.mode-btn`
    classes, wired up by `_forms.bindModeGroup` after blog-post render.
    Active panel toggled by JS via `.switcher-panel.active`. */
 .blog-content .switcher-figure {

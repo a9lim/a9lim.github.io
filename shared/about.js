@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════
-   shared-about.js — About / help overlay for the
+   shared/about.js — About / help overlay for the
    a9l.im simulation projects.
    "?" opens the panel; Escape closes it.
    ═══════════════════════════════════════════════ */

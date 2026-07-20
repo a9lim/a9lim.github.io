@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════
-   shared-info.js — Info tip popover system for the
+   shared/info.js — Info tip popover system for the
    three a9l.im simulation projects.
    Desktop: hover/focus to show. Mobile: tap to toggle.
    Renders KaTeX math in body if KaTeX is loaded.

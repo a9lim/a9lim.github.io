@@ -207,11 +207,11 @@ const WORK_MENTIONS = {
   ],
 };
 
-// ROUTE_META / BLOG_META are imported from _content.generated.mjs above.
+// ROUTE_META / BLOG_META are imported from .build/content.generated.mjs above.
 
 
 
-// SIMS_SSR / PROJECTS_SSR are imported from _content.generated.mjs above.
+// SIMS_SSR / PROJECTS_SSR are imported from .build/content.generated.mjs above.
 
 function rewriteHTML(response, meta) {
   return new HTMLRewriter()

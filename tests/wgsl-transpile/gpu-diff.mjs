@@ -3,7 +3,7 @@
    tests/wgsl-transpile/gpu-diff.mjs — GPU-golden differential harness.
 
    Validates that a transpiled compute kernel (run on CPU via
-   shared-wgsl-transpile.js) produces the SAME outputs as the real WGSL
+   lib/wgsl/transpile.js) produces the SAME outputs as the real WGSL
    shader run on a GPU. This is the ground-truth oracle the synthetic
    smoke tests can't be: the GPU is the reference implementation.
 

@@ -1,5 +1,5 @@
 /* ===================================================================
-   shared-tokens.js — Design token source of truth for all a9l.im sites.
+   shared/tokens.js — Design token source of truth for all a9l.im sites.
    Loaded in <head> before each project's colors.js, which extends
    _FONT/_PALETTE with project-specific keys then freezes both.
    =================================================================== */
@@ -248,7 +248,7 @@ ${gen(D, true)}
 }`;
   document.head.appendChild(style);
 
-  // Theme-color <meta> is set by shared-toolbar.js _syncThemeColor() on theme init/toggle.
+  // Theme-color <meta> is set by shared/toolbar.js _syncThemeColor() on theme init/toggle.
   // No duplicate here — toolbar owns theme-color lifecycle.
 })();
 

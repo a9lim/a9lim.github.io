@@ -1,4 +1,4 @@
-// shared-tabs.js — Tab switching for sidebar panels.
+// shared/tabs.js — Tab switching for sidebar panels.
 // Loaded as a plain <script> (not a module) so tabs work even if the main module fails.
 (function () {
     var btns = document.querySelectorAll('.tab-btn');

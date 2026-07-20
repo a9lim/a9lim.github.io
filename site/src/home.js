@@ -1,5 +1,5 @@
 // Populates the homepage "command-center" slab from home-data.json, which
-// _build.mjs generates from content/home/*.md plus the lastDeploy marker.
+// tools/build.mjs generates from content/home/*.md plus the lastDeploy marker.
 // Everything rendered here goes through createElement/textContent — no
 // innerHTML.
 //

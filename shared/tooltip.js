@@ -1,10 +1,10 @@
 /* ═══════════════════════════════════════════════
-   shared-tooltip.js — Cursor-following tooltip for
+   shared/tooltip.js — Cursor-following tooltip for
    all a9l.im sim projects. Lightweight positioned
    overlay with fade transition.
 
    CSS: .sim-tooltip / .sim-tooltip.visible in
-   shared-base.css.
+   shared/base.css.
    ═══════════════════════════════════════════════ */
 
 /**

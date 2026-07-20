@@ -54,11 +54,39 @@ for (const forbidden of [
   /^migrations(?:\/|$)/,
   /^resume(?:\/|$)/,
   /^og(?:\/|$)/,
+  /^site(?:\/|$)/,
+  /^static(?:\/|$)/,
+  /^projects(?:\/|$)/,
+  /^features(?:\/|$)/,
+  /^db(?:\/|$)/,
+  /^worker(?:\/|$)/,
+  /^lib(?:\/|$)/,
+  /^tools(?:\/|$)/,
   /^scripture\/raw(?:\/|$)/,
   /^_worker\.js$/,
   /^_build\.mjs$/,
+  /^_routes\.json$/,
 ]) {
   check(`omits ${forbidden}`, !files.some(file => forbidden.test(file)));
+}
+
+for (const generated of [
+  '_content.generated.mjs',
+  '_routes.json',
+  'about.md',
+  'feed.atom',
+  'feed.xml',
+  'home-data.json',
+  'llms-full.txt',
+  'llms.txt',
+  'posts.json',
+  'resume.pdf',
+  'sitemap-main.xml',
+  'sitemap-scripture.xml',
+  'sitemap.xml',
+  'site/src/projects.js',
+]) {
+  check(`keeps ${generated} out of the source tree`, !existsSync(join(ROOT, generated)));
 }
 
 console.log(`\ndeploy layout: ${files.length} files validated`);

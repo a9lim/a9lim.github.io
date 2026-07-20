@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════════
-   shared-utils.js — Pure utility functions for all a9l.im sites.
-   Loaded after shared-tokens.js; exposes globals consumed by
+   shared/utils.js — Pure utility functions for all a9l.im sites.
+   Loaded after shared/tokens.js; exposes globals consumed by
    ES6 modules and plain scripts across all four projects.
    ═══════════════════════════════════════════════ */
 
@@ -237,7 +237,7 @@ function trapFocus(overlayEl) {
 
 /**
  * Show a brief toast notification. Creates the container on first use.
- * Styled by `.toast` / `#toast-container` in shared-base.css.
+ * Styled by `.toast` / `#toast-container` in shared/base.css.
  * @param {string} message  Text to display
  * @param {number} [duration=2000]  Visible time in ms before fade-out
  */

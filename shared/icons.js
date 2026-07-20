@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════
-   shared-icons.js — Shared SVG icon library
+   shared/icons.js — Shared SVG icon library
    Single source of truth for all toolbar icons.
    Exposes window._ICON with SVG markup strings.
 

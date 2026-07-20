@@ -1,170 +1,118 @@
 # AGENTS.md
 
-Root site for the **a9l.im** portfolio. Hosted on Cloudflare Workers + Assets with custom domain `a9l.im`. Also hosts the shared design system consumed by all eight submodules (`geon`, `shoals`, `gerry`, `cyano`, `scripture`, `miasma`, `pile`, `plasma`). Cloudflare config lives in `wrangler.jsonc` (Worker + asset serving + Analytics Engine), `_worker.js` (SPA routing + HTMLRewriter SSR + SEO + security headers + CDN cache control + analytics), `_headers` (security + caching + Early Hints + COEP + CDN-Cache-Control), and `_routes.json` (static asset exclusions). Fonts are self-hosted in `fonts/` (no Google Fonts dependency).
+Root site for **a9l.im**, hosted on Cloudflare Workers + Static Assets. This repository also owns the shared design system and mounts eight browser projects as git submodules.
 
-**All hand-edited root-site copy lives in `content/`** — see Content Pipeline below. Simulation documentation and its SEO summary live in each `{sim}/about.md`. If you're changing words a visitor reads, edit the relevant canonical source and run `node _build.mjs`; never edit the generated mirrors directly.
+## Source and output boundaries
 
-## Content Pipeline
+The top-level layout is intentional:
 
-`content/` is the single source of truth for editable root-site content; `_build.mjs` compiles it into every derived surface. One file per thing, markdown with a minimal-YAML frontmatter (string/bool/int scalars and `- item` lists only — the parser throws on anything else). Translations are parallel files: `{name}.ja.md` next to `{name}.md`.
+- `site/` — hand-edited root SPA shell (`index.html`, `main.js`, `i18n.js`, `styles.css`, `404.html`) and browser modules in `site/src/`.
+- `content/` — canonical root-site copy, project registry, posts, and resume source. If changing words a root-site visitor reads, start here.
+- `shared/` — shared CSS and plain-script browser globals consumed by the root site and all projects.
+- `projects/{cyano,geon,gerry,miasma,pile,plasma,scripture,shoals}/` — git submodules. Their physical nesting does not change their public roots (`/geon/`, `/scripture/`, and so on).
+- `worker/` — Cloudflare Worker. `index.js` owns routing and SSR; `http.js` owns Worker response policy; `surveys.js` owns `POST /api/surveys`; `analytics.js` owns Analytics Engine writes.
+- `static/` — public assets copied to the deploy root, including `static/_headers`, fonts, icons, blog assets, and `.well-known/security.txt`.
+- `features/surveys/` — survey scoring/data foundation. It is source-only and must not be copied into the static bundle.
+- `db/migrations/` — D1 migrations.
+- `lib/wgsl/` — dormant WGSL-to-JavaScript transpiler and runner. It is not deployed.
+- `tools/` — the build orchestrator, asset stager, and OG generation tooling.
+- `dist/` — ignored, fully replaceable deploy tree.
+- `.build/` — ignored Worker/build intermediates, including `content.generated.mjs`.
 
-- `content/posts/{slug}.md` — blog post and canonical served markdown. Frontmatter: `title`, `date`, `updated` (optional), `tag` (list), `excerpt`. The `.ja.md` sibling carries JA `title`/`tag`/`excerpt` + body; its existence sets `translations: ["ja"]`. The client and Worker fetch these files directly and strip frontmatter through `src/markdown.js`; the build generates `posts.json`, `BLOG_META`, feeds, and llms-full entries. **Adding a post = adding one file** (plus optional `.ja.md`).
-- `content/projects/{slug}.md` — one card per project/sim. Frontmatter: `title`, `href`, `kind` (`sim`|`project`), `order` (grid sort, gaps of 10), `major`/`planned` (optional), `external`, `emoji` (the card's decorative emoji), `seoName` (JSON-LD ItemList name; omit for planned), `seoUrl` (canonical override, e.g. scripture's trailing slash), `tags`, and optional `packages` registry cards. Each `packages` item is `Registry | package-name | https://URL | install command`; only list verified, live distributions. Body = the card description used by both the client and worker SSR grid. `.ja.md` sibling: `tags` frontmatter + translated description body. Generates `src/projects.js`, the worker's `SIMS_SSR`/`PROJECTS_SSR` mirrors, and both JSON-LD ItemLists — the old "update both copies" gotcha is gone.
-- `content/home/*.md` — one file per homepage card: `bio`, `contact`, `now` (2-col table), `hyperfixation`, `predictions` (3-col table; header row becomes the `<th>` labels), `ask-me-about` (chip list + hint paragraph), `other-things`, `footer`, and `site` (head meta + per-route titles/descriptions → `ROUTE_META`). Generates: marker regions in `index.html` (`<!-- content:{name} -->…<!-- /content:{name} -->`), the `GENERATED CONTENT` sections of `i18n.js`, content fields in `home-data.json`, and the `<head>` metadata tags.
+Never restore generated browser, feed, sitemap, discovery, PDF, or Worker-data artifacts to the repository root. A normal build must leave tracked files untouched.
 
-i18n mechanics: prose paragraphs with inline links/`*em*` are split into per-segment `<span data-i18n>` elements **mechanically** (keys like `c.bio.p3.s0`) — the JA text must contain the same links in the same order or the build fails loudly. Plain paragraphs get one key. UI chrome strings (nav, blog labels, breadcrumbs, `about.contact.resume`) stay hand-edited in `i18n.js` outside the generated sections.
+## Build contract
 
-Workflow: edit `content/` → `node _build.mjs` → commit sources and artifacts together. `node _build.mjs --check` verifies the deterministic artifacts are current without writing (CI-friendly); `node tests/content-pipeline/run.mjs` cross-checks artifact consistency; `./deploy.sh` runs the build then `wrangler deploy` so stale artifacts can't ship.
-
-Generated files (banner-marked or build-owned — never hand-edit): `posts.json`, `src/projects.js`, `_content.generated.mjs`, `about.md`, `llms.txt`, `llms-full.txt`, feeds, sitemaps, `home-data.json`, the marked regions inside `README.md`, `index.html`, and `i18n.js`, and the SEO metadata synchronized into each submodule. `.assetsignore` and `dev.sh` expose only `content/posts/`; `content/home/` and `content/projects/` remain source-only.
-
-- `{sim}/about.md` — canonical long-form simulation documentation plus frontmatter fields `name`, `title`, `description`, and `updated`. `_build.mjs` copies those fields into the submodule's `<title>`, description/OG/Twitter tags, primary JSON-LD description and `dateModified`, visible about-panel update date, root README table, discovery files, and sitemap metadata. Edit the about source, not those mirrors.
-
-## Design Philosophy
-
-Command-center engineering aesthetic. Sharp, geometric, flat. Evangelion NERV HQ meets Palantir Foundry. Every surface is differentiated by **background color**, never borders. Lines are **graphic accents** (underlines, side bars, horizontal rules), never container boundaries. Elevation is earned through interaction, not decoration.
-
-- **No borders** on panels, buttons, inputs, tabs, cards, separators, or toggles. Use `border: none` everywhere. The only exception is `outline` on `:focus-visible` for accessibility, and accent underlines/side-lines as graphic elements.
-- **No resting shadows** — `box-shadow: none` at rest. Hover states use `var(--shadow-hover)`. Accent glow via `var(--shadow-glow)` for focus/active states.
-- **Two surface modes**: Opaque (cards, content panels, blog, footer — `--bg-elevated` or `--bg-panel-solid`) and HUD overlay (navbar, toolbars, sidebars — `--bg-panel` at 30-35% opacity with `backdrop-filter: blur(8px)`).
-- **Line accents** — accent underlines on active nav links (with subtle glow), side-lines on cards on hover, horizontal rules as structural markers. All lines `border-radius: 0`.
-- **No bounce** — `--ease-spring` and `--ease-elastic` removed. All transitions use `var(--ease-out)`, `var(--ease-in-out)`, or `var(--ease-smooth)`. Hover: `0.2s`. Transforms: `0.3s`.
-- `.glass` uses `--bg-panel` (30-35% opacity) with `backdrop-filter: blur(8px)`. No `saturate()`. Grid/contours visible through HUD elements.
-- **No hardcoded design values** in CSS — use token vars for everything: `--radius` (2px), `--font-sm`/`--font-base`/`--font-lg`, `--shadow-*`, `--ease-*`. Exceptions: `border-radius: 0` (lines), `border-radius: 50%` (circles), display text sizes (>1rem), and shadow hex values.
-
-## Shared Code Policy
-
-All projects share a common design system at this repo's root. **Always prefer shared code over project-specific implementations.** Check `shared-*.js` before adding utility code to a project.
-
-Key shared modules:
-- `shared-tokens.js` — `_PALETTE`, `_FONT`, color math. Extend via `colors.js`, never hardcode colors. Exposes `--text-on-accent` (light/dark) for text on accent-colored backgrounds — use instead of hardcoded `#fff`/`#FDFBF5`. `_FONT` has four text keys (`display`, `sans`, `serif`, `mono`) resolving to Recursive plus an `emoji` system-color-font stack. Shadow tokens: `--shadow-hover`, `--shadow-glow`.
-- `shared-utils.js` — `escapeHtml`, `debounce`, `throttle`, `clamp`, `lerp`, `showToast`, `trapFocus`, `resizeCanvasDPR`, `animateValue`, `initOverlayDismiss`
-- `shared-base.css` — reset, layout tokens (`--radius: 2px`, `--font-sm`/`--font-base`/`--font-lg`, `--ease-*`), `.glass` (HUD overlay), `.tool-btn`, `.ctrl-row`, `.sim-overlay`, `.panel-hint` (italic mono caption), `.sim-dropdown` (custom dropdown styles), `.dep-reveal`/`.dep-hidden` (animated dependency collapse), toasts, a11y. Universal `font-variation-settings: 'MONO' 0, 'CASL' 0` on `*` selector. `.stat-value` has `transition: transform 0.15s` globally for animation support. `.tab-panels` has `font-variant-numeric: tabular-nums` globally. `.ctrl-disabled` and `.ctrl-row.locked` have `transition: opacity 0.2s` for smooth enable/disable feedback.
-- `shared-toolbar.js` — `_toolbar` (theme toggle, sidebar, play/pause, speed)
-- `shared-forms.js` — `_forms` (mode groups, sliders, toggles, dependencies). `bindModeGroup` creates a sliding `.mode-indicator` element inside `.mode-toggles` — accent-colored rectangle (2px radius) that animates between buttons via `translateX`. `bindDeps(deps, opts)` declares show/hide and enable/disable relationships between controls — returns `updateDeps()` for manual re-evaluation. Show deps wrap targets in `.dep-reveal` grid containers with animated collapse (`grid-template-rows: 0fr → 1fr` + opacity). Enable deps toggle `.ctrl-disabled` with cascading uncheck (disabled checked toggles auto-uncheck; `opts.onDisable` callback for sim-specific state sync). Initial state set without transitions via `.dep-init` class.
-- `shared-icons.js` — unified SVG UI-icon library. Exposes `_ICON` global and renders icons via `data-icon`; portfolio card imagery lives as emoji in `content/projects/` instead
-- `shared-dropdown.js` — auto-enhances `select.sim-select` into custom styled dropdowns. Fires native `change` events so existing JS works untouched. Exposes `_dropdown.enhance(el)` for dynamically created selects. Uses MutationObserver to sync when options change programmatically.
-- `shared-settings.js` — `_settings.create(triggerBtn, rows, opts)` builds a fixed-position settings dropdown with slider and mode-group rows, click-outside/Escape dismiss. CSS classes: `.settings-dd`, `.settings-dd-row`, `.settings-dd-label`, `.settings-dd-val`.
-- `shared-tabs.js`, `shared-camera.js`, `shared-info.js`, `shared-shortcuts.js`, `shared-about.js`, `shared-touch.js`, `shared-tooltip.js`, `shared-sparkline.js`, `shared-haptics.js`
-- `shared-wgsl-transpile.js` — standalone WGSL → JavaScript compute-shader transpiler (lex → parse → resolve → inline/SROA → emit → optional eval). **Currently unwired**: `_build.mjs` emits no artifacts, no simulation imports it, and the retained `shared-wgsl-runner.js`/`shared-wgsl-worker.js` integration has no production caller. To re-enable a CPU fallback, add an explicit deterministic artifact writer and a simulation-side importer; production CSP does not allow runtime `Function` evaluation. `compileWGSL(source, opts?)` returns `{ entry, bind, bindings, entryInfo, jsSource, metrics, errors }`; `transpileWGSL()` returns build-time source and metadata without evaluation. Bindings are keyed by WGSL identifier name, top-level `workgroupBarrier()` calls split dispatch into sequential phases, and typed-array storage plus scalar/vector/struct SROA are covered by the smoke suite. The current contract is the compute subset exercised by the Geon and Plasma corpora, not general WGSL: render entry points, texture/sampler and matrix execution, nested-control-flow barriers, and `loop` continuing-block emission remain unsupported. See `tests/wgsl-transpile/README.md` for the active checks and dormant artifact boundary.
-
-## Prose Voice
-
-User-facing prose (blog posts in `content/posts/`, the home page's bio prose and "Other things" section, homepage copy in `content/home/`, contact blurbs) is written in a9lim's voice. When rewriting or drafting this content, invoke the `/writing` skill — it has the full voice rubric, anti-patterns, and before/after examples. Scope excludes sim `about.md` files and the `<details class="edu-content">` sections in each sim's `index.html` (those stay in technical-reference register). Functional resume bullets also stay action-verb-led unless explicitly asked otherwise.
-
-## Running Locally
-
-For static-only iteration (no SPA routing, no SSR, no CSP):
+Use the pinned Node tooling:
 
 ```bash
-cd path/to/a9lim.github.io && python -m http.server
+npm install
+npm run build
+npm test
+npm exec -- wrangler deploy --dry-run
 ```
 
-For full Worker behavior (SPA routing, HTMLRewriter SSR, security headers):
+`npm run build` runs two explicit phases:
 
-```bash
-./dev.sh
-```
+1. `tools/stage-assets.mjs` deletes and recreates `dist/`, then copies only allowlisted site/static/shared files and tracked deployable files from each project submodule.
+2. `tools/build.mjs` derives all content-dependent outputs into `dist/` and `.build/`.
 
-`dev.sh` builds a symlink farm at `_dev-assets/` (gitignored) excluding root repository metadata and the large, source-only `scripture/raw/` tree, then points a generated `wrangler.dev.jsonc` at it. This works around a wrangler 4.87 bug where `.assetsignore` is honored at deploy but not by `wrangler dev`'s asset walker; oversized files can crash miniflare's workerd-spawn step with a swallowed `EBADF`. Edits to source files are live (symlinks); only re-run `dev.sh` if you add/remove a top-level path or a scripture subdir — but edits to `content/` need `node _build.mjs` to show up (the served files are the generated artifacts). Real `wrangler.jsonc` still drives prod deploys; `./deploy.sh` chains the build and `wrangler deploy` so stale artifacts can't ship. Use python http.server when you don't care about routing/CSP — it's faster to start and useful for quickly previewing static HTML changes.
+`npm test` rebuilds, runs the deterministic `--check`, verifies content consistency and the deploy allowlist, and runs the survey API/scoring tests. `./dev.sh` builds then starts pinned Wrangler. `./deploy.sh` builds then deploys. For a static-only preview, build first and serve `dist/`.
 
-Root site and sub-projects both use absolute paths (`/shared-*.js`, `/fonts/fonts.css`, etc.). Relative paths break on deep SPA routes like `/blog/hello-world` because the Worker serves `index.html` and the browser resolves relative URLs under `/blog/`.
+The Worker imports `.build/content.generated.mjs`, so Wrangler commands that bundle the Worker require a completed build. `wrangler.jsonc` points only at `dist/`; do not broaden its asset directory back to the repository root. Workers Static Assets handles existing files before the Worker, so the retired Pages `_routes.json` file must not return.
 
-CSP-blocked external scripts are silently empty in browser, so test new third-party CDN dependencies under `./dev.sh` before pushing — python http.server sends no CSP and will mask the failure.
+## Content pipeline
 
-## Overview
+`content/` is the single source of truth for editable root-site content. Frontmatter accepts scalar strings/bools/integers and simple `- item` lists. English and Japanese files are parallel `{name}.md` / `{name}.ja.md` pairs.
 
-Single-page portfolio site. Path-based SPA router (`/`, `/sims`, `/projects`, `/blog`, `/blog/{slug}`). The former `/about` route was folded into `/`, and the former `/resume` webpage was removed in favor of the canonical PDF at `/resume.pdf` — the Worker serves 308 redirects for both inbound links (`/about` → `/`, `/resume` → `/resume.pdf`). `_worker.js` routes non-static requests to the correct SPA shell (`index.html` for root routes, `scripture/index.html` for `/scripture/*`) and uses HTMLRewriter for:
-- **SSR**: Blog posts are rendered from markdown at the edge (parser ported from `src/markdown.js`). The blog listing at `/blog` is SSR'd from `posts.json`. The project grid is injected as static HTML on `/projects`. Scripture index (`/scripture/`) gets a work listing with links. Scripture work-level routes (`/scripture/{workId}`) get a book listing with inline chapter links for all chapters, fetched from manifests, plus a work description paragraph. Scripture chapter routes get structured verse HTML (first 25 verses) injected into `#reading-pane` and visible breadcrumb HTML into `#breadcrumb`. Verse deep links (`/scripture/{workId}/{bookId}-{chapter}:{verse}`) also populate `#reading-pane` with the specific verse. The correct page section gets the `active` class per route. All of this makes SPA content visible to crawlers without JS execution.
-- **SEO injection**: Per-route `<title>`, `<meta description>`, OG tags, `twitter:title`/`twitter:description`, `article:published_time`/`article:modified_time`/`article:author`/`article:tag` (blog posts — tags support arrays), canonical URLs, `hreflang="en"` + `hreflang="x-default"` self-referential tags, `BlogPosting` + `BreadcrumbList` JSON-LD (blog posts — includes `wordCount`, `image`, `articleSection`, `speakable`, `articleBody` truncated to ~500 chars), `Blog` + `ItemList` JSON-LD (`/blog`), `CollectionPage` + `ItemList` JSON-LD (`/projects`, `/scripture/`), `Person` JSON-LD (statically served at `/` — includes `jobTitle`, `hasOccupation` with SOC code, `makesOffer`; `@id: https://a9l.im/#person`), `Book` + `translationOfWork` + `sameAs` + `mentions` + conditional `author`/`translator` + `ReadAction` + `SearchAction` + `Dataset` JSON-LD (scripture work-level — includes `license`, `contentRating`, and work-scoped search), `Chapter` + `BreadcrumbList` + `Quotation` JSON-LD (scripture chapters — includes `@id`, `position`, section headings with `aria-label`, and first-verse Quotation schema for crawlers), and verse-level `Quotation` JSON-LD with translation credit and inherited `WORK_MENTIONS`. `SiteNavigationElement` JSON-LD is injected on root SPA routes. Canonical pages and verified linked identities use `@id` URIs for graph disambiguation. Visible breadcrumb HTML is SSR'd for `/sims`, `/projects`, `/blog` (targeting `#breadcrumb` in root `index.html`) and all scripture routes.
-- **Security headers** (CSP, HSTS, COOP, etc.) via the `secure()` wrapper — `_headers` only covers static assets. Worker also sets `Vary: Accept-Encoding` and rejects non-GET/HEAD with 405. Scripture manifest/chapter fetches are wrapped in a 2-second timeout (`timedFetch`) to prevent SSR hangs.
+- `content/posts/{slug}.md` — canonical served post markdown. Fields: `title`, `date`, optional `updated`, `tag`, and `excerpt`. A Japanese sibling adds translated metadata/body and `translations: ["ja"]` in generated metadata.
+- `content/projects/{slug}.md` — project cards and registry metadata. Fields include `title`, `href`, `kind`, `order`, optional `major`/`planned`, `external`, `emoji`, `seoName`, `seoUrl`, `tags`, and optional `packages` entries (`Registry | name | URL | install`).
+- `content/home/*.md` — homepage cards and `site.md` route/head metadata.
+- `content/resume/` — TeX source, fonts, and build script for `/resume.pdf`.
+- `projects/{sim}/about.md` — canonical simulation documentation and its `name`, `title`, `description`, and `updated` metadata.
 
-Static assets are served directly by the asset layer before the Worker runs (`html_handling: "auto-trailing-slash"`). CDN caching is split from browser caching via `Cloudflare-CDN-Cache-Control`: the CDN caches Worker HTML for 1 hour and static assets indefinitely (purged on deploy), while browsers use short TTLs. Analytics Engine (`VIEWS` binding) logs page views server-side via `waitUntil()` with pathname, country, referer, user-agent, city, and ASN. Speculation Rules in `index.html` prefetch and prerender SPA routes. The homepage has no animated background — a static `.grain-overlay` film texture sits over the page background. Dense personal homepage hydrated from `home-data.json`, projects grid, blog with markdown rendering.
+The build emits `dist/posts.json`, `dist/src/projects.js`, the generated regions of `dist/index.html` and `dist/i18n.js`, `dist/home-data.json`, feeds, sitemaps, discovery files, `dist/resume.pdf`, synchronized project HTML/UI copies, and `.build/content.generated.mjs`. These are outputs, not hand-edited files. Project source is read-only during the parent build; SEO synchronization happens in `dist/{sim}/`, not inside the submodule.
 
-## Architecture
+The lightweight markdown parser is `site/src/markdown.js`, shared by the blog client, Worker SSR, and feed generation. Keep it isomorphic: no DOM or Node-only APIs. It supports the existing iframe and switcher directives, theme-paired images (`light|dark`), and GFM-style tables.
 
-- `main.js` creates `$` DOM cache, passed to all init functions. Modules never call `getElementById` for shared elements.
-- `src/projects.js` exports `PROJECTS` array — **generated** from `content/projects/*.md` by `_build.mjs`, along with the worker's `SIMS_SSR`/`PROJECTS_SSR` mirrors in `_content.generated.mjs` (same source, so they cannot drift). Entries with `planned: true` render as non-clickable, subdued cards (`.project-card-planned`, a `projects.planned` i18n tag, no link/arrow) placed at the end of their grid via `order`; the SSR mirror renders them as a matching `<div>` (not `<a>`). Shipped-ness is the default and carries no tag.
-- `src/markdown.js` is the **single** markdown parser, imported by the blog client (`src/blog.js`), the worker's edge SSR (`_worker.js`, bundled by wrangler at deploy), and `_build.mjs` (feed generation). Keep it isomorphic — no DOM, no Node APIs. Beyond the lightweight CommonMark subset the parser supports two custom directives and one extended-image syntax:
-  - **iframe directive**: ` ```iframe height=N title="..." caption="..." ` followed by a single same-origin path. Emits `<figure class="iframe-figure"><iframe ... loading="lazy"></iframe><figcaption>...</figcaption></figure>`. URL must match `^/[A-Za-z0-9_./?&=%#-]*$` or the block is silently dropped.
-  - **switcher directive**: ` ```switcher labels="a | b | c" caption="..." ` followed by one body line per tab. Each body line is `light_url | dark_url` (single URL is fine — used for both themes). Emits `<figure class="switcher-figure"><div class="mode-toggles">...buttons...</div><div class="switcher-panels">...panels...</div></figure>` using the canonical shared `.mode-toggles` + `.mode-btn` markup. `src/blog.js` calls `_forms.bindModeGroup(toggles, 'panel', onChange)` after render to wire up the sliding indicator and panel swap. Per-render counter resets in `parseMarkdown` / `renderMarkdown` so SSR + client emit identical IDs.
-  - **theme-paired image syntax**: `![alt](light.png|dark.png)` — pipe in the URL splits into two `<img>` with `theme-light` and `theme-dark` classes; `styles.css` rules under `:root[data-theme="dark"] .theme-light` swap which is visible.
-  - **GFM-style tables**: `| col | col |` header row followed by `| --- | --- |` separator. No column alignment.
-- `shared-forms.js` is loaded via `<script defer>` on root `index.html` (alongside `shared-toolbar.js`). `_forms.bindModeGroup` is the canonical pattern for any segmented-control button group on root pages — the blog post switcher uses it.
-- `src/home.js` populates the homepage (Now, Hyperfixation, Posts, Predictions, Chips, and the colophon deploy marker) by fetching `/home-data.json` + `/posts.json`. The static shell is inlined in `index.html`; its content-bearing parts (bio prose, card headings, SSR fallback rows, and footer tech line) sit inside generated `<!-- content:{name} -->` regions filled by `_build.mjs` from `content/home/`. The homepage hierarchy is intentionally tiered: bio/contact + Research read as the "big" sections (Research has a `.home-section-lead` / `.home-h-lead` larger scale), Blog is medium full-width, and Now/Special-interest/Predictions/Ask-me-about/Other-things compress into the `.home-margin` two-column marginalia grid (recessed `--bg-panel-solid` surface, smaller scale, single column on mobile). There is no homepage Sims or Misc-Projects list anymore — the `/sims` and `/projects` grids (from `src/projects.js`, SSR'd via `_worker.js`) are canonical; the Research section points to `/projects`.
-- `home-data.json` is a build artifact: content fields from `content/home/*.md` (now/hyperfixation/predictions/askMeAbout, with `_ja` siblings) plus a single `lastDeploy` git marker (footer colophon). `home.json` no longer exists. Edit `content/home/` → `node _build.mjs` → commit both; the `#home-fix-label` SSR fallback and the hydrated label regenerate together from `hyperfixation.md`, so they can't drift.
-- `shared-tokens.js` is a synchronous `<script>` tag (no `defer`) — it must run before CSS parses to inject CSS custom properties. All other `shared-*.js` use `defer`. Both expose globals on `window`. ES6 modules access these directly. Converting them to modules would break all consumers.
+## Shared code policy
 
-## Image Generation
+Always inspect `shared/` before adding project-specific UI infrastructure. Canonical public URLs are `/shared/{name}.js` and `/shared/base.css`. The build emits former `/shared-*.js` and `/shared/base.css` paths as one-cycle compatibility aliases; new code must not use those aliases.
 
-```bash
-node og/generate.js      # OG images (1200×630) → each project's og-image.webp + PWA icons (192/512px PNG)
-node _build.mjs           # content/ pipeline + sitemap, feeds, llms-full.txt, home-data.json (see below)
-```
+Important modules:
 
-`og/generate.js` requires Puppeteer (installed in `og/`). Source HTML in `og/` — self-contained pages with hardcoded colors, no shared imports. OG images are WebP (quality 90). PWA icons are PNG with transparent background and `#e11107` logo fill (`og/icon.html`). Each `index.html` references its `og-image.webp` via `<meta property="og:image">` with absolute `https://a9l.im/` URLs.
+- `shared/tokens.js` — synchronous token/bootstrap script; it must execute before CSS parses. Extends through each project's `colors.js`.
+- `shared/base.css` — reset, layout/design tokens, HUD surfaces, controls, overlays, dropdowns, toasts, dependency reveals, and accessibility patterns.
+- `shared/utils.js` — escaping, timing, math, toast/focus/canvas helpers.
+- `shared/toolbar.js`, `shared/forms.js`, `shared/dropdown.js`, `shared/settings.js` — canonical controls and wiring.
+- `shared/icons.js`, `shared/tabs.js`, `shared/camera.js`, `shared/info.js`, `shared/shortcuts.js`, `shared/about.js`, `shared/touch.js`, `shared/tooltip.js`, `shared/sparkline.js`, `shared/haptics.js` — shared project UI services.
 
-## Gotchas
+Except for `tokens.js`, shared scripts use `defer`, expose globals on `window`, and are intentionally not ES modules. Changing public globals, class names (`.tab-btn`, `.tab-panel`, `.glass`, `.tool-btn`, `.about-*`, `.sim-dropdown`, `.panel-hint`, `.dep-reveal`, `.dep-hidden`), or data attributes can break every project.
 
-### Do Not Break
+`lib/wgsl/transpile.js`, `runner.js`, and `worker.js` are retained but unwired. Production CSP forbids runtime `Function` evaluation. Any CPU fallback needs a deterministic build-time artifact writer, a project importer, and the full WGSL smoke suite; do not imply that one ships today.
 
-- **`_worker.js`** — SPA routing, HTMLRewriter SSR + SEO injection, security headers (via `secure()` wrapper), CDN cache control, Analytics Engine logging, 405 rejection for non-GET/HEAD, `Vary: Accept-Encoding`. Removing it breaks direct navigation to `/sims`, `/projects`, `/blog/*`, and `/scripture/*` (plus the `/about` → `/` and `/resume` → `/resume.pdf` 308 redirects). Route and blog metadata (`ROUTE_META`, `BLOG_META`), the SSR grid mirrors, and the JSON-LD item lists are imported from `_content.generated.mjs` (generated from `content/`, bundled by wrangler at deploy) — new posts and route-description changes flow in from `content/` via `node _build.mjs`, never by editing the worker. `WORK_TITLES` maps scripture work IDs to display names. `WORK_SCHEMA` maps work IDs to edition or translator credit, language, year, Wikidata IDs, `sameAs` URLs, optional verified translator QIDs, historically supportable author/compiler entities, and description. Multi-translator credits use `translators` arrays so one person's QID is never attached to a composite name; editions such as the KJV are not emitted as people. `WORK_MENTIONS` maps work IDs to Wikidata-linked named entities (key figures, deities, places, concepts) for entity linking. `SCRIPTURE_WORKS_SSR` is built from these for the index route. Scripture has three SSR tiers: index (work listing + `CollectionPage`/`ItemList` JSON-LD), work-level (book listing + description paragraph fetched from manifests + `Book`/`translationOfWork`/`Dataset` JSON-LD with `license` and `contentRating`), and chapter (structured verse HTML [25 verses] + `Chapter` JSON-LD with `@id`/`position` + prev/next links). Verse deep links get `Quotation` JSON-LD (with `@id`, `url`, `inLanguage`, `position`, translator credit where present, and nested `isPartOf`) and verse text in `#reading-pane`. Blog listing at `/blog` is SSR'd from `posts.json` with `Blog`/`ItemList` JSON-LD. Blog posts get `BlogPosting` (with `@id`, `articleSection`, `speakable`) + `BreadcrumbList` + `article:*` OG meta. `/projects` gets `CollectionPage`/`ItemList` JSON-LD. All root SPA routes include `SiteNavigationElement` JSON-LD. All entities have `@id` URIs. `rewriteHTML()` also handles `twitter:title`/`twitter:description` rewriting (requires base tags in HTML). The SSR grid mirrors and the markdown parser are no longer duplicated — both are imports (`_content.generated.mjs`, `src/markdown.js`). The canonical Person entity (`@id: https://a9l.im/#person`) ships statically in `index.html` so the home page anchors `#person` for the knowledge graph; the Worker no longer carries a duplicate copy. Security headers are duplicated between `_worker.js` (`SECURITY_HEADERS` object) and `_headers` (`/*` block) because they serve different response types — keep them in sync. Scripture manifest/chapter fetches use `timedFetch` (2s timeout) to prevent SSR hangs.
-- **`_headers`** — security headers for static assets (CSP, HSTS, COOP, plus COEP on `/geon/*` and `/plasma/*`), cache policy with `Cloudflare-CDN-Cache-Control` for CDN/browser TTL separation, Early Hints for root SPA shells (`/`, `/sims`, `/projects`, `/blog`, `/blog/*`) and static sub-projects (cyano, shoals, gerry, miasma, pile), and `preconnect` for cdn.jsdelivr.net on KaTeX-using sims (geon, cyano, shoals). Geon and Plasma omit asset preloads because their COEP policy invalidates pre-policy 103 fetches; Scripture omits Early Hints because Worker SSR delay makes them expire. `_headers` does not apply to Worker-generated responses — those get headers from `_worker.js`.
-- **`_routes.json`** — excludes static assets (`/*.css`, `/*.js`, `/*.xml`, `/*.pdf`, `/img/*`, `/shared-*`, `/favicon.ico`, `/logo.svg`, `/og-image.webp`, `/world-map.svg`, `/content/posts/*`, `/robots.txt`), all eight subproject paths, discovery files (`/*.txt`, `/*.md`, `/.well-known/*`, `/feed.atom`), and scripture sub-asset paths (`/scripture/*.js`, `/scripture/*.css`, `/scripture/*.md`, `/scripture/data/*`) from the Worker. `/scripture/*` itself is intentionally NOT excluded because the Worker handles scripture's SPA deep-route routing and breadcrumb JSON-LD injection. Scripture static assets (JS/CSS/data) still serve directly via the assets-first default.
-- **All `shared-*.js` and `shared-base.css` files** — consumed by all projects. Changing public APIs or class names (`.tab-btn`, `.tab-panel`, `data-tab`, `.glass`, `.tool-btn`, `.about-*`, `.sim-dropdown`, `.panel-hint`, `.dep-reveal`, `.dep-hidden`) breaks all sims
-- `_toolbar`, `_forms`, `_dropdown`, `initAboutPanel(config)` — changing these APIs breaks all consumers. `initAboutPanel` now accepts `lastUpdated` (optional)
+## Worker and Cloudflare contracts
 
-### External Identifiers Must Be Verified
+`worker/index.js` preserves direct navigation for `/sims`, `/projects`, `/blog/*`, and `/scripture/*`; redirects `/about` to `/` and `/resume` to `/resume.pdf`; injects SSR/SEO/JSON-LD; returns secure 404s; and rejects unsupported methods. Scripture fetches are bounded by the existing timeout. Survey writes remain same-origin, schema-validated, rate-limited without storing IP/request metadata, and fail closed without D1.
 
-**Never generate Wikidata QIDs or DOIs from memory.** LLMs hallucinate identifiers at ~88% rates. Every QID and DOI in JSON-LD structured data must be verified against the live source before committing:
-- **Wikidata QIDs**: Search `https://www.wikidata.org/w/api.php?action=wbsearchentities&search=ENTITY&language=en&format=json`, then confirm the result label matches by fetching `https://www.wikidata.org/wiki/Special:EntityData/QXXXXX.json`.
-- **DOIs**: Verify via `https://api.crossref.org/works/DOI` or `https://doi.org/DOI` — check the resolved title matches the claimed paper.
-- **Other URLs** (NCBI, JSTOR, SSRN): Fetch and confirm they don't return 404/410.
+Security policy is deliberately duplicated:
 
-This applies to all `@id` URIs in JSON-LD (`_worker.js` WORK_SCHEMA/WORK_MENTIONS, sim `index.html` about arrays, `isBasedOn` references, edu-content References sections). If no Wikidata entity exists for a concept, omit it rather than guess.
+- `worker/http.js` applies it to Worker-generated responses.
+- `static/_headers` applies it to direct static-asset responses and also owns Early Hints, COEP, and cache policy.
 
-### Specificity
+Keep CSP, HSTS, COOP, robots policy, and `Vary` aligned across both. `static/_headers` has a 100-rule limit. Cloudflare strips `Cloudflare-CDN-Cache-Control` before browser delivery; it controls CDN caching separately from browser `Cache-Control`.
 
-- `.fade-in.visible` (0,2,0) beats `.project-card:hover` (0,1,1). Hover selectors must include `.visible` (e.g., `.my-element.visible:hover`)
+## Design philosophy
 
-### Sidebar Pattern
+Command-center engineering aesthetic: sharp, geometric, flat.
 
-All project sidebars now use `.sidebar-tabs` inside `.stats-header` instead of a `<h2 class="stats-title">` with a separate `.tab-bar`. New sidebars should follow this pattern.
+- Differentiate surfaces with background color, not container borders.
+- No resting shadows; hover may use `--shadow-hover`, focus/active may use `--shadow-glow`.
+- Opaque content panels use elevated/solid backgrounds; HUD overlays use translucent `--bg-panel` plus `blur(8px)`.
+- Lines are accents (underlines, side bars, rules), never rounded container boundaries.
+- No bounce/spring easing. Use the shared ease tokens.
+- Use design tokens instead of hardcoded CSS values. Accessibility focus outlines remain allowed.
+- `.fade-in.visible` outranks a plain hover selector; hover rules for those elements must include `.visible`.
+- Keep project sidebars on the `.sidebar-tabs` pattern inside `.stats-header`.
 
-### Other
+## SEO and identifier safety
 
-- `.hero-tagline em` needs `padding-right: 0.05em` to prevent italic glyph clipping
-- `data-theme` is on `<html>` (toggled in `src/theme.js`); `data-theme="dark"` CSS rules key off it
-- `.tog-wrap input` uses `clip: rect(0,0,0,0)` for a11y — do not change to `display: none`
-- The sole `<h1>` is the hero tagline — navbar brand is a `<span>` for heading hierarchy
-- Blog fetches `/posts.json` and `/content/posts/{slug}.md` via absolute URLs. The Worker also fetches the canonical content file for SSR — slug validation rejects `/` and `..` to prevent path traversal.
-- `fonts/` contains a single self-hosted woff2: Recursive variable font (5 axes: wght, MONO, CASL, slnt, CRSV). `fonts/fonts.css` has the `@font-face` declaration. CSP `font-src` is `'self' https://cdn.jsdelivr.net` (jsdelivr is needed for KaTeX font files on geon/cyano/shoals). CSP `script-src` allows `'self'`, `'unsafe-inline'`, `https://cdn.jsdelivr.net` (KaTeX), `https://cdn.plot.ly` (plotly auto-emits this URL in figure HTML for blog posts; required for any plotly figure to render), and `https://static.cloudflareinsights.com` (analytics). Lato, Merriweather, and Crimson Text have been removed.
-- `_build.mjs` no longer runs the WGSL → JS transpiler. It previously transpiled `plasma/` and `geon/` shaders into a parent-tracked `transpiled/` artifact tree served at `/transpiled/...`; that path was removed (build step, committed artifacts, and the `/transpiled/*` `_routes.json` exclusion all gone) because it was unmaintained. The transpiler library (`shared-wgsl-transpile.js`) and its runtime harness (`shared-wgsl-runner.js`/`shared-wgsl-worker.js`) are kept but unwired — see the Shared Code Policy note above for how to re-wire.
-- `_build.mjs` compiles `content/` (see Content Pipeline above: `posts.json`, `src/projects.js`, `_content.generated.mjs`, `index.html` + `i18n.js` regions), synchronizes submodule SEO from `{sim}/about.md`, and generates the discovery files below — run before deploy (or use `./deploy.sh`). `--check` verifies every deterministic mirror without writing:
-  - `sitemap.xml` — `<sitemapindex>` pointing to `sitemap-main.xml` and `sitemap-scripture.xml`
-  - `sitemap-main.xml` — root routes, project routes, blog, sim routes with `<image:image>` tags (OG images only; card images removed)
-  - `sitemap-scripture.xml` — 2740+ scripture work-level (priority 0.7) and chapter (priority 0.65) URLs with git-dated `<lastmod>` and `<changefreq>`
-  - `feed.xml` — RSS 2.0 with `content:encoded` full HTML from rendered markdown, `lastBuildDate` from most recent post (not build date), `<channel><image>`, `<managingEditor>`, `<ttl>60</ttl>`, uses `posts.json` `excerpt` for `<description>`
-  - `feed.atom` — Atom feed with same rendered content, `<updated>` uses `p.updated || p.date`, per-entry `<author>` and `<category>` elements
-  - `llms-full.txt` — concatenated markdown of all project `about.md` files and blog posts (for LLM consumption). Links back to `llms.txt`.
-  - `home-data.json` — homepage content from `content/home/` plus a single `lastDeploy` git marker for the footer colophon.
-- `llms.txt` and root `about.md` are generated from `content/home/site.md`, `content/projects/`, and submodule `about.md` metadata. They link to `llms-full.txt` for expanded docs. Update the canonical sources and rebuild rather than editing these files.
-- `.well-known/security.txt` — RFC 9116. Update the `Expires` date annually.
-- Each sim's `index.html` has `twitter:title`, `twitter:description`, keyword-rich `<title>`, `og:locale`, `hreflang="en"` self-referential tags, `apple-mobile-web-app-title`, and `<link rel="modulepreload" href="main.js">`. KaTeX-using sims (geon, cyano, shoals) also have `dns-prefetch` + `preconnect` for cdn.jsdelivr.net in HTML `<head>`. Four schema nodes are required, either as separate JSON-LD blocks or one `@graph` (Plasma): `["WebApplication", "LearningResource"]` (with `teaches`, verified Wikidata `about` entities, language/interactivity metadata, dates, repository/license links, verified scholarly references, standards alignment, accessibility fields, and cross-sim links), `FAQPage`, `BreadcrumbList`, and `HowTo`. Shoals additionally types the main entity as `Game` and includes its narrative/game metadata. Update `dateModified`, FAQ, and HowTo content when significant sim behavior changes.
-- Each sim's `index.html` has a `<details class="edu-content">` section with 500+ words of educational text, Learning Outcomes, Prerequisites, References (with DOI links), Accessibility (describing keyboard nav, theme toggle, ARIA labels, and hazards), and cross-sim "See also" links (all 3 siblings) before `</body>`. This is crawlable content for SEO/GEO — keep it factually accurate and substantive.
-- `shared-about.js` `initAboutPanel(config)` accepts optional `lastUpdated` (ISO date string) — displayed as "Updated YYYY-MM-DD" in the about panel footer. Update when making significant sim changes.
-- `manifest.json` — Web App Manifest for PWA with 48/192/512px icons (`purpose: "any"`, not maskable — PNG icons have transparent backgrounds), `lang: "en"`, `id: "/"`, `scope: "/"`, `categories: ["education", "science"]`, one measured 1200×630 wide screenshot, and `share_target` for scripture search via Web Share Target API. Icons are generated by `og/generate.js` from `og/icon.html` (logo.svg in `#e11107` on transparent background).
-- Root `index.html` JSON-LD: `WebSite` (with `datePublished`, `dateModified`, `inLanguage`, `SearchAction`, and a `speakable` cssSelector pointing at `.home-bio-prose`), an `ItemList` of the sims, an `Organization`, a `Person` (`@id: https://a9l.im/#person`, description leads with LLM interpretability research), and a `SiteNavigationElement`. The old `Course` "learning path" block was removed (the framing was fiction); the factual `ItemList` of sims stays. Identity is "an interpretability researcher who hosts sims," not an "educational sim hub" — `og:title`/`twitter:title`/descriptions and `meta.*` i18n keys lead with the research thread. Has `hreflang="en"` + `hreflang="x-default"` and `dns-prefetch` for `github.com` and `cdn.jsdelivr.net`. `#breadcrumb` nav element (hidden by default) is filled by the Worker for `/sims`, `/projects`, `/blog`.
-- `posts.json` is generated from `content/posts/` frontmatter; its `tag` field is always an array — `_worker.js` emits one `<meta property="article:tag">` per entry, and `_build.mjs` emits RSS `<category>` elements.
-- `src/router.js` sets `aria-current="page"` on the active nav link for screen reader accessibility.
-- `scripture/index.html` has a `SearchAction` potentialAction in its WebApplication JSON-LD — links to `?q={query}` with `suggestedQuery` examples. Has `hreflang="x-default"`, `og:locale`, `accessibilityFeature`/`accessibilityHazard` in the WebApplication schema and a separate `Dataset` JSON-LD block describing the 16-work corpus (with license, keywords, distribution, `temporalCoverage`, `spatialCoverage`). `scripture/main.js` reads the `?q=` URL parameter on init to auto-open search. `aria-live="polite"` on `#search-results`, `#concordance-results`, and `#notes-content` for dynamic content announcements.
-- Each sim's about.md is 400+ words for LLM consumption via `llms-full.txt`. Each includes an Accessibility section describing keyboard navigation, high-contrast mode, ARIA labels, and known hazards.
+Never invent Wikidata QIDs, DOIs, or scholarly URLs from memory. Verify QIDs with the Wikidata search API and entity JSON, DOIs with Crossref or the DOI resolver, and other references against their live primary source. If no entity exists, omit it. This applies to Worker scripture schema, project JSON-LD, `isBasedOn`, and educational references.
 
-### Cloudflare Headers Split
+Each project retains substantive `about.md` documentation, educational content, accessibility notes, structured data, canonical metadata, and verified references. Update `dateModified` and the about-panel `lastUpdated` value when behavior changes materially; the parent build checks their agreement in the staged output.
 
-- `_headers` applies to **static assets only** (served by the asset layer). Worker-served HTML (SPA routes, scripture, 404) gets headers from `_worker.js`'s `secure()` function. Both must carry the same security headers — changing CSP or HSTS in one requires updating the other. Both set `X-Robots-Tag: index, follow` and `Vary: Accept-Encoding`.
-- `Cloudflare-CDN-Cache-Control` is stripped by Cloudflare before reaching the browser. It controls CDN-layer caching independently of `Cache-Control` (which controls the browser). `_headers` uses this for static assets; the Worker sets it for HTML responses.
-- `_headers` has a **100-rule limit** (55 path rules at this sweep). Adding new path-header pairs requires checking headroom. Early Hints are the largest consumer.
-- `robots.txt` has tiered crawl delays: Googlebot (1s), Bingbot (2s), default `*` (5s), and automated AI crawlers (10s — GPTBot, OAI-SearchBot, ChatGPT-User, ClaudeBot, Claude-SearchBot, Claude-User, PerplexityBot). User-triggered `Perplexity-User`, plus Google-Extended, Applebot-Extended, and DuckAssistBot, have no delay. The default group explicitly allows `/llms.txt` and `/llms-full.txt` and disallows `/content/posts/` (raw markdown) and `/fonts/`. Update when crawler vendors publish new tokens.
-- `opensearch.xml` — OpenSearch descriptor with favicon `<Image>`, `<LongName>`, `<Language>`, `<InputEncoding>`, RSS/Atom feed discovery URLs. Search URL template points to scripture search (`https://a9l.im/scripture/?q={searchTerms}`). Linked from `index.html` and `scripture/index.html`.
-- `about.md`, `llms.txt`, and `llms-full.txt` have YAML frontmatter (title, url, description, language, license, updated) for machine-parseable metadata. Their date comes from `content/home/site.md`; rebuild after changing it.
+## Root-site specifics
+
+- `site/main.js` creates the shared DOM cache passed to root init functions.
+- `site/src/home.js` hydrates generated homepage data; `site/src/router.js` maintains `aria-current`.
+- The root Person JSON-LD entity remains `https://a9l.im/#person`.
+- The sole root `<h1>` is the hero tagline; the navbar brand is not a heading.
+- `data-theme` lives on `<html>`.
+- `.tog-wrap input` stays visually clipped for accessibility; never replace it with `display: none`.
+- Root and project URLs inside deployable HTML/JS are absolute. Deep SPA routes make relative asset URLs unsafe.
+- `static/fonts/` contains the self-hosted Recursive variable font. KaTeX project fonts still require jsDelivr in CSP.
+- `static/.well-known/security.txt` has an annual expiry date.
+
+## Prose voice
+
+Root-site personal copy in `content/posts/` and `content/home/` uses a9lim's prose voice and its dedicated writing workflow when available. Simulation `about.md` files and educational sections use a technical-reference register. Resume bullets remain action-verb-led unless explicitly requested otherwise.

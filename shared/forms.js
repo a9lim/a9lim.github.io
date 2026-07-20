@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════
-   shared-forms.js — Form control wiring utilities
+   shared/forms.js — Form control wiring utilities
    Shared across sim projects for consistent handling of
    mode-toggle groups, range sliders, and toggle checkboxes.
    ═══════════════════════════════════════════════ */

@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════
-   shared-haptics.js — Haptic feedback for all a9l.im sites.
+   shared/haptics.js — Haptic feedback for all a9l.im sites.
    Thin wrapper around the Web Vibration API with named presets.
    Silently no-ops on platforms without vibration support.
    Loaded as a plain <script>; exposes global _haptics.

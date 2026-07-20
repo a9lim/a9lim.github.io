@@ -1,4 +1,4 @@
-// shared-dropdown.js — Custom dropdown replacement for native <select>.
+// shared/dropdown.js — Custom dropdown replacement for native <select>.
 // Loaded as a plain <script> (not a module). Auto-enhances select.sim-select elements.
 // Fires native 'change' events on the hidden <select> so existing JS works untouched.
 (function () {

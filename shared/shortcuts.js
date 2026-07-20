@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════
-   shared-shortcuts.js — Keyboard shortcut registry
+   shared/shortcuts.js — Keyboard shortcut registry
    for the three a9l.im simulation projects.
    ═══════════════════════════════════════════════ */
 

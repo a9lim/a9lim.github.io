@@ -81,7 +81,7 @@
 
         // ── About page ──
         'about.contact.resume': 'Resume (PDF)',
-        // == GENERATED CONTENT (en) — from content/home/, via _build.mjs; edit there ==
+        // == GENERATED CONTENT (en) — from content/home/, via tools/build.mjs; edit there ==
         "c.bio.p1": "Hi! I'm a9lim. I like studying LLMs and how they work, along with a smattering of other things.",
         "c.bio.p2": "I find a lot of niche topics very personally satisfying to explore, across physics, biology, mathematics, geopolitics, religion, and interpretability. My understanding is pretty spiky within each subject, as I like to focus in on certain specific areas, but I try my best to really grasp the things that catch my attention.",
         "c.bio.p3.s0": "My first real forays into recreationally learning things came in the form of playing with Colorado Boulder's ",
@@ -170,7 +170,7 @@
 
         // ── About page ──
         'about.contact.resume': '履歴書 (PDF)',
-        // == GENERATED CONTENT (ja) — from content/home/, via _build.mjs; edit there ==
+        // == GENERATED CONTENT (ja) — from content/home/, via tools/build.mjs; edit there ==
         "c.bio.p1": "こんにちは! a9lim です。LLM とその仕組みを研究するのが好きで、ほかにもさまざまなことに少しずつ手を出している。",
         "c.bio.p2": "物理、生物、数学、地政学、宗教、解釈可能性など、ニッチなテーマを掘ることに強く惹かれる。各分野での理解にはかなり濃淡があり、特定の領域に絞って取り組むことが多い。それでも、関心を引かれたものはできるだけ本質まで掴もうとしている。",
         "c.bio.p3.s0": "子どもの頃、娯楽として何かを学ぶ最初の本格的な体験は、University of Colorado Boulder の ",

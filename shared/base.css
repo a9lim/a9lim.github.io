@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════
-   shared-base.css — Shared styles for all a9l.im sites
+   shared/base.css — Shared styles for all a9l.im sites
    ═══════════════════════════════════════════════ */
 
 /* ─── Reset ─── */
@@ -1021,7 +1021,7 @@ body {
 
 .ctrl-disabled { opacity: 0.4; pointer-events: none; transition: opacity 0.2s var(--ease-out); }
 
-/* ─── Dependency Reveal (shared-forms.js bindDeps) ─── */
+/* ─── Dependency Reveal (shared/forms.js bindDeps) ─── */
 .dep-reveal {
     display: grid;
     grid-template-rows: 1fr;
@@ -1067,7 +1067,7 @@ body {
 .ctrl-row.locked { opacity: 0.4; pointer-events: none; transition: opacity 0.2s var(--ease-out); }
 
 /* ─── Select Dropdowns ─── */
-/* Native select — hidden when enhanced by shared-dropdown.js */
+/* Native select — hidden when enhanced by shared/dropdown.js */
 .sim-select {
     width: 100%;
     padding: 6px 10px;
@@ -1087,7 +1087,7 @@ body {
     outline-offset: 0;
 }
 
-/* ─── Custom Dropdown (shared-dropdown.js) ─── */
+/* ─── Custom Dropdown (shared/dropdown.js) ─── */
 .sim-dropdown {
     position: relative;
     width: 100%;
@@ -1340,7 +1340,7 @@ input[type=range]::-moz-range-thumb {
     color: var(--text-on-accent);
 }
 
-/* Settings dropdown (shared-settings.js) */
+/* Settings dropdown (shared/settings.js) */
 .settings-dd {
     position: fixed;
     z-index: 100;

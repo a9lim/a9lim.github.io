@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════
-   shared-sparkline.js — Lightweight sparkline renderer for
+   shared/sparkline.js — Lightweight sparkline renderer for
    all a9l.im sim projects. Ring-buffer data storage with
    polyline canvas drawing.
    ═══════════════════════════════════════════════ */

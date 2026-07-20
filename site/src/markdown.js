@@ -11,8 +11,8 @@
 // passthrough, no setext headings.
 //
 // Single source of truth for all three render surfaces: the blog client
-// (src/blog.js), edge SSR (_worker.js, bundled by wrangler), and the
-// build (_build.mjs for feeds/llms-full). Keep it isomorphic — no DOM,
+// (src/blog.js), edge SSR (worker/index.js, bundled by wrangler), and the
+// build (tools/build.mjs for feeds/llms-full). Keep it isomorphic — no DOM,
 // no Node APIs.
 
 let _switcherCounter = 0;

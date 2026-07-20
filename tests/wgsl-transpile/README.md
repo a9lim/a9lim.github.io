@@ -1,12 +1,12 @@
 # WGSL transpiler tests
 
 This directory tests the standalone WGSL-to-JavaScript compute-shader
-transpiler in `shared-wgsl-transpile.js`.
+transpiler in `lib/wgsl/transpile.js`.
 
 The transpiler is **not part of the deployed simulation path**. The root build
 does not generate `transpiled/` artifacts, no simulation imports the
-transpiler or runner, and `shared-wgsl-runner.js` plus
-`shared-wgsl-worker.js` are retained as dormant integration code. Geon keeps
+transpiler or runner, and `lib/wgsl/runner.js` plus
+`lib/wgsl/worker.js` are retained as dormant integration code. Geon keeps
 its own CPU backend; Plasma currently requires WebGPU. Re-enabling a browser
 CPU fallback would require an explicit build-artifact configuration and a
 simulation-side importer.
@@ -14,7 +14,7 @@ simulation-side importer.
 ## Public API
 
 ```js
-import { compileWGSL, transpileWGSL } from '../../shared-wgsl-transpile.js';
+import { compileWGSL, transpileWGSL } from '../../lib/wgsl/transpile.js';
 
 const compiled = compileWGSL(source, options);
 compiled.entry.main({
@@ -101,14 +101,14 @@ PLASMA_BENCH_SIZES=64,128 PLASMA_BENCH_ITERS=10 \
 ## Dormant artifact harness
 
 `build-smoke.js` validates a pre-generated `transpiled/` artifact tree. That
-tree and its writer were deliberately removed from `_build.mjs`, so the
+tree and its writer were deliberately removed from `tools/build.mjs`, so the
 command is not part of the current test gate and is expected to report that
 no artifacts exist. Keep the harness only as a validation starting point if
 the artifact pipeline is restored.
 
 If the integration is re-enabled, the minimum contract is:
 
-1. `_build.mjs` emits deterministic modules from repository-owned WGSL and
+1. `tools/build.mjs` emits deterministic modules from repository-owned WGSL and
    records enough source, option, and transpiler hashes to detect staleness.
 2. A simulation imports those artifacts through the runner; no runtime path
    compiles untrusted shader text.

@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════
-   shared-toolbar.js — Toolbar button utilities
+   shared/toolbar.js — Toolbar button utilities
    Shared across all projects for consistent toolbar controls:
    play/pause, speed, theme toggle, sidebar toggle.
    ═══════════════════════════════════════════════ */
@@ -9,7 +9,7 @@ var _toolbar = (function () {
     'use strict';
 
     // ── Play / Pause ──
-    // Uses _ICON from shared-icons.js (must be loaded first).
+    // Uses _ICON from shared/icons.js (must be loaded first).
     // Safe: _ICON contains only hardcoded SVG markup, never user input.
 
     function updatePlayBtn(btn, playing) {

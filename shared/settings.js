@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════
-   shared-settings.js — Settings dropdown builder
+   shared/settings.js — Settings dropdown builder
    Creates a fixed-position dropdown anchored to a
    trigger button with slider/mode-group rows,
    click-outside and Escape dismiss.

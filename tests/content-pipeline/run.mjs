@@ -25,7 +25,7 @@ const { PROJECTS } = await import(join(DIST, 'src/projects.js'));
 const gen = await import(join(BUILD, 'content.generated.mjs'));
 const posts = JSON.parse(readFileSync(join(DIST, 'posts.json'), 'utf8'));
 
-console.log('content/projects ↔ src/projects.js ↔ _content.generated.mjs');
+console.log('content/projects ↔ dist/src/projects.js ↔ .build/content.generated.mjs');
 const projSlugs = enSlugs('content/projects');
 check('card count matches content files', PROJECTS.length === projSlugs.length,
   `${PROJECTS.length} vs ${projSlugs.length}`);

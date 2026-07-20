@@ -1,6 +1,6 @@
 # AGENTS.md
 
-Survey-specific instructions for `surveys/`. The repository-root `AGENTS.md` still
+Survey-specific instructions for `features/surveys/`. The repository-root `AGENTS.md` still
 applies; this file adds the contracts that are easy to miss when working on the
 psychometrics project.
 
@@ -13,8 +13,8 @@ in a future session.
 - Do not add a survey page, navigation entry, static route, sitemap entry, OG image,
   or other public frontend integration unless a9 explicitly asks for that frontend
   pass.
-- `surveys/` is intentionally excluded from the deployed asset bundle and the local
-  asset farm. The Worker API remains live independently of static survey files.
+- `features/surveys/` is intentionally excluded from `dist/`. The Worker API remains
+  live independently of static survey files.
 - The future v1 frontend is English-only unless a9 revisits localization.
 - When the frontend returns, consume the root shared design system and utilities
   before adding survey-specific equivalents.
@@ -66,10 +66,11 @@ in a future session.
 
 The API and deployment pieces cross the directory boundary:
 
-- `../_worker.js` owns `POST /api/surveys` and its payload validation.
-- `../migrations/0001_surveys.sql` owns the D1 schema.
-- `../wrangler.jsonc` and `../dev.sh` bind `SURVEYS_DB`.
-- `../.assetsignore` keeps the backend/data tree out of static deployment.
+- `../../worker/surveys.js` owns `POST /api/surveys` payload validation and storage.
+- `../../worker/index.js` routes the endpoint.
+- `../../db/migrations/0001_surveys.sql` owns the D1 schema.
+- `../../wrangler.jsonc` binds `SURVEYS_DB`; `../../tools/stage-assets.mjs` excludes
+  this entire feature from static deployment.
 
 ## Generated data
 
@@ -87,7 +88,7 @@ Treat `build/generate_data.py` plus the upstream releases as the source of truth
 Generator command:
 
 ```bash
-python surveys/build/generate_data.py --source-dir /path/to/survey-sources
+python features/surveys/build/generate_data.py --source-dir /path/to/survey-sources
 ```
 
 ## API and privacy
@@ -124,18 +125,20 @@ primary source before adding it.
 For ordinary scoring/data/API work, run:
 
 ```bash
-node --test surveys/tests/*.test.mjs
-node --check surveys/src/scoring.js
-node --check surveys/src/data.js
-node --check _worker.js
+node --test features/surveys/tests/*.test.mjs
+node --check features/surveys/src/scoring.js
+node --check features/surveys/src/data.js
+node --check worker/index.js
+node --check worker/surveys.js
 git diff --check
 ```
 
 When root Worker or deployment configuration changes, also run:
 
 ```bash
-npx wrangler deploy --dry-run
-node tests/content-pipeline/run.mjs
+npm run build
+npm exec -- wrangler deploy --dry-run
+npm run check
 ```
 
 When the generator changes, additionally run a full source-to-temporary-output build

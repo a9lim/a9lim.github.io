@@ -3,7 +3,7 @@
    tests/wgsl-transpile/build-smoke.js — Build-time artifact validation.
 
    Dormant integration harness: this validates pre-transpiled .js artifacts
-   if an artifact writer is restored. The current _build.mjs intentionally
+   if an artifact writer is restored. The current tools/build.mjs intentionally
    writes none, so this script is not part of the active test gate and exits
    non-zero after reporting the absent transpiled/ tree.
 
@@ -102,7 +102,7 @@ function transpilerJsSourceBody(jsSource) {
 }
 
 // Collect sibling helpers in the same dir as an entry shader.
-// Mirrors _build.mjs's classification: helpers = no @compute/@vertex/@fragment.
+// Mirrors tools/build.mjs's classification: helpers = no @compute/@vertex/@fragment.
 function collectHelpersForEntry(entryAbs) {
     const dir = dirname(entryAbs);
     const siblings = readdirSync(dir)
@@ -144,7 +144,7 @@ function testArtifactHeaders(artifacts) {
                         { source: !!h.source, unitSha: !!h.unitSha, transpilerSha: !!h.transpilerSha, opts: !!h.opts, metrics: !!h.metrics });
             allValid = false;
         } else if (h.transpilerSha !== TRANSPILER_SHA) {
-            console.log(`    [${rel}] transpiler hash mismatch (artifact stale — re-run node _build.mjs)`);
+            console.log(`    [${rel}] transpiler hash mismatch (artifact stale — re-run node tools/build.mjs)`);
             allValid = false;
         }
     }
@@ -431,7 +431,7 @@ function testSourceHashes(artifacts) {
         const unitSrc  = helpers.length ? helperSrc + '\n' + entrySrc : entrySrc;
         const freshHash = sha256Hex(unitSrc);
         if (freshHash !== h.unitSha) {
-            console.log(`    [${h.source}] hash mismatch (artifact stale — re-run node _build.mjs)`);
+            console.log(`    [${h.source}] hash mismatch (artifact stale — re-run node tools/build.mjs)`);
             console.log(`      header: ${h.unitSha}`);
             console.log(`      fresh:  ${freshHash}`);
             allMatch = false;
@@ -466,7 +466,7 @@ function testByteIdenticalBodies(artifacts) {
         const expected = transpilerJsSourceBody(fresh.jsSource);
         const actual   = bodyOnly(text);
         if (expected !== actual) {
-            console.log(`    [${h.source}] body mismatch (artifact stale — re-run node _build.mjs)`);
+            console.log(`    [${h.source}] body mismatch (artifact stale — re-run node tools/build.mjs)`);
             allMatch = false;
         }
     }
@@ -611,7 +611,7 @@ async function testRuntimeInstantiation(artifacts) {
 const artifacts = testTranspiledTreeExists();
 if (artifacts.length === 0) {
     console.log('');
-    console.log('no artifacts to validate — run `node _build.mjs` first');
+    console.log('no artifacts to validate — run `node tools/build.mjs` first');
     process.exit(fail === 0 ? 0 : 1);
 }
 testArtifactHeaders(artifacts);
