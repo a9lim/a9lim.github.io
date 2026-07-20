@@ -37,6 +37,6 @@ docs/
 .env*
 !.env.example
 
-# Local dev asset farm (built by dev.sh)
-_dev-assets/
-wrangler.dev.jsonc
+# Build outputs
+dist/
+.build/

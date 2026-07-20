@@ -6,5 +6,5 @@
 set -euo pipefail
 cd "$(dirname "$0")"
 
-node _build.mjs
-npx --yes wrangler@latest deploy "$@"
+npm run build
+exec npm exec -- wrangler deploy "$@"

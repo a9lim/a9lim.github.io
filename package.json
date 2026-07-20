@@ -1,0 +1,20 @@
+{
+  "name": "a9lim-site",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build:content": "node _build.mjs",
+    "build:stage": "node tools/stage-assets.mjs",
+    "build": "npm run build:content && npm run build:stage",
+    "check": "node _build.mjs --check && node tests/content-pipeline/run.mjs && node tests/deploy-layout/run.mjs",
+    "test": "npm run check && node --test surveys/tests/*.test.mjs",
+    "dev": "npm run build && wrangler dev",
+    "deploy": "npm run build && wrangler deploy"
+  },
+  "devDependencies": {
+    "wrangler": "4.112.0"
+  }
+}
