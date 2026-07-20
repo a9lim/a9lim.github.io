@@ -12,9 +12,20 @@ export function adjustedReliability(alpha, administered, fullCount) {
     return (fraction * alpha) / (1 + (fraction - 1) * alpha);
 }
 
+function demographicsForNorms(demographics) {
+    const normalized = { ...demographics };
+    delete normalized.gender;
+    delete normalized.sex_assigned_at_birth;
+    if (['female', 'male'].includes(demographics.sex_assigned_at_birth)) {
+        normalized.sex = demographics.sex_assigned_at_birth;
+    }
+    return normalized;
+}
+
 export function chooseNormCell(norms, demographics = {}) {
     if (!norms?.cells?.length) return null;
-    const candidates = norms.cells.filter(cell => Object.entries(cell.dimensions).every(([key, value]) => demographics[key] === value));
+    const normalized = demographicsForNorms(demographics);
+    const candidates = norms.cells.filter(cell => Object.entries(cell.dimensions).every(([key, value]) => normalized[key] === value));
     return candidates.sort((a, b) => Object.keys(b.dimensions).length - Object.keys(a.dimensions).length || b.n - a.n)[0]
         || norms.cells.find(cell => cell.id === 'overall') || null;
 }

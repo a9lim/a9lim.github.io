@@ -41,12 +41,14 @@ test('norm selection prefers the most specific available demographic cell', () =
     const norms = {
         cells: [
             { id: 'overall', dimensions: {}, n: 10000 },
-            { id: 'age', dimensions: { age: '21-40' }, n: 5000 },
-            { id: 'age-gender', dimensions: { age: '21-40', gender: 'female' }, n: 2000 },
+            { id: 'young-adult', dimensions: { age: '18-24' }, n: 5000 },
+            { id: 'young-adult-sex', dimensions: { age: '18-24', sex: 'female' }, n: 2000 },
+            { id: 'older-adult', dimensions: { age: '65+' }, n: 1500 },
         ],
     };
-    assert.equal(chooseNormCell(norms, { age: '21-40', gender: 'female' }).id, 'age-gender');
-    assert.equal(chooseNormCell(norms, { age: '61-95' }).id, 'overall');
+    assert.equal(chooseNormCell(norms, { age: '18-24', sex_assigned_at_birth: 'female', gender: 'nonbinary' }).id, 'young-adult-sex');
+    assert.equal(chooseNormCell(norms, { age: '18-24', sex_assigned_at_birth: 'x-or-another' }).id, 'young-adult');
+    assert.equal(chooseNormCell(norms, { age: '65+' }).id, 'older-adult');
 });
 
 test('battery assembly is deterministic and percentage depth is monotone', () => {

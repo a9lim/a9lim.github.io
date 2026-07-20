@@ -23,8 +23,15 @@ from lxml import html
 
 
 QUANTILES = [1, 5, 10, 20, 25, 30, 40, 50, 60, 70, 75, 80, 90, 95, 99]
-AGE_BANDS = ((10, 20, "10-20"), (21, 40, "21-40"), (41, 60, "41-60"), (61, 95, "61-95"))
-GENDERS = {1: "male", 2: "female"}
+AGE_BANDS = (
+    (18, 24, "18-24"),
+    (25, 34, "25-34"),
+    (35, 44, "35-44"),
+    (45, 54, "45-54"),
+    (55, 64, "55-64"),
+    (65, 95, "65+"),
+)
+SEXES = {1: "male", 2: "female"}
 
 
 def clean_text(value: object) -> str:
@@ -386,28 +393,29 @@ def norm_cells(key: dict, frame: pd.DataFrame, item_values: np.ndarray, sex: np.
         scores[valid] = values[valid].sum(axis=1)
         scale_scores[scale] = scores
 
-    country_counts = Counter(value for value in country if value)
+    adult = (age >= 18) & (age <= 95)
+    country_counts = Counter(value for value in country[adult] if value)
     supported_countries = sorted(value for value, count in country_counts.items() if count >= 1000)
-    specs: list[tuple[dict, np.ndarray]] = [({}, np.ones(len(sex), dtype=bool))]
+    specs: list[tuple[dict, np.ndarray]] = [({}, adult)]
     for low, high, label in AGE_BANDS:
         specs.append(({"age": label}, (age >= low) & (age <= high)))
-    for code, label in GENDERS.items():
-        specs.append(({"gender": label}, sex == code))
+    for code, label in SEXES.items():
+        specs.append(({"sex": label}, adult & (sex == code)))
     for value in supported_countries:
-        specs.append(({"country": value}, country == value))
+        specs.append(({"country": value}, adult & (country == value)))
     for low, high, age_label in AGE_BANDS:
-        for code, gender_label in GENDERS.items():
-            specs.append(({"age": age_label, "gender": gender_label}, (age >= low) & (age <= high) & (sex == code)))
+        for code, sex_label in SEXES.items():
+            specs.append(({"age": age_label, "sex": sex_label}, (age >= low) & (age <= high) & (sex == code)))
     for value in supported_countries:
         country_mask = country == value
         for low, high, age_label in AGE_BANDS:
             specs.append(({"country": value, "age": age_label}, country_mask & (age >= low) & (age <= high)))
-        for code, gender_label in GENDERS.items():
-            specs.append(({"country": value, "gender": gender_label}, country_mask & (sex == code)))
+        for code, sex_label in SEXES.items():
+            specs.append(({"country": value, "sex": sex_label}, adult & country_mask & (sex == code)))
         for low, high, age_label in AGE_BANDS:
-            for code, gender_label in GENDERS.items():
+            for code, sex_label in SEXES.items():
                 specs.append((
-                    {"country": value, "age": age_label, "gender": gender_label},
+                    {"country": value, "age": age_label, "sex": sex_label},
                     country_mask & (age >= low) & (age <= high) & (sex == code),
                 ))
 
