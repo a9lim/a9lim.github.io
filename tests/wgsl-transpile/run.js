@@ -65,7 +65,7 @@ async function findShaders(root) {
         catch { return; }
         for (const ent of entries) {
             if (ent.name.startsWith('.') || ent.name === 'node_modules' ||
-                ent.name === '_dev-assets') continue;
+                ent.name === 'dist') continue;
             const p = join(dir, ent.name);
             if (ent.isDirectory()) await walk(p);
             else if (ent.name.endsWith('.wgsl')) out.push(p);
@@ -388,7 +388,13 @@ async function main() {
     console.log(`  ${C.dim}lines:${C.reset}     ${totalLines}`);
     console.log(`  ${C.dim}tokens:${C.reset}    ${totalTokens}`);
     const dirs = Object.entries(byDir).sort();
-    console.log(`  ${C.dim}by sim:${C.reset}    ${dirs.map(([d, c]) => `${d.split('/')[0]}=${c}`).join(', ')}`);
+    const projectCounts = {};
+    for (const [dir, count] of dirs) {
+        const parts = dir.split('/');
+        const project = parts[0] === 'projects' ? parts[1] : parts[0];
+        projectCounts[project] = (projectCounts[project] || 0) + count;
+    }
+    console.log(`  ${C.dim}by sim:${C.reset}    ${Object.entries(projectCounts).map(([name, count]) => `${name}=${count}`).join(', ')}`);
     if (resolveTotal > 0) {
         const typed = resolveTotal - resolveNulls;
         const pct = (100 * typed / resolveTotal).toFixed(1);
