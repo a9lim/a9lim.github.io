@@ -84,7 +84,7 @@ The models' hidden states predict the emotional category with high accuracy, wit
 | granite | 0.980 | ~0.55 |
 | gpt-oss | 0.876 | ~0.40 |
 
-The kaomoji predicts the emotional category of the prompt reasonably well as well. On Gemma it's accurate 80.6% of the time and on Qwen it's accuracte 78.5% of the time. 
+The kaomoji predicts the emotional category of the prompt reasonably well. On Gemma it's accurate 80.6% of the time and on Qwen it's accurate 78.5% of the time. 
 
 For Ministral, Granite, and GPT-OSS the accuracy drops to ~43%, ~55%, and ~40% respectively, which lines up with how these models tend to reuse kaomoji over multiple categories. The hidden state still achieves good accuracy on two of the three models, so the gap has more to do with their kaomoji-using ability than anything inherent to the models. 
 
