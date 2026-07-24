@@ -96,11 +96,13 @@ Independent interpretability and alignment researcher, and open-source developer
 
 \section*{Education}
 
-\plainentry{University of California, San Diego}{Bachelor of Science in Mathematics - GPA 3.73 - Major GPA 3.86 - Graduated in 2.5 years}{Sep 2023 - Mar 2026}
+\plainentry{Singapore American School}{High School Diploma - Weighted GPA 4.5}{Aug 2019 - May 2023}
+
+\plainentry{University of California, San Diego}{Bachelor of Science in Mathematics - GPA 3.73 - Major GPA 3.86}{Sep 2023 - Mar 2026}
 
 \section*{Research}
 
-\entry{Introspection via Kaomoji}{https://a9l.im/blog/introspection-via-kaomoji}{Study on legibility and geometry of emotional representation in LLMs - Python}{Apr 2026 - Jun 2026}
+\entry{Introspection via Kaomoji}{https://a9l.im/blog/introspection-via-kaomoji}{Study on legibility and geometry of emotional representation in LLMs - Python, HF Transformers}{Apr 2026 - Jun 2026}
 \begin{itemize}
   \item Investigated correspondence between kaomoji used by LLMs and functional emotional states.
   \item Found that the kaomoji could predict the emotional content of the prompt with 80.6\% accuracy on Gemma-4-31b-it.
@@ -108,27 +110,27 @@ Independent interpretability and alignment researcher, and open-source developer
   \item Built data collection tooling and published the resulting corpus.
 \end{itemize}
 
-\entry{Elapsed-Time Encoding in LLMs}{https://github.com/a9lim/time-experiment}{Ongoing study on representations of elapsed time within LLMs - Python}{Jun 2026 - Present}
+\entry{Elapsed-Time Encoding in LLMs}{https://github.com/a9lim/time-experiment}{Ongoing study on representations of elapsed time within LLMs - Python, HF Transformers}{Jun 2026 - Present}
 \begin{itemize}
   \item Used linear probes and logits to investigate the representation of elapsed time within LLMs over a conversation without timestamps.
   \item Showed elapsed time is tracked within LLMs and linearly proportional to context length using probes.
-  \item Replicated findings of \href{https://arxiv.org/abs/2506.05790}{Discrete Minds in a Continuous World} (Wang et al.).
+  \item Replicated findings of Discrete Minds in a Continuous World (Wang et al.).
 \end{itemize}
 
 \entry{Neuralese as a Conlang}{https://github.com/a9lim/acot-experiment}{Ongoing study on the legibility of latent reasoning - Python, PyTorch}{Jul 2026 - Present}
 \begin{itemize}
-  \item Train a model to reason via \href{https://arxiv.org/abs/2604.22709}{Abstract Chain-of-Thought} (Ramji et al.) to analyze the structure and grammar of abstract tokens.
+  \item Train a model to reason via Abstract Chain-of-Thought (Ramji et al.) to analyze the structure and grammar of abstract tokens.
   \item A preliminary run on a small model has so far not successfully trained it to use abstract tokens to reason.
 \end{itemize}
 
 \entry{Block Sparse Crosscoders}{https://github.com/a9lim/block-crosscoder-experiment}{Ongoing study on cross-layer multidimensional features in LLMs - Python, PyTorch}{Jul 2026 - Present}
 \begin{itemize}
-  \item Synthesize recent work on \href{https://arxiv.org/abs/2606.25234}{Block Sparse Featurizers} (Fel et al.) and \href{https://transformer-circuits.pub/2024/crosscoders/index.html}{Sparse Crosscoders} (Lindsey et al.) to attempt extraction of cross-layer multidimensional features.
+  \item Synthesize recent work on Block Sparse Featurizers (Fel et al.) and Sparse Crosscoders (Lindsey et al.) to attempt extraction of cross-layer multidimensional features.
 \end{itemize}
 
 \section*{Projects}
 
-\entry{Saklas}{https://github.com/a9lim/saklas}{Mechanistic interpretability workbench - Python, PyTorch}{Apr 2026 - Present}
+\entry{Saklas}{https://github.com/a9lim/saklas}{Mechanistic interpretability workbench - Python, HF Transformers, PyTorch}{Apr 2026 - Present}
 \begin{itemize}
   \item Built a local interpretability workbench compatible with most open-weight LLMs and both CUDA and MPS.
   \item Implemented curved manifold extraction from sets of concepts.
@@ -143,18 +145,13 @@ Independent interpretability and alignment researcher, and open-source developer
   \item Implemented force-coupled scalar fields with self-gravity.
 \end{itemize}
 
-\entry{Ogdoad}{https://a9l.im/ogdoad}{Library for recreational mathematics - Rust, Python}{Jun 2026 - Present}
+\plainentry{Other Projects}{Additional projects and tooling I've worked on - Rust, Python, JavaScript, WebGPU}{Feb 2026 - Present}
 \begin{itemize}
-  \item Built a Rust library to explore Clifford algebras over the surreal numbers and Conway's combinatorial games.
-  \item Implemented Python tooling to investigate open problems.
-  \item Designed a language to teach combinatorial game theory and geometric algebra.
-\end{itemize}
-
-\entry{Other Projects}{https://a9l.im/}{Browser simulations and tooling for agents - JavaScript, WebGPU}{Feb 2026 - Present}
-\begin{itemize}
-  \item \textbf{Agent infrastructure.} Built \href{https://github.com/a9lim/gaslamp}{Gaslamp}, a
-  cross-agent CLI reviewer for Claude Code and Codex.
-  \item \textbf{Interactive simulations.} Built seven more browser projects across physics,
+  \item \textbf{\href{https://github.com/a9lim/ogdoad}{Ogdoad}:} Built a library to explore Clifford algebras over the
+  surreal numbers and Conway's combinatorial games and investigate open problems.
+  \item \textbf{\href{https://github.com/a9lim/gaslamp}{Gaslamp}:} Built a
+  cross-agent CLI for Claude Code and Codex to dispatch each other as subagents.
+  \item \textbf{\href{https://a9l.im/sims}{Interactive educational simulations}:} Built seven more browser simulations across physics,
   finance, biology, political science, and comparative religion.
 \end{itemize}
 
@@ -162,8 +159,8 @@ Independent interpretability and alignment researcher, and open-source developer
 
 {\small
 \textbf{Research:} Experiment design and execution, agent orchestration.\\
-\textbf{ML:} Python, PyTorch, NumPy/SciPy.\\
-\textbf{Engineering:} Java, Rust, JavaScript, WebGPU, Git.
+\textbf{ML:} Python, HF Transformers, PyTorch, NumPy/SciPy.\\
+\textbf{Programming:} Java, Rust, JavaScript, WebGPU, Git.
 }
 
 \end{document}
