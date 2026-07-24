@@ -87,6 +87,7 @@ a:hover { color: var(--accent-light); }
 
 .nav-link {
     font-family: var(--font-sans);
+    font-variation-settings: var(--fvs-prose);
     font-size: var(--font-base);
     font-weight: 500;
     letter-spacing: 0.04em;
@@ -159,7 +160,8 @@ a:hover { color: var(--accent-light); }
     width: auto;
     min-width: 36px;
     padding: 0 8px;
-    font-family: var(--font-mono);
+    font-family: var(--font-sans);
+    font-variation-settings: var(--fvs-prose);
     font-size: var(--font-sm);
     font-weight: 600;
     letter-spacing: 0.02em;
@@ -235,9 +237,10 @@ a:hover { color: var(--accent-light); }
     to   { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
 }
 
-/* Uppercase mono label used on every page ("Featured", "Projects", etc.) */
+/* Uppercase section label used on every page ("Featured", "Projects", etc.) */
 .section-label {
-    font-family: var(--font-mono);
+    font-family: var(--font-sans);
+    font-variation-settings: var(--fvs-prose);
     font-size: var(--font-sm);
     font-weight: 600;
     text-transform: uppercase;
@@ -280,6 +283,7 @@ a:hover { color: var(--accent-light); }
 
 .hero-tagline {
     font-family: var(--font-display);
+    font-variation-settings: var(--fvs-prose);
     font-weight: normal;
     font-size: clamp(3rem, 7vw, 5.5rem);
     line-height: 1.02;
@@ -323,6 +327,7 @@ a:hover { color: var(--accent-light); }
     background: var(--accent);
     color: var(--overlay-text);
     font-family: var(--font-sans);
+    font-variation-settings: var(--fvs-prose);
     font-size: var(--font-lg);
     font-weight: 600;
     letter-spacing: 0.02em;
@@ -513,6 +518,7 @@ a:hover { color: var(--accent-light); }
 .project-title {
     flex: 1 1 auto;
     font-family: var(--font-display);
+    font-variation-settings: var(--fvs-prose);
     font-weight: normal;
     font-size: 1.5rem;
     line-height: 1.2;
@@ -552,7 +558,8 @@ a:hover { color: var(--accent-light); }
 }
 
 .project-tag {
-    font-family: var(--font-mono);
+    font-family: var(--font-sans);
+    font-variation-settings: var(--fvs-prose);
     font-size: var(--font-sm);
     padding: 4px 10px;
     border-radius: var(--radius);
@@ -604,6 +611,7 @@ a:hover { color: var(--accent-light); }
 .project-package-install {
     color: inherit;
     font-family: var(--font-mono);
+    font-variation-settings: var(--fvs-mono);
     font-size: var(--font-sm);
     white-space: nowrap;
 }
@@ -630,7 +638,8 @@ a:hover { color: var(--accent-light); }
 }
 
 .project-planned-tag {
-    font-family: var(--font-mono);
+    font-family: var(--font-sans);
+    font-variation-settings: var(--fvs-prose);
     font-size: var(--font-sm);
     letter-spacing: 0.06em;
     text-transform: uppercase;
@@ -687,7 +696,8 @@ a:hover { color: var(--accent-light); }
 }
 
 .blog-date {
-    font-family: var(--font-mono);
+    font-family: var(--font-sans);
+    font-variation-settings: var(--fvs-prose);
     font-size: var(--font-base);
     color: var(--text-muted);
     white-space: nowrap;
@@ -708,7 +718,8 @@ a:hover { color: var(--accent-light); }
 }
 
 .blog-tag {
-    font-family: var(--font-mono);
+    font-family: var(--font-sans);
+    font-variation-settings: var(--fvs-prose);
     font-size: var(--font-sm);
     color: var(--text-muted);
     padding: 2px 8px;
@@ -815,7 +826,8 @@ a:hover { color: var(--accent-light); }
 
 .blog-post-date {
     display: block;
-    font-family: var(--font-mono);
+    font-family: var(--font-sans);
+    font-variation-settings: var(--fvs-prose);
     font-size: var(--font-base);
     color: var(--text-muted);
     margin-bottom: 8px;
@@ -824,6 +836,7 @@ a:hover { color: var(--accent-light); }
 
 .blog-post-title {
     font-family: var(--font-display);
+    font-variation-settings: var(--fvs-prose);
     font-weight: normal;
     font-size: clamp(2rem, 5vw, 3rem);
     line-height: 1.1;
@@ -838,7 +851,8 @@ a:hover { color: var(--accent-light); }
     align-items: baseline;
     gap: 8px;
     margin-top: 16px;
-    font-family: var(--font-mono);
+    font-family: var(--font-sans);
+    font-variation-settings: var(--fvs-prose);
     font-size: var(--font-sm);
 }
 
@@ -884,8 +898,8 @@ a:hover { color: var(--accent-light); }
     margin-bottom: 0.6em;
 }
 
-.blog-content h1 { font-family: var(--font-display); font-weight: normal; font-size: 2rem; }
-.blog-content h2 { font-family: var(--font-display); font-weight: normal; font-size: 1.5rem; }
+.blog-content h1 { font-family: var(--font-display); font-variation-settings: var(--fvs-prose); font-weight: normal; font-size: 2rem; }
+.blog-content h2 { font-family: var(--font-display); font-variation-settings: var(--fvs-prose); font-weight: normal; font-size: 1.5rem; }
 .blog-content h3 { font-size: 1.15rem; font-weight: 600; }
 .blog-content h4 { font-size: 1rem; font-weight: 600; }
 
@@ -908,6 +922,7 @@ a:hover { color: var(--accent-light); }
 
 .blog-content code {
     font-family: var(--font-mono);
+    font-variation-settings: var(--fvs-mono);
     font-size: 0.88em;
     padding: 2px 6px;
     border-radius: var(--radius);
@@ -936,6 +951,7 @@ a:hover { color: var(--accent-light); }
     content: attr(class);
     display: block;
     font-family: var(--font-mono);
+    font-variation-settings: var(--fvs-mono);
     font-size: var(--font-sm);
     color: var(--text-muted);
     text-transform: uppercase;
@@ -1034,9 +1050,9 @@ a:hover { color: var(--accent-light); }
 }
 .blog-content .switcher-figure .mode-btn {
     padding: 6px 14px;
-    font-family: var(--font-mono);
+    font-family: var(--font-sans);
     font-size: var(--font-sm);
-    font-variation-settings: 'MONO' 1;
+    font-variation-settings: var(--fvs-prose);
     letter-spacing: 0.04em;
     text-transform: lowercase;
 }
@@ -1062,7 +1078,8 @@ a:hover { color: var(--accent-light); }
 }
 
 .blog-content figure figcaption {
-    font-family: var(--font-mono);
+    font-family: var(--font-sans);
+    font-variation-settings: var(--fvs-prose);
     font-size: var(--font-sm);
     color: var(--text-muted);
     margin-top: 8px;
@@ -1202,6 +1219,7 @@ body.blog-lightbox-open {
 
 .about-bio h2 {
     font-family: var(--font-display);
+    font-variation-settings: var(--fvs-prose);
     font-weight: normal;
     font-size: 2rem;
     line-height: 1.15;
@@ -1251,6 +1269,7 @@ body.blog-lightbox-open {
 
 .contact-section h3 {
     font-family: var(--font-display);
+    font-variation-settings: var(--fvs-prose);
     font-weight: normal;
     font-size: 1.4rem;
     margin-bottom: 12px;
@@ -1265,7 +1284,8 @@ body.blog-lightbox-open {
 }
 
 .contact-email {
-    font-family: var(--font-mono);
+    font-family: var(--font-sans);
+    font-variation-settings: var(--fvs-prose);
     font-size: 1rem;
     color: var(--accent);
     transition: color 0.2s var(--ease-out), letter-spacing 0.3s var(--ease-out);
@@ -1279,6 +1299,7 @@ body.blog-lightbox-open {
 
 .about-bio .about-h3 {
     font-family: var(--font-display);
+    font-variation-settings: var(--fvs-prose);
     font-weight: normal;
     font-size: 1.25rem;
     margin-top: 36px;
@@ -1325,7 +1346,8 @@ body.blog-lightbox-open {
     display: flex;
     align-items: center;
     gap: 10px;
-    font-family: var(--font-mono);
+    font-family: var(--font-sans);
+    font-variation-settings: var(--fvs-prose);
     font-size: var(--font-sm);
     color: var(--text-secondary);
     text-decoration: none;
@@ -1373,7 +1395,8 @@ a.contact-social:hover {
 
 .footer-tech {
     color: var(--text-muted);
-    font-family: var(--font-mono);
+    font-family: var(--font-sans);
+    font-variation-settings: var(--fvs-prose);
     font-size: 0.72rem;
     letter-spacing: 0.02em;
     margin: 0 0 6px;
@@ -1392,6 +1415,7 @@ a.contact-social:hover {
 
 .footer-deploy-hash {
     font-family: var(--font-mono);
+    font-variation-settings: var(--fvs-mono);
     color: var(--text-secondary);
 }
 
@@ -1408,6 +1432,7 @@ a.contact-social:hover {
 
 .footer-hint kbd {
     font-family: var(--font-mono);
+    font-variation-settings: var(--fvs-mono);
     font-size: 0.72rem;
     padding: 1px 5px;
     background: var(--accent-subtle);
@@ -1435,7 +1460,8 @@ a.contact-social:hover {
     display: flex;
     flex-direction: column;
     align-items: center;
-    font-family: var(--font-mono);
+    font-family: var(--font-sans);
+    font-variation-settings: var(--fvs-prose);
     gap: 10px;
     color: var(--text-muted);
     font-size: var(--font-sm);
@@ -1590,6 +1616,7 @@ a.contact-social:hover {
     margin: 0 auto;
     padding: calc(var(--toolbar-h) + 48px) 24px 96px;
     font-family: var(--font-sans);
+    font-variation-settings: var(--fvs-prose);
     font-size: 15px;
     line-height: 1.6;
     color: var(--text);
@@ -1619,6 +1646,7 @@ a.contact-social:hover {
 
 .home-contact h3 {
     font-family: var(--font-display);
+    font-variation-settings: var(--fvs-prose);
     font-weight: normal;
     font-size: 1.25rem;
     margin: 0 0 12px;
@@ -1671,6 +1699,7 @@ a.contact-social:hover {
 
 .home-h {
     font-family: var(--font-sans);
+    font-variation-settings: var(--fvs-prose);
     font-size: 0.85rem;
     font-weight: 600;
     letter-spacing: 0.08em;
@@ -1698,6 +1727,7 @@ a.contact-social:hover {
 
 .home-fix-title {
     font-family: var(--font-sans);
+    font-variation-settings: var(--fvs-prose);
     font-size: 1.05rem;
     font-weight: 600;
     margin: 0 0 8px;
@@ -1787,7 +1817,8 @@ a.contact-social:hover {
 
 .home-post-d {
     color: var(--text-muted);
-    font-family: var(--font-mono);
+    font-family: var(--font-sans);
+    font-variation-settings: var(--fvs-prose);
     font-size: 0.8rem;
     font-variant-numeric: tabular-nums;
     margin-right: 10px;
@@ -1842,6 +1873,7 @@ a.contact-social:hover {
     color: var(--accent);
     font-weight: 600;
     font-family: var(--font-mono);
+    font-variation-settings: var(--fvs-mono);
     font-variant-numeric: tabular-nums;
     width: 5ch;
 }
@@ -1849,6 +1881,7 @@ a.contact-social:hover {
 .home-pred-b {
     color: var(--text-muted);
     font-family: var(--font-mono);
+    font-variation-settings: var(--fvs-mono);
     font-variant-numeric: tabular-nums;
     font-size: 0.85rem;
     white-space: nowrap;
@@ -1974,7 +2007,8 @@ a.contact-social:hover {
     background: var(--bg-elevated);
     border-radius: var(--radius);
     outline: none;
-    font-family: var(--font-mono);
+    font-family: var(--font-sans);
+    font-variation-settings: var(--fvs-prose);
 }
 
 .home-cheat-panel:focus-visible {
@@ -1984,6 +2018,7 @@ a.contact-social:hover {
 
 .home-cheat-h {
     font-family: var(--font-sans);
+    font-variation-settings: var(--fvs-prose);
     font-size: 0.85rem;
     font-weight: 600;
     letter-spacing: 0.08em;
@@ -2019,6 +2054,7 @@ a.contact-social:hover {
 
 .home-cheat-k kbd {
     font-family: var(--font-mono);
+    font-variation-settings: var(--fvs-mono);
     font-size: 12px;
     padding: 2px 6px;
     background: var(--accent-subtle);

@@ -102,6 +102,11 @@ const _FONT = {
   serif:   "'Recursive', 'SF Mono', 'Menlo', monospace",
   mono:    "'Recursive', 'SF Mono', 'Menlo', monospace",
   emoji:   "'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji', sans-serif",
+  // Recursive variable-font axis coordinates. Every font-family: var(--font-mono)
+  // declaration pairs with --fvs-mono; every --font-sans/--font-display/--font-serif
+  // declaration pairs with --fvs-prose. Single source of truth for both axes.
+  variationProse: "'MONO' 0, 'CASL' 0.5",
+  variationMono:  "'MONO' 1, 'CASL' 0.5",
 };
 
 // ─── Palette ───
@@ -194,6 +199,8 @@ const _PALETTE = {
   --font-serif:   ${_FONT.serif};
   --font-mono:    ${_FONT.mono};
   --font-emoji:   ${_FONT.emoji};
+  --fvs-prose:    ${_FONT.variationProse};
+  --fvs-mono:     ${_FONT.variationMono};
 
 ${gen(L, false)}
 

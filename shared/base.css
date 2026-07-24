@@ -7,7 +7,6 @@
     box-sizing: border-box;
     margin: 0;
     padding: 0;
-    font-variation-settings: 'MONO' 0, 'CASL' 0;
 }
 
 /* ─── Layout Tokens ─── */
@@ -30,8 +29,8 @@
 body {
     background: var(--bg-canvas);
     color: var(--text);
-    font-family: var(--font-mono);
-    font-variation-settings: 'MONO' 0, 'CASL' 0;
+    font-family: var(--font-sans);
+    font-variation-settings: var(--fvs-prose);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     transition: background-color 0.5s var(--ease-out), color 0.4s var(--ease-out);
@@ -107,6 +106,7 @@ body {
 /* ─── Speed Button ─── */
 .speed-btn {
     font-family: var(--font-mono);
+    font-variation-settings: var(--fvs-mono);
     font-size: var(--font-sm);
     font-weight: 600;
     min-width: 34px;
@@ -141,6 +141,7 @@ body {
 /* ─── Sidebar Patterns ─── */
 .group-label {
     font-family: var(--font-sans);
+    font-variation-settings: var(--fvs-prose);
     font-weight: 600;
     font-size: var(--font-base);
     text-transform: uppercase;
@@ -159,6 +160,7 @@ body {
 
 .stats-title {
     font-family: var(--font-sans);
+    font-variation-settings: var(--fvs-prose);
     font-size: var(--font-base);
     font-weight: 600;
     text-transform: uppercase;
@@ -189,6 +191,7 @@ body {
 
 .stat-value {
     font-family: var(--font-mono);
+    font-variation-settings: var(--fvs-mono);
     font-weight: 600;
     font-size: var(--font-base);
     color: var(--text);
@@ -242,6 +245,7 @@ body {
     border: none;
     border-radius: 0;
     font-family: var(--font-sans);
+    font-variation-settings: var(--fvs-prose);
     font-weight: 500;
     font-size: var(--font-base);
     color: var(--text-muted);
@@ -372,6 +376,7 @@ body {
 /* Brand title with accent gradient */
 .sim-brand {
     font-family: var(--font-display);
+    font-variation-settings: var(--fvs-prose);
     font-size: clamp(1.3rem, 2.5vw, 1.8rem);
     font-weight: 400;
     color: var(--text);
@@ -469,6 +474,7 @@ body {
 /* Zoom percentage text */
 .zoom-level {
     font-family: var(--font-mono);
+    font-variation-settings: var(--fvs-mono);
     font-size: 0.56rem;
     font-weight: 500;
     color: var(--text-muted);
@@ -503,7 +509,8 @@ body {
 /* Hint text — italic caption style */
 .panel-hint {
     color: var(--text-muted);
-    font-family: var(--font-mono);
+    font-family: var(--font-sans);
+    font-variation-settings: var(--fvs-prose);
     font-size: var(--font-sm);
     font-style: italic;
     line-height: 1.5;
@@ -664,6 +671,7 @@ body {
     border: none;
     color: var(--text);
     font: 500 var(--font-base) var(--font-sans);
+    font-variation-settings: var(--fvs-prose);
     box-shadow: var(--shadow-hover);
     opacity: 0;
     transform: translateY(12px);
@@ -692,6 +700,7 @@ body {
     background: var(--accent);
     color: var(--text-on-accent);
     font: 500 var(--font-lg) var(--font-sans);
+    font-variation-settings: var(--fvs-prose);
     border-radius: var(--radius);
     text-decoration: none;
     transition: top 0.2s var(--ease-out);
@@ -727,6 +736,7 @@ body {
     font-size: var(--font-sm);
     font-weight: 700;
     font-family: var(--font-sans);
+    font-variation-settings: var(--fvs-prose);
     cursor: help;
     padding: 0;
     margin-left: 4px;
@@ -753,6 +763,7 @@ body {
     border: none;
     box-shadow: none;
     font: 500 var(--font-sm) / 1.55 var(--font-mono);
+    font-variation-settings: var(--fvs-mono);
     color: var(--text);
     pointer-events: none;
     white-space: nowrap;
@@ -774,6 +785,7 @@ body {
     padding: 10px 14px;
     border-radius: var(--radius);
     font-family: var(--font-sans);
+    font-variation-settings: var(--fvs-prose);
     font-size: var(--font-base);
     line-height: 1.55;
     color: var(--text);
@@ -883,6 +895,7 @@ body {
 
 .about-header h2 {
     font-family: var(--font-sans);
+    font-variation-settings: var(--fvs-prose);
     font-size: 1rem;
     font-weight: 600;
     color: var(--text);
@@ -908,6 +921,7 @@ body {
 
 .about-group-label {
     font-family: var(--font-sans);
+    font-variation-settings: var(--fvs-prose);
     font-weight: 600;
     font-size: var(--font-sm);
     text-transform: uppercase;
@@ -936,6 +950,7 @@ body {
     border: none;
     background: var(--bg-elevated);
     font-family: var(--font-mono);
+    font-variation-settings: var(--fvs-mono);
     font-size: var(--font-sm);
     color: var(--text);
     min-width: 24px;
@@ -944,7 +959,8 @@ body {
 }
 
 .about-value {
-    font-family: var(--font-mono);
+    font-family: var(--font-sans);
+    font-variation-settings: var(--fvs-prose);
     font-size: var(--font-base);
     color: var(--text);
 }
@@ -1076,6 +1092,7 @@ body {
     background: var(--bg-hover);
     color: var(--text);
     font-family: var(--font-sans);
+    font-variation-settings: var(--fvs-prose);
     font-size: var(--font-base);
     transition: background 0.2s var(--ease-out), box-shadow 0.25s var(--ease-out);
 }
@@ -1106,7 +1123,8 @@ body {
     border: none;
     background: var(--bg-hover);
     color: var(--text);
-    font-family: var(--font-mono);
+    font-family: var(--font-sans);
+    font-variation-settings: var(--fvs-prose);
     font-size: var(--font-base);
     font-variant-numeric: tabular-nums;
     text-align: left;
@@ -1188,7 +1206,8 @@ body {
 
 .sim-dropdown-item {
     padding: 5px 10px;
-    font-family: var(--font-mono);
+    font-family: var(--font-sans);
+    font-variation-settings: var(--fvs-prose);
     font-size: var(--font-base);
     font-variant-numeric: tabular-nums;
     color: var(--text-secondary);
@@ -1226,6 +1245,7 @@ body {
 /* Slider value display */
 .slider-value {
     font-family: var(--font-mono);
+    font-variation-settings: var(--fvs-mono);
     color: var(--text);
     font-weight: 600;
     font-size: var(--font-base);
@@ -1318,6 +1338,7 @@ input[type=range]::-moz-range-thumb {
     border: none;
     padding: 6px 12px;
     font-family: var(--font-sans);
+    font-variation-settings: var(--fvs-prose);
     font-size: var(--font-base);
     font-weight: 500;
     color: var(--text-muted);
@@ -1362,6 +1383,7 @@ input[type=range]::-moz-range-thumb {
 
 .settings-dd-label {
     font-family: var(--font-sans);
+    font-variation-settings: var(--fvs-prose);
     font-size: var(--font-base);
     color: var(--text-muted);
     min-width: 80px;
@@ -1370,6 +1392,7 @@ input[type=range]::-moz-range-thumb {
 
 .settings-dd-val {
     font-family: var(--font-mono);
+    font-variation-settings: var(--fvs-mono);
     font-size: var(--font-sm);
     color: var(--text-secondary);
     min-width: 40px;
@@ -1428,6 +1451,7 @@ input[type=range]::-moz-range-thumb {
     background: transparent;
     color: var(--text-secondary);
     font-family: var(--font-sans);
+    font-variation-settings: var(--fvs-prose);
     font-size: var(--font-base);
     font-weight: 500;
     cursor: pointer;
@@ -1668,6 +1692,7 @@ html:has(> .sim-body) { overflow: hidden; }
     border: none;
     background: transparent;
     font-family: var(--font-sans);
+    font-variation-settings: var(--fvs-prose);
     font-weight: 600;
     font-size: clamp(0.72rem, 1vw, 0.82rem);
     cursor: pointer;
@@ -1722,6 +1747,7 @@ html:has(> .sim-body) { overflow: hidden; }
     background: var(--bg-hover);
     color: var(--text);
     font-family: var(--font-sans);
+    font-variation-settings: var(--fvs-prose);
     font-size: var(--font-base);
     outline: none;
     transition: background 0.2s var(--ease-out), box-shadow 0.25s var(--ease-out);
@@ -1757,7 +1783,8 @@ html:has(> .sim-body) { overflow: hidden; }
 
 /* ─── Label Utilities ─── */
 .label-caps {
-    font-family: var(--font-mono);
+    font-family: var(--font-sans);
+    font-variation-settings: var(--fvs-prose);
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.06em;
