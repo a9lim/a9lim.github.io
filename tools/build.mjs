@@ -377,7 +377,7 @@ ${lines.join('\n')}
 const homeCards = {};
 for (const slug of contentSlugs('content/home')) homeCards[slug] = loadContentPair('content/home', slug);
 for (const req of ['site', 'bio', 'contact', 'now', 'hyperfixation', 'predictions',
-  'ask-me-about', 'other-things', 'footer']) {
+  'ask-me-about', 'other-things']) {
   if (!homeCards[req]) throw new Error(`content/home/${req}.md missing`);
 }
 
@@ -585,12 +585,6 @@ let homeChips, homeChipsJa;
     ...en.map((li, i) => IND + '        ' + i18nBlock('li', `c.other.li${i + 1}`, li, ja[i], 'content/home/other-things.md')),
     IND + '    </ul>',
   ].join('\n');
-}
-
-// footer — tech line
-{
-  const c = homeCards['footer'];
-  regions.footer = '        ' + i18nBlock('p', 'c.footer.tech', mdBlocksOf(c.body)[0], mdBlocksOf(c.ja.body)[0], 'content/home/footer.md', ' class="footer-tech"');
 }
 
 // site — <head> metadata + per-route titles/descriptions

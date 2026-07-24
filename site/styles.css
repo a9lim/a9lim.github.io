@@ -1385,24 +1385,6 @@ a.contact-social:hover {
     margin: 0 auto;
 }
 
-.footer-accent {
-    width: 48px;
-    height: 2px;
-    background: var(--accent);
-    margin: 0 auto 16px;
-    border-radius: 0;
-}
-
-.footer-tech {
-    color: var(--text-muted);
-    font-family: var(--font-sans);
-    font-variation-settings: var(--fvs-prose);
-    font-size: 0.72rem;
-    letter-spacing: 0.02em;
-    margin: 0 0 6px;
-    line-height: 1.6;
-}
-
 .footer-copy {
     color: var(--text-muted);
     font-size: var(--font-sm);
