@@ -522,12 +522,11 @@ let homeFix, homeFixJa;
   regions.hyperfixation = IND + `    <h2 class="home-h" id="home-fix-heading"><span id="home-fix-label" data-i18n="c.fix.label">${mdEsc(c.meta.label)}</span></h2>`;
 }
 
-// predictions — heading + note from frontmatter, rows + column labels from table
+// predictions — heading, rows, and column labels from table
 let homePred, homePredJa;
 {
   const c = homeCards['predictions'];
   i18nScalar('c.pred.h', c.meta.heading, c.ja.meta.heading);
-  i18nScalar('c.pred.note', c.meta.note, c.ja.meta.note);
   const t = parseTableBlock(c.body, 'content/home/predictions.md');
   const tja = parseTableBlock(c.ja.body, 'content/home/predictions.ja.md');
   if (t.rows.length !== tja.rows.length) throw new Error('content/home/predictions: EN/JA row count mismatch');
@@ -545,7 +544,6 @@ let homePred, homePredJa;
     IND + '        </thead>',
     IND + '        <tbody></tbody>',
     IND + '    </table>',
-    IND + `    <p class="home-pred-note" data-i18n="c.pred.note">${mdEsc(c.meta.note)}</p>`,
   ].join('\n');
 }
 

@@ -1,6 +1,5 @@
 ---
 heading: Predictions
-note: Trust at your own risk.
 ---
 | Prediction | p | by |
 | --- | --- | --- |

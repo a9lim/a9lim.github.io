@@ -1869,13 +1869,6 @@ a.contact-social:hover {
     white-space: nowrap;
 }
 
-.home-pred-note {
-    margin: 10px 0 0;
-    color: var(--text-muted);
-    font-size: 0.8rem;
-    font-style: italic;
-}
-
 /* ── Ask me about chips ───────────────────────────────────── */
 .home-chips {
     display: flex;
