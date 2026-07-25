@@ -154,8 +154,11 @@ function resizeCanvasDPR(canvas, ctx, opts) {
     var el = (opts && opts.el) || canvas;
     var rect = el.getBoundingClientRect();
     var dpr = window.devicePixelRatio || 1;
-    var w = Math.floor(rect.width)  || canvas.clientWidth;
-    var h = Math.floor(rect.height) || canvas.clientHeight;
+    // Hidden canvases have a 0x0 layout box. Preserve their intrinsic buffer
+    // size as the CSS-pixel fallback instead of collapsing the buffer to zero;
+    // callers can render safely before a hidden panel is first revealed.
+    var w = Math.floor(rect.width)  || canvas.clientWidth  || canvas.width / dpr;
+    var h = Math.floor(rect.height) || canvas.clientHeight || canvas.height / dpr;
     var bw = Math.round(w * dpr);
     var bh = Math.round(h * dpr);
     var changed = canvas.width !== bw || canvas.height !== bh;
