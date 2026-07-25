@@ -5,7 +5,7 @@ import { execFileSync, spawnSync } from 'node:child_process';
 import { dirname, join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createHash } from 'node:crypto';
-import { parseMarkdown, mdEsc } from '../site/src/markdown.js';
+import { parseMarkdown, mdEsc, splitMarkdownTableRow } from '../site/src/markdown.js';
 
 const ROOT = dirname(dirname(fileURLToPath(import.meta.url)));
 const DIST = join(ROOT, 'dist');
@@ -390,8 +390,15 @@ function parseTableBlock(block, rel) {
   if (!/^\|.*\|\s*$/.test(lines[0]) || !/^\|[\s:|-]+\|\s*$/.test(lines[1] || '')) {
     throw new Error(rel + ': expected a pipe table, got: ' + lines[0]);
   }
-  const splitRow = s => s.replace(/^\s*\||\|\s*$/g, '').split('|').map(c => c.trim());
-  return { header: splitRow(lines[0]), rows: lines.slice(2).map(splitRow) };
+  const header = splitMarkdownTableRow(lines[0]);
+  const rows = lines.slice(2).map((line, index) => {
+    const row = splitMarkdownTableRow(line);
+    if (row.length !== header.length) {
+      throw new Error(`${rel}:${index + 3}: expected ${header.length} table cells, got ${row.length}`);
+    }
+    return row;
+  });
+  return { header, rows };
 }
 
 function parseListBlock(block, rel) {

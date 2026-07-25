@@ -4,7 +4,8 @@
 // emits a same-origin iframe figure), switcher directive (fenced block
 // with `switcher` lang — CSS-only radio-tabbed image gallery),
 // blockquotes (recursive), ordered/unordered lists, GFM-style pipe
-// tables (no column alignment), horizontal rules, images (single or
+// tables (no column alignment; escaped pipes are allowed in cells),
+// horizontal rules, images (single or
 // theme-paired via `light.png|dark.png`), links, inline code, bold,
 // italic, bold-italic.
 // Limitations: no nested lists, no reference-style links, no HTML
@@ -32,6 +33,41 @@ function unstashMath(s) {
 
 export function mdEsc(s) {
     return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+/**
+ * Split a pipe-table row while treating \| as a literal pipe inside a cell.
+ * An even-length run of backslashes leaves the following pipe as a delimiter;
+ * an odd-length run consumes one escaping backslash and preserves the pipe.
+ */
+export function splitMarkdownTableRow(row) {
+    let body = row.trim();
+    const isEscapedPipe = (text, index) => {
+        let precedingBackslashes = 0;
+        for (let j = index - 1; j >= 0 && text[j] === '\\'; j--) precedingBackslashes++;
+        return precedingBackslashes % 2 === 1;
+    };
+    if (body.startsWith('|')) body = body.slice(1);
+    if (body.endsWith('|') && !isEscapedPipe(body, body.length - 1)) body = body.slice(0, -1);
+
+    const cells = [];
+    let cell = '';
+    for (let i = 0; i < body.length; i++) {
+        const ch = body[i];
+        if (ch !== '|') {
+            cell += ch;
+            continue;
+        }
+
+        if (isEscapedPipe(body, i)) {
+            cell = cell.slice(0, -1) + '|';
+        } else {
+            cells.push(cell.trim());
+            cell = '';
+        }
+    }
+    cells.push(cell.trim());
+    return cells;
 }
 
 /** Remove the minimal YAML frontmatter used by canonical content/*.md files. */
@@ -225,12 +261,11 @@ export function parseMarkdown(src) {
 
         // GFM-style pipe table: header row, separator row of dashes, body rows.
         if (/^\|.+\|\s*$/.test(line) && i + 1 < len && /^\|[\s:|-]+\|\s*$/.test(lines[i + 1])) {
-            const splitRow = (s) => s.replace(/^\||\|\s*$/g, '').split('|').map(c => c.trim());
-            const headers = splitRow(line);
+            const headers = splitMarkdownTableRow(line);
             i += 2;
             const bodyRows = [];
             while (i < len && /^\|.+\|\s*$/.test(lines[i])) {
-                bodyRows.push(splitRow(lines[i]));
+                bodyRows.push(splitMarkdownTableRow(lines[i]));
                 i++;
             }
             html.push('<table><thead><tr>'
