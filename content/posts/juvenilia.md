@@ -12,7 +12,7 @@ I was looking through a hard drive of mine when I found my old Google archive fr
 
 ## High School
 
-In late 2022, when I was 16 and in my senior year of high school, OpenAI released ChatGPT. Having only played with GPT Playground at that point, I remember feeling like my future was about to change dramatically. I followed neither LessWrong nor SlateStarCodex, but I managed to stumble upon some similar threads. I was taking a creative writing course that year, and this piece I wrote for it summarizes my thoughts at the time.
+In late 2022, when I was 16 and in my senior year of high school, OpenAI released ChatGPT. Having only played with GPT Playground at that point, I remember feeling like my future was about to change dramatically. I followed neither LessWrong nor Slate Star Codex, but I managed to stumble upon some similar threads. I was taking a creative writing course that year, and this piece I wrote for it summarizes my thoughts at the time.
 
 ---
 
