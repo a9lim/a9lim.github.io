@@ -12,4 +12,4 @@ tags:
   - options pricing
   - canvas
 ---
-A derivatives trading game set in a similar world to ours, with a dynamic, evolving market.
+A derivatives trading game where the AI race runs under the market — price it from the desk, and find out what your margin was for.
