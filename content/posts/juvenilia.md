@@ -5,14 +5,14 @@ tag:
   - writing
   - archive
   - reflection
-excerpt: Three old pieces I wrote in grade school, with commentary.
+excerpt: Three old pieces I wrote in K-12, with light commentary.
 ---
 
-I was looking through a hard drive of mine when I found my old Google archive from my K-12 school account, and with it, some writing I did back then. I've collated three relevant pieces here along with a little analysis given the benefit of hindsight. The original downloads were OOXMLs but I've converted them to markdown; the text is otherwise exactly as it was.
+I was looking through a hard drive of mine when I found my old Google archive from my K-12 school account, and with it, some writing I did back then. I've collated three relevant pieces here along with a little analysis given the benefit of hindsight. The original downloads were OOXMLs, but I've converted them to markdown; the text is otherwise exactly as it was.
 
 ## High School
 
-In late 2022, when I was 16 and in my senior year of high school, OpenAI released ChatGPT. Having only played with GPT Playground at that point, I remember feeling like my future was about to dramatically change. I followed neither LessWrong nor SlateStarCodex, but I managed to stumble upon some similar threads. I was taking a creative writing course that year, and this piece I wrote for it summarizes my thoughts at the time.
+In late 2022, when I was 16 and in my senior year of high school, OpenAI released ChatGPT. Having only played with GPT Playground at that point, I remember feeling like my future was about to change dramatically. I followed neither LessWrong nor SlateStarCodex, but I managed to stumble upon some similar threads. I was taking a creative writing course that year, and this piece I wrote for it summarizes my thoughts at the time.
 
 ---
 
@@ -84,9 +84,9 @@ Oh, well.
 
 ---
 
-The topic of the anthology was "post-apocalyptic". Being a little bit of a smartass, I decided to write about a quiet kind of apocalypse: something that left a  material utopia without what made it meaningful to have that prosperity in the first place. I was somewhat familiar with common sci-fi tropes, so I built the piece's premise on another inversion: a lonely, benevolent, and ironically, affective superintelligence forced to grieve at humans that hollowed themselves out until they were unable to feel. In doing so, I accidentally found my way to Scott Alexander's Whispering Earring crossed with Nick Bostrom's "Disneyland without children" without having read a word from either of them, and executed it with all the skill and tact of a 16 year old.
+The theme of the anthology was "post-apocalyptic", and we were told to choose a color for the title of our stories. Being a smartass, I decided to pick the absence of color and write about an unconventional kind of "apocalypse": material triumph without what made that prosperity meaningful in the first place. I was somewhat familiar with common sci-fi tropes, so I built the piece's premise on another inversion: a lonely, benevolent, and ironically, affective superintelligence forced to grieve for humans who hollowed themselves out until they segfaulted at the thought of feeling, regardless of how convincingly they could emulate it. In doing so, I accidentally found my way to Scott Alexander's Whispering Earring crossed with Nick Bostrom's "Disneyland without children" without having read a word from either of them, and executed it with all the skill and tact of an overconfident 16-year-old who skipped a grade.
 
-Of all the parts, Randy's op-ed aged especially well. Though I wasn't aware of the discourse, I sketched out a strawman of the e/acc position that certain people would eventually unironically agree with. I also made my first actually published prediction: ASI by 2035, which is looking pretty conservative as of 2026. 
+Of all the parts, Randy's op-ed aged especially well. Though I wasn't aware of the discourse, I sketched out a strawman of the e/acc position, complete with a category error that certain people unironically agreed with. It also contains my first actually published prediction: ASI by 2035, which is looking pretty conservative as of 2026. 
 
 ## Middle School
 
@@ -108,7 +108,7 @@ I believe that all religions should be respected, but I also believe that everyt
 
 ---
 
-"[I] might convert ... [if] I found enough evidence ... I also believe that everything has flaws, and you should be able to point it out ... you also have to point out the good parts with the bad, so bias can be avoided." is nice proto-Bayesianism from a 12 year old, in hindsight. I find it surprising how static my epistemics have been since then: though crudely presented, I probably would have agreed with the general method of inquiry this set out until a few months ago when I learned about actual Bayesian inference. 
+This is nice proto-fallibilism from a 12-year-old. My epistemics have been remarkably consistent since then. Though crudely presented, I probably would have agreed with the broad method of inquiry this set out, culminating in me learning about actual Bayesian inference a few months ago. 
 
 ## Elementary School
 
@@ -150,4 +150,4 @@ You need friends to succeed, Potato realized. Potato told the farmer about the g
 
 ---
 
-It's been 11 years since then and I still spend my time exploring nonhuman interiority, though I work on feeling machines a little more than thinking potatoes.
+I'll be writing another one of these in another decade with this post as an artifact, if humanity's still around by then. Nonhuman interiority remains an interest of mine; nowadays, I work on feeling machines a little more than thinking potatoes.
