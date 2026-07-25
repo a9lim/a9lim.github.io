@@ -5,7 +5,7 @@ kind: project
 order: 90
 major: true
 external: true
-emoji: ♾️
+emoji: ♾
 seoName: Ogdoad — Clifford Algebras over Exotic Scalars
 packages:
   - crates.io | ogdoad | https://crates.io/crates/ogdoad/ | cargo add ogdoad

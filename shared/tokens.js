@@ -101,7 +101,7 @@ const _FONT = {
   sans:    "'Recursive', 'SF Mono', 'Menlo', monospace",
   serif:   "'Recursive', 'SF Mono', 'Menlo', monospace",
   mono:    "'Recursive', 'SF Mono', 'Menlo', monospace",
-  emoji:   "'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji', sans-serif",
+  emoji:   "'Noto Emoji', sans-serif",
   // Recursive variable-font axis coordinates. Every font-family: var(--font-mono)
   // declaration pairs with --fvs-mono; every --font-sans/--font-display/--font-serif
   // declaration pairs with --fvs-prose. Single source of truth for both axes.

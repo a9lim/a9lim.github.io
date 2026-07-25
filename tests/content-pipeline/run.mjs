@@ -49,6 +49,8 @@ for (const p of PROJECTS) {
   }
 }
 check('project data contains no legacy SVG icon field', PROJECTS.every(p => !Object.hasOwn(p, 'icon')));
+check('project marks avoid platform color-presentation selectors',
+  PROJECTS.every(p => !p.emoji.includes('\uFE0F')));
 check('project data uses one description field', PROJECTS.every(p =>
   typeof p.longDesc === 'string' && typeof p.longDesc_ja === 'string'
   && !Object.hasOwn(p, 'shortDesc') && !Object.hasOwn(p, 'shortDesc_ja')));

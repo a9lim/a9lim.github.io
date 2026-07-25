@@ -4,7 +4,7 @@ href: /pile
 kind: sim
 order: 160
 external: false
-emoji: ☢️
+emoji: ☢
 seoName: Pile — Nuclear Reactor Simulator
 tags:
   - physics

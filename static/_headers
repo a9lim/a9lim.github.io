@@ -39,12 +39,14 @@
   Link: </styles.css>; rel=preload; as=style
   Link: </main.js>; rel=modulepreload
   Link: </fonts/recursive-variable.woff2>; rel=preload; as=font; crossorigin
+  Link: </fonts/noto-emoji-variable.woff2>; rel=preload; as=font; crossorigin
 /projects
   Link: </shared/tokens.js>; rel=preload; as=script
   Link: </shared/base.css>; rel=preload; as=style
   Link: </styles.css>; rel=preload; as=style
   Link: </main.js>; rel=modulepreload
   Link: </fonts/recursive-variable.woff2>; rel=preload; as=font; crossorigin
+  Link: </fonts/noto-emoji-variable.woff2>; rel=preload; as=font; crossorigin
 /blog
   Link: </shared/tokens.js>; rel=preload; as=script
   Link: </shared/base.css>; rel=preload; as=style
