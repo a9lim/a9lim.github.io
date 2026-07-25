@@ -8,8 +8,8 @@ external: false
 emoji: 📈
 seoName: Shoals — Options Trading Simulator
 tags:
+  - AI x-risk
   - finance
-  - options pricing
-  - canvas
+  - derivatives
 ---
-A derivatives trading game where the AI race runs under the market — price it from the desk, and find out what your margin was for.
+A derivatives trading game set during the AI race. Watch the lines go up and don't lose your head.
