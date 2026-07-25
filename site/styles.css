@@ -1828,15 +1828,20 @@ a.contact-social:hover {
 .home-pred {
     width: 100%;
     border-collapse: collapse;
+    table-layout: fixed;
     font-size: 0.9rem;
     margin: 0;
 }
+
+.home-pred thead th:nth-child(1) { width: 60%; }
+.home-pred thead th:nth-child(2) { width: 18%; }
+.home-pred thead th:nth-child(3) { width: 22%; }
 
 .home-pred thead th {
     text-align: left;
     color: var(--text-muted);
     font-weight: 500;
-    font-size: 0.75rem;
+    font-size: var(--font-sm);
     padding: 4px 12px 8px 0;
     text-transform: uppercase;
     letter-spacing: 0.06em;
@@ -1857,7 +1862,6 @@ a.contact-social:hover {
     font-family: var(--font-mono);
     font-variation-settings: var(--fvs-mono);
     font-variant-numeric: tabular-nums;
-    width: 5ch;
 }
 
 .home-pred-b {
@@ -2073,4 +2077,8 @@ a.contact-social:hover {
     .home-pred tbody td {
         padding-right: 8px;
     }
+
+    .home-pred thead th:nth-child(1) { width: 50%; }
+    .home-pred thead th:nth-child(2) { width: 20%; }
+    .home-pred thead th:nth-child(3) { width: 30%; }
 }

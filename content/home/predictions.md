@@ -1,7 +1,7 @@
 ---
 heading: Predictions
 ---
-| Item | P to 1 s.f. | By |
+| Item | P (1 s.f.) | By |
 | --- | --- | --- |
 | AGI | ~0.5 | 2026-11-01 |
 | Open-weight AGI | ~0.3 | 2027-01-01 |
