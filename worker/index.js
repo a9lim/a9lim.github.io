@@ -772,7 +772,7 @@ export default {
                           articleBody,
                           ...(postMeta.tag && { articleSection: Array.isArray(postMeta.tag) ? postMeta.tag[0] : postMeta.tag }),
                           speakable: { '@type': 'SpeakableSpecification', cssSelector: ['.blog-post-title', '.blog-content p:first-of-type'] },
-                          image: 'https://a9l.im/og-image.webp?v=20260725b',
+                          image: 'https://a9l.im/og-image.webp?v=20260725c',
                           author: { '@type': 'Person', '@id': 'https://a9l.im/#person', name: 'a9lim', url: 'https://a9l.im/', sameAs: ['https://github.com/a9lim', 'https://twitter.com/_a9lim'] },
                           publisher: { '@type': 'Organization', name: 'a9l.im', url: 'https://a9l.im', logo: { '@type': 'ImageObject', url: 'https://a9l.im/icon-192.png', width: 192, height: 192 } },
                           isPartOf: { '@type': 'Blog', name: 'a9l.im Blog', url: 'https://a9l.im/blog' },

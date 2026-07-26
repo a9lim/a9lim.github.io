@@ -95,8 +95,8 @@ for (const p of PROJECTS.filter(p => !p.external && !p.planned)) {
   check(`${p.title} about panel date is current`, uiFiles.some(rel => readFileSync(rel, 'utf8').includes(`lastUpdated: '${meta.updated}'`)));
 
   const expectedImage = p.major
-    ? `https://a9l.im/${slug}/og-image.webp?v=20260725b`
-    : 'https://a9l.im/og-image.webp?v=20260725b';
+    ? `https://a9l.im/${slug}/og-image.webp?v=20260725c`
+    : 'https://a9l.im/og-image.webp?v=20260725c';
   const ogImage = index.match(/<meta property="og:image" content="([^"]+)">/)?.[1];
   const twitterImage = index.match(/<meta name="twitter:image" content="([^"]+)">/)?.[1];
   const ogAlt = index.match(/<meta property="og:image:alt" content="([^"]+)">/)?.[1];
