@@ -1,7 +1,6 @@
 ---
 title: Dagwood
 href: https://github.com/a9lim/dagwood
-kind: project
 order: 60
 external: true
 emoji: 🥪

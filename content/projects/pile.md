@@ -1,7 +1,6 @@
 ---
 title: Pile
 href: /pile
-kind: sim
 order: 160
 external: false
 emoji: ☢

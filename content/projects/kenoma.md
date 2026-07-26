@@ -1,7 +1,6 @@
 ---
 title: Kenoma
 href: https://github.com/a9lim/kenoma
-kind: project
 order: 20
 external: true
 emoji: 👾

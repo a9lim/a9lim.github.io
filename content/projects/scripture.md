@@ -1,7 +1,6 @@
 ---
 title: Scripture
 href: /scripture
-kind: sim
 order: 140
 external: false
 emoji: ⛪
@@ -12,4 +11,4 @@ tags:
   - text
   - religion
 ---
-A holy text archive and reader.
+A holy text archive and reader. Includes works across several world traditions.

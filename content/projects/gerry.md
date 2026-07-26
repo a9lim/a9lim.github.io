@@ -1,7 +1,6 @@
 ---
 title: Gerry
 href: /gerry
-kind: sim
 order: 120
 external: false
 emoji: 🗳

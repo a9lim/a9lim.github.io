@@ -1,7 +1,6 @@
 ---
 title: Miasma
 href: /miasma
-kind: sim
 order: 150
 external: false
 emoji: 🦠

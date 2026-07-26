@@ -1,7 +1,6 @@
 ---
 title: Rlaif
 href: https://github.com/a9lim/rlaif
-kind: project
 order: 30
 external: true
 emoji: ⚡

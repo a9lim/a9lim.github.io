@@ -1,6 +1,5 @@
 ---
 title: Hylic
-kind: project
 order: 210
 planned: true
 external: true

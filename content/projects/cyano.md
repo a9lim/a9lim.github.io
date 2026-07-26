@@ -1,7 +1,6 @@
 ---
 title: Cyano
 href: /cyano
-kind: sim
 order: 110
 external: false
 emoji: 🧫

@@ -1,7 +1,6 @@
 ---
 title: Ogdoad
 href: https://github.com/a9lim/ogdoad
-kind: project
 order: 90
 major: true
 external: true

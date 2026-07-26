@@ -1,7 +1,6 @@
 ---
 title: Gaslamp
 href: https://github.com/a9lim/gaslamp
-kind: project
 order: 70
 external: true
 emoji: 🪔

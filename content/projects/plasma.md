@@ -1,7 +1,6 @@
 ---
 title: Plasma
 href: /plasma
-kind: sim
 order: 170
 external: false
 emoji: ☀

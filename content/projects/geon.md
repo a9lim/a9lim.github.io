@@ -1,7 +1,6 @@
 ---
 title: Geon
 href: /geon
-kind: sim
 order: 100
 major: true
 external: false

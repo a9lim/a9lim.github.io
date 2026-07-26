@@ -1,7 +1,6 @@
 ---
 title: Llmoji
 href: https://github.com/a9lim/llmoji
-kind: project
 order: 40
 external: true
 emoji: 🙂

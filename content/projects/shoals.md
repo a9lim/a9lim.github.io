@@ -1,7 +1,6 @@
 ---
 title: Shoals
 href: /shoals
-kind: sim
 order: 130
 major: true
 external: false

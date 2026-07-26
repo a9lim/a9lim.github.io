@@ -40,7 +40,7 @@ const projSlugs = enSlugs('content/projects');
 check('card count matches content files', PROJECTS.length === projSlugs.length,
   `${PROJECTS.length} vs ${projSlugs.length}`);
 for (const p of PROJECTS) {
-  const ssr = p.kind === 'sim' ? gen.SIMS_SSR : gen.PROJECTS_SSR;
+  const ssr = p.external ? gen.PROJECTS_SSR : gen.SIMS_SSR;
   check(`${p.title} has a decorative mark`, typeof p.emoji === 'string' && p.emoji.trim().length > 0);
   check(`SSR mirror carries ${p.title}`, ssr.includes(`<h3 class="project-title">${p.title.replace(/&/g, '&amp;')}</h3>`));
   check(`SSR mirror carries ${p.title}'s emoji`, ssr.includes(`<span class="project-emoji" aria-hidden="true">${p.emoji}</span>`));
@@ -49,6 +49,8 @@ for (const p of PROJECTS) {
   }
 }
 check('project data contains no legacy SVG icon field', PROJECTS.every(p => !Object.hasOwn(p, 'icon')));
+check('external is the sole project/simulation discriminator', PROJECTS.every(p =>
+  typeof p.external === 'boolean' && !Object.hasOwn(p, 'kind')));
 check('project marks avoid platform color-presentation selectors',
   PROJECTS.every(p => !p.emoji.includes('\uFE0F')));
 check('project data uses one description field', PROJECTS.every(p =>
@@ -80,7 +82,7 @@ check('blog client loads canonical markdown', blogClient.includes('/content/post
 check('worker loads canonical markdown', worker.includes('/content/posts/'));
 
 console.log('submodule about.md ↔ HTML metadata ↔ about-panel date');
-for (const p of PROJECTS.filter(p => p.kind === 'sim' && !p.external && !p.planned)) {
+for (const p of PROJECTS.filter(p => !p.external && !p.planned)) {
   const slug = p.href.replace(/^\//, '').replace(/\/$/, '');
   const about = readFileSync(join(ROOT, 'projects', slug, 'about.md'), 'utf8');
   const meta = Object.fromEntries([...about.matchAll(/^([A-Za-z][\w]*):\s+(.+)$/gm)].map(m => [m[1], m[2]]));

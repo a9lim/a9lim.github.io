@@ -1,7 +1,6 @@
 ---
 title: Saklas
 href: https://github.com/a9lim/saklas
-kind: project
 order: 10
 major: true
 external: true

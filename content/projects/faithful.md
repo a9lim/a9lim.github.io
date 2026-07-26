@@ -1,7 +1,6 @@
 ---
 title: Faithful
 href: https://github.com/a9lim/faithful
-kind: project
 order: 190
 external: true
 emoji: 🙈
