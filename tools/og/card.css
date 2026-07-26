@@ -40,22 +40,22 @@ body {
 }
 
 .mark {
-  width: 208px;
-  height: 208px;
+  position: absolute;
+  top: 64px;
+  left: 64px;
+  width: 120px;
+  height: 120px;
 }
 
 .copy {
   position: absolute;
-  top: 130px;
-  left: 168px;
-  display: flex;
-  width: max-content;
-  flex-direction: column;
-  align-items: center;
-  gap: 42px;
+  inset: 0;
 }
 
 h1 {
+  position: absolute;
+  bottom: 64px;
+  left: 64px;
   margin: 0;
   color: #151615;
   font-size: 116px;
@@ -63,7 +63,6 @@ h1 {
   font-weight: 570;
   letter-spacing: -0.062em;
   line-height: 0.92;
-  transform: translate(-30px, 18px);
 }
 
 .root h1 {

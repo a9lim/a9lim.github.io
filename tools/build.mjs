@@ -899,7 +899,7 @@ const simPath = doc => new URL(projectUrl(doc.project)).pathname;
 
 // Every route has a social image, but only major simulations own a bespoke
 // card. Smaller simulations deliberately share the root card.
-const OG_REVISION = '20260725e';
+const OG_REVISION = '20260725f';
 const ROOT_OG_IMAGE = `og-image.webp?v=${OG_REVISION}`;
 const IMAGE_MAP = { '/': [ROOT_OG_IMAGE] };
 const IMAGE_CAPTIONS = { '/': site.discoveryDescription };
