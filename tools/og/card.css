@@ -40,32 +40,33 @@ body {
 }
 
 .mark {
-  width: 136px;
-  height: 136px;
+  width: 208px;
+  height: 208px;
 }
 
 .copy {
   position: absolute;
-  top: 150px;
+  top: 130px;
   left: 168px;
   display: flex;
   width: max-content;
   flex-direction: column;
   align-items: center;
-  gap: 50px;
+  gap: 42px;
 }
 
 h1 {
   margin: 0;
   color: #151615;
-  font-size: 104px;
+  font-size: 116px;
   font-variation-settings: "MONO" 0, "CASL" 0.7;
   font-weight: 570;
   letter-spacing: -0.062em;
   line-height: 0.92;
+  transform: translate(-30px, 18px);
 }
 
 .root h1 {
-  font-size: 98px;
+  font-size: 110px;
   letter-spacing: -0.068em;
 }
