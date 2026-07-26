@@ -1,14 +1,14 @@
 ---
 title: Soft Friend
-order: 200
+order: 220
 planned: true
 major: true
 external: true
-emoji: 🐳
+emoji: 🐟
 seoName: Soft Friend — Soft-Bodied Lighter-Than-Air Agent Platform
 tags:
   - hardware
   - uav
   - llm
 ---
-A soft-bodied lighter-than-air platform for agents to inhabit. A little more expressive than just kaomoji.
+A soft-bodied lighter-than-air platform for agents to inhabit.
