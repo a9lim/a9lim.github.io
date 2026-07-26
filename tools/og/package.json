@@ -5,6 +5,9 @@
     "generate": "node generate.js"
   },
   "devDependencies": {
-    "puppeteer": "^24.0.0"
+    "puppeteer": "^24.43.1"
+  },
+  "allowScripts": {
+    "puppeteer@24.43.1": true
   }
 }
