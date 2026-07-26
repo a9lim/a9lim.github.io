@@ -38,7 +38,7 @@
     {"name": "Plasma", "url": "/plasma", "description": "2.5D resistive magnetohydrodynamics simulator"}
   ],
   "screenshots": [
-    {"src": "/og-image.webp?v=20260725c", "sizes": "1200x630", "type": "image/webp", "form_factor": "wide"}
+    {"src": "/og-image.webp?v=20260725d", "sizes": "1200x630", "type": "image/webp", "form_factor": "wide"}
   ],
   "share_target": {
     "action": "/scripture/",

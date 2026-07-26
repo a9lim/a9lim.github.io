@@ -40,17 +40,19 @@ body {
 }
 
 .mark {
-  position: absolute;
-  top: 56px;
-  left: 72px;
-  width: 88px;
-  height: 88px;
+  width: 136px;
+  height: 136px;
 }
 
 .copy {
   position: absolute;
-  top: 360px;
+  top: 150px;
   left: 168px;
+  display: flex;
+  width: max-content;
+  flex-direction: column;
+  align-items: center;
+  gap: 50px;
 }
 
 h1 {
@@ -66,23 +68,4 @@ h1 {
 .root h1 {
   font-size: 98px;
   letter-spacing: -0.068em;
-}
-
-.license {
-  display: flex;
-  align-items: center;
-  gap: 15px;
-  margin: 28px 0 0 4px;
-  color: #565753;
-  font-size: 17px;
-  font-variation-settings: "MONO" 1, "CASL" 0;
-  font-weight: 480;
-  letter-spacing: 0.09em;
-}
-
-.license::before {
-  content: "";
-  width: 25px;
-  height: 1px;
-  background: currentColor;
 }
