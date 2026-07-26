@@ -1,194 +1,63 @@
-<!DOCTYPE html>
-<html>
+<!doctype html>
+<html lang="en">
 <head>
-<meta charset="utf-8">
-<link href="https://fonts.googleapis.com/css2?family=Recursive:CASL,MONO,wght@0,0,300..700;0,1,300..700&display=swap" rel="stylesheet">
-<style>
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  body {
-    width: 1200px;
-    height: 630px;
-    overflow: hidden;
-    background: #F4F5F8;
-    display: flex;
-    align-items: center;
-    font-family: 'Recursive', sans-serif;
-    font-variation-settings: 'MONO' 0, 'CASL' 0.5;
-    position: relative;
-  }
-  .flair {
-    width: 400px;
-    height: 630px;
-    flex-shrink: 0;
-    position: relative;
-  }
-  .flair canvas {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 560px;
-    height: 630px;
-  }
-  /* Soft fade-out that lets the spillover content show through */
-  .flair::after {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 360px;
-    width: 200px;
-    height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(244, 245, 248, 0.7));
-    pointer-events: none;
-  }
-  .text-side {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 0 60px;
-    position: relative;
-    z-index: 1;
-  }
-  .project-name {
-    font-family: 'Recursive', sans-serif;
-    font-variation-settings: 'MONO' 0, 'CASL' 0.5;
-    font-weight: 700;
-    font-size: 156px;
-    color: #010203;
-    letter-spacing: -3px;
-    line-height: 1;
-  }
-  .site-brand {
-    font-family: 'Recursive', sans-serif;
-    font-variation-settings: 'MONO' 0, 'CASL' 0.5;
-    font-size: 22px;
-    color: #1E1F23;
-    margin-top: 32px;
-    letter-spacing: 0.5px;
-  }
-</style>
+  <meta charset="utf-8">
+  <title>Shoals social card</title>
+  <link rel="stylesheet" href="card.css">
 </head>
-<body>
-  <div class="flair">
-    <canvas id="chart" width="1120" height="1260"></canvas>
-  </div>
-  <div class="text-side">
-    <div class="project-name">Shoals</div>
-    <div class="site-brand">AGPL-3.0</div>
-  </div>
+<body class="shoals">
+  <main class="card">
+    <header class="topline">
+      <div class="identity">
+        <span class="identity-mark"></span>
+        <span>a9l.im / simulation</span>
+      </div>
+      <span class="serial">SIM / 002</span>
+    </header>
 
-  <script>
-    const canvas = document.getElementById('chart');
-    const ctx = canvas.getContext('2d');
-    const W = canvas.width, H = canvas.height;
+    <section class="content">
+      <div class="eyebrow">Markets &amp; institutional power</div>
+      <h1>Shoals</h1>
+      <p class="dek">Trade the options. Navigate the consequences.</p>
+    </section>
 
-    // Right-align flair content within the canvas for visual symmetry
-    // with the right-side text (native px units).
-    const SHIFT_X = 160;
-    ctx.save();
-    ctx.translate(SHIFT_X, 0);
+    <aside class="visual" aria-hidden="true">
+      <span class="visual-label">Volatility surface / live</span>
+      <svg viewBox="0 0 420 390" role="img">
+        <g stroke="#24262e" stroke-width="1">
+          <path d="M0 84H420M0 156H420M0 228H420M0 300H420"/>
+          <path d="M70 0V390M140 0V390M210 0V390M280 0V390M350 0V390"/>
+        </g>
+        <g stroke-linecap="square">
+          <path d="M27 294L68 278L108 291L149 238L190 251L230 188L271 202L312 131L352 148L393 76" fill="none" stroke="#009f68" stroke-width="3"/>
+          <path d="M27 302L68 286L108 299L149 246L190 259L230 196L271 210L312 139L352 156L393 84" fill="none" stroke="#009f68" stroke-width="14" opacity=".12"/>
+        </g>
+        <g>
+          <path d="M70 244V316M57 268H83V293H57Z" fill="#009f68" stroke="#009f68" stroke-width="3"/>
+          <path d="M113 255V327M100 277H126V306H100Z" fill="#d35182" stroke="#d35182" stroke-width="3"/>
+          <path d="M156 196V279M143 216H169V254H143Z" fill="#009f68" stroke="#009f68" stroke-width="3"/>
+          <path d="M199 211V287M186 232H212V264H186Z" fill="#d35182" stroke="#d35182" stroke-width="3"/>
+          <path d="M242 147V241M229 171H255V214H229Z" fill="#009f68" stroke="#009f68" stroke-width="3"/>
+          <path d="M285 158V235M272 179H298V209H272Z" fill="#d35182" stroke="#d35182" stroke-width="3"/>
+          <path d="M328 92V191M315 119H341V163H315Z" fill="#009f68" stroke="#009f68" stroke-width="3"/>
+          <path d="M371 62V151M358 83H384V124H358Z" fill="#009f68" stroke="#009f68" stroke-width="3"/>
+        </g>
+        <path d="M20 332C92 332 113 327 146 295C179 263 195 188 236 188C276 188 294 265 326 298C354 326 377 332 410 332" fill="none" stroke="#9769dc" stroke-width="3"/>
+        <g fill="#8f929b" font-family="Recursive, monospace" font-size="11" font-variation-settings="'MONO' 1">
+          <text x="24" y="366">σ / 0.314</text>
+          <text x="312" y="366">Δ / +0.62</text>
+        </g>
+      </svg>
+    </aside>
 
-    const UP = '#009F68';
-    const DOWN = '#D35182';
-
-    // Seeded PRNG for deterministic wick sizing
-    let _seed = 42;
-    function _rand() { _seed = (_seed * 16807 + 0) % 2147483647; return (_seed - 1) / 2147483646; }
-
-    // Generate OHLC — volatile run-up with pullbacks
-    const candles = [];
-    let price = 62;
-    const moves = [
-      3.2, -1.8, 2.5, 4.1, -2.2, 1.9, -3.5, -1.2,
-      2.8, 5.2, 3.8, -2.0, 1.5, -4.1, 2.2, 6.0,
-      -1.5, 3.4, 2.8, -2.8, 4.5, 3.2, -1.0, 5.8
-    ];
-    for (let i = 0; i < moves.length; i++) {
-      const open = price;
-      const close = open + moves[i];
-      const wickUp = 0.5 + _rand() * 2.5;
-      const wickDown = 0.5 + _rand() * 2.5;
-      const high = Math.max(open, close) + wickUp;
-      const low = Math.min(open, close) - wickDown;
-      candles.push({ o: open, h: high, l: low, c: close });
-      price = close;
-    }
-
-    const allPrices = candles.flatMap(c => [c.h, c.l]);
-    const minP = Math.min(...allPrices) - 3;
-    const maxP = Math.max(...allPrices) + 3;
-
-    const padL = 24, padR = 60, padT = 50, padB = 50;
-    const chartW = 800 - padL - padR;
-    const chartH = H - padT - padB;
-
-    function priceToY(p) {
-      return padT + chartH * (1 - (p - minP) / (maxP - minP));
-    }
-
-    // Subtle horizontal grid
-    ctx.strokeStyle = 'rgba(1, 2, 3, 0.05)';
-    ctx.lineWidth = 1;
-    for (let i = 0; i <= 6; i++) {
-      const y = padT + (chartH / 6) * i;
-      ctx.beginPath();
-      ctx.moveTo(padL, y);
-      ctx.lineTo(800 - padR, y);
-      ctx.stroke();
-    }
-
-    // Draw candles
-    const candleW = chartW / candles.length;
-    const bodyW = candleW * 0.6;
-    const wickW = 3;
-
-    candles.forEach((c, i) => {
-      const x = padL + candleW * i + candleW / 2;
-      const isUp = c.c >= c.o;
-      const color = isUp ? UP : DOWN;
-
-      // Subtle glow
-      const glowGrad = ctx.createRadialGradient(x, priceToY((c.h + c.l) / 2), 0, x, priceToY((c.h + c.l) / 2), candleW * 1.2);
-      glowGrad.addColorStop(0, isUp ? 'rgba(0,159,104,0.08)' : 'rgba(211,81,130,0.08)');
-      glowGrad.addColorStop(1, 'transparent');
-      ctx.fillStyle = glowGrad;
-      ctx.fillRect(x - candleW, priceToY(c.h) - 10, candleW * 2, priceToY(c.l) - priceToY(c.h) + 20);
-
-      // Wick
-      ctx.strokeStyle = color;
-      ctx.lineWidth = wickW;
-      ctx.lineCap = 'round';
-      ctx.beginPath();
-      ctx.moveTo(x, priceToY(c.h));
-      ctx.lineTo(x, priceToY(c.l));
-      ctx.stroke();
-
-      // Body
-      const top = priceToY(Math.max(c.o, c.c));
-      const bot = priceToY(Math.min(c.o, c.c));
-      const bH = Math.max(bot - top, 4);
-      ctx.fillStyle = color;
-      ctx.beginPath();
-      ctx.roundRect(x - bodyW / 2, top, bodyW, bH, 3);
-      ctx.fill();
-    });
-
-    ctx.restore();
-
-    // Fade bottom (full canvas width, drawn after restore)
-    const fadeBot = ctx.createLinearGradient(0, H - 100, 0, H);
-    fadeBot.addColorStop(0, 'rgba(244, 245, 248, 0)');
-    fadeBot.addColorStop(1, 'rgba(244, 245, 248, 1)');
-    ctx.fillStyle = fadeBot;
-    ctx.fillRect(0, H - 100, W, 100);
-
-    // Fade top
-    const fadeTop = ctx.createLinearGradient(0, 0, 0, 60);
-    fadeTop.addColorStop(0, 'rgba(244, 245, 248, 1)');
-    fadeTop.addColorStop(1, 'rgba(244, 245, 248, 0)');
-    ctx.fillStyle = fadeTop;
-    ctx.fillRect(0, 0, W, 60);
-  </script>
+    <footer class="footer">
+      <div class="taxonomy">
+        <span>Derivatives</span>
+        <span>Politics</span>
+        <span>Narrative</span>
+      </div>
+      <span class="url">a9l.im/shoals</span>
+    </footer>
+  </main>
 </body>
 </html>

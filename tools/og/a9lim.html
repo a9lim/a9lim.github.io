@@ -1,123 +1,40 @@
-<!DOCTYPE html>
-<html>
+<!doctype html>
+<html lang="en">
 <head>
-<meta charset="utf-8">
-<link href="https://fonts.googleapis.com/css2?family=Recursive:CASL,MONO,wght@0,0,300..700;0,1,300..700&display=swap" rel="stylesheet">
-<style>
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  body {
-    width: 1200px;
-    height: 630px;
-    overflow: hidden;
-    background: #F4F5F8;
-    display: flex;
-    align-items: center;
-    font-family: 'Recursive', sans-serif;
-    font-variation-settings: 'MONO' 0, 'CASL' 0.5;
-    position: relative;
-  }
-  .flair {
-    width: 400px;
-    height: 630px;
-    flex-shrink: 0;
-    position: relative;
-  }
-  .flair canvas {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 560px;
-    height: 630px;
-  }
-  /* Soft fade-out that lets the spillover content show through */
-  .flair::after {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 360px;
-    width: 200px;
-    height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(244, 245, 248, 0.7));
-    pointer-events: none;
-  }
-  .text-side {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 0 60px;
-    position: relative;
-    z-index: 1;
-  }
-  .project-name {
-    font-family: 'Recursive', sans-serif;
-    font-variation-settings: 'MONO' 0, 'CASL' 0.5;
-    font-weight: 700;
-    font-size: 156px;
-    color: #010203;
-    letter-spacing: -3px;
-    line-height: 1;
-  }
-  .site-brand {
-    font-family: 'Recursive', sans-serif;
-    font-variation-settings: 'MONO' 0, 'CASL' 0.5;
-    font-size: 22px;
-    color: #1E1F23;
-    margin-top: 32px;
-    letter-spacing: 0.5px;
-  }
-</style>
+  <meta charset="utf-8">
+  <title>a9l.im social card</title>
+  <link rel="stylesheet" href="card.css">
 </head>
-<body>
-  <div class="flair">
-    <canvas id="flair" width="1120" height="1260"></canvas>
-  </div>
-  <div class="text-side">
-    <div class="project-name">a9l.im</div>
-    <div class="site-brand">AGPL-3.0</div>
-  </div>
+<body class="root">
+  <main class="card">
+    <header class="topline">
+      <div class="identity">
+        <span class="identity-mark"></span>
+        <span>a9l.im / independent research</span>
+      </div>
+      <span class="serial">ROOT / 000</span>
+    </header>
 
-  <script>
-    const canvas = document.getElementById('flair');
-    const ctx = canvas.getContext('2d');
-    const W = canvas.width, H = canvas.height;
+    <section class="content">
+      <div class="eyebrow">Research &amp; software</div>
+      <h1>a9l.im</h1>
+      <p class="dek">Research, simulations, and open-source tools.</p>
+    </section>
 
-    // Right-align flair content within the canvas for visual symmetry
-    // with the right-side text (see og/AGENTS notes; native px units)
-    const SHIFT_X = 160;
+    <aside class="visual" aria-hidden="true">
+      <span class="visual-label">Open systems / active</span>
+      <span class="visual-orbit"></span>
+      <img class="root-mark" src="../../static/logo.svg" alt="">
+    </aside>
 
-    const img = new Image();
-    img.onload = () => {
-      ctx.save();
-      ctx.translate(SHIFT_X, 0);
-
-      const scale = 560 / img.naturalWidth;
-      const w = img.naturalWidth * scale;
-      const h = img.naturalHeight * scale;
-      const x = (800 - w) / 2;
-      const y = (H - h) / 2;
-      ctx.drawImage(img, x, y, w, h);
-
-      ctx.restore();
-
-      // Top fade (full canvas width, drawn after restore)
-      const fadeTop = ctx.createLinearGradient(0, 0, 0, 60);
-      fadeTop.addColorStop(0, 'rgba(244, 245, 248, 1)');
-      fadeTop.addColorStop(1, 'rgba(244, 245, 248, 0)');
-      ctx.fillStyle = fadeTop;
-      ctx.fillRect(0, 0, W, 60);
-
-      // Bottom fade
-      const fadeBot = ctx.createLinearGradient(0, H - 100, 0, H);
-      fadeBot.addColorStop(0, 'rgba(244, 245, 248, 0)');
-      fadeBot.addColorStop(1, 'rgba(244, 245, 248, 1)');
-      ctx.fillStyle = fadeBot;
-      ctx.fillRect(0, H - 100, W, 100);
-
-      window._ready = true;
-    };
-    img.src = '../../static/logo.svg';
-  </script>
+    <footer class="footer">
+      <div class="taxonomy">
+        <span>Research</span>
+        <span>Simulations</span>
+        <span>Software</span>
+      </div>
+      <span class="url">a9l.im</span>
+    </footer>
+  </main>
 </body>
 </html>

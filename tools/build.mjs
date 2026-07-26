@@ -649,6 +649,8 @@ const HOME_META_GEN = {
     `<meta property="og:description" data-i18n-content="c.site.description" content="${mdEsc(site.description)}">`, 'og:description');
   headTag(/<meta property="og:image:alt"[^>]*>/,
     `<meta property="og:image:alt" data-i18n-content="c.site.ogImageAlt" content="${mdEsc(site.ogImageAlt)}">`, 'og:image:alt');
+  headTag(/<meta name="twitter:image:alt"[^>]*>/,
+    `<meta name="twitter:image:alt" data-i18n-content="c.site.ogImageAlt" content="${mdEsc(site.ogImageAlt)}">`, 'twitter:image:alt');
   headTag(/<meta name="twitter:title"[^>]*>/,
     `<meta name="twitter:title" data-i18n-content="c.site.title" content="${mdEsc(site.title)}">`, 'twitter:title');
   headTag(/<meta name="twitter:description"[^>]*>/,
@@ -895,12 +897,14 @@ const urls = [];
 
 const simPath = doc => new URL(projectUrl(doc.project)).pathname;
 
-// Image metadata follows the canonical simulation registry and about files.
+// Every route has a social image, but only major simulations own a bespoke
+// card. Smaller simulations deliberately share the root card.
 const IMAGE_MAP = { '/': ['og-image.webp'] };
 const IMAGE_CAPTIONS = { '/': site.discoveryDescription };
 for (const doc of simDocs) {
-  IMAGE_MAP[simPath(doc)] = [`${doc.project.slug}/og-image.webp`];
-  IMAGE_CAPTIONS[simPath(doc)] = doc.meta.description;
+  const hasBespokeCard = doc.project.major === true;
+  IMAGE_MAP[simPath(doc)] = [hasBespokeCard ? `${doc.project.slug}/og-image.webp` : 'og-image.webp'];
+  IMAGE_CAPTIONS[simPath(doc)] = hasBespokeCard ? doc.meta.description : site.discoveryDescription;
 }
 
 function add(path, lastmod, images, changefreq, priority, imageCaption) {

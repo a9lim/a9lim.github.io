@@ -93,7 +93,27 @@ for (const p of PROJECTS.filter(p => !p.external && !p.planned)) {
   const uiFiles = ['main.js', join('src', 'ui.js')]
     .map(rel => join(DIST, slug, rel)).filter(existsSync);
   check(`${p.title} about panel date is current`, uiFiles.some(rel => readFileSync(rel, 'utf8').includes(`lastUpdated: '${meta.updated}'`)));
+
+  const expectedImage = p.major
+    ? `https://a9l.im/${slug}/og-image.webp`
+    : 'https://a9l.im/og-image.webp';
+  const ogImage = index.match(/<meta property="og:image" content="([^"]+)">/)?.[1];
+  const twitterImage = index.match(/<meta name="twitter:image" content="([^"]+)">/)?.[1];
+  const ogAlt = index.match(/<meta property="og:image:alt" content="([^"]+)">/)?.[1];
+  const twitterAlt = index.match(/<meta name="twitter:image:alt" content="([^"]+)">/)?.[1];
+  check(`${p.title} uses the ${p.major ? 'bespoke' : 'root fallback'} social card`,
+    ogImage === expectedImage && twitterImage === expectedImage);
+  check(`${p.title} social card alt metadata agrees`,
+    Boolean(ogAlt) && ogAlt === twitterAlt);
+  check(`${p.title} ${p.major ? 'owns' : 'does not own'} a project OG asset`,
+    existsSync(join(ROOT, 'projects', slug, 'og-image.webp')) === Boolean(p.major));
 }
+
+const ogTemplates = readdirSync(join(ROOT, 'tools', 'og'))
+  .filter(name => name.endsWith('.html') && name !== 'icon.html')
+  .sort();
+check('OG source templates are limited to root and major simulations',
+  JSON.stringify(ogTemplates) === JSON.stringify(['a9lim.html', 'geon.html', 'shoals.html']));
 
 console.log('project registry ↔ discovery files');
 const llms = readFileSync(join(DIST, 'llms.txt'), 'utf8');

@@ -2,7 +2,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "generate": "node generate.js"
+    "generate": "node generate.js",
+    "generate:icons": "node generate.js --icons"
   },
   "devDependencies": {
     "puppeteer": "^24.43.1"
