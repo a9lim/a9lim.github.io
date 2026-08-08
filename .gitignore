@@ -40,3 +40,7 @@ docs/
 # Build outputs
 dist/
 .build/
+
+# Unpublished content (DRAFTS=1 only); the README documents the contract
+draft/*
+!draft/README.md

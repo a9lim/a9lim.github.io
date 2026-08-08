@@ -17,6 +17,17 @@ const SITE = 'https://a9l.im';
 const CHECK = process.argv.includes('--check');
 const checkFailures = [];
 
+// draft/ mirrors content/ (draft/posts/, draft/projects/, draft/home/) and is
+// read only when DRAFTS=1 — ./dev.sh sets it, ./deploy.sh and `npm run check`
+// clear it. A draft file shadows the content/ file with the same slug, so a
+// draft is either a new entry or a preview of a revision. Nothing under draft/
+// ever reaches a deploy.
+const DRAFTS = process.env.DRAFTS === '1';
+if (DRAFTS && CHECK) {
+  throw new Error('DRAFTS=1 is incompatible with --check: draft content is not deployable');
+}
+if (DRAFTS) console.log('drafts: ENABLED — dist/ mixes draft/ into content/ and must not be deployed');
+
 // Write a content-derived artifact — or, under --check, diff it against disk.
 function emit(rel, content) {
   const output = join(DIST, rel);
@@ -135,18 +146,41 @@ function parseFrontmatter(rel) {
   return { meta, body: raw.slice(end + 5) };
 }
 
+// Slug → source directory for one content family. content/ is read first and
+// draft/ second, so a draft shadows the published file of the same slug.
+const contentIndexCache = new Map();
+function contentIndex(dir) {
+  const cached = contentIndexCache.get(dir);
+  if (cached) return cached;
+  const dirs = [dir];
+  if (DRAFTS) {
+    const draftDir = 'draft/' + dir.replace(/^content\//, '');
+    if (existsSync(join(ROOT, draftDir))) dirs.push(draftDir);
+  }
+  const index = new Map();
+  for (const d of dirs) {
+    for (const f of readdirSync(join(ROOT, d))) {
+      if (!f.endsWith('.md') || f.endsWith('.ja.md')) continue;
+      index.set(f.replace(/\.md$/, ''), d);
+    }
+  }
+  contentIndexCache.set(dir, index);
+  return index;
+}
+
 function contentSlugs(dir) {
-  return readdirSync(join(ROOT, dir))
-    .filter(f => f.endsWith('.md') && !f.endsWith('.ja.md'))
-    .map(f => f.replace(/\.md$/, ''));
+  return [...contentIndex(dir).keys()];
 }
 
 // Each content file may have a parallel `{slug}.ja.md` translation.
 function loadContentPair(dir, slug) {
-  const en = parseFrontmatter(`${dir}/${slug}.md`);
-  const jaRel = `${dir}/${slug}.ja.md`;
+  const base = contentIndex(dir).get(slug);
+  if (!base) throw new Error(`${dir}/${slug}.md: not found`);
+  const enRel = `${base}/${slug}.md`;
+  const jaRel = `${base}/${slug}.ja.md`;
+  const en = parseFrontmatter(enRel);
   const ja = existsSync(join(ROOT, jaRel)) ? parseFrontmatter(jaRel) : null;
-  return { slug, meta: en.meta, body: en.body, ja };
+  return { slug, meta: en.meta, body: en.body, ja, draft: base !== dir, enRel, jaRel };
 }
 
 // --- posts: content/posts/*.md → posts.json ---
@@ -159,10 +193,11 @@ const postEntryBySlug = new Map(postEntries.map(p => [p.slug, p]));
 const posts = [];
 for (const p of postEntries) {
   for (const req of ['title', 'date', 'tag', 'excerpt']) {
-    if (p.meta[req] == null) throw new Error(`content/posts/${p.slug}.md: missing ${req}`);
+    if (p.meta[req] == null) throw new Error(`${p.enRel}: missing ${req}`);
   }
   posts.push({
     slug: p.slug,
+    ...(p.draft && { draft: true }),
     title: p.meta.title,
     ...(p.ja && p.ja.meta.title && { title_ja: p.ja.meta.title }),
     date: p.meta.date,
@@ -175,13 +210,15 @@ for (const p of postEntries) {
   });
 }
 emit('posts.json', JSON.stringify(posts, null, 2) + '\n');
-console.log(`posts.json: ${posts.length} posts (from content/posts/)`);
+const draftPostCount = posts.filter(p => p.draft).length;
+console.log(`posts.json: ${posts.length} posts (from content/posts/${draftPostCount ? `, ${draftPostCount} from draft/posts/` : ''})`);
 
 // --- projects: content/projects/*.md → src/projects.js + worker SSR data ---
 
 const projectEntries = contentSlugs('content/projects')
   .map(slug => loadContentPair('content/projects', slug))
   .sort((a, b) => (a.meta.order ?? 1e9) - (b.meta.order ?? 1e9));
+const projectRel = new Map(projectEntries.map(p => [p.slug, p.enRel]));
 
 // Package distributions are intentionally a flat frontmatter list because
 // the content parser only accepts scalar values and scalar lists. Each entry
@@ -204,29 +241,29 @@ function parsePackages(value, rel) {
 
 const projectsData = projectEntries.map(p => {
   for (const req of ['title', 'external', 'emoji', 'tags']) {
-    if (p.meta[req] == null) throw new Error(`content/projects/${p.slug}.md: missing ${req}`);
+    if (p.meta[req] == null) throw new Error(`${p.enRel}: missing ${req}`);
   }
   if (typeof p.meta.external !== 'boolean') {
-    throw new Error(`content/projects/${p.slug}.md: external must be true or false`);
+    throw new Error(`${p.enRel}: external must be true or false`);
   }
   if (Object.hasOwn(p.meta, 'kind')) {
-    throw new Error(`content/projects/${p.slug}.md: kind is redundant; external is authoritative`);
+    throw new Error(`${p.enRel}: kind is redundant; external is authoritative`);
   }
   if (typeof p.meta.emoji !== 'string' || !p.meta.emoji.trim()) {
-    throw new Error(`content/projects/${p.slug}.md: emoji must be a non-empty string`);
+    throw new Error(`${p.enRel}: emoji must be a non-empty string`);
   }
-  if (!p.ja) throw new Error(`content/projects/${p.slug}.md: missing .ja.md sibling`);
+  if (!p.ja) throw new Error(`${p.enRel}: missing .ja.md sibling`);
   const longDesc = p.body.trim();
   const longDescJa = p.ja.body.trim();
-  if (!longDesc) throw new Error(`content/projects/${p.slug}.md: missing description body`);
-  if (!longDescJa) throw new Error(`content/projects/${p.slug}.ja.md: missing description body`);
+  if (!longDesc) throw new Error(`${p.enRel}: missing description body`);
+  if (!longDescJa) throw new Error(`${p.jaRel}: missing description body`);
   return {
     slug: p.slug,
     ...(p.meta.href && { href: p.meta.href }),
     title: p.meta.title,
     longDesc,
     longDesc_ja: longDescJa,
-    packages: parsePackages(p.meta.packages, `content/projects/${p.slug}.md`),
+    packages: parsePackages(p.meta.packages, p.enRel),
     tags: p.meta.tags,
     tags_ja: p.ja.meta.tags,
     emoji: p.meta.emoji,
@@ -261,7 +298,7 @@ const simDocs = projectsData
       if (doc.meta[req] == null) throw new Error(`${rel}: missing ${req}`);
     }
     if (doc.meta.name !== project.title) {
-      throw new Error(`${rel}: name must match content/projects/${project.slug}.md title`);
+      throw new Error(`${rel}: name must match ${projectRel.get(project.slug)} title`);
     }
     if (!/^\d{4}-\d{2}-\d{2}$/.test(doc.meta.updated)) {
       throw new Error(`${rel}: updated must be YYYY-MM-DD`);
@@ -482,8 +519,8 @@ const IND = '                '; // base indent inside home cards (4 levels)
 {
   const c = homeCards['bio'];
   const en = mdBlocksOf(c.body), ja = mdBlocksOf(c.ja.body);
-  if (en.length !== ja.length) throw new Error('content/home/bio: EN/JA paragraph count mismatch');
-  regions.bio = en.map((p, i) => IND + '    ' + i18nBlock('p', `c.bio.p${i + 1}`, p, ja[i], 'content/home/bio.md')).join('\n');
+  if (en.length !== ja.length) throw new Error(`${c.enRel}: EN/JA paragraph count mismatch`);
+  regions.bio = en.map((p, i) => IND + '    ' + i18nBlock('p', `c.bio.p${i + 1}`, p, ja[i], c.enRel)).join('\n');
 }
 
 // contact — heading + blurb (socials list stays hand-edited in index.html)
@@ -493,7 +530,7 @@ const IND = '                '; // base indent inside home cards (4 levels)
   const en = mdBlocksOf(c.body), ja = mdBlocksOf(c.ja.body);
   regions.contact = [
     IND + `<h3 id="home-contact-h" data-i18n="c.contact.h">${mdEsc(c.meta.heading)}</h3>`,
-    IND + i18nBlock('p', 'c.contact.p1', en[0], ja[0], 'content/home/contact.md'),
+    IND + i18nBlock('p', 'c.contact.p1', en[0], ja[0], c.enRel),
   ].join('\n');
 }
 
@@ -502,9 +539,9 @@ let homeNow, homeNowJa;
 {
   const c = homeCards['now'];
   i18nScalar('c.now.h', c.meta.heading, c.ja.meta.heading);
-  const t = parseTableBlock(c.body, 'content/home/now.md');
-  const tja = parseTableBlock(c.ja.body, 'content/home/now.ja.md');
-  if (t.rows.length !== tja.rows.length) throw new Error('content/home/now: EN/JA row count mismatch');
+  const t = parseTableBlock(c.body, c.enRel);
+  const tja = parseTableBlock(c.ja.body, c.jaRel);
+  if (t.rows.length !== tja.rows.length) throw new Error(`${c.enRel}: EN/JA row count mismatch`);
   homeNow = t.rows;
   homeNowJa = tja.rows;
   const dl = t.rows.map(([k, v], i) => {
@@ -538,9 +575,9 @@ let homePred, homePredJa;
 {
   const c = homeCards['predictions'];
   i18nScalar('c.pred.h', c.meta.heading, c.ja.meta.heading);
-  const t = parseTableBlock(c.body, 'content/home/predictions.md');
-  const tja = parseTableBlock(c.ja.body, 'content/home/predictions.ja.md');
-  if (t.rows.length !== tja.rows.length) throw new Error('content/home/predictions: EN/JA row count mismatch');
+  const t = parseTableBlock(c.body, c.enRel);
+  const tja = parseTableBlock(c.ja.body, c.jaRel);
+  if (t.rows.length !== tja.rows.length) throw new Error(`${c.enRel}: EN/JA row count mismatch`);
   homePred = t.rows;
   homePredJa = tja.rows;
   const ths = t.header.map((h, i) => {
@@ -565,18 +602,18 @@ let homeChips, homeChipsJa;
   i18nScalar('c.ama.h', c.meta.heading, c.ja.meta.heading);
   const [listEn, hintEn] = mdBlocksOf(c.body);
   const [listJa, hintJa] = mdBlocksOf(c.ja.body);
-  homeChips = parseListBlock(listEn, 'content/home/ask-me-about.md');
-  homeChipsJa = parseListBlock(listJa, 'content/home/ask-me-about.ja.md');
-  if (homeChips.length !== homeChipsJa.length) throw new Error('content/home/ask-me-about: EN/JA chip count mismatch');
+  homeChips = parseListBlock(listEn, c.enRel);
+  homeChipsJa = parseListBlock(listJa, c.jaRel);
+  if (homeChips.length !== homeChipsJa.length) throw new Error(`${c.enRel}: EN/JA chip count mismatch`);
   if ((hintEn === undefined) !== (hintJa === undefined)) {
-    throw new Error('content/home/ask-me-about: EN/JA hint presence mismatch');
+    throw new Error(`${c.enRel}: EN/JA hint presence mismatch`);
   }
   const region = [
     IND + `    <h2 class="home-h" id="home-ama-heading" data-i18n="c.ama.h">${mdEsc(c.meta.heading)}</h2>`,
     IND + '    <div class="home-chips" id="home-chips"></div>',
   ];
   if (hintEn !== undefined) {
-    region.push(IND + '    ' + i18nBlock('p', 'c.ama.hint', hintEn, hintJa, 'content/home/ask-me-about.md', ' class="home-chips-hint"'));
+    region.push(IND + '    ' + i18nBlock('p', 'c.ama.hint', hintEn, hintJa, c.enRel, ' class="home-chips-hint"'));
   }
   regions['ask-me-about'] = region.join('\n');
 }
@@ -585,9 +622,9 @@ let homeChips, homeChipsJa;
 {
   const c = homeCards['other-things'];
   i18nScalar('c.other.h', c.meta.heading, c.ja.meta.heading);
-  const en = parseListBlock(mdBlocksOf(c.body)[0], 'content/home/other-things.md');
-  const ja = parseListBlock(mdBlocksOf(c.ja.body)[0], 'content/home/other-things.ja.md');
-  if (en.length !== ja.length) throw new Error('content/home/other-things: EN/JA item count mismatch');
+  const en = parseListBlock(mdBlocksOf(c.body)[0], c.enRel);
+  const ja = parseListBlock(mdBlocksOf(c.ja.body)[0], c.jaRel);
+  if (en.length !== ja.length) throw new Error(`${c.enRel}: EN/JA item count mismatch`);
   regions['other-things'] = [
     IND + `    <h2 class="home-h" id="home-other-heading" data-i18n="c.other.h">${mdEsc(c.meta.heading)}</h2>`,
     IND + '    <ul class="home-other">',
@@ -602,7 +639,7 @@ const siteJa = homeCards['site'].ja.meta;
 for (const req of ['titleShort', 'title', 'description', 'descriptionShort', 'ogImageAlt',
   'discoveryDescription', 'aboutIntro', 'updated', 'simsTitle', 'simsDesc',
   'projectsTitle', 'projectsDesc', 'blogTitle', 'blogDesc']) {
-  if (site[req] == null) throw new Error('content/home/site.md: missing ' + req);
+  if (site[req] == null) throw new Error(homeCards['site'].enRel + ': missing ' + req);
 }
 i18nScalar('c.site.titleShort', site.titleShort, siteJa.titleShort);
 i18nScalar('c.site.title', site.title, siteJa.title);

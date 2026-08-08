@@ -21,6 +21,11 @@ const PROJECTS = ['cyano', 'geon', 'gerry', 'miasma', 'pile', 'plasma', 'scriptu
 const ROOT_FILES = ['LICENSE', 'README.md'];
 const SITE_FILES = ['404.html', 'i18n.js', 'main.js', 'styles.css'];
 
+// draft/posts/*.md is staged over content/posts/*.md — same public path, so a
+// draft renders exactly like a published post. DRAFTS=1 (./dev.sh) only; a
+// deploy build never sees it. See tools/build.mjs for the rest of the draft/ tree.
+const DRAFTS = process.env.DRAFTS === '1';
+
 function trackedFiles(cwd, pathspec = '.') {
   return execFileSync('git', ['ls-files', '-z', '--', pathspec], { cwd, encoding: 'utf8' })
     .split('\0')
@@ -43,6 +48,20 @@ function copyTrackedTree(cwd, pathspec, destinationRoot, filter = () => true) {
     if (!filter(rel)) continue;
     const outputRel = pathspec === '.' ? rel : rel.slice(pathspec.length + 1);
     copyPath(join(cwd, rel), join(destinationRoot, outputRel));
+    count += 1;
+  }
+  return count;
+}
+
+// Drafts are copied by directory scan, not `git ls-files`, so the tree works
+// whether or not draft/ is tracked.
+function copyDraftTree(sourceRel, destinationRoot) {
+  const source = join(ROOT, sourceRel);
+  if (!existsSync(source)) return 0;
+  let count = 0;
+  for (const name of readdirSync(source)) {
+    if (!name.endsWith('.md')) continue;
+    copyPath(join(source, name), join(destinationRoot, name));
     count += 1;
   }
   return count;
@@ -83,6 +102,12 @@ copied += copyTrackedTree(ROOT, 'site/src', join(DIST, 'src'), rel => rel !== 's
 copied += copyTrackedTree(ROOT, 'static', DIST);
 copied += copyTrackedTree(ROOT, 'shared', join(DIST, 'shared'));
 copied += copyTrackedTree(ROOT, 'content/posts', join(DIST, 'content/posts'));
+
+if (DRAFTS) {
+  const drafts = copyDraftTree('draft/posts', join(DIST, 'content/posts'));
+  copied += drafts;
+  console.log(`drafts: staged ${drafts} draft post file(s) — this tree must not be deployed`);
+}
 
 // Keep the former public URLs for one migration cycle. Source and consumers
 // use /shared/*; these aliases can be removed after caches and inbound links age.

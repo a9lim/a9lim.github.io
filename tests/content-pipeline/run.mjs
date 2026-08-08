@@ -64,11 +64,18 @@ check('planned cards stay out of ItemLists',
   !PROJECTS.filter(p => p.planned).some(p => itemNames.some(n => n.startsWith(p.title))));
 
 console.log('content/posts ↔ posts.json ↔ BLOG_META');
+// Entries flagged `draft` come from draft/posts/ and only exist in a DRAFTS=1
+// dev build; a deploy build has none, and then these two checks are the old
+// exact-count check.
 const postSlugs = enSlugs('content/posts');
-check('post count matches content files', posts.length === postSlugs.length);
+check('every content/posts file appears in posts.json',
+  postSlugs.every(slug => posts.some(p => p.slug === slug)));
+check('every published post has a content/posts file',
+  posts.filter(p => !p.draft).every(p => postSlugs.includes(p.slug)));
 for (const p of posts) {
-  check(`content/posts/${p.slug}.md is canonical and carries frontmatter`,
-    readFileSync(join(ROOT, 'content', 'posts', p.slug + '.md'), 'utf8').startsWith('---\n'));
+  const dir = p.draft ? 'draft' : 'content';
+  check(`${dir}/posts/${p.slug}.md is canonical and carries frontmatter`,
+    readFileSync(join(ROOT, dir, 'posts', p.slug + '.md'), 'utf8').startsWith('---\n'));
   check(`BLOG_META carries ${p.slug}`, gen.BLOG_META[p.slug]?.desc === p.excerpt);
 }
 check('browser and Worker route metadata agree',

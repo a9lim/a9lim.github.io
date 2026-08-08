@@ -738,6 +738,12 @@ a:hover { color: var(--accent-light); }
     color: var(--accent);
 }
 
+/* Local-only marker: draft/ entries never reach a deploy. */
+.blog-tag-draft {
+    background: var(--accent-subtle);
+    color: var(--accent);
+}
+
 .blog-empty {
     text-align: center;
     padding: 80px 20px;

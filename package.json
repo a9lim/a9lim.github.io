@@ -9,10 +9,10 @@
     "build:stage": "node tools/stage-assets.mjs",
     "build:content": "node tools/build.mjs",
     "build": "npm run build:stage && npm run build:content",
-    "check": "npm run build && node tools/build.mjs --check && node tests/content-pipeline/run.mjs && node tests/deploy-layout/run.mjs",
+    "check": "export DRAFTS=0 && npm run build && node tools/build.mjs --check && node tests/content-pipeline/run.mjs && node tests/deploy-layout/run.mjs",
     "test": "npm run check && node --test features/surveys/tests/*.test.mjs",
-    "dev": "npm run build && wrangler dev",
-    "deploy": "npm run build && wrangler deploy"
+    "dev": "export DRAFTS=\"${DRAFTS:-1}\" && npm run build && wrangler dev",
+    "deploy": "export DRAFTS=0 && npm run build && wrangler deploy"
   },
   "devDependencies": {
     "wrangler": "4.114.0"

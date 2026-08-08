@@ -8,6 +8,7 @@ The top-level layout is intentional:
 
 - `site/` — hand-edited root SPA shell (`index.html`, `main.js`, `i18n.js`, `styles.css`, `404.html`) and browser modules in `site/src/`.
 - `content/` — canonical root-site copy, project registry, posts, and resume source. If changing words a root-site visitor reads, start here.
+- `draft/` — unpublished mirror of `content/`, read only when `DRAFTS=1`. Never deployed. See `draft/README.md`.
 - `shared/` — shared CSS and plain-script browser globals consumed by the root site and all projects.
 - `projects/{cyano,geon,gerry,miasma,pile,plasma,scripture,shoals}/` — git submodules. Their physical nesting does not change their public roots (`/geon/`, `/scripture/`, and so on).
 - `worker/` — Cloudflare Worker. `index.js` owns routing and SSR; `http.js` owns Worker response policy; `surveys.js` owns `POST /api/surveys`; `analytics.js` owns Analytics Engine writes.
@@ -50,6 +51,8 @@ The Worker imports `.build/content.generated.mjs`, so Wrangler commands that bun
 - `content/home/*.md` — homepage cards and `site.md` route/head metadata.
 - `content/resume/` — TeX source, fonts, and build script for `/resume.pdf`.
 - `projects/{sim}/about.md` — canonical simulation documentation and its `name`, `title`, `description`, and `updated` metadata.
+
+`draft/` mirrors that structure — `draft/posts/`, `draft/projects/`, `draft/home/`, same frontmatter rules and same `{name}.ja.md` convention — and is folded into the build only when `DRAFTS=1`. `./dev.sh` and `npm run dev` set it; `./deploy.sh`, `npm run check`, and `npm test` clear it so an exported `DRAFTS=1` cannot leak into a deploy, and `tools/build.mjs --check` refuses to run with drafts enabled. A draft file shadows the `content/` file of the same slug, so a draft is either a new entry or a preview of a revision; publishing is `git mv`. Draft posts are staged over `dist/content/posts/` so they render through the same client and Worker SSR paths, and carry `draft: true` in `posts.json`, which the listing shows as a badge.
 
 The build emits `dist/posts.json`, `dist/src/projects.js`, the generated regions of `dist/index.html` and `dist/i18n.js`, `dist/home-data.json`, feeds, sitemaps, discovery files, `dist/resume.pdf`, synchronized project HTML/UI copies, and `.build/content.generated.mjs`. These are outputs, not hand-edited files. Project source is read-only during the parent build; SEO synchronization happens in `dist/{sim}/`, not inside the submodule.
 

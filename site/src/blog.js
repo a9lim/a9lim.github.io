@@ -181,6 +181,13 @@ function renderListingPosts($, posts) {
         titleEl.className = 'blog-title';
         titleEl.textContent = title;
         a.appendChild(titleEl);
+        // Only dev builds (draft/, DRAFTS=1) ever carry a draft entry.
+        if (p.draft) {
+            const draftEl = document.createElement('span');
+            draftEl.className = 'blog-tag blog-tag-draft';
+            draftEl.textContent = 'draft';
+            a.appendChild(draftEl);
+        }
         if (tags) {
             const tagArr = Array.isArray(tags) ? tags : [tags];
             for (const t of tagArr) {
