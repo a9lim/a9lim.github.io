@@ -768,7 +768,9 @@ const HOME_META_GEN = {
 // --- worker content module: SSR mirrors + blog/route metadata ---
 
 function ssrCard(p) {
-  const tagSpans = p.tags.map(t => `<span class="tag">${mdEsc(t)}</span>`).join('');
+  // .project-tag, matching site/src/projects-page.js — the SSR mirror is what
+  // crawlers and no-JS clients get, so it has to carry the styled class too.
+  const tagSpans = p.tags.map(t => `<span class="project-tag">${mdEsc(t)}</span>`).join('');
   const emoji = `<span class="project-emoji" aria-hidden="true">${mdEsc(p.emoji)}</span>`;
   const packageCards = p.packages.length
     ? `<div class="project-packages" aria-label="Available package registries">${p.packages.map(pkg => `<a class="project-package" href="${mdEsc(pkg.href)}" target="_blank" rel="noopener noreferrer" aria-label="Open ${mdEsc(pkg.name)} on ${mdEsc(pkg.registry)}"><code class="project-package-install">${mdEsc(pkg.install)}</code></a>`).join('')}</div>`
@@ -791,12 +793,25 @@ function ssrGrid(list) {
 }
 
 // JSON-LD ItemList entries; planned cards and cards without seoName are skipped.
+// Card tags ride along as `keywords` on the referenced node. Simulations already
+// carry richer hand-curated keywords in their own index.html JSON-LD, but the
+// external projects are repos we do not own a page for, so this listing is their
+// only structured-data surface.
 function itemList(list) {
-  return list.filter(p => !p.planned && p.seoName).map((p, i) => ({
-    position: i + 1,
-    name: p.seoName,
-    url: p.seoUrl || (p.external ? p.href : SITE + p.href),
-  }));
+  return list.filter(p => !p.planned && p.seoName).map((p, i) => {
+    const url = p.seoUrl || (p.external ? p.href : SITE + p.href);
+    return {
+      position: i + 1,
+      name: p.seoName,
+      url,
+      item: {
+        '@type': p.external ? 'SoftwareSourceCode' : 'WebApplication',
+        '@id': url,
+        name: p.seoName,
+        keywords: p.tags.join(', '),
+      },
+    };
+  });
 }
 
 const simsData = projectsData.filter(p => !p.external);
