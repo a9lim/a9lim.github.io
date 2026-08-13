@@ -183,6 +183,41 @@ function loadContentPair(dir, slug) {
   return { slug, meta: en.meta, body: en.body, ja, draft: base !== dir, enRel, jaRel };
 }
 
+// --- tags: display labels are translated, slugs are not ---
+
+/**
+ * Stable URL key for a tag. `?tag=` always carries the slug of the English
+ * label, so a filtered link survives a language switch and means the same
+ * thing in both. Localized labels are looked up positionally, which is why
+ * checkTagPair below refuses a JA list of a different length.
+ */
+function tagSlug(t) {
+  return String(t).toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+}
+
+function tagSlugs(tags, source) {
+  const slugs = tags.map(t => {
+    const slug = tagSlug(t);
+    if (!slug) throw new Error(`${source}: tag "${t}" slugifies to nothing`);
+    return slug;
+  });
+  const seen = new Map();
+  slugs.forEach((slug, i) => {
+    if (seen.has(slug)) {
+      throw new Error(`${source}: tags "${seen.get(slug)}" and "${tags[i]}" share the slug "${slug}"`);
+    }
+    seen.set(slug, tags[i]);
+  });
+  return slugs;
+}
+
+function checkTagPair(en, ja, field, source) {
+  if (!Array.isArray(en)) throw new Error(`${source}: ${field} must be a list`);
+  if (ja != null && (!Array.isArray(ja) || ja.length !== en.length)) {
+    throw new Error(`${source}: EN/JA ${field} count mismatch (${en.length} vs ${Array.isArray(ja) ? ja.length : 'not a list'})`);
+  }
+}
+
 // --- posts: content/posts/*.md → posts.json ---
 
 /**
@@ -213,6 +248,7 @@ for (const p of postEntries) {
   for (const req of ['title', 'date', 'tag', 'excerpt']) {
     if (p.meta[req] == null) throw new Error(`${p.enRel}: missing ${req}`);
   }
+  checkTagPair(p.meta.tag, p.ja && p.ja.meta.tag, 'tag', p.enRel);
   posts.push({
     slug: p.slug,
     ...(p.draft && { draft: true }),
@@ -221,6 +257,7 @@ for (const p of postEntries) {
     date: p.meta.date,
     ...(p.meta.updated && { updated: p.meta.updated }),
     tag: p.meta.tag,
+    tagSlugs: tagSlugs(p.meta.tag, p.enRel),
     ...(p.ja && p.ja.meta.tag && { tag_ja: p.ja.meta.tag }),
     excerpt: p.meta.excerpt,
     ...(p.ja && p.ja.meta.excerpt && { excerpt_ja: p.ja.meta.excerpt }),
@@ -268,6 +305,7 @@ const projectsData = projectEntries.map(p => {
   if (typeof p.meta.external !== 'boolean') {
     throw new Error(`${p.enRel}: external must be true or false`);
   }
+  checkTagPair(p.meta.tags, p.ja && p.ja.meta.tags, 'tags', p.enRel);
   if (Object.hasOwn(p.meta, 'kind')) {
     throw new Error(`${p.enRel}: kind is redundant; external is authoritative`);
   }
@@ -287,6 +325,7 @@ const projectsData = projectEntries.map(p => {
     longDesc_ja: longDescJa,
     packages: parsePackages(p.meta.packages, p.enRel),
     tags: p.meta.tags,
+    tagSlugs: tagSlugs(p.meta.tags, p.enRel),
     tags_ja: p.ja.meta.tags,
     emoji: p.meta.emoji,
     external: p.meta.external,
@@ -407,6 +446,7 @@ console.log(`submodule SEO: ${simDocs.length} about pages synchronized`);
     o.push(`        longDesc_ja: ${JSON.stringify(p.longDesc_ja)},`);
     if (p.packages.length) o.push(`        packages: ${JSON.stringify(p.packages)},`);
     o.push(`        tags: ${JSON.stringify(p.tags)},`);
+    o.push(`        tagSlugs: ${JSON.stringify(p.tagSlugs)},`);
     o.push(`        tags_ja: ${JSON.stringify(p.tags_ja)},`);
     o.push(`        emoji: ${JSON.stringify(p.emoji)},`);
     o.push(`        external: ${p.external},`);

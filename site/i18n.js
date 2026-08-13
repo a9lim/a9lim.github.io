@@ -54,6 +54,11 @@
         'projects.minor':    'Minor',
         'projects.planned':  'planned',
 
+        // ── Tag filter (?tag=): shared by /sims, /projects, /blog ──
+        'projects.allTags':   'all',
+        'projects.filterAria': 'Filter by tag',
+        'projects.tagEmpty':  'Nothing here with that tag.',
+
         // ── Home: blog ──
         'home.blog.all':       'All posts →',
 
@@ -141,6 +146,11 @@
         'projects.major':    '主要',
         'projects.minor':    'その他',
         'projects.planned':  '構想中',
+
+        // ── Tag filter (?tag=): shared by /sims, /projects, /blog ──
+        'projects.allTags':   'すべて',
+        'projects.filterAria': 'タグで絞り込む',
+        'projects.tagEmpty':  'そのタグの項目はありません。',
 
         // ── Home: blog ──
         'home.blog.all':       'すべての投稿 →',

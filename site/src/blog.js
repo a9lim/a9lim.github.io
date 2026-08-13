@@ -14,6 +14,7 @@ let postsCache = null;   // posts.json result (fetched once)
 const mdCache = {};      // `${slug}:${lang}` -> raw markdown text
 let katexLoaded = false;
 let _currentPostSlug = null;  // tracks rendered post so onChange can rerender
+let _activeTag = null;        // ?tag= slug narrowing the listing, or null
 
 const FETCH_TIMEOUT = 10000;
 const KATEX_VERSION = '0.16.11';
@@ -199,6 +200,63 @@ function injectPostLangSwitch(contentRoot, meta) {
     header.appendChild(wrap);
 }
 
+/**
+ * Listing URL for a filter chip. Built from the live URL so an active
+ * `?lang=ja` survives the click — mirrors filterHref in projects-page.js.
+ */
+function filterHref(slug) {
+    const url = new URL(window.location.href);
+    url.pathname = '/blog';
+    if (slug) url.searchParams.set('tag', slug);
+    else url.searchParams.delete('tag');
+    return url.pathname + url.search;
+}
+
+/**
+ * Chip row above the listing. Slugs come from posts.json (generated from the
+ * English label at build time), labels from the localized `tag` array at the
+ * same index, so a filtered link means the same thing in either language.
+ */
+function renderTagFilter($, posts, active) {
+    if (!$.blogTagFilter) return;
+    clearNode($.blogTagFilter);
+    const index = new Map();
+    for (const p of posts) {
+        const slugs = p.tagSlugs || [];
+        const labels = pickPostField(p, 'tag') || [];
+        slugs.forEach((slug, i) => {
+            const seen = index.get(slug);
+            if (seen) { seen.count++; return; }
+            index.set(slug, { label: labels[i] == null ? slug : labels[i], count: 1 });
+        });
+    }
+    const sorted = [...index.entries()]
+        .sort((a, b) => b[1].count - a[1].count || a[1].label.localeCompare(b[1].label));
+
+    const chip = (slug, label, count) => {
+        const a = document.createElement('a');
+        a.className = 'tag-chip';
+        a.href = filterHref(slug);
+        a.setAttribute('data-page', 'blog');
+        const isActive = (slug || null) === active;
+        if (isActive) {
+            a.classList.add('active');
+            a.setAttribute('aria-current', 'true');
+        }
+        a.appendChild(document.createTextNode(label));
+        if (count != null) {
+            const c = document.createElement('span');
+            c.className = 'tag-chip-count';
+            c.textContent = String(count);
+            a.appendChild(c);
+        }
+        $.blogTagFilter.appendChild(a);
+    };
+
+    chip(null, localizedI18n('projects.allTags', 'all'), null);
+    for (const [slug, e] of sorted) chip(slug, e.label, e.count);
+}
+
 function renderListingPosts($, posts) {
     clearNode($.blogListCt);
     for (const p of posts) {
@@ -237,10 +295,11 @@ function renderListingPosts($, posts) {
     triggerFadeIns(document.getElementById('page-blog'));
 }
 
-export async function showBlogListing($) {
+export async function showBlogListing($, tag) {
     $.blogListing.style.display = '';
     $.blogPost.style.display = 'none';
     _currentPostSlug = null;
+    _activeTag = tag || null;
 
     if (!postsCache) {
         $.blogListCt.innerHTML = skeletonEntries(5);
@@ -261,9 +320,28 @@ export async function showBlogListing($) {
         return;
     }
 
-    renderListingPosts($, postsCache);
+    renderListingView($);
 
     triggerFadeIns(document.getElementById('page-blog'));
+}
+
+/**
+ * Chip row + the posts surviving the active filter. Both the initial listing
+ * render and the i18n re-render go through here, so a language switch cannot
+ * quietly widen an active filter back to every post.
+ */
+function renderListingView($) {
+    renderTagFilter($, postsCache, _activeTag);
+    // An unknown slug (stale link, hand-typed) filters to nothing rather than
+    // silently showing everything — the chip row above is the way back.
+    const shown = _activeTag
+        ? postsCache.filter(p => (p.tagSlugs || []).includes(_activeTag))
+        : postsCache;
+    if (!shown.length) {
+        renderListingEmpty($, localizedI18n('projects.tagEmpty', 'Nothing here with that tag.'));
+        return;
+    }
+    renderListingPosts($, shown);
 }
 
 export async function showBlogPost(slug, $) {
@@ -504,7 +582,7 @@ export function wireBlogI18n($) {
         // Re-render listing if it's visible.
         if ($.blogListing && $.blogListing.style.display !== 'none') {
             // posts.json is already cached; re-render synchronously.
-            if (postsCache && postsCache.length) renderListingPosts($, postsCache);
+            if (postsCache && postsCache.length) renderListingView($);
         }
         // Re-render the current post if one is showing.
         if (_currentPostSlug && $.blogPost && $.blogPost.style.display !== 'none') {

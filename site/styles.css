@@ -543,6 +543,62 @@ a:hover { color: var(--accent-light); }
     line-height: 1.6;
 }
 
+/* ── Tag filter (?tag=) ──────────────────────────────────────
+   Shared by /sims, /projects, and /blog. Chips are real links so a
+   filtered view is shareable; the active one is marked by fill, not
+   by a border. */
+
+.tag-filter {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 32px;
+}
+
+.tag-filter:empty {
+    display: none;
+}
+
+.tag-chip {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 6px;
+    font-family: var(--font-sans);
+    font-variation-settings: var(--fvs-prose);
+    font-size: var(--font-sm);
+    padding: 4px 10px;
+    border-radius: var(--radius);
+    background: var(--bg-hover);
+    color: var(--text-secondary);
+    text-decoration: none;
+    transition: background 0.2s var(--ease-out), color 0.2s var(--ease-out);
+}
+
+.tag-chip:hover {
+    color: var(--accent);
+}
+
+.tag-chip.active {
+    background: var(--accent-subtle);
+    color: var(--accent);
+}
+
+.tag-chip-count {
+    font-size: 0.85em;
+    color: var(--text-muted);
+}
+
+.tag-chip.active .tag-chip-count {
+    color: inherit;
+    opacity: 0.7;
+}
+
+.tag-empty {
+    grid-column: 1 / -1;
+    color: var(--text-muted);
+    padding: 40px 0;
+}
+
 .project-tags {
     display: flex;
     flex-wrap: wrap;

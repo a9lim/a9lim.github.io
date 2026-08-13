@@ -63,11 +63,15 @@ export function parsePath() {
     const parts = raw.split('/');
     const page = PAGES.includes(parts[0]) ? parts[0] : 'home';
     const slug = page === 'blog' && parts[1] ? parts[1] : null;
-    return { page, slug };
+    // ?tag= filters a listing; it is not part of the route. A single post has
+    // nothing to filter, and canonical/og:url below deliberately drop it so 37
+    // filtered views do not compete with the page they are a view of.
+    const tag = slug ? null : new URLSearchParams(location.search).get('tag');
+    return { page, slug, tag };
 }
 
-export function navigateTo(page, slug, deps) {
-    const { $, pages, navLinks, triggerFadeIns, showBlogPost, showBlogListing } = deps;
+export function navigateTo(page, slug, deps, tag) {
+    const { $, pages, navLinks, triggerFadeIns, showBlogPost, showBlogListing, setProjectFilter } = deps;
 
     const bc = document.getElementById('breadcrumb');
     if (bc) { bc.textContent = ''; bc.hidden = true; }
@@ -97,9 +101,10 @@ export function navigateTo(page, slug, deps) {
         if (slug) {
             showBlogPost(slug);
         } else {
-            showBlogListing();
+            showBlogListing(tag || null);
         }
     } else {
+        if (setProjectFilter) setProjectFilter(page, tag || null);
         triggerFadeIns(target);
     }
 
@@ -108,8 +113,8 @@ export function navigateTo(page, slug, deps) {
 
 export function initRouter(deps) {
     function onRoute() {
-        const { page, slug } = parsePath();
-        navigateTo(page, slug, deps);
+        const { page, slug, tag } = parsePath();
+        navigateTo(page, slug, deps, tag);
     }
 
     window.addEventListener('popstate', onRoute);
@@ -125,19 +130,14 @@ export function initRouter(deps) {
         const link = e.target.closest('[data-page]');
         if (!link) return;
 
-        // Blog entry links have data-page="blog" and a full path href
+        // Every [data-page] link carries a site-absolute href — nav links, blog
+        // entries, and tag chips alike — so the href is the route, query string
+        // included. Rebuilding a path from data-page would drop `?tag=`.
         const href = link.getAttribute('href');
-        if (href && href.startsWith('/blog/')) {
-            e.preventDefault();
-            history.pushState(null, '', href);
-            onRoute();
-            return;
-        }
-
         e.preventDefault();
-        const page = link.dataset.page;
-        const path = page === 'home' ? '/' : '/' + page;
-        history.pushState(null, '', path);
+        history.pushState(null, '', href && href.startsWith('/')
+            ? href
+            : (link.dataset.page === 'home' ? '/' : '/' + link.dataset.page));
         onRoute();
     });
 

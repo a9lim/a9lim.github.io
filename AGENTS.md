@@ -49,6 +49,9 @@ The Worker imports `.build/content.generated.mjs`, so Wrangler commands that bun
 - `content/posts/{slug}.md` — canonical served post markdown. Fields: `title`, `date`, optional `updated`, `tag`, and `excerpt`. Optional `authors` (a `- name` list) and `links` (a `- label | href` list, site-absolute or https, validated at build time) render as a byline opposite the date/tag line; a paper's provenance belongs there rather than in the body. A Japanese sibling adds translated metadata/body and `translations: ["ja"]` in generated metadata.
 - `content/projects/{slug}.md` — project cards and registry metadata. Fields include `title`, `href`, `kind`, `order`, optional `major`/`planned`, `external`, `emoji`, `seoName`, `seoUrl`, `tags`, and optional `packages` entries (`Registry | name | URL | install`).
 - `content/home/*.md` — homepage cards and `site.md` route/head metadata.
+
+Post `tag` and project `tags` are lists that drive the `?tag=` listing filter. The build derives a `tagSlugs` array alongside each, slugified from the **English** label, and that slug is what the URL carries — a filtered link therefore survives a language switch. Localized labels are looked up positionally, so a Japanese sibling's list must have the same length and order as the English one; `checkTagPair` in `tools/build.mjs` fails the build otherwise. Two tags in one entry that slugify alike are also a build error.
+
 - `content/resume/` — TeX source, fonts, and build script for `/resume.pdf`.
 - `projects/{sim}/about.md` — canonical simulation documentation and its `name`, `title`, `description`, and `updated` metadata.
 
@@ -119,6 +122,7 @@ Each project retains substantive `about.md` documentation, educational content, 
 
 - `site/main.js` creates the shared DOM cache passed to root init functions.
 - `site/src/home.js` hydrates generated homepage data; `site/src/router.js` maintains `aria-current`.
+- `?tag={slug}` filters `/sims`, `/projects`, and `/blog` client-side. It is a view, not a route: `parsePath` reports it separately from page/slug, canonical and `og:url` deliberately drop it, and the Worker SSRs the unfiltered listing. Every `[data-page]` link's href is the route it navigates to, query string included — do not rebuild a path from `data-page` alone or the filter is lost on click.
 - The root Person JSON-LD entity remains `https://a9l.im/#person`.
 - The sole root `<h1>` is the hero tagline; the navbar brand is not a heading.
 - `data-theme` lives on `<html>`.

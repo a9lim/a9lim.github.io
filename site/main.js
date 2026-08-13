@@ -8,7 +8,7 @@ import { triggerFadeIns, initNavbarScroll, initScrollReveal } from './src/animat
 import { initCardTilt } from './src/card-effects.js';
 import { showBlogListing, showBlogPost, wireBlogI18n } from './src/blog.js';
 import { PROJECTS } from './src/projects.js';
-import { renderProjectCards } from './src/projects-page.js';
+import { renderProjectCards, setProjectFilter } from './src/projects-page.js';
 import { initHome } from './src/home.js';
 
 // ─── DOM Cache ───
@@ -22,13 +22,24 @@ const $ = {
     blogPost:    document.getElementById('blog-post'),
     blogListCt:  document.getElementById('blog-list-container'),
     blogContent: document.getElementById('blog-post-content'),
+    blogTagFilter: document.getElementById('blog-tag-filter'),
 };
 
 const navLinks = document.querySelectorAll('.nav-link');
 const pages    = document.querySelectorAll('.page-section');
 
-renderProjectCards(document.querySelector('.sims-grid'), PROJECTS.filter(p => !p.external));
-renderProjectCards(document.querySelector('.projects-grid'), PROJECTS.filter(p => p.external));
+renderProjectCards({
+    page: 'sims',
+    container: document.querySelector('.sims-grid'),
+    filterEl: document.getElementById('sims-tag-filter'),
+    projects: PROJECTS.filter(p => !p.external),
+});
+renderProjectCards({
+    page: 'projects',
+    container: document.querySelector('.projects-grid'),
+    filterEl: document.getElementById('projects-tag-filter'),
+    projects: PROJECTS.filter(p => p.external),
+});
 
 // ─── Init ───
 initTheme($);
@@ -41,7 +52,8 @@ initRouter({
     navLinks,
     triggerFadeIns,
     showBlogPost: (slug) => showBlogPost(slug, $),
-    showBlogListing: () => showBlogListing($),
+    showBlogListing: (tag) => showBlogListing($, tag),
+    setProjectFilter,
 });
 
 initScrollReveal();
