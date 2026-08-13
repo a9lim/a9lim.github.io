@@ -22,3 +22,6 @@
 [submodule "plasma"]
 	path = projects/plasma
 	url = https://github.com/a9lim/plasma.git
+[submodule "papers/ogdoad"]
+	path = papers/ogdoad
+	url = https://github.com/a9lim/ogdoad.git

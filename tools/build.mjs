@@ -6,6 +6,7 @@ import { dirname, join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createHash } from 'node:crypto';
 import { parseMarkdown, mdEsc, splitMarkdownTableRow } from '../site/src/markdown.js';
+import { convertTex, renderPaperBody } from './tex-to-post.mjs';
 
 const ROOT = dirname(dirname(fileURLToPath(import.meta.url)));
 const DIST = join(ROOT, 'dist');
@@ -39,6 +40,20 @@ function emit(rel, content) {
   let current = null;
   try { current = readFileSync(output, 'utf8'); } catch { /* missing counts as stale */ }
   if (current !== content) checkFailures.push(rel);
+}
+
+// Copy a binary artifact into dist/ — or, under --check, compare bytes.
+function emitBinary(rel, srcPath) {
+  const output = join(DIST, rel);
+  const content = readFileSync(srcPath);
+  if (!CHECK) {
+    mkdirSync(dirname(output), { recursive: true });
+    writeFileSync(output, content);
+    return;
+  }
+  let current = null;
+  try { current = readFileSync(output); } catch { /* missing counts as stale */ }
+  if (!current || !current.equals(content)) checkFailures.push(rel);
 }
 
 function emitInternal(rel, content) {
@@ -243,6 +258,50 @@ const postEntries = contentSlugs('content/posts')
   .sort((a, b) => (a.meta.date < b.meta.date ? 1 : -1));
 const postEntryBySlug = new Map(postEntries.map(p => [p.slug, p]));
 
+// --- papers: body generated from the LaTeX source in papers/ogdoad ---
+//
+// A post whose frontmatter names `paper: <basename>` carries no prose of its
+// own. Its body is converted from papers/ogdoad/writeups/<basename>.tex on
+// every build, and the typeset PDF is copied to whatever site path the post's
+// own `pdf` link names. The paper is the single source of truth: editing the
+// prose here would be overwritten, so the loop refuses a body outright.
+//
+// The submodule is pinned, so this stays deterministic — updating the paper is
+// `git submodule update --remote papers/ogdoad` plus a commit, the same motion
+// as the project submodules.
+const PAPER_DIR = join(ROOT, 'papers/ogdoad/writeups');
+const paperPdfs = [];
+for (const p of postEntries) {
+  if (p.meta.paper == null) continue;
+  if (p.body.trim()) {
+    throw new Error(`${p.enRel}: declares paper: ${p.meta.paper} but also has a body — the body is generated from the .tex, so only frontmatter belongs here`);
+  }
+  if (p.ja) {
+    throw new Error(`${p.enRel}: paper posts have no translated sibling (${p.jaRel}); the converter reads one .tex`);
+  }
+  const tex = join(PAPER_DIR, `${p.meta.paper}.tex`);
+  if (!existsSync(tex)) {
+    throw new Error(`${p.enRel}: no papers/ogdoad/writeups/${p.meta.paper}.tex — run \`git submodule update --init papers/ogdoad\``);
+  }
+  const converted = convertTex(tex);
+  p.body = renderPaperBody(converted);
+
+  // The PDF lands wherever the post's own byline link points, so the public
+  // URL stays owned by the frontmatter rather than derived twice.
+  const pdfLink = (p.meta.links || []).map(String).find(l => l.split('|')[0].trim() === 'pdf');
+  if (pdfLink) {
+    const dest = pdfLink.split('|')[1].trim();
+    if (!dest.startsWith('/')) throw new Error(`${p.enRel}: pdf link must be site-absolute, got "${dest}"`);
+    const src = join(PAPER_DIR, `${p.meta.paper}.pdf`);
+    if (!existsSync(src)) throw new Error(`${p.enRel}: no typeset ${p.meta.paper}.pdf beside the .tex`);
+    paperPdfs.push([dest.replace(/^\//, ''), src]);
+  }
+
+  const s = converted.stats;
+  console.log(`${p.slug}: body from ${p.meta.paper}.tex — ${s.statements} statements, ${s.xrefs} cross-refs, ${s.refs}/${s.bibSize} refs`
+    + (s.uncited.length ? ` (uncited: ${s.uncited.join(', ')})` : ''));
+}
+
 const posts = [];
 for (const p of postEntries) {
   for (const req of ['title', 'date', 'tag', 'excerpt']) {
@@ -271,6 +330,19 @@ for (const p of postEntries) {
 emit('posts.json', JSON.stringify(posts, null, 2) + '\n');
 const draftPostCount = posts.filter(p => p.draft).length;
 console.log(`posts.json: ${posts.length} posts (from content/posts/${draftPostCount ? `, ${draftPostCount} from draft/posts/` : ''})`);
+
+// Paper posts: stage-assets copied the frontmatter-only source verbatim, so
+// overwrite it with frontmatter + generated body. The blog client, Worker SSR,
+// and feeds all read this same file, so the paper reaches every surface.
+for (const p of postEntries) {
+  if (p.meta.paper == null) continue;
+  const front = readText(p.enRel).trimEnd();
+  emit(`content/posts/${p.slug}.md`, `${front}\n\n${p.body}\n`);
+}
+for (const [dest, src] of paperPdfs) emitBinary(dest, src);
+if (paperPdfs.length) {
+  console.log(`papers: ${paperPdfs.length} PDF(s) staged from papers/ogdoad/writeups/`);
+}
 
 // --- projects: content/projects/*.md → src/projects.js + worker SSR data ---
 

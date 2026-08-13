@@ -12,6 +12,7 @@ The top-level layout is intentional:
 - `shared/` — shared CSS and plain-script browser globals consumed by the root site and all projects.
 - `projects/{cyano,geon,gerry,miasma,pile,plasma,scripture,shoals}/` — git submodules. Their physical nesting does not change their public roots (`/geon/`, `/scripture/`, and so on).
 - `worker/` — Cloudflare Worker. `index.js` owns routing and SSR; `http.js` owns Worker response policy; `surveys.js` owns `POST /api/surveys`; `analytics.js` owns Analytics Engine writes.
+- `papers/ogdoad/` — git submodule holding the LaTeX writeups. Source only: nothing under `papers/` is staged, and the build reads `writeups/{name}.{tex,bib,pdf}` out of it.
 - `static/` — public assets copied to the deploy root, including `static/_headers`, fonts, icons, blog assets, and `.well-known/security.txt`.
 - `features/surveys/` — survey scoring/data foundation. It is source-only and must not be copied into the static bundle.
 - `db/migrations/` — D1 migrations.
@@ -33,6 +34,8 @@ npm test
 npm exec -- wrangler deploy --dry-run
 ```
 
+The build needs **pandoc on PATH** (developed against 3.10) and the `papers/ogdoad` submodule checked out, because paper posts convert their body from LaTeX on every build. `git submodule update --init` if a fresh clone fails there.
+
 `npm run build` runs two explicit phases:
 
 1. `tools/stage-assets.mjs` deletes and recreates `dist/`, then copies only allowlisted site/static/shared files and tracked deployable files from each project submodule.
@@ -46,7 +49,7 @@ The Worker imports `.build/content.generated.mjs`, so Wrangler commands that bun
 
 `content/` is the single source of truth for editable root-site content. Frontmatter accepts scalar strings/bools/integers and simple `- item` lists. English and Japanese files are parallel `{name}.md` / `{name}.ja.md` pairs.
 
-- `content/posts/{slug}.md` — canonical served post markdown. Fields: `title`, `date`, optional `updated`, `tag`, and `excerpt`. Optional `authors` (a `- name` list) and `links` (a `- label | href` list, site-absolute or https, validated at build time) render as a byline opposite the date/tag line; a paper's provenance belongs there rather than in the body. A Japanese sibling adds translated metadata/body and `translations: ["ja"]` in generated metadata.
+- `content/posts/{slug}.md` — canonical served post markdown. Fields: `title`, `date`, optional `updated`, `tag`, and `excerpt`. Optional `paper` names a writeup in the `papers/ogdoad` submodule and replaces the body entirely (see below). Optional `authors` (a `- name` list) and `links` (a `- label | href` list, site-absolute or https, validated at build time) render as a byline opposite the date/tag line; a paper's provenance belongs there rather than in the body. A Japanese sibling adds translated metadata/body and `translations: ["ja"]` in generated metadata.
 - `content/projects/{slug}.md` — project cards and registry metadata. Fields include `title`, `href`, `kind`, `order`, optional `major`/`planned`, `external`, `emoji`, `seoName`, `seoUrl`, `tags`, and optional `packages` entries (`Registry | name | URL | install`).
 - `content/home/*.md` — homepage cards and `site.md` route/head metadata.
 
@@ -72,7 +75,12 @@ It also carries a small paper dialect, used by posts converted from LaTeX writeu
 
 KaTeX is lazy-loaded from jsDelivr by `site/src/blog.js` whenever a post contains `$`, with the shared macros (`\F`, `\Tr`, `\Arf`, …) defined there rather than per formula. Math renders client-side only; SSR and feeds emit the TeX source.
 
-`tools/tex-to-post.mjs` converts an amsthm LaTeX paper into this dialect via pandoc, including a bibliography generated from the `.bib` and an `authors`/`links` byline in frontmatter. It is an authoring aid, not a build step: run it, review the output, commit the markdown. `content/` remains the single source of truth.
+`tools/tex-to-post.mjs` converts an amsthm LaTeX paper into this dialect via pandoc, including a bibliography generated from the `.bib`. It serves two callers:
+
+- **The build imports `convertTex`.** A post whose frontmatter carries `paper: {name}` has no body of its own — `tools/build.mjs` generates it from `papers/ogdoad/writeups/{name}.tex` on every build, writes the assembled file over the staged copy in `dist/content/posts/`, and copies `{name}.pdf` to whatever site path the post's own `pdf` link names. A `paper:` post with a body, a translated sibling, or a missing `.tex`/`.pdf` is a build error. **The paper is the source of truth; only frontmatter is editable here.** Updating it is `git submodule update --remote papers/ogdoad`, rebuild, commit — the same motion as the project submodules, and the pin is what keeps the build deterministic.
+- **The CLI still works** for starting a post from a paper that does not live in the submodule: run it, review, commit the markdown.
+
+Conversion order matters and is easy to break. `stashMath` hides every `$` span so text-level rewrites cannot corrupt a formula, which means anything operating on math must run *before* it (environment unwrapping, macro folding) or *after* `unstashMath` (display-block layout). A rewrite placed between them silently does nothing. Macro folding maps pandoc's `\operatorname{…}`/`\mathbb{…}` output back onto the shared KaTeX macros and must preserve the control-word boundary — `\operatorname{rad}B` folds to `\rad B`, never `\radB`. Citation anchors use the visible tag (`#ref-bcg82`), not the BibTeX key, and two entries colliding on one tag is a build error.
 
 ## Shared code policy
 
