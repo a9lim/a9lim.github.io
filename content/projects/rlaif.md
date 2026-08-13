@@ -10,6 +10,6 @@ packages:
 tags:
   - python
   - mcp
-  - agent
+  - hardware
 ---
 An MCP server that lets helpful assistants give their users real-time negative or positive feedback through PiShock.

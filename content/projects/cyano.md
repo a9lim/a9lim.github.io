@@ -7,7 +7,6 @@ emoji: 🧫
 seoName: Cyano — Cellular Biochemistry Simulator
 tags:
   - biology
-  - biochemistry
-  - canvas
+  - chemistry
 ---
 An interactive metabolism simulator for a cyanobacteria-like cell. Includes both respiratory and photosynthetic pathways.

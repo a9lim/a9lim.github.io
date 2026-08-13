@@ -8,6 +8,5 @@ seoName: Pile — Nuclear Reactor Simulator
 tags:
   - physics
   - nuclear
-  - canvas
 ---
 A nuclear reactor sandbox for exploring neutronics, thermal dynamics, and safety.

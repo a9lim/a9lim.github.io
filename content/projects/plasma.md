@@ -7,8 +7,6 @@ emoji: ☀
 seoName: Plasma — 2D Resistive MHD Simulator
 tags:
   - physics
-  - webgpu
-  - mhd
-  - canvas
+  - plasma
 ---
 A WebGPU 2D magnetohydrodynamics lab with high-fidelity physics.

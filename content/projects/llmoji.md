@@ -10,6 +10,6 @@ packages:
 tags:
   - python
   - cli
-  - kaomoji
+  - interpretability
 ---
 A CLI to make coding agents cuter. Also lets you contribute to a shared research dataset.

@@ -6,8 +6,7 @@ external: false
 emoji: 🦠
 seoName: Miasma — Stochastic Spatial Epidemic Simulator
 tags:
+  - biology
   - epidemiology
-  - cellular automaton
-  - canvas
 ---
 A spatial epidemiology sandbox for that implements a rich compartmental model with mutating strains on an arbitrary topology.

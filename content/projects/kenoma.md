@@ -10,6 +10,6 @@ packages:
 tags:
   - python
   - llm
-  - shell
+  - cli
 ---
 An LLM-powered fake shell.

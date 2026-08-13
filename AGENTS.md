@@ -50,7 +50,9 @@ The Worker imports `.build/content.generated.mjs`, so Wrangler commands that bun
 - `content/projects/{slug}.md` — project cards and registry metadata. Fields include `title`, `href`, `kind`, `order`, optional `major`/`planned`, `external`, `emoji`, `seoName`, `seoUrl`, `tags`, and optional `packages` entries (`Registry | name | URL | install`).
 - `content/home/*.md` — homepage cards and `site.md` route/head metadata.
 
-Post `tag` and project `tags` are lists that drive the `?tag=` listing filter. The build derives a `tagSlugs` array alongside each, slugified from the **English** label, and that slug is what the URL carries — a filtered link therefore survives a language switch. Localized labels are looked up positionally, so a Japanese sibling's list must have the same length and order as the English one; `checkTagPair` in `tools/build.mjs` fails the build otherwise. Two tags in one entry that slugify alike are also a build error.
+Post `tag` and project `tags` are lists that drive the `?tag=` listing filter. The build derives a `tagSlugs` array alongside each, slugified from the **English** label, and that slug is what the URL carries — a filtered link therefore survives a language switch. Localized labels are looked up positionally, so a Japanese sibling's list must have the same length **and order** as the English one; `checkTagPair` in `tools/build.mjs` fails the build otherwise. Two tags in one entry that slugify alike are also a build error.
+
+The project tag vocabulary is deliberately small — roughly a dozen per grid, drawn from subject and language rather than rendering tech — so the filter chips stay a usable row instead of a wall of one-item dead ends. Each entry carries 2–4 tags, enforced at build time. Prefer reusing an existing tag over minting a near-synonym; a tag that will only ever match one entry is usually better spent on a broader one.
 
 - `content/resume/` — TeX source, fonts, and build script for `/resume.pdf`.
 - `projects/{sim}/about.md` — canonical simulation documentation and its `name`, `title`, `description`, and `updated` metadata.

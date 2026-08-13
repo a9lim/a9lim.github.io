@@ -7,7 +7,6 @@ emoji: 🗳
 seoName: Gerry — Gerrymandering & Electoral Fairness Simulator
 tags:
   - politics
-  - svg
-  - monte carlo
+  - statistics
 ---
 A redistricting sandbox on a hex map with third parties. Supports election simulations and fairness metrics.

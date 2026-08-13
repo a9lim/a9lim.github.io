@@ -306,6 +306,11 @@ const projectsData = projectEntries.map(p => {
     throw new Error(`${p.enRel}: external must be true or false`);
   }
   checkTagPair(p.meta.tags, p.ja && p.ja.meta.tags, 'tags', p.enRel);
+  // The card vocabulary is deliberately small and the footer is a fixed slot:
+  // one tag does not distinguish an entry, five overflow the card on mobile.
+  if (p.meta.tags.length < 2 || p.meta.tags.length > 4) {
+    throw new Error(`${p.enRel}: expected 2-4 tags, got ${p.meta.tags.length}`);
+  }
   if (Object.hasOwn(p.meta, 'kind')) {
     throw new Error(`${p.enRel}: kind is redundant; external is authoritative`);
   }

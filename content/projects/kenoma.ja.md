@@ -2,6 +2,6 @@
 tags:
   - python
   - LLM
-  - シェル
+  - CLI
 ---
 LLM を使った偽シェル。
