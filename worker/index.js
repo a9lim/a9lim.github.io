@@ -753,7 +753,17 @@ export default {
                     meta.articleAuthor = 'https://a9l.im/';
                     if (postMeta.tag) meta.articleTag = Array.isArray(postMeta.tag) ? postMeta.tag : [postMeta.tag];
                     const tagDisplay = Array.isArray(postMeta.tag) ? postMeta.tag.join(', ') : postMeta.tag;
-                    postHeader = `<span class="blog-post-date">${fmtDate(postMeta.date)}${postMeta.tag ? ' &middot; ' + mdEsc(tagDisplay) : ''}</span><h1 class="blog-post-title">${mdEsc(postMeta.title)}</h1>`;
+                    // Byline mirrors postByline() in site/src/blog.js — keep
+                    // the two in step so SSR and the client render alike.
+                    const bylineBits = [];
+                    if (Array.isArray(postMeta.authors) && postMeta.authors.length) {
+                      bylineBits.push(`<span class="blog-post-authors">${postMeta.authors.map(mdEsc).join(' &middot; ')}</span>`);
+                    }
+                    if (Array.isArray(postMeta.links) && postMeta.links.length) {
+                      bylineBits.push(`<span class="blog-post-links">${postMeta.links.map(l => `<a href="${mdEsc(l.href)}">${mdEsc(l.label)}</a>`).join(' &middot; ')}</span>`);
+                    }
+                    const byline = bylineBits.length ? `<span class="blog-post-byline">${bylineBits.join(' &middot; ')}</span>` : '';
+                    postHeader = `<div class="blog-post-meta"><span class="blog-post-date">${fmtDate(postMeta.date)}${postMeta.tag ? ' &middot; ' + mdEsc(tagDisplay) : ''}</span>${byline}</div><h1 class="blog-post-title">${mdEsc(postMeta.title)}</h1>`;
                     const wordCount = mdText.replace(/[#*_`>\-\[\]()]/g, '').split(/\s+/).filter(Boolean).length;
                     const plainText = renderedBody.replace(/<[^>]+>/g, '').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/\s+/g, ' ').trim();
                     const articleBody = plainText.length > 500 ? plainText.slice(0, plainText.lastIndexOf(' ', 500)) + '\u2026' : plainText;

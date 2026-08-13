@@ -46,7 +46,7 @@ The Worker imports `.build/content.generated.mjs`, so Wrangler commands that bun
 
 `content/` is the single source of truth for editable root-site content. Frontmatter accepts scalar strings/bools/integers and simple `- item` lists. English and Japanese files are parallel `{name}.md` / `{name}.ja.md` pairs.
 
-- `content/posts/{slug}.md` — canonical served post markdown. Fields: `title`, `date`, optional `updated`, `tag`, and `excerpt`. A Japanese sibling adds translated metadata/body and `translations: ["ja"]` in generated metadata.
+- `content/posts/{slug}.md` — canonical served post markdown. Fields: `title`, `date`, optional `updated`, `tag`, and `excerpt`. Optional `authors` (a `- name` list) and `links` (a `- label | href` list, site-absolute or https, validated at build time) render as a byline opposite the date/tag line; a paper's provenance belongs there rather than in the body. A Japanese sibling adds translated metadata/body and `translations: ["ja"]` in generated metadata.
 - `content/projects/{slug}.md` — project cards and registry metadata. Fields include `title`, `href`, `kind`, `order`, optional `major`/`planned`, `external`, `emoji`, `seoName`, `seoUrl`, `tags`, and optional `packages` entries (`Registry | name | URL | install`).
 - `content/home/*.md` — homepage cards and `site.md` route/head metadata.
 - `content/resume/` — TeX source, fonts, and build script for `/resume.pdf`.
@@ -57,6 +57,17 @@ The Worker imports `.build/content.generated.mjs`, so Wrangler commands that bun
 The build emits `dist/posts.json`, `dist/src/projects.js`, the generated regions of `dist/index.html` and `dist/i18n.js`, `dist/home-data.json`, feeds, sitemaps, discovery files, `dist/resume.pdf`, synchronized project HTML/UI copies, and `.build/content.generated.mjs`. These are outputs, not hand-edited files. Project source is read-only during the parent build; SEO synchronization happens in `dist/{sim}/`, not inside the submodule.
 
 The lightweight markdown parser is `site/src/markdown.js`, shared by the blog client, Worker SSR, and feed generation. Keep it isomorphic: no DOM or Node-only APIs. It supports the existing iframe and switcher directives, theme-paired images (`light|dark`), and GFM-style tables.
+
+It also carries a small paper dialect, used by posts converted from LaTeX writeups:
+
+- `::: theorem id="thm:x" name="Optional title"` … `:::` containers for `theorem`, `proposition`, `lemma`, `corollary`, `definition`, `remark`, and `proof`. Bodies are parsed recursively. Numbering mirrors amsthm's `\newtheorem{...}[section]`: one counter shared by every numbered kind, reset at each `##`, printed as `{section}.{n}`; `proof` is unnumbered.
+- `[[label]]` renders a linked `Theorem 4.1`; `[[#label]]` renders the bare number, for prose supplying its own noun ("Sections 3–5"). An undeclared label renders visibly as `.xref-missing` rather than failing silently.
+- Headings take a trailing pandoc-style attribute block: `{#sec:x}` sets the anchor and makes the heading referenceable, `{.unnumbered}` keeps it out of the section count so an abstract or reference list does not renumber the paper between them. List items take a leading `{#id}` anchor, which is how bibliography entries become link targets.
+- Numbering requires a pre-pass, so `parseMarkdown` scans labels before rendering. Math, the switcher counter, and the label table are module-level and owned by the outermost call only — nested parses must not reset them. Math is HTML-escaped when restored: formulas routinely contain `<`, which the browser would otherwise read as markup.
+
+KaTeX is lazy-loaded from jsDelivr by `site/src/blog.js` whenever a post contains `$`, with the shared macros (`\F`, `\Tr`, `\Arf`, …) defined there rather than per formula. Math renders client-side only; SSR and feeds emit the TeX source.
+
+`tools/tex-to-post.mjs` converts an amsthm LaTeX paper into this dialect via pandoc, including a bibliography generated from the `.bib` and an `authors`/`links` byline in frontmatter. It is an authoring aid, not a build step: run it, review the output, commit the markdown. `content/` remains the single source of truth.
 
 ## Shared code policy
 

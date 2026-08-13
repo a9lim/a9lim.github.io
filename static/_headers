@@ -184,6 +184,14 @@
   Cache-Control: public, max-age=86400
   Cloudflare-CDN-Cache-Control: public, max-age=31536000, immutable
 
+# Paper PDF accompanying /blog/quadratic-refinements-in-games. Listed
+# explicitly rather than as /*.pdf: matching rules all apply in order, and a
+# glob here would override the resume's own cache policy above.
+/quadratic-refinements.pdf
+  Content-Type: application/pdf
+  Cache-Control: public, max-age=604800
+  Cloudflare-CDN-Cache-Control: public, max-age=31536000, immutable
+
 # Self-hosted fonts
 /fonts/*.woff2
   Cache-Control: public, max-age=31536000, immutable

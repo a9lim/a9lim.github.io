@@ -26,6 +26,82 @@ check('table rows preserve escaped pipes inside cells',
 check('markdown table rendering preserves escaped pipes inside cells',
   parseMarkdown(`| Item | P | By |\n| --- | --- | --- |\n${escapedPipeRow}`)
     .includes('<tr><td>Dogs uplifted | no doom</td><td>~0.0</td><td>2030-01-01</td></tr>'));
+// ─── Math, theorem environments, and cross-references ───
+// The parser is re-entered for blockquotes and theorem bodies, and its math
+// stash, switcher counter, and label table are module-level. Each of these
+// guards a way that state has broken or could break across a nested parse.
+
+check('math survives a nested parse',
+  parseMarkdown('> The form $Q(x)=0$ holds.').includes('$Q(x)=0$'));
+
+// `<` is common in math (`j<k`, `0\le i<m`). Reinserted raw it would be
+// parsed as markup and swallow the rest of the formula.
+const mathWithLt = parseMarkdown('Let $j<k$ hold.');
+check('math escapes < so the HTML parser cannot eat the formula',
+  mathWithLt.includes('$j&lt;k$') && !mathWithLt.includes('$j<k$'));
+
+const thmDoc = [
+  '## First {#sec:one}', '',
+  '::: definition id="def:a" name="Local realization"', 'Body $x<y$.', ':::', '',
+  '## Second {#sec:two}', '',
+  '::: theorem id="thm:a" name="Public matching"', 'Statement.', ':::', '',
+  '::: proof', 'Uses [[def:a]].', ':::', '',
+  '::: corollary id="cor:a"', 'Follows.', ':::', '',
+  'See [[thm:a]], sections [[#sec:one]]–[[#sec:two]], and [[nope:x]].', '',
+  '- {#ref-key}**[Key]** A cited work.',
+].join('\n');
+const thmHtml = parseMarkdown(thmDoc);
+
+check('theorem counter resets per section and is shared across kinds',
+  thmHtml.includes('Definition&nbsp;1.1')
+  && thmHtml.includes('Theorem&nbsp;2.1')
+  && thmHtml.includes('Corollary&nbsp;2.2'),
+  thmHtml.match(/theorem-kind">[^<]*/g)?.join(' | '));
+check('proofs are unnumbered', thmHtml.includes('<span class="theorem-kind">Proof</span>'));
+check('theorem carries its label as an anchor', thmHtml.includes('<div class="theorem theorem-theorem" id="thm-a">'));
+check('qualified cross-reference renders kind and number',
+  thmHtml.includes('<a href="#def-a" class="xref">Definition&nbsp;1.1</a>'));
+check('bare cross-reference renders the number alone',
+  thmHtml.includes('<a href="#sec-one" class="xref">1</a>'));
+check('forward cross-reference resolves', thmHtml.includes('<a href="#thm-a" class="xref">Theorem&nbsp;2.1</a>'));
+check('unknown label stays visible rather than failing silently',
+  thmHtml.includes('<span class="xref-missing">[[nope:x]]</span>'));
+check('explicit heading id becomes the anchor', thmHtml.includes('<h2 id="sec-one">First</h2>'));
+check('list item anchor becomes an id', thmHtml.includes('<li id="ref-key">'));
+check('math inside a theorem body survives and is escaped', thmHtml.includes('$x&lt;y$'));
+
+// Front matter (an authorship note, an abstract) must not renumber the paper
+// it sits above — the same role LaTeX gives \section*.
+const unnumbered = parseMarkdown([
+  '## Preface {.unnumbered}', '', 'Framing.', '',
+  '## First {#sec:x}', '',
+  '::: theorem id="thm:y"', 'Claim.', ':::', '',
+  'See [[thm:y]] in [[#sec:x]].',
+].join('\n'));
+check('unnumbered headings do not advance the section counter',
+  unnumbered.includes('Theorem&nbsp;1.1') && unnumbered.includes('class="xref">1</a>'),
+  unnumbered.match(/theorem-kind">[^<]*/)?.[0]);
+check('unnumbered attribute does not leak into the heading text',
+  unnumbered.includes('<h2 id="preface">Preface</h2>'));
+check('renders identically on a repeat parse (SSR and client must agree)',
+  parseMarkdown(thmDoc) === thmHtml);
+check('same-page links do not open a new tab',
+  parseMarkdown('See [it](#ref-key).').includes('<a href="#ref-key">it</a>'));
+check('outbound links still open a new tab',
+  parseMarkdown('See [it](https://example.com).').includes('target="_blank"'));
+
+// Optional post byline: `authors:` and `links:` reach posts.json parsed, and
+// both the client and the Worker render them opposite the date/tag line.
+const bylinePost = JSON.parse(readFileSync(join(DIST, 'posts.json'), 'utf8'))
+  .find(p => Array.isArray(p.links));
+if (bylinePost) {
+  check('post links parse into label/href pairs',
+    bylinePost.links.every(l => typeof l.label === 'string' && typeof l.href === 'string'),
+    JSON.stringify(bylinePost.links));
+  check('post link hrefs are site-absolute or https',
+    bylinePost.links.every(l => l.href.startsWith('/') || l.href.startsWith('https://')));
+}
+
 const enSlugs = dir => readdirSync(join(ROOT, dir))
   .filter(f => f.endsWith('.md') && !f.endsWith('.ja.md'))
   .map(f => f.replace(/\.md$/, ''));
@@ -87,6 +163,12 @@ const blogClient = readFileSync(join(ROOT, 'site', 'src', 'blog.js'), 'utf8');
 const worker = readFileSync(join(ROOT, 'worker', 'index.js'), 'utf8');
 check('blog client loads canonical markdown', blogClient.includes('/content/posts/'));
 check('worker loads canonical markdown', worker.includes('/content/posts/'));
+// The byline is rendered twice, once per surface; a change to one that skips
+// the other shows up as a header that differs between SSR and hydration.
+for (const marker of ['blog-post-meta', 'blog-post-byline', 'blog-post-authors', 'blog-post-links']) {
+  check(`client and worker both render .${marker}`,
+    blogClient.includes(marker) && worker.includes(marker));
+}
 
 console.log('submodule about.md ↔ HTML metadata ↔ about-panel date');
 for (const p of PROJECTS.filter(p => !p.external && !p.planned)) {

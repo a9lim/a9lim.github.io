@@ -1,8 +1,10 @@
 // ─── Lightweight Markdown → HTML Parser ───
-// Regex-based, single-pass. Supports: headings, fenced code blocks (with
-// language class), iframe directive (fenced block with `iframe` lang —
-// emits a same-origin iframe figure), switcher directive (fenced block
-// with `switcher` lang — CSS-only radio-tabbed image gallery),
+// Regex-based, single-pass. Supports: headings (with optional explicit
+// `{#id}` anchors), fenced code blocks (with language class), iframe
+// directive (fenced block with `iframe` lang — emits a same-origin iframe
+// figure), switcher directive (fenced block with `switcher` lang — CSS-only
+// radio-tabbed image gallery), `:::` theorem containers (recursive, with
+// LaTeX-style per-section numbering), `[[label]]` cross-references,
 // blockquotes (recursive), ordered/unordered lists, GFM-style pipe
 // tables (no column alignment; escaped pipes are allowed in cells),
 // horizontal rules, images (single or
@@ -18,6 +20,12 @@
 
 let _switcherCounter = 0;
 
+// Depth of the current parseMarkdown() call. Blockquotes and theorem bodies
+// re-enter the parser, and the math stash, switcher counter, and label table
+// are module-level: resetting them on a nested entry would discard the outer
+// document's state. Only depth 0 owns that state.
+let _depth = 0;
+
 /** Stash $$ and $ math delimiters before escaping, restore after. */
 var _mathStash = [];
 function stashMath(s) {
@@ -28,7 +36,139 @@ function stashMath(s) {
     });
 }
 function unstashMath(s) {
-    return s.replace(/\x00MATH(\d+)\x00/g, function (_, i) { return _mathStash[i]; });
+    // Escape on the way back in. Math routinely contains `<` (`j<k`,
+    // `0\le i<m`) and `&` (alignment in `aligned`); reinserted raw, the HTML
+    // parser reads those as markup and eats the rest of the formula. KaTeX
+    // renders from textContent, which decodes the entities again, so the
+    // formula it sees is unchanged.
+    return s.replace(/\x00MATH(\d+)\x00/g, function (_, i) { return mdEsc(_mathStash[i]); });
+}
+
+// ─── Theorem environments ───
+// Mirrors LaTeX's `\newtheorem{theorem}{Theorem}[section]`: one counter
+// shared by every numbered environment, reset at each `##` section, printed
+// as `{section}.{n}`. `proof` is unnumbered.
+const THEOREM_ENVS = {
+    theorem: 'Theorem',
+    proposition: 'Proposition',
+    lemma: 'Lemma',
+    corollary: 'Corollary',
+    definition: 'Definition',
+    remark: 'Remark',
+    proof: 'Proof',
+};
+
+/** `thm:matching` → `thm-matching`; colons are legal in ids but awkward in selectors. */
+function labelToId(label) {
+    return label.replace(/[^\w-]+/g, '-');
+}
+
+/**
+ * Parse a trailing pandoc-style attribute block: `{#id}`, `{.class}`, or
+ * both. `.unnumbered` marks a heading that carries no section number, so
+ * front matter can sit above the paper without renumbering it — the same
+ * meaning LaTeX gives `\section*`.
+ */
+function splitHeadingAttrs(text) {
+    const m = text.match(/\s*\{([^}]*)\}\s*$/);
+    if (!m) return { text: text, id: '', unnumbered: false };
+    const tokens = m[1].trim().split(/\s+/);
+    let id = '';
+    let unnumbered = false;
+    for (const tok of tokens) {
+        if (tok.charAt(0) === '#') id = tok.slice(1);
+        else if (tok === '.unnumbered') unnumbered = true;
+    }
+    // Only treat it as an attribute block if it actually held attributes.
+    if (!id && !unnumbered) return { text: text, id: '', unnumbered: false };
+    return { text: text.slice(0, m.index).trim(), id: id, unnumbered: unnumbered };
+}
+
+// Populated by scanLabels() at depth 0, read by cross-references anywhere.
+let _labels = {};
+// Numbers assigned to numbered environments in document order. The renderer
+// consumes this by index rather than recounting, so the two passes cannot
+// disagree about numbering.
+let _envNumbers = [];
+let _envIndex = 0;
+
+/**
+ * First pass: assign section and environment numbers and record every
+ * declared label. Needed because the document forward-references sections
+ * from its introduction, which a single-pass renderer cannot resolve.
+ * Runs on already-stashed source, so math bodies cannot be mistaken for
+ * directives; only code fences need skipping.
+ */
+function scanLabels(lines) {
+    _labels = {};
+    _envNumbers = [];
+    _envIndex = 0;
+    let sectionNum = 0;
+    let subNum = 0;
+    let envNum = 0;
+    let i = 0;
+    const len = lines.length;
+
+    while (i < len) {
+        const fenceMatch = lines[i].match(/^(`{3,}|~{3,})/);
+        if (fenceMatch) {
+            const fence = fenceMatch[1];
+            i++;
+            while (i < len && lines[i].indexOf(fence) !== 0) i++;
+            i++;
+            continue;
+        }
+
+        const headingMatch = lines[i].match(/^(#{1,6})\s+(.+)$/);
+        if (headingMatch) {
+            const level = headingMatch[1].length;
+            const attrs = splitHeadingAttrs(headingMatch[2]);
+            if (!attrs.unnumbered) {
+                if (level === 2) { sectionNum++; subNum = 0; envNum = 0; }
+                else if (level === 3) { subNum++; }
+            }
+            if (attrs.id && !attrs.unnumbered) {
+                _labels[attrs.id] = {
+                    kind: 'Section',
+                    num: level >= 3 ? sectionNum + '.' + subNum : String(sectionNum),
+                };
+            }
+            i++;
+            continue;
+        }
+
+        const dirMatch = lines[i].match(/^:::\s*([a-z]+)\s*(.*)$/);
+        if (dirMatch && THEOREM_ENVS[dirMatch[1]]) {
+            const env = dirMatch[1];
+            if (env === 'proof') {
+                _envNumbers.push('');
+            } else {
+                envNum++;
+                const num = sectionNum + '.' + envNum;
+                _envNumbers.push(num);
+                const idMatch = dirMatch[2].match(/id="([^"]*)"/);
+                if (idMatch && idMatch[1]) {
+                    _labels[idMatch[1]] = { kind: THEOREM_ENVS[env], num: num };
+                }
+            }
+        }
+        i++;
+    }
+}
+
+/**
+ * Resolve a cross-reference. `[[label]]` yields the qualified form
+ * (`Theorem 4.1`); `[[#label]]` yields the bare number, for prose that
+ * supplies its own noun ("Sections 3–5"). Unknown labels stay visible
+ * rather than failing silently.
+ */
+function resolveXref(ref) {
+    const bare = ref.charAt(0) === '#';
+    const label = bare ? ref.slice(1) : ref;
+    const entry = _labels[label];
+    if (!entry) return '<span class="xref-missing">[[' + mdEsc(ref) + ']]</span>';
+    return '<a href="#' + labelToId(label) + '" class="xref">'
+        + (bare ? entry.num : entry.kind + '&nbsp;' + entry.num) + '</a>';
 }
 
 export function mdEsc(s) {
@@ -77,6 +217,18 @@ export function stripFrontmatter(src) {
     return end === -1 ? src : src.slice(end + 5);
 }
 
+/**
+ * Render one list item, honouring a leading `{#id}` anchor. Bibliography
+ * entries need to be link targets, and this parser has no HTML passthrough
+ * to write an anchor by hand.
+ */
+function renderListItem(item) {
+    const anchor = item.match(/^\{#([^}]+)\}\s*/);
+    const text = anchor ? item.slice(anchor[0].length) : item;
+    return '<li' + (anchor ? ' id="' + labelToId(anchor[1]) + '"' : '') + '>'
+        + mdInline(mdEsc(text)) + '</li>';
+}
+
 /** Reject script-scheme URLs; returns '' when unsafe. */
 function mdSafeUrl(u) {
     const l = u.trim().toLowerCase();
@@ -86,9 +238,11 @@ function mdSafeUrl(u) {
 
 /** Process inline formatting (images, links, code, bold, italic). */
 export function mdInline(src) {
-    // Order matters: images before links (share bracket syntax), bold-italic
-    // before bold before italic to avoid partial matches
+    // Order matters: cross-references before images/links (all bracket-based),
+    // images before links (share bracket syntax), bold-italic before bold
+    // before italic to avoid partial matches
     return src
+        .replace(/\[\[([^\]\n]+)\]\]/g, (_, label) => resolveXref(label.trim()))
         .replace(/!\[([^\]]*)\]\(([^)]+)\)/g, (_, alt, url) => {
             const pi = url.indexOf('|');
             if (pi !== -1) {
@@ -98,7 +252,14 @@ export function mdInline(src) {
             }
             return '<img src="' + mdSafeUrl(url) + '" alt="' + alt + '" loading="lazy">';
         })
-        .replace(/\[([^\]]+)\]\(([^)]+)\)/g, (_, text, url) => { const s = mdSafeUrl(url); return s ? '<a href="' + s + '" target="_blank" rel="noopener noreferrer">' + text + '</a>' : text; })
+        // Same-page anchors (citations, footnotes) stay in the tab; only
+        // outbound links open a new one.
+        .replace(/\[([^\]]+)\]\(([^)]+)\)/g, (_, text, url) => {
+            const s = mdSafeUrl(url);
+            if (!s) return text;
+            if (s.charAt(0) === '#') return '<a href="' + s + '">' + text + '</a>';
+            return '<a href="' + s + '" target="_blank" rel="noopener noreferrer">' + text + '</a>';
+        })
         .replace(/`([^`]+)`/g, '<code>$1</code>')
         .replace(/\*{3}(.+?)\*{3}/g, '<strong><em>$1</em></strong>')
         .replace(/_{3}(.+?)_{3}/g, '<strong><em>$1</em></strong>')
@@ -115,13 +276,31 @@ export function mdInline(src) {
  * @returns {string}    HTML string
  */
 export function parseMarkdown(src) {
-    // Reset switcher counter so SSR + client-side renders produce
-    // identical IDs for the same input (CSS-only switcher tabs use
-    // these IDs to scope the radio button groups).
-    _switcherCounter = 0;
-    // Stash math expressions before any escaping
-    src = stashMath(src);
+    // Blockquotes and theorem bodies re-enter this function. Only the
+    // outermost call owns the module-level state: a nested call must not
+    // reset the math stash (it would orphan the outer document's formulas),
+    // the switcher counter (it would collide ids), or the label table.
+    const isRoot = _depth === 0;
+    _depth++;
+    try {
+        if (isRoot) {
+            // Reset switcher counter so SSR + client-side renders produce
+            // identical IDs for the same input (CSS-only switcher tabs use
+            // these IDs to scope the radio button groups).
+            _switcherCounter = 0;
+            // Stash math expressions before any escaping
+            src = stashMath(src);
+        }
+        const body = parseBlocks(src);
+        return isRoot ? unstashMath(body) : body;
+    } finally {
+        _depth--;
+    }
+}
+
+function parseBlocks(src) {
     const lines = src.replace(/\r\n?/g, '\n').split('\n');
+    if (_depth === 1) scanLabels(lines);
     const html = [];
     let i = 0;
     const len = lines.length;
@@ -226,9 +405,50 @@ export function parseMarkdown(src) {
         const headingMatch = line.match(/^(#{1,6})\s+(.+)$/);
         if (headingMatch) {
             const level = headingMatch[1].length;
-            const slug = headingMatch[2].toLowerCase().replace(/<[^>]+>/g, '').replace(/&[^;]+;/g, '').replace(/[^\w]+/g, '-').replace(/^-|-$/g, '');
-            html.push('<h' + level + ' id="' + slug + '">' + mdInline(mdEsc(headingMatch[2])) + '</h' + level + '>');
+            // An explicit `{#label}` suffix sets the anchor and makes the
+            // heading addressable by `[[label]]`; otherwise slugify the text.
+            const attrs = splitHeadingAttrs(headingMatch[2]);
+            const text = attrs.text;
+            const slug = attrs.id
+                ? labelToId(attrs.id)
+                : text.toLowerCase().replace(/<[^>]+>/g, '').replace(/&[^;]+;/g, '').replace(/[^\w]+/g, '-').replace(/^-|-$/g, '');
+            html.push('<h' + level + ' id="' + slug + '">' + mdInline(mdEsc(text)) + '</h' + level + '>');
             i++;
+            continue;
+        }
+
+        // Theorem container: `::: theorem id="thm:x" name="Optional title"`,
+        // body parsed recursively, closed by a bare `:::`.
+        const dirMatch = line.match(/^:::\s*([a-z]+)\s*(.*)$/);
+        if (dirMatch && THEOREM_ENVS[dirMatch[1]]) {
+            const env = dirMatch[1];
+            const attrs = dirMatch[2];
+            const id = (attrs.match(/id="([^"]*)"/) || [])[1] || '';
+            const name = (attrs.match(/name="([^"]*)"/) || [])[1] || '';
+            const num = _envNumbers[_envIndex++] || '';
+
+            const bodyLines = [];
+            let nesting = 0;
+            i++;
+            while (i < len) {
+                if (/^:::\s*[a-z]/.test(lines[i])) nesting++;
+                else if (/^:::\s*$/.test(lines[i])) {
+                    if (nesting === 0) break;
+                    nesting--;
+                }
+                bodyLines.push(lines[i]);
+                i++;
+            }
+            i++;
+
+            let head = '<span class="theorem-kind">' + THEOREM_ENVS[env]
+                + (num ? '&nbsp;' + num : '') + '</span>';
+            if (name) head += ' <span class="theorem-name">(' + mdInline(mdEsc(name)) + ')</span>';
+            html.push('<div class="theorem theorem-' + env + '"'
+                + (id ? ' id="' + labelToId(id) + '"' : '') + '>'
+                + '<p class="theorem-head">' + head + '</p>'
+                + parseMarkdown(bodyLines.join('\n'))
+                + '</div>');
             continue;
         }
 
@@ -255,7 +475,7 @@ export function parseMarkdown(src) {
                 items.push(lines[i].replace(/^[\-*+]\s+/, ''));
                 i++;
             }
-            html.push('<ul>' + items.map(it => '<li>' + mdInline(mdEsc(it)) + '</li>').join('') + '</ul>');
+            html.push('<ul>' + items.map(renderListItem).join('') + '</ul>');
             continue;
         }
 
@@ -282,14 +502,14 @@ export function parseMarkdown(src) {
                 olItems.push(lines[i].replace(/^\d+[.)]\s+/, ''));
                 i++;
             }
-            html.push('<ol>' + olItems.map(it => '<li>' + mdInline(mdEsc(it)) + '</li>').join('') + '</ol>');
+            html.push('<ol>' + olItems.map(renderListItem).join('') + '</ol>');
             continue;
         }
 
         // Paragraph: collect consecutive non-blank, non-block-syntax lines
         const pLines = [];
         while (i < len && !/^\s*$/.test(lines[i])
-            && !/^(#{1,6}\s|>\s?|[\-*+]\s|`{3,}|~{3,}|\d+[.)]\s|(-{3,}|\*{3,}|_{3,})\s*$)/.test(lines[i])) {
+            && !/^(#{1,6}\s|>\s?|[\-*+]\s|`{3,}|~{3,}|:{3}|\d+[.)]\s|(-{3,}|\*{3,}|_{3,})\s*$)/.test(lines[i])) {
             pLines.push(lines[i]);
             i++;
         }

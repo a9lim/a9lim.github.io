@@ -42,6 +42,20 @@ function loadKaTeX() {
     });
 }
 
+// Macros posts may use without redefining them per formula. Mirrors the
+// preamble shorthands of the papers these posts are drawn from.
+const KATEX_MACROS = {
+    '\\F': '\\mathbb{F}',
+    '\\Z': '\\mathbb{Z}',
+    '\\Tr': '\\operatorname{Tr}',
+    '\\Arf': '\\operatorname{Arf}',
+    '\\rad': '\\operatorname{rad}',
+    '\\rank': '\\operatorname{rank}',
+    '\\wt': '\\operatorname{wt}',
+    '\\Span': '\\operatorname{span}',
+    '\\supp': '\\operatorname{supp}'
+};
+
 function renderMath(el) {
     if (typeof renderMathInElement === 'function') {
         renderMathInElement(el, {
@@ -49,6 +63,7 @@ function renderMath(el) {
                 { left: '$$', right: '$$', display: true },
                 { left: '$', right: '$', display: false }
             ],
+            macros: KATEX_MACROS,
             throwOnError: false
         });
     }
@@ -59,6 +74,26 @@ function formatDate(iso) {
     const d = new Date(iso + 'T00:00:00');
     const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
     return months[d.getMonth()] + ' ' + d.getDate() + ', ' + d.getFullYear();
+}
+
+/**
+ * Byline shown opposite the date/tag line: who produced the work, and the
+ * artifacts it stands on. Both fields are optional; posts without them render
+ * exactly as before. Mirrored by the Worker's SSR header — keep the two in
+ * step. Hrefs are validated at build time (see postLinks in tools/build.mjs).
+ */
+function postByline(meta) {
+    const bits = [];
+    if (Array.isArray(meta.authors) && meta.authors.length) {
+        bits.push('<span class="blog-post-authors">'
+            + meta.authors.map(escapeHtml).join(' &middot; ') + '</span>');
+    }
+    if (Array.isArray(meta.links) && meta.links.length) {
+        bits.push('<span class="blog-post-links">' + meta.links.map(function (l) {
+            return '<a href="' + escapeHtml(l.href) + '">' + escapeHtml(l.label) + '</a>';
+        }).join(' &middot; ') + '</span>');
+    }
+    return bits.length ? '<span class="blog-post-byline">' + bits.join(' &middot; ') + '</span>' : '';
 }
 
 /** Shimmer skeleton placeholders matching blog-entry layout. */
@@ -302,8 +337,11 @@ export async function showBlogPost(slug, $) {
 
     let header = '<div class="blog-post-header">';
     if (meta) {
-        header += '<span class="blog-post-date">' + formatDate(meta.date)
-            + (displayTags ? ' &middot; ' + (Array.isArray(displayTags) ? displayTags : [displayTags]).map(escapeHtml).join(', ') : '') + '</span>';
+        header += '<div class="blog-post-meta">'
+            + '<span class="blog-post-date">' + formatDate(meta.date)
+            + (displayTags ? ' &middot; ' + (Array.isArray(displayTags) ? displayTags : [displayTags]).map(escapeHtml).join(', ') : '') + '</span>'
+            + postByline(meta)
+            + '</div>';
         header += '<h1 class="blog-post-title">' + escapeHtml(displayTitle) + '</h1>';
     }
     header += '</div>';

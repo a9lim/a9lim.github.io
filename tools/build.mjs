@@ -185,6 +185,24 @@ function loadContentPair(dir, slug) {
 
 // --- posts: content/posts/*.md → posts.json ---
 
+/**
+ * Parse a post's `links:` frontmatter list. Each entry is `label | href`.
+ * Hrefs must be site-absolute or https so a byline cannot smuggle in a
+ * script scheme; anything else is a build error rather than a silent drop.
+ */
+function postLinks(value, source) {
+  return value.map(spec => {
+    const [label, href, ...extra] = String(spec).split('|').map(s => s.trim());
+    if (!label || !href || extra.length) {
+      throw new Error(`${source}: links entry must be "label | href", got "${spec}"`);
+    }
+    if (!href.startsWith('/') && !href.startsWith('https://')) {
+      throw new Error(`${source}: link "${label}" must be site-absolute or https, got "${href}"`);
+    }
+    return { label, href };
+  });
+}
+
 const postEntries = contentSlugs('content/posts')
   .map(slug => loadContentPair('content/posts', slug))
   .sort((a, b) => (a.meta.date < b.meta.date ? 1 : -1));
@@ -206,6 +224,10 @@ for (const p of postEntries) {
     ...(p.ja && p.ja.meta.tag && { tag_ja: p.ja.meta.tag }),
     excerpt: p.meta.excerpt,
     ...(p.ja && p.ja.meta.excerpt && { excerpt_ja: p.ja.meta.excerpt }),
+    // Optional byline for papers: who produced the work, and the artifacts it
+    // stands on. Rendered opposite the date/tag line, not in the body.
+    ...(p.meta.authors && { authors: p.meta.authors }),
+    ...(p.meta.links && { links: postLinks(p.meta.links, p.enRel) }),
     ...(p.ja && { translations: ['ja'] }),
   });
 }
