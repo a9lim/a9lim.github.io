@@ -967,6 +967,9 @@ a:hover { color: var(--accent-light); }
     background: var(--bg-hover);
 }
 
+/* Matches the blockquote/theorem callout treatment: surface only, no rule.
+   A filled block already reads as set apart; the bar on top of it was doing
+   the same job twice. */
 .blog-content pre {
     margin: 1.5em 0;
     padding: 20px 24px;
@@ -1017,25 +1020,17 @@ a:hover { color: var(--accent-light); }
 .blog-content pre code.language-cpp::before { content: "c++"; }
 .blog-content pre code.language-glsl::before { content: "glsl"; }
 
+/* Called-out blocks — quotes, theorem statements, and code — all share the
+   one surface, --bg-elevated, and carry no rule: a block is set apart by a
+   surface or by a rule, never both. That also leaves the accent left bar
+   meaning "interactive" and nothing else (see .blog-entry::before), where on
+   a block this size it had read as an alert rather than an aside. */
 .blog-content blockquote {
     margin: 1.5em 0;
     padding: 12px 20px 12px 24px;
-    border-left: none;
-    background: var(--bg-hover);
+    background: var(--bg-elevated);
     border-radius: var(--radius);
     color: var(--text-secondary);
-    position: relative;
-}
-
-.blog-content blockquote::before {
-    content: '';
-    position: absolute;
-    left: 0;
-    top: 8px;
-    bottom: 8px;
-    width: 3px;
-    border-radius: var(--radius);
-    background: var(--accent);
 }
 
 .blog-content blockquote p { margin-bottom: 0.5em; }
@@ -1256,33 +1251,25 @@ body.blog-lightbox-open {
 }
 
 /* ─── Theorem environments (::: directives from src/markdown.js) ─── */
+/* Same surface and geometry as .blog-content blockquote, deliberately: a
+   called-out block should look the same whether it is a quote or a
+   statement, so a post that mixes them reads as one document. */
 .blog-content .theorem {
     margin: 1.5em 0;
-    padding: 14px 20px 14px 24px;
+    padding: 12px 20px 12px 24px;
     background: var(--bg-elevated);
     border-radius: var(--radius);
-    position: relative;
 }
 
-.blog-content .theorem::before {
-    content: '';
-    position: absolute;
-    left: 0;
-    top: 8px;
-    bottom: 8px;
-    width: 3px;
-    border-radius: var(--radius);
-    background: var(--accent);
-}
-
-/* Proofs are subordinate to the statement they follow: quieter surface,
-   muted rule. */
+/* A proof is supporting text, not a callout, and it is usually the longest
+   block on the page — as a filled slab it outweighed the theorem it belongs
+   to. It is the one block here with no surface, so it is also the one that
+   still needs a rule to mark its extent. Left padding absorbs the border so
+   its text edge stays at 24px with the filled blocks. */
 .blog-content .theorem-proof {
-    background: var(--bg-hover);
-}
-
-.blog-content .theorem-proof::before {
-    background: var(--text-muted);
+    background: none;
+    padding: 4px 20px 4px 21px;
+    border-left: 3px solid var(--border-strong);
 }
 
 .blog-content .theorem-head {
