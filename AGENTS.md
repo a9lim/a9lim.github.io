@@ -34,7 +34,7 @@ npm test
 npm exec -- wrangler deploy --dry-run
 ```
 
-The build needs **pandoc on PATH** (developed against 3.10) and the `papers/ogdoad` submodule checked out, because paper posts convert their body from LaTeX on every build. `git submodule update --init` if a fresh clone fails there.
+The build needs the `papers/ogdoad` submodule checked out because paper posts convert their body from LaTeX on every build. `tools/pandoc.sh` prefers a local Pandoc and otherwise downloads the pinned, checksum-verified Linux release into `.build/`; `content/resume/build.sh` does the same for Tectonic. `git submodule update --init` if a fresh clone fails there.
 
 `npm run build` runs two explicit phases:
 
@@ -68,7 +68,7 @@ The lightweight markdown parser is `site/src/markdown.js`, shared by the blog cl
 
 It also carries a small paper dialect, used by posts converted from LaTeX writeups:
 
-- `::: theorem id="thm:x" name="Optional title"` … `:::` containers for `theorem`, `proposition`, `lemma`, `corollary`, `definition`, `remark`, and `proof`. Bodies are parsed recursively. Numbering mirrors amsthm's `\newtheorem{...}[section]`: one counter shared by every numbered kind, reset at each `##`, printed as `{section}.{n}`; `proof` is unnumbered.
+- `::: theorem id="thm:x" name="Optional title"` … `:::` containers for `theorem`, `proposition`, `lemma`, `corollary`, `definition`, `remark`, and `proof`. Bodies are parsed recursively. Numbering mirrors amsthm's `\newtheorem{...}[section]`: one counter shared by every numbered kind, reset at each `##`, printed as `{section}.{n}`; `proof` is unnumbered. `number="A"` supplies a named theorem's explicit display number without advancing that counter.
 - `[[label]]` renders a linked `Theorem 4.1`; `[[#label]]` renders the bare number, for prose supplying its own noun ("Sections 3–5"). An undeclared label renders visibly as `.xref-missing` rather than failing silently.
 - Headings take a trailing pandoc-style attribute block: `{#sec:x}` sets the anchor and makes the heading referenceable, `{.unnumbered}` keeps it out of the section count so an abstract or reference list does not renumber the paper between them. List items take a leading `{#id}` anchor, which is how bibliography entries become link targets.
 - Numbering requires a pre-pass, so `parseMarkdown` scans labels before rendering. Math, the switcher counter, and the label table are module-level and owned by the outermost call only — nested parses must not reset them. Math is HTML-escaped when restored: formulas routinely contain `<`, which the browser would otherwise read as markup.

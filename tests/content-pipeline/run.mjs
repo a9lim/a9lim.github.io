@@ -42,6 +42,7 @@ check('math escapes < so the HTML parser cannot eat the formula',
 
 const thmDoc = [
   '## First {#sec:one}', '',
+  '::: theorem number="A" name="Main result"', 'Overview.', ':::', '',
   '::: definition id="def:a" name="Local realization"', 'Body $x<y$.', ':::', '',
   '## Second {#sec:two}', '',
   '::: theorem id="thm:a" name="Public matching"', 'Statement.', ':::', '',
@@ -58,6 +59,8 @@ check('theorem counter resets per section and is shared across kinds',
   && thmHtml.includes('Corollary&nbsp;2.2'),
   thmHtml.match(/theorem-kind">[^<]*/g)?.join(' | '));
 check('proofs are unnumbered', thmHtml.includes('<span class="theorem-kind">Proof</span>'));
+check('explicit theorem numbers do not advance the section counter',
+  thmHtml.includes('Theorem&nbsp;A') && thmHtml.includes('Definition&nbsp;1.1'));
 check('theorem carries its label as an anchor', thmHtml.includes('<div class="theorem theorem-theorem" id="thm-a">'));
 check('qualified cross-reference renders kind and number',
   thmHtml.includes('<a href="#def-a" class="xref">Definition&nbsp;1.1</a>'));
@@ -89,6 +92,9 @@ check('same-page links do not open a new tab',
   parseMarkdown('See [it](#ref-key).').includes('<a href="#ref-key">it</a>'));
 check('outbound links still open a new tab',
   parseMarkdown('See [it](https://example.com).').includes('target="_blank"'));
+const unknownDirective = parseMarkdown('::: custom\nBody.\n:::\nAfter.');
+check('unknown directives stay visible and cannot trap the parser',
+  unknownDirective.includes('::: custom') && unknownDirective.includes('After.'));
 
 // Optional post byline: `authors:` and `links:` reach posts.json parsed, and
 // both the client and the Worker render them opposite the date/tag line.
@@ -110,6 +116,9 @@ const { PROJECTS } = await import(join(DIST, 'src/projects.js'));
 const clientMeta = await import(join(DIST, 'src/route-meta.js'));
 const gen = await import(join(BUILD, 'content.generated.mjs'));
 const posts = JSON.parse(readFileSync(join(DIST, 'posts.json'), 'utf8'));
+const paperPost = readFileSync(join(DIST, 'content/posts/quadratic-refinements-in-games.md'), 'utf8');
+check('custom Theorem A is normalized into the supported paper dialect',
+  paperPost.includes('::: theorem number="A"') && !paperPost.includes('::: thmA'));
 
 console.log('content/projects ↔ dist/src/projects.js ↔ .build/content.generated.mjs');
 const projSlugs = enSlugs('content/projects');

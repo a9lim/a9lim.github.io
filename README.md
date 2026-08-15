@@ -42,6 +42,7 @@ python -m http.server --directory dist 8000
 ```
 
 `./deploy.sh` runs a fresh build and deploys with the pinned Wrangler version. A normal build must leave `git status` clean.
+Linux builders bootstrap pinned, checksum-verified Pandoc and Tectonic binaries into the ignored `.build/` cache when those tools are not already installed.
 
 ## Projects
 

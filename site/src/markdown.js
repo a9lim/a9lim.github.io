@@ -143,8 +143,10 @@ function scanLabels(lines) {
             if (env === 'proof') {
                 _envNumbers.push('');
             } else {
-                envNum++;
-                const num = sectionNum + '.' + envNum;
+                const rawExplicit = (dirMatch[2].match(/number="([^"]*)"/) || [])[1] || '';
+                const explicit = rawExplicit ? mdEsc(rawExplicit) : '';
+                if (!explicit) envNum++;
+                const num = explicit || sectionNum + '.' + envNum;
                 _envNumbers.push(num);
                 const idMatch = dirMatch[2].match(/id="([^"]*)"/);
                 if (idMatch && idMatch[1]) {
@@ -449,6 +451,15 @@ function parseBlocks(src) {
                 + '<p class="theorem-head">' + head + '</p>'
                 + parseMarkdown(bodyLines.join('\n'))
                 + '</div>');
+            continue;
+        }
+
+        // Unknown directive syntax must remain visible, but it must also make
+        // progress. Excluding `:::` from paragraphs without consuming it used
+        // to spin forever on a converter-emitted custom theorem environment.
+        if (/^:::\s*/.test(line)) {
+            html.push('<p>' + mdInline(mdEsc(line)) + '</p>');
+            i++;
             continue;
         }
 
