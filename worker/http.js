@@ -15,7 +15,9 @@ export const SECURITY_HEADERS = {
 export function secure(response, extra) {
   const secured = new Response(response.body, response);
   for (const [name, value] of Object.entries(SECURITY_HEADERS)) secured.headers.set(name, value);
-  secured.headers.set('Cache-Control', 'public, max-age=0, stale-while-revalidate=86400');
+  // Public URLs are stable rather than content-hashed. Revalidation lets a new
+  // version appear immediately while the version-scoped edge cache stays warm.
+  secured.headers.set('Cache-Control', 'public, max-age=0, must-revalidate');
   secured.headers.set('Cloudflare-CDN-Cache-Control', 'public, max-age=3600, stale-while-revalidate=86400');
   secured.headers.set('Vary', 'Accept-Encoding');
   if (extra) {

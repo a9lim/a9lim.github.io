@@ -6,6 +6,10 @@
   "observability": {
     "enabled": true
   },
+  "cache": {
+    "enabled": true,
+    "cross_version_cache": false
+  },
   "assets": {
     "directory": "dist",
     "binding": "ASSETS",

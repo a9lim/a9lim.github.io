@@ -12,7 +12,7 @@
     "check": "export DRAFTS=0 && npm run build && node tools/build.mjs --check && node tests/content-pipeline/run.mjs && node tests/deploy-layout/run.mjs",
     "test": "npm run check && node --test features/surveys/tests/*.test.mjs",
     "dev": "export DRAFTS=\"${DRAFTS:-1}\" && npm run build && wrangler dev",
-    "deploy": "export DRAFTS=0 && npm run build && wrangler deploy"
+    "deploy": "./deploy.sh"
   },
   "devDependencies": {
     "wrangler": "4.123.0"

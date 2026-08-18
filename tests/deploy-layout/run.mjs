@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { existsSync, readdirSync, statSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { dirname, join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -96,5 +96,22 @@ for (const generated of [
 ]) {
   check(`keeps ${generated} out of the source tree`, !existsSync(join(ROOT, generated)));
 }
+
+const headers = readFileSync(join(DIST, '_headers'), 'utf8');
+const browserCacheLines = headers.split('\n').filter(line => /^  Cache-Control:/.test(line));
+check(
+  'all static assets revalidate at the browser boundary',
+  browserCacheLines.length === 1 && browserCacheLines[0] === '  Cache-Control: public, max-age=0, must-revalidate'
+);
+
+const workerHttp = readFileSync(join(ROOT, 'worker/http.js'), 'utf8');
+check(
+  'Worker responses use the same browser revalidation policy',
+  workerHttp.includes("secured.headers.set('Cache-Control', 'public, max-age=0, must-revalidate')")
+);
+
+const wrangler = JSON.parse(readFileSync(join(ROOT, 'wrangler.jsonc'), 'utf8'));
+check('Worker caching is enabled', wrangler.cache?.enabled === true);
+check('Worker cache is isolated per deploy', wrangler.cache?.cross_version_cache === false);
 
 console.log(`\ndeploy layout: ${files.length} files validated`);

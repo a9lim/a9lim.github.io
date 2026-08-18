@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Deploy to Cloudflare: regenerate all content-derived artifacts, then push.
+# Deploy to Cloudflare: regenerate all content-derived artifacts, push, then
+# verify that the newly generated deployment marker is live.
 # Guards against the one real failure mode of the content/ pipeline —
 # editing content/ and deploying stale generated files.
 
@@ -10,4 +11,13 @@ cd "$(dirname "$0")"
 export DRAFTS=0
 
 npm run build
-exec npm exec -- wrangler deploy "$@"
+npm exec -- wrangler deploy "$@"
+
+# A dry run never changes production, so there is nothing live to verify.
+for arg in "$@"; do
+  if [[ "$arg" == "--dry-run" ]]; then
+    exit 0
+  fi
+done
+
+node tools/verify-deploy.mjs

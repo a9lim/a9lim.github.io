@@ -10,6 +10,7 @@
   Content-Language: en
   X-Robots-Tag: index, follow
   Vary: Accept-Encoding
+  Cache-Control: public, max-age=0, must-revalidate
 
 # Cross-origin isolation for geon (enables SharedArrayBuffer / high-res timers for WebGPU)
 /geon/*
@@ -18,13 +19,6 @@
 # Cross-origin isolation for plasma (enables SharedArrayBuffer / high-res timers for WebGPU)
 /plasma/*
   Cross-Origin-Embedder-Policy: credentialless
-
-# HTML — no-cache with stale-while-revalidate (static pages only;
-# Worker-served SPA routes set their own cache headers)
-/*.html
-  Cache-Control: public, max-age=0, stale-while-revalidate=86400
-/
-  Cache-Control: public, max-age=0, stale-while-revalidate=86400
 
 # Early Hints — preload critical resources for root SPA
 /
@@ -95,93 +89,69 @@
   Link: </pile/styles.css>; rel=preload; as=style
   Link: </pile/main.js>; rel=modulepreload
 
-# Shared design system — short browser TTL, CDN caches until next deploy
+# Public asset names are stable, so browsers revalidate them on every use via
+# the global Cache-Control rule. The edge cache below is isolated per deploy.
+# Shared design system
 /shared/*
-  Cache-Control: public, max-age=86400, stale-while-revalidate=604800
   Cloudflare-CDN-Cache-Control: public, max-age=31536000, immutable
 
 # One-cycle compatibility aliases for the former root-level URLs.
 /shared-*.js
-  Cache-Control: public, max-age=86400, stale-while-revalidate=604800
   Cloudflare-CDN-Cache-Control: public, max-age=31536000, immutable
 /shared-*.css
-  Cache-Control: public, max-age=86400, stale-while-revalidate=604800
   Cloudflare-CDN-Cache-Control: public, max-age=31536000, immutable
 
-# Subproject assets — short browser TTL, CDN caches until next deploy
+# Subproject assets
 /geon/*.js
-  Cache-Control: public, max-age=86400, stale-while-revalidate=604800
   Cloudflare-CDN-Cache-Control: public, max-age=31536000, immutable
 /geon/*.css
-  Cache-Control: public, max-age=86400, stale-while-revalidate=604800
   Cloudflare-CDN-Cache-Control: public, max-age=31536000, immutable
 /cyano/*.js
-  Cache-Control: public, max-age=86400, stale-while-revalidate=604800
   Cloudflare-CDN-Cache-Control: public, max-age=31536000, immutable
 /cyano/*.css
-  Cache-Control: public, max-age=86400, stale-while-revalidate=604800
   Cloudflare-CDN-Cache-Control: public, max-age=31536000, immutable
 /gerry/*.js
-  Cache-Control: public, max-age=86400, stale-while-revalidate=604800
   Cloudflare-CDN-Cache-Control: public, max-age=31536000, immutable
 /gerry/*.css
-  Cache-Control: public, max-age=86400, stale-while-revalidate=604800
   Cloudflare-CDN-Cache-Control: public, max-age=31536000, immutable
 /shoals/*.js
-  Cache-Control: public, max-age=86400, stale-while-revalidate=604800
   Cloudflare-CDN-Cache-Control: public, max-age=31536000, immutable
 /shoals/*.css
-  Cache-Control: public, max-age=86400, stale-while-revalidate=604800
   Cloudflare-CDN-Cache-Control: public, max-age=31536000, immutable
 /miasma/*.js
-  Cache-Control: public, max-age=86400, stale-while-revalidate=604800
   Cloudflare-CDN-Cache-Control: public, max-age=31536000, immutable
 /miasma/*.css
-  Cache-Control: public, max-age=86400, stale-while-revalidate=604800
   Cloudflare-CDN-Cache-Control: public, max-age=31536000, immutable
 /pile/*.js
-  Cache-Control: public, max-age=86400, stale-while-revalidate=604800
   Cloudflare-CDN-Cache-Control: public, max-age=31536000, immutable
 /pile/*.css
-  Cache-Control: public, max-age=86400, stale-while-revalidate=604800
   Cloudflare-CDN-Cache-Control: public, max-age=31536000, immutable
 /plasma/*.js
-  Cache-Control: public, max-age=86400, stale-while-revalidate=604800
   Cloudflare-CDN-Cache-Control: public, max-age=31536000, immutable
 /plasma/*.css
-  Cache-Control: public, max-age=86400, stale-while-revalidate=604800
   Cloudflare-CDN-Cache-Control: public, max-age=31536000, immutable
 /plasma/*.wgsl
-  Cache-Control: public, max-age=86400, stale-while-revalidate=604800
   Cloudflare-CDN-Cache-Control: public, max-age=31536000, immutable
 /scripture/*.js
-  Cache-Control: public, max-age=86400, stale-while-revalidate=604800
   Cloudflare-CDN-Cache-Control: public, max-age=31536000, immutable
 /scripture/*.css
-  Cache-Control: public, max-age=86400, stale-while-revalidate=604800
   Cloudflare-CDN-Cache-Control: public, max-age=31536000, immutable
 
 # Static assets — CDN caches until next deploy
 /favicon.ico
-  Cache-Control: public, max-age=604800
   Cloudflare-CDN-Cache-Control: public, max-age=31536000, immutable
 /logo.svg
-  Cache-Control: public, max-age=604800
   Cloudflare-CDN-Cache-Control: public, max-age=31536000, immutable
 /og-image.webp
-  Cache-Control: public, max-age=604800
   Cloudflare-CDN-Cache-Control: public, max-age=31536000, immutable
 /img/*
-  Cache-Control: public, max-age=604800
   Cloudflare-CDN-Cache-Control: public, max-age=31536000, immutable
 /blog-assets/*
-  Cache-Control: public, max-age=604800
   Cloudflare-CDN-Cache-Control: public, max-age=31536000, immutable
 
 # Resume PDF
 /resume.pdf
   Content-Type: application/pdf
-  Cache-Control: public, max-age=86400
   Cloudflare-CDN-Cache-Control: public, max-age=31536000, immutable
 
 # Paper PDF accompanying /blog/quadratic-refinements-in-games. Listed
@@ -189,51 +159,32 @@
 # glob here would override the resume's own cache policy above.
 /quadratic-refinements.pdf
   Content-Type: application/pdf
-  Cache-Control: public, max-age=604800
   Cloudflare-CDN-Cache-Control: public, max-age=31536000, immutable
 
 # Self-hosted fonts
 /fonts/*.woff2
-  Cache-Control: public, max-age=31536000, immutable
   Cloudflare-CDN-Cache-Control: public, max-age=31536000, immutable
 /fonts/*.css
-  Cache-Control: public, max-age=31536000, immutable
   Cloudflare-CDN-Cache-Control: public, max-age=31536000, immutable
 
 # Manifest
 /manifest.json
-  Cache-Control: public, max-age=86400
   Cloudflare-CDN-Cache-Control: public, max-age=31536000, immutable
 
 # Feed and sitemap
 /feed.xml
-  Cache-Control: public, max-age=3600
   Cloudflare-CDN-Cache-Control: public, max-age=86400
 /feed.atom
-  Cache-Control: public, max-age=3600
   Cloudflare-CDN-Cache-Control: public, max-age=86400
 /sitemap.xml
-  Cache-Control: public, max-age=3600
   Cloudflare-CDN-Cache-Control: public, max-age=86400
 /sitemap-main.xml
-  Cache-Control: public, max-age=3600
   Cloudflare-CDN-Cache-Control: public, max-age=86400
 /sitemap-scripture.xml
-  Cache-Control: public, max-age=3600
   Cloudflare-CDN-Cache-Control: public, max-age=86400
 /robots.txt
-  Cache-Control: public, max-age=86400
   Cloudflare-CDN-Cache-Control: public, max-age=86400
 
 # LLM and discovery files
 /content/posts/*
-  Cache-Control: public, max-age=3600
   Cloudflare-CDN-Cache-Control: public, max-age=86400
-/llms.txt
-  Cache-Control: public, max-age=3600
-/llms-full.txt
-  Cache-Control: public, max-age=3600
-/about.md
-  Cache-Control: public, max-age=3600
-/.well-known/*
-  Cache-Control: public, max-age=86400
