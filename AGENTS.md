@@ -41,7 +41,7 @@ The build needs the `papers/ogdoad` submodule checked out because paper posts co
 1. `tools/stage-assets.mjs` deletes and recreates `dist/`, then copies only allowlisted site/static/shared files and tracked deployable files from each project submodule.
 2. `tools/build.mjs` derives all content-dependent outputs into `dist/` and `.build/`.
 
-`npm test` rebuilds, runs the deterministic `--check`, verifies content consistency and the deploy allowlist, and runs the survey API/scoring tests. `./dev.sh` builds then starts pinned Wrangler. Production deployment is manual: Cloudflare Workers Builds stays disabled, and `./deploy.sh` builds, deploys, then verifies the live `home-data.json` marker. For a static-only preview, build first and serve `dist/`.
+`npm test` rebuilds, runs the deterministic `--check`, verifies content consistency and the deploy allowlist, and runs the survey API/scoring tests. `./dev.sh` builds then starts pinned Wrangler. Production deployment is manual: Cloudflare Workers Builds stays disabled, and `./deploy.sh` builds, deploys, purges the `a9l.im` hostname cache with the least-privilege token stored in macOS Keychain, then verifies the live `home-data.json` marker. For a static-only preview, build first and serve `dist/`.
 
 The Worker imports `.build/content.generated.mjs`, so Wrangler commands that bundle the Worker require a completed build. `wrangler.jsonc` points only at `dist/`; do not broaden its asset directory back to the repository root. Workers Static Assets handles existing files before the Worker, so the retired Pages `_routes.json` file must not return.
 
@@ -109,7 +109,7 @@ Security policy is deliberately duplicated:
 
 Keep CSP, HSTS, COOP, robots policy, and `Vary` aligned across both. `static/_headers` has a 100-rule limit. Cloudflare strips `Cloudflare-CDN-Cache-Control` before browser delivery; it controls CDN caching separately from browser `Cache-Control`.
 
-The Worker cache is explicitly version-scoped with `cache.cross_version_cache: false`; each deploy activates a fresh edge-cache namespace. Public assets use stable URLs, so both `static/_headers` and Worker responses require browser revalidation (`max-age=0, must-revalidate`). Preserve those two halves together. A zone-wide API purge is redundant for ordinary deploys, cannot evict browser caches, and would require a second cache-purge credential that Wrangler OAuth does not carry.
+The Worker cache is explicitly version-scoped with `cache.cross_version_cache: false`, but the live zone cache has retained canonical URLs across deployments. `tools/purge-cache.mjs` therefore purges only the `a9l.im` hostname after Wrangler succeeds; its token has only Zone Cache Purge permission and is read from the `a9l.im-cloudflare-cache-purge` Keychain item (or `CLOUDFLARE_CACHE_PURGE_TOKEN` off macOS). Public assets use stable URLs, so both `static/_headers` and Worker responses also require browser revalidation (`max-age=0, must-revalidate`); an edge purge cannot evict an already-fresh browser copy. Preserve the purge and revalidation halves together.
 
 ## Design philosophy
 

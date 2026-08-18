@@ -114,4 +114,15 @@ const wrangler = JSON.parse(readFileSync(join(ROOT, 'wrangler.jsonc'), 'utf8'));
 check('Worker caching is enabled', wrangler.cache?.enabled === true);
 check('Worker cache is isolated per deploy', wrangler.cache?.cross_version_cache === false);
 
+const deployScript = readFileSync(join(ROOT, 'deploy.sh'), 'utf8');
+const deployStep = deployScript.indexOf('npm exec -- wrangler deploy');
+const purgeStep = deployScript.indexOf('node tools/purge-cache.mjs');
+const verifyStep = deployScript.indexOf('node tools/verify-deploy.mjs');
+check('manual deploy purges only after Wrangler succeeds', deployStep >= 0 && purgeStep > deployStep);
+check('manual deploy verifies only after the purge succeeds', verifyStep > purgeStep);
+check('manual deploy reads the scoped token from Keychain', deployScript.includes('a9l.im-cloudflare-cache-purge'));
+
+const purgeTool = readFileSync(join(ROOT, 'tools/purge-cache.mjs'), 'utf8');
+check('cache purge targets the a9l.im hostname', purgeTool.includes("body: JSON.stringify({ hosts: [HOSTNAME] })"));
+
 console.log(`\ndeploy layout: ${files.length} files validated`);

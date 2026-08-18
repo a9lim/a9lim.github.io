@@ -41,7 +41,7 @@ For a static-only preview after building:
 python -m http.server --directory dist 8000
 ```
 
-Production deploys are manual: Cloudflare Workers Builds stays disabled, and `./deploy.sh` is the authoritative path. It runs a fresh build, deploys with the pinned Wrangler version, and confirms that the new build marker is live. Worker caches are isolated by deployment, and stable public asset URLs require browser revalidation, so a successful deploy appears immediately without a zone-wide purge credential. A normal build must leave `git status` clean.
+Production deploys are manual: Cloudflare Workers Builds stays disabled, and `./deploy.sh` is the authoritative path. It runs a fresh build, deploys with the pinned Wrangler version, purges the `a9l.im` hostname cache, and confirms that the new build marker is live. The purge-only token lives in the macOS Keychain item `a9l.im-cloudflare-cache-purge`; `CLOUDFLARE_CACHE_PURGE_TOKEN` is the non-macOS fallback. Stable public asset URLs also require browser revalidation, so a successful deploy appears immediately. A normal build must leave `git status` clean.
 Linux builders bootstrap pinned, checksum-verified Pandoc and Tectonic binaries into the ignored `.build/` cache when those tools are not already installed.
 
 ## Projects
