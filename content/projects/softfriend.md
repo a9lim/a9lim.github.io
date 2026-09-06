@@ -2,7 +2,7 @@
 title: Soft Friend
 order: 220
 planned: true
-major: true
+major: false
 external: true
 emoji: 🐟
 seoName: Soft Friend — Soft-Bodied Lighter-Than-Air Agent Platform
