@@ -1,13 +1,11 @@
 ---
-title: Saklas
-href: https://github.com/a9lim/saklas
+title: Drowse
+href: https://github.com/a9lim/drowse
 order: 10
 major: true
 external: true
-emoji: 👁
-seoName: Saklas — Activation Steering for HuggingFace Transformers
-packages:
-  - PyPI | saklas | https://pypi.org/project/saklas/ | pip install saklas
+emoji: 💤
+seoName: Drowse — Activation Steering for HuggingFace Transformers
 tags:
   - python
   - llm

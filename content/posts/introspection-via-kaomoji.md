@@ -9,7 +9,7 @@ excerpt: Kaomoji are a partial readout of model state. Five open-weight LLMs rec
 ---
 I saw [eriskii's claudefaces project](https://eriskii.net/projects/claude-faces) on Twitter a few weeks ago and was blown away by how cute it made Claude. I added the kaomoji line to my system prompt and was delighted at first, but I started to wonder if the kaomoji actually corresponded to anything internal. This post seeks to answer that.
 
-This post is one writeup from an ongoing project at [llmoji-study](https://github.com/a9lim/llmoji-study). You can contribute data with [llmoji](https://github.com/a9lim/llmoji) on PyPI, and the data itself is at [a9lim/llmoji](https://huggingface.co/datasets/a9lim/llmoji) on HuggingFace. I used my data and my own library [saklas](https://github.com/a9lim/saklas) for this writeup.
+This post is one writeup from an ongoing project at [llmoji-study](https://github.com/a9lim/llmoji-study). You can contribute data with [llmoji](https://github.com/a9lim/llmoji) on PyPI, and the data itself is at [a9lim/llmoji](https://huggingface.co/datasets/a9lim/llmoji) on HuggingFace. I used my data and my own library [drowse](https://github.com/a9lim/drowse) for this writeup.
 
 If you aren't too familiar with some of the concepts I discuss, please check out Anthropic's [introspection paper](https://www.anthropic.com/research/introspection), Anthropic's [emotions paper](https://www.anthropic.com/research/emotions), Theia Vogel's [introspection post](https://vgel.me/posts/qwen-introspection/), and eriskii's post above.
 
