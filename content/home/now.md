@@ -3,9 +3,9 @@ heading: Now
 ---
 | key | value |
 | --- | --- |
-| Location | Ann Arbor |
+| Location | The Midwest |
 | Workflow | Claude Code, Codex |
 | Supplements | Choline, Creatine, Fish oil, Semax |
 | Languages | English (native), Chinese (heritage) |
-| Reading | The Inside Story Of Leverage Research 1.0 |
-| Listening | Lightning Seeds - Three Lions |
+| Reading | Scaling up Test-Time Compute with Latent Reasoning |
+| Listening | ELO - Yours Truly, 2095 |

@@ -19,13 +19,13 @@ function check(name, ok, detail = '') {
   console.error('  FAIL: ' + name + (detail ? ' — ' + detail : ''));
 }
 
-const escapedPipeRow = '| Dogs uplifted \\| no doom | ~0.0 | 2030-01-01 |';
+const escapedPipeRow = '| LEV \\| no doom | ~0.4 | 2030-01-01 |';
 check('table rows preserve escaped pipes inside cells',
   JSON.stringify(splitMarkdownTableRow(escapedPipeRow))
-    === JSON.stringify(['Dogs uplifted | no doom', '~0.0', '2030-01-01']));
+    === JSON.stringify(['LEV | no doom', '~0.4', '2030-01-01']));
 check('markdown table rendering preserves escaped pipes inside cells',
   parseMarkdown(`| Item | P | By |\n| --- | --- | --- |\n${escapedPipeRow}`)
-    .includes('<tr><td>Dogs uplifted | no doom</td><td>~0.0</td><td>2030-01-01</td></tr>'));
+    .includes('<tr><td>LEV | no doom</td><td>~0.4</td><td>2030-01-01</td></tr>'));
 // ─── Math, theorem environments, and cross-references ───
 // The parser is re-entered for blockquotes and theorem bodies, and its math
 // stash, switcher counter, and label table are module-level. Each of these
@@ -249,8 +249,8 @@ check('EN/JA predictions align', hd.predictions.length === hd.predictions_ja.len
 check('prediction rows keep conditional labels in one cell',
   hd.predictions.every(row => row.length === 3)
   && hd.predictions_ja.every(row => row.length === 3)
-  && hd.predictions[3][0] === 'Dogs uplifted | no doom'
-  && hd.predictions_ja[3][0] === '犬の知性向上 | 破滅なし');
+  && hd.predictions.some(row => row[0] === 'LEV | no doom')
+  && hd.predictions_ja.some(row => row[0] === 'LEV | 破滅なし'));
 check('EN/JA chips align', hd.askMeAbout.length === hd.askMeAbout_ja.length);
 
 if (failures) { console.error(`\n${failures} failure(s)`); process.exit(1); }
