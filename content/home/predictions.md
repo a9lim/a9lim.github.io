@@ -7,4 +7,4 @@ heading: Predictions
 | Open-weight AGI | ~0.4 | 2027-01-01 |
 | ASI | ~0.8 | 2030-01-01 |
 | LEV \| no doom | ~0.4 | 2030-01-01 |
-| Doom | ~0.7 | 2037-01-01 |
+| Doom | ~0.7 | 2032-01-01 |
