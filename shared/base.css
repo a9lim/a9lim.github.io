@@ -1699,7 +1699,12 @@ html:has(> .sim-body) { overflow: hidden; }
 }
 
 /* ─── Japanese labels ─── */
-/* Mincho has no true italic: Japanese labels stay upright, set at 500 and tracked. */
+/* Mincho has no true italic, so Japanese text is never slanted synthetically
+   (Latin runs keep Newsreader's real italic); labels are set at 500 and tracked. */
+:lang(ja) {
+    font-synthesis-style: none;
+}
+
 :lang(ja) .group-label,
 :lang(ja) .about-group-label,
 :lang(ja) .panel-hint {
