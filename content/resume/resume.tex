@@ -2,35 +2,52 @@
 % =====================================================================
 % a9lim - resume
 % Conventional one-page research resume. Build with ./resume/build.sh.
+%
+% Set in Newsreader (Production Type; SIL OFL 1.1, fonts/OFL-Newsreader.txt).
+% The TTFs in fonts/ are upstream's own static instances, unmodified, from
+% github.com/productiontype/Newsreader fonts/static/ttf/ at commit
+% cfcb4f7af0e52c25e8df2a2431814c8e5fe2e155 (2021-03-01; the repository has
+% no tags or releases), font version 1.003. The 16pt text cut sets
+% everything except the name, which uses the 72pt display cut. Colours are
+% the light palette from shared/tokens.js.
 % =====================================================================
 
 \documentclass[10pt,letterpaper]{article}
 
-\usepackage[letterpaper,top=0.6in,bottom=0.6in,left=0.6in,right=0.6in]{geometry}
+\usepackage[letterpaper,top=0.5in,bottom=0.5in,left=0.6in,right=0.6in]{geometry}
 \usepackage{fontspec}
 \usepackage{xcolor}
 \usepackage{titlesec}
 \usepackage{enumitem}
 \usepackage{hyperref}
-\usepackage{tabularx}
 \usepackage{microtype}
 
-\setmainfont{Recursive}[
-  Path           = fonts/,
-  Extension      = .ttf,
-  UprightFont    = *-Regular,
-  BoldFont       = *-Bold,
-  ItalicFont     = *-Italic,
-  BoldItalicFont = *-BoldItalic,
-  Ligatures      = TeX,
+% Newsreader's default figures are lining and tabular, so no Numbers option.
+\setmainfont{Newsreader16pt}[
+  Path        = fonts/,
+  Extension   = .ttf,
+  UprightFont = *-Regular,
+  ItalicFont  = *-Italic,
+  BoldFont    = *-SemiBold,
+  Ligatures   = TeX,
+]
+\newfontfamily\displayface{Newsreader72pt}[
+  Path        = fonts/,
+  Extension   = .ttf,
+  UprightFont = *-Regular,
+  Ligatures   = TeX,
 ]
 
-\definecolor{water}{HTML}{000080}
+\definecolor{ink}{HTML}{161514}       % text
+\definecolor{secondary}{HTML}{42413F} % textSecondary
+\definecolor{muted}{HTML}{666463}     % textMuted
+\definecolor{accent}{HTML}{983432}    % accent
+\colorlet{rule}{ink!14}               % border: text at 14% on white
 
 \hypersetup{
   colorlinks  = true,
-  urlcolor    = water,
-  linkcolor   = water,
+  urlcolor    = accent,
+  linkcolor   = accent,
   pdftitle    = {a9lim's Resume},
   pdfauthor   = {a9lim},
   pdfsubject  = {Resume},
@@ -40,69 +57,82 @@
 \pagestyle{empty}
 \setlength{\parindent}{0pt}
 \setlength{\parskip}{0pt}
-\setlength{\tabcolsep}{0pt}
 \raggedbottom
+\raggedright
 
-% Compact, conventional section headings with a single restrained rule.
-\titleformat{\section}
-  {\large\bfseries}
-  {}{0pt}{}
-\titlespacing*{\section}{0pt}{2.5pt}{2.5pt}
+% Two sizes: body for titles, bullets, and skills; small for metadata.
+\makeatletter
+\renewcommand\normalsize{\@setfontsize\normalsize{10.25}{12.2}}
+\renewcommand\small{\@setfontsize\small{9.25}{11.25}}
+\makeatother
+\normalsize
 
-% Standard resume bullets: readable hanging indent, no decorative markers.
+\newcommand{\sep}{\textcolor{muted}{\enspace·\enspace}}
+\newcommand{\meta}[1]{\textcolor{muted}{#1}}
+\newcommand{\push}{\hspace{0pt plus 1filll}} % outranks \raggedright's fil
+
+% Sentence-case section heads in regular weight, beneath a hairline rule.
+\newcommand{\sectionface}{%
+  {\color{rule}\hrule height 0.45pt}\nobreak\vspace{4.5pt}%
+  \fontsize{12}{14}\selectfont}
+\titleformat{\section}[block]{\sectionface}{}{0pt}{}
+\titlespacing*{\section}{0pt}{7pt}{1pt}
+
+% Resume bullets: hanging indent, small muted marker.
 \setlist[itemize]{
   leftmargin=10pt,
-  label=\raisebox{0.2ex}{\scriptsize\textbullet},
-  labelsep=2.5pt,
-  itemsep=1pt,
-  topsep=1pt,
+  label={\color{muted}\raisebox{0.15ex}{\footnotesize•}},
+  labelsep=4pt,
+  itemsep=0pt,
+  topsep=0.6pt,
   parsep=0pt,
   partopsep=0pt
 }
 
-\newcommand{\entry}[4]{%
-  \noindent\begin{tabularx}{\linewidth}{@{}X r@{}}
-    \textbf{\href{#2}{#1}} & \small #4 \\
-    \textit{#3} & \\
-  \end{tabularx}%
+% \entry{title}{url}{description}{stack}{dates}
+\newcommand{\entry}[5]{%
+  \par\addvspace{3pt}%
+  \textbf{\href{#2}{#1}}\push{\small\meta{#5}}\par
+  {\small\textcolor{secondary}{\itshape #3}\sep\meta{#4}\par}
 }
 
-\newcommand{\plainentry}[3]{%
-  \noindent\begin{tabularx}{\linewidth}{@{}X r@{}}
-    \textbf{#1} & \small #3 \\
-    \textit{#2} & \\
-  \end{tabularx}%
+% \plainentry{title}{description}{detail}{dates}
+\newcommand{\plainentry}[4]{%
+  \par\addvspace{3pt}%
+  \textbf{#1}\push{\small\meta{#4}}\par
+  {\small\textcolor{secondary}{\itshape #2}\sep\meta{#3}\par}
 }
 
 \begin{document}
+\color{ink}
 
 % Header
 \noindent
 \begin{minipage}[b]{0.24\linewidth}
-  {\fontsize{23}{24}\selectfont\bfseries a9lim}
+  {\displayface\fontsize{28}{28}\selectfont a9lim}
 \end{minipage}%
 \hfill
 \begin{minipage}[b]{0.74\linewidth}
   \raggedleft\small
-  Ann Arbor \enspace\textbar\enspace
-    \href{mailto:mx@a9l.im}{mx@a9l.im} \enspace\textbar\enspace
-    \href{https://a9l.im}{a9l.im} \enspace\textbar\enspace
+  \meta{Ann Arbor}\sep
+    \href{mailto:mx@a9l.im}{mx@a9l.im}\sep
+    \href{https://a9l.im}{a9l.im}\sep
     \href{https://github.com/a9lim}{github.com/a9lim}
 \end{minipage}
-\par\vspace{2.5pt}
-{\small
+\par\vspace{4pt}
+{\color{secondary}
 Independent interpretability and alignment researcher, and open-source developer.
 \par}
 
 \section*{Education}
 
-\plainentry{Singapore American School}{High School Diploma - Weighted GPA 4.5}{Aug 2019 - May 2023}
+\plainentry{Singapore American School}{High School Diploma}{Weighted GPA 4.5}{Aug 2019 – May 2023}
 
-\plainentry{University of California, San Diego}{Bachelor of Science in Mathematics - GPA 3.73 - Major GPA 3.86}{Sep 2023 - Mar 2026}
+\plainentry{University of California, San Diego}{Bachelor of Science in Mathematics}{GPA 3.73\sep Major GPA 3.86}{Sep 2023 – Mar 2026}
 
 \section*{Research}
 
-\entry{Introspection via Kaomoji}{https://a9l.im/blog/introspection-via-kaomoji}{Study on legibility of emotional representation in LLMs - Python, HF Transformers}{Apr 2026 - Jun 2026}
+\entry{Introspection via Kaomoji}{https://a9l.im/blog/introspection-via-kaomoji}{Study on legibility of emotional representation in LLMs}{Python, HF Transformers}{Apr 2026 – Jun 2026}
 \begin{itemize}
   \item Investigated correspondence between kaomoji used by LLMs and functional emotional states.
   \item Found that the kaomoji could predict the emotional content of the prompt with 80.6\% accuracy on Gemma-4-31b-it.
@@ -110,27 +140,27 @@ Independent interpretability and alignment researcher, and open-source developer
   \item Built data collection tooling and published the resulting corpus.
 \end{itemize}
 
-\entry{Elapsed-Time Encoding in LLMs}{https://github.com/a9lim/time-experiment}{Ongoing study on representations of elapsed time within LLMs - Python, HF Transformers}{Jun 2026 - Present}
+\entry{Elapsed-Time Encoding in LLMs}{https://github.com/a9lim/time-experiment}{Ongoing study on representations of elapsed time within LLMs}{Python, HF Transformers}{Jun 2026 – Present}
 \begin{itemize}
   \item Used linear probes and logits to investigate the representation of elapsed time within LLMs over a conversation without timestamps.
   \item Showed elapsed time is tracked within LLMs and linearly proportional to context length using probes.
   \item Replicated findings of Discrete Minds in a Continuous World (Wang et al.).
 \end{itemize}
 
-\entry{Neuralese as a Conlang}{https://github.com/a9lim/acot-experiment}{Ongoing study on the legibility of latent reasoning - Python, PyTorch}{Jul 2026 - Present}
+\entry{Neuralese as a Conlang}{https://github.com/a9lim/acot-experiment}{Ongoing study on the legibility of latent reasoning}{Python, PyTorch}{Jul 2026 – Present}
 \begin{itemize}
   \item Train a model to reason via Abstract Chain-of-Thought (Ramji et al.) to analyze the structure and grammar of abstract tokens.
   \item A preliminary run on a small model has so far not successfully trained it to use abstract tokens to reason.
 \end{itemize}
 
-\entry{Block Sparse Crosscoders}{https://github.com/a9lim/block-crosscoder-experiment}{Ongoing study on cross-layer multidimensional features in LLMs - Python, PyTorch}{Jul 2026 - Present}
+\entry{Block Sparse Crosscoders}{https://github.com/a9lim/block-crosscoder-experiment}{Ongoing study on cross-layer multidimensional features in LLMs}{Python, PyTorch}{Jul 2026 – Present}
 \begin{itemize}
   \item Synthesize recent work on Block Sparse Featurizers (Fel et al.) and Sparse Crosscoders (Lindsey et al.) to attempt extraction of cross-layer multidimensional features.
 \end{itemize}
 
 \section*{Projects}
 
-\entry{Drowse}{https://github.com/a9lim/drowse}{Mechanistic interpretability workbench - Python, HF Transformers, PyTorch}{Apr 2026 - Present}
+\entry{Drowse}{https://github.com/a9lim/drowse}{Mechanistic interpretability workbench}{Python, HF Transformers, PyTorch}{Apr 2026 – Present}
 \begin{itemize}
   \item Built a local interpretability workbench compatible with most open-weight LLMs and both CUDA and MPS.
   \item Implemented curved manifold extraction from sets of concepts.
@@ -138,14 +168,14 @@ Independent interpretability and alignment researcher, and open-source developer
   \item Published a Python API, dashboard, and OpenAI/Ollama-compatible server.
 \end{itemize}
 
-\entry{Geon}{https://a9l.im/geon}{Relativistic N-body simulation - JavaScript, WebGPU}{Feb 2026 - Present}
+\entry{Geon}{https://a9l.im/geon}{Relativistic N-body simulation}{JavaScript, WebGPU}{Feb 2026 – Present}
 \begin{itemize}
   \item Built a WebGPU simulation that models N-body physics with charged rotating massive particles.
   \item Implemented finite-speed force propagation and Einstein–Infeld–Hoffmann dynamics.
   \item Implemented force-coupled scalar fields with self-gravity.
 \end{itemize}
 
-\plainentry{Other Projects}{Additional projects and tooling I've worked on - Rust, Python, JavaScript, WebGPU}{Feb 2026 - Present}
+\plainentry{Other Projects}{Additional projects and tooling I've worked on}{Rust, Python, JavaScript, WebGPU}{Feb 2026 – Present}
 \begin{itemize}
   \item \textbf{\href{https://github.com/a9lim/ogdoad}{Ogdoad}:} Built a library to explore Clifford algebras over the
   surreal numbers and Conway's combinatorial games and investigate open problems.
@@ -155,12 +185,10 @@ Independent interpretability and alignment researcher, and open-source developer
   finance, biology, political science, and comparative religion.
 \end{itemize}
 
-\section*{Technical Skills}
-
-{\small
+\section*{Technical skills}
+\addvspace{3pt}%
 \textbf{Research:} Experiment design and execution, agent orchestration.\\
 \textbf{ML:} Python, HF Transformers, PyTorch, NumPy/SciPy.\\
 \textbf{Programming:} Java, Rust, JavaScript, WebGPU, Git.
-}
 
 \end{document}
