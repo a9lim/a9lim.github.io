@@ -208,7 +208,7 @@ Phases run in order. In phase 4 each project is an independent pass — a commit
 
 Every project: the static `<meta name="theme-color">` becomes `#FCFCFB`; all font, `--fvs-*`, and `_FONT.*` uses are migrated; direct `_PALETTE.accent` reads move to the per-theme accent; its own `AGENTS.md` and docs are updated in the same pass; light and dark are checked by eye.
 
-- [ ] **cyano**: `_THEME` accent in `src/enzymes.js`; its canvas font cache `_F` on `_FONT.text` with nothing under 10px; adopt the shared theme-color sync (`src/theme.js` never updates the meta tag).
+- [x] **cyano**: `_THEME` accent in `src/enzymes.js`; its canvas font cache `_F` on `_FONT.text` with nothing under 10px; adopt the shared theme-color sync (`src/theme.js` never updates the meta tag).
 - [x] **geon**: WGSL color constants in `src/gpu/gpu-constants.js` and accent/clear colors in `src/gpu/gpu-renderer.js` and `src/renderer.js` from the per-theme accent; `'9px Noto Sans Mono'` (never loaded) in `src/effective-potential.js` and `src/phase-plot.js` to `_FONT.text`; static `theme-color` `#C8553D`.
 - [x] **gerry**: `'9px Noto Sans Mono'` and `'11px Noto Sans'` (never loaded) in `src/election-sim.js` to `_FONT.text`; check the orange party against the accent and the fixed 68px `.prop-values` column.
 - [x] **miasma**: undefined `--bg-base` (`src/config.js`, `src/timeseries.js`, `styles.css`) replaced with `--bg-canvas`; `#e11107` and `#808696` fallbacks in `src/render.js` and `styles.css`; check the red infected compartment against the accent.
