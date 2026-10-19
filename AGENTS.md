@@ -17,7 +17,7 @@ The top-level layout is intentional:
 - `features/surveys/` — survey scoring/data foundation. It is source-only and must not be copied into the static bundle.
 - `db/migrations/` — D1 migrations.
 - `lib/wgsl/` — dormant WGSL-to-JavaScript transpiler and runner. It is not deployed.
-- `tools/` — the build orchestrator, asset stager, and OG generation tooling.
+- `tools/` — the build orchestrator, asset stager, Japanese font subsetter, and OG generation tooling.
 - `dist/` — ignored, fully replaceable deploy tree.
 - `.build/` — ignored Worker/build intermediates, including `content.generated.mjs`.
 
@@ -34,7 +34,7 @@ npm test
 npm exec -- wrangler deploy --dry-run
 ```
 
-The build needs the `papers/ogdoad` submodule checked out because paper posts convert their body from LaTeX on every build. `tools/pandoc.sh` prefers a local Pandoc and otherwise downloads the pinned, checksum-verified Linux release into `.build/`; `content/resume/build.sh` does the same for Tectonic. `git submodule update --init` if a fresh clone fails there.
+The build needs the `papers/ogdoad` submodule checked out because paper posts convert their body from LaTeX on every build. `tools/pandoc.sh` prefers a local Pandoc and otherwise downloads the pinned, checksum-verified Linux release into `.build/`; `content/resume/build.sh` does the same for Tectonic, and `tools/subset-fonts.mjs` for the Shippori Mincho source fonts (`.build/fonts/`). `git submodule update --init` if a fresh clone fails there.
 
 `npm run build` runs two explicit phases:
 
@@ -117,7 +117,7 @@ Editorial and quiet: one serif typeface, a near-white neutral ground, a single o
 
 ### Color
 
-`shared/tokens.js` owns the palette (`_PALETTE.light`, `_PALETTE.dark`) and injects it as CSS custom properties. Neutrals are near-achromatic (OKLCH chroma ≤ 0.003, hue 60–90): never cold blue-white, never beige.
+`shared/tokens.js` owns the palette (`_PALETTE.light`, `_PALETTE.dark`) and injects it as CSS custom properties. Neutrals are near-achromatic (OKLCH chroma below 0.004): never cold blue-white, never beige.
 
 | Token | Light | Dark | Use |
 |---|---|---|---|
@@ -130,7 +130,7 @@ Editorial and quiet: one serif typeface, a near-white neutral ground, a single o
 | `accent` | `#983432` | `#DC5960` | links, active navigation, emphasized figures, the seal |
 
 - Rules (`--border`) are `text` at 12% (light) or 13% (dark). Link underlines are `accent` at 40%.
-- The accent is per theme: read `_PALETTE.light.accent` / `_PALETTE.dark.accent` or `var(--accent)`. There is no theme-independent accent value.
+- The accent is per theme: CSS reads `var(--accent)`; canvas and WebGPU code reads `_themePalette().accent` (the palette for the current `data-theme`) on every theme change. There is no theme-independent accent value.
 - Every text role clears 4.5:1 on every surface in both themes; the lowest pair is dark `accent` on `elevated` at 4.66:1.
 - The navbar seal is inline SVG filled with `currentColor`, so it follows the theme's accent (light oxblood on the dark canvas is only 2.6:1). Static copies — `static/logo.svg`, the favicon, app icons, OG cards — use light `#983432`.
 - `extended` data hues are unchanged except `slate`, which is `#8A8580` (OKLCH 0.62 0.010 75) so it sits on the neutral ground. `secondary` is unchanged.
@@ -139,10 +139,11 @@ Editorial and quiet: one serif typeface, a near-white neutral ground, a single o
 
 - **Newsreader for everything a visitor reads**: brand, navigation, headings, body, labels, table headers, dates, figures, buttons, HUD readouts, and canvas text. Self-hosted variable WOFF2 (opsz 6–72, wght 200–800), roman and italic, Latin and Latin Extended subsets, with `font-optical-sizing: auto`.
 - Newsreader's default figures are lining and tabular, so dates and readouts align without a monospace face. It has no small caps and no old-style figures.
-- **Japanese is Shippori Mincho** (400 and 500), subset at build time to the site's Japanese text. Stack: `'Newsreader', 'Shippori Mincho', 'Hiragino Mincho ProN', 'Yu Mincho', serif`.
+- **Japanese is Shippori Mincho** (400 and 500). `tools/subset-fonts.mjs` subsets it at build time to kana, CJK punctuation, fullwidth forms, and every kanji in the tracked text of `content/`, `site/`, `worker/`, and the projects; `static/fonts/fonts.css` declares the matching `unicode-range` faces, so the files are build outputs in `dist/fonts/`, never tracked. Stack: `'Newsreader', 'Shippori Mincho', 'Hiragino Mincho ProN', 'Yu Mincho', serif`.
 - **Monospace only for code** (`--font-code`, a system stack with no webfont).
-- Newsreader has no arrows, `∼`, double-struck letters, or ceiling brackets. Arrows come from the Shippori Mincho subset, which always includes U+2190–2193; math renders in KaTeX's own fonts.
+- Newsreader has no arrows, `∼`, double-struck letters, or ceiling brackets. Arrows U+2190–2193 come from a separate arrows-only Shippori Mincho file, so English pages never download the Japanese subsets; math renders in KaTeX's own fonts.
 - Font tokens are `_FONT.text`, `_FONT.code`, and `_FONT.emoji`, injected as `--font-text`, `--font-code`, and `--font-emoji`. There are no variation-settings tokens. Scripture's optional sans reading face is a local system-sans stack in that project, not a shared token.
+- Project HUD sizes are `--font-sm` / `--font-base` / `--font-lg` (0.84 / 0.92 / 1.02rem) in `shared/base.css`; numeric readouts use `font-variant-numeric: lining-nums tabular-nums`.
 
 ### Typographic scale (root site)
 
@@ -183,12 +184,12 @@ Phases run in order. In phase 4 each project is an independent pass — a commit
 
 ### 1. Shared layer (this repository; reaches every project on deploy)
 
-- [ ] `shared/tokens.js`: `_PALETTE.light` and `_PALETTE.dark` set to the table above with `accent` inside each theme (top-level `accent` and `accentLight` removed); `extended.slate` retinted; `_FONT` reduced to `text`, `code`, `emoji` with `variationProse`/`variationMono` removed; inject `--font-text`, `--font-code`, `--accent`, and `--accent-line`, and stop injecting `--font-display`, `--font-sans`, `--font-serif`, `--font-mono`, and `--fvs-*`.
-- [ ] `shared/base.css`: every font and `--fvs-*` use migrated; uppercase letter-spaced labels (`.group-label`, `.stats-title`, `.tab-btn`, `.about-group-label`, `.label-caps`) to sentence case; mono readouts (`.stat-value`, `.slider-value`, `.zoom-level`, `.speed-btn`, `.sim-tooltip`, `.settings-dd-val`) to `--font-text` with tabular figures; icon strokes 1.4px and round.
-- [ ] `shared/icons.js` stroke attributes; `shared/toolbar.js` theme-color fallbacks.
-- [ ] Fonts: Newsreader roman and italic WOFF2 (Latin, Latin Extended) with its OFL text in `static/fonts/`; `static/fonts/fonts.css` rewritten; a build-time Shippori Mincho subset (a pinned Node subsetter under `tools/`, deterministic under `--check`) covering `content/**/*.ja.md`, the Japanese dictionary in `site/i18n.js`, project Japanese strings (`projects/geon/i18n/strings.js`), and U+2190–2193.
-- [ ] `static/_headers` Early Hints preload Newsreader roman instead of Recursive on every route block; `static/manifest.json` `theme_color` and `background_color`.
-- [ ] Recursive removed: `static/fonts/recursive-variable.woff2`, its `@font-face`, and the Root-site specifics line describing it.
+- [x] `shared/tokens.js`: `_PALETTE.light` and `_PALETTE.dark` set to the table above with `accent` inside each theme (top-level `accent` and `accentLight` removed); `extended.slate` retinted; `_FONT` reduced to `text`, `code`, `emoji` with `variationProse`/`variationMono` removed; inject `--font-text`, `--font-code`, `--accent`, and `--accent-line`, and stop injecting `--font-display`, `--font-sans`, `--font-serif`, `--font-mono`, and `--fvs-*`.
+- [x] `shared/base.css`: every font and `--fvs-*` use migrated; uppercase letter-spaced labels (`.group-label`, `.stats-title`, `.tab-btn`, `.about-group-label`, `.label-caps`) to sentence case; mono readouts (`.stat-value`, `.slider-value`, `.zoom-level`, `.speed-btn`, `.sim-tooltip`, `.settings-dd-val`) to `--font-text` with tabular figures; icon strokes 1.4px and round.
+- [x] `shared/icons.js` stroke attributes; `shared/toolbar.js` theme-color fallbacks.
+- [x] Fonts: Newsreader roman and italic WOFF2 (Latin, Latin Extended) with its OFL text in `static/fonts/`; `static/fonts/fonts.css` rewritten; a build-time Shippori Mincho subset (a pinned Node subsetter under `tools/`, deterministic under `--check`) covering `content/**/*.ja.md`, the Japanese dictionary in `site/i18n.js`, project Japanese strings (`projects/geon/i18n/strings.js`), and U+2190–2193.
+- [x] `static/_headers` Early Hints preload Newsreader roman instead of Recursive on every route block; `static/manifest.json` `theme_color` and `background_color`.
+- [x] Recursive removed: `static/fonts/recursive-variable.woff2`, its `@font-face`, and the Root-site specifics line describing it.
 
 ### 2. Root site
 
@@ -238,7 +239,7 @@ Each project retains substantive `about.md` documentation, educational content, 
 - `data-theme` lives on `<html>`.
 - `.tog-wrap input` stays visually clipped for accessibility; never replace it with `display: none`.
 - Root and project URLs inside deployable HTML/JS are absolute. Deep SPA routes make relative asset URLs unsafe.
-- `static/fonts/` contains the self-hosted Recursive variable font. KaTeX project fonts still require jsDelivr in CSP.
+- `static/fonts/` holds Newsreader (roman and italic, latin and latin-ext WOFF2), Noto Emoji, their OFL texts, the Shippori Mincho OFL text, and `fonts.css`. KaTeX project fonts still require jsDelivr in CSP.
 - `static/.well-known/security.txt` has an annual expiry date.
 
 ## Prose voice

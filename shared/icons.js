@@ -14,14 +14,14 @@ var _ICON = (function () {
     'use strict';
 
     // Standard stroke-icon attributes
-    var A = ' width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" stroke-linejoin="miter"';
+    var A = ' width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"';
 
     function s(d, a) { return '<svg aria-hidden="true"' + (a || A) + '>' + d + '</svg>'; }
 
     // ── Reusable path fragments ──
     var SUN   = '<circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="5"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="1" y1="12" x2="5" y2="12"/><line x1="19" y1="12" x2="23" y2="12"/><line x1="4.22" y1="4.22" x2="6.34" y2="6.34"/><line x1="17.66" y1="17.66" x2="19.78" y2="19.78"/><line x1="4.22" y1="19.78" x2="6.34" y2="17.66"/><line x1="17.66" y1="6.34" x2="19.78" y2="4.22"/>';
     var MOON  = '<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>';
-    var SUNF  = '<circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="5" stroke="currentColor" stroke-width="3" stroke-linecap="square"/><line x1="12" y1="19" x2="12" y2="23" stroke="currentColor" stroke-width="3" stroke-linecap="square"/><line x1="1" y1="12" x2="5" y2="12" stroke="currentColor" stroke-width="3" stroke-linecap="square"/><line x1="19" y1="12" x2="23" y2="12" stroke="currentColor" stroke-width="3" stroke-linecap="square"/><line x1="4.22" y1="4.22" x2="6.34" y2="6.34" stroke="currentColor" stroke-width="3" stroke-linecap="square"/><line x1="17.66" y1="17.66" x2="19.78" y2="19.78" stroke="currentColor" stroke-width="3" stroke-linecap="square"/><line x1="4.22" y1="19.78" x2="6.34" y2="17.66" stroke="currentColor" stroke-width="3" stroke-linecap="square"/><line x1="17.66" y1="6.34" x2="19.78" y2="4.22" stroke="currentColor" stroke-width="3" stroke-linecap="square"/>';
+    var SUNF  = '<circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><line x1="12" y1="19" x2="12" y2="23" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><line x1="1" y1="12" x2="5" y2="12" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><line x1="19" y1="12" x2="23" y2="12" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><line x1="4.22" y1="4.22" x2="6.34" y2="6.34" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><line x1="17.66" y1="17.66" x2="19.78" y2="19.78" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><line x1="4.22" y1="19.78" x2="6.34" y2="17.66" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><line x1="17.66" y1="6.34" x2="19.78" y2="4.22" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>';
     var FILL  = ' width="10" height="10" viewBox="0 0 24 24" fill="currentColor" stroke="none"';
     var MENU  = '<line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="17" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>';
     var ABOUT = '<circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/>';
@@ -30,7 +30,7 @@ var _ICON = (function () {
     var LOAD  = '<path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/>';
     var CLOSE = '<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>';
     var PLUS  = '<line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>';
-    var M20   = ' width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square"';
+    var M20   = ' width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"';
 
     var icons = {
         // ── Simulation controls ──

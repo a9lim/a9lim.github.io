@@ -42,7 +42,7 @@ var _toolbar = (function () {
         var theme = document.documentElement.dataset.theme || 'light';
         var color = (typeof _PALETTE !== 'undefined' && _PALETTE[theme])
             ? _PALETTE[theme].canvas
-            : (theme === 'dark' ? '#080B11' : '#EBEFF4');
+            : (theme === 'dark' ? '#121111' : '#FCFCFB');
         var meta = document.querySelector('meta[name="theme-color"]');
         if (!meta) {
             meta = document.createElement('meta');

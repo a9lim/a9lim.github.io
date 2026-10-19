@@ -7,6 +7,7 @@ import { fileURLToPath } from 'node:url';
 import { createHash } from 'node:crypto';
 import { parseMarkdown, mdEsc, splitMarkdownTableRow } from '../site/src/markdown.js';
 import { convertTex, renderPaperBody } from './tex-to-post.mjs';
+import { buildFontSubsets } from './subset-fonts.mjs';
 
 const ROOT = dirname(dirname(fileURLToPath(import.meta.url)));
 const DIST = join(ROOT, 'dist');
@@ -44,8 +45,11 @@ function emit(rel, content) {
 
 // Copy a binary artifact into dist/ — or, under --check, compare bytes.
 function emitBinary(rel, srcPath) {
+  emitBytes(rel, readFileSync(srcPath));
+}
+
+function emitBytes(rel, content) {
   const output = join(DIST, rel);
-  const content = readFileSync(srcPath);
   if (!CHECK) {
     mkdirSync(dirname(output), { recursive: true });
     writeFileSync(output, content);
@@ -1334,6 +1338,10 @@ for (const p of posts) {
 
 emit('llms-full.txt', llmsParts.join('\n'));
 console.log('llms-full.txt: generated');
+
+// --- Shippori Mincho subsets for Japanese text and arrows ---
+
+for (const { rel, bytes } of await buildFontSubsets({ root: ROOT, drafts: DRAFTS })) emitBytes(rel, bytes);
 
 if (CHECK) {
   if (checkFailures.length) {

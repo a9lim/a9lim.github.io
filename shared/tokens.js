@@ -95,49 +95,45 @@ function _oklch2hex(L, C, H) {
 }
 
 // ─── Font stacks ───
-// Left mutable — cyano extends with `emoji` before freezing
+// Left mutable — a project's colors.js may add keys before freezing.
+// Newsreader carries Latin text; Japanese and the arrows Newsreader lacks
+// fall through to the build-time Shippori Mincho subset (static/fonts/fonts.css).
 const _FONT = {
-  display: "'Recursive', 'SF Mono', 'Menlo', monospace",
-  sans:    "'Recursive', 'SF Mono', 'Menlo', monospace",
-  serif:   "'Recursive', 'SF Mono', 'Menlo', monospace",
-  mono:    "'Recursive', 'SF Mono', 'Menlo', monospace",
-  emoji:   "'Noto Emoji', sans-serif",
-  // Recursive variable-font axis coordinates. Every font-family: var(--font-mono)
-  // declaration pairs with --fvs-mono; every --font-sans/--font-display/--font-serif
-  // declaration pairs with --fvs-prose. Single source of truth for both axes.
-  variationProse: "'MONO' 0, 'CASL' 0.5",
-  variationMono:  "'MONO' 1, 'CASL' 0.5",
+  text:  "'Newsreader', 'Shippori Mincho', 'Hiragino Mincho ProN', 'Yu Mincho', serif",
+  code:  "ui-monospace, 'SF Mono', 'Menlo', 'Consolas', monospace",
+  emoji: "'Noto Emoji', sans-serif",
 };
 
 // ─── Palette ───
 // Left mutable — each project's colors.js adds keys then freezes.
 //
-// OKLCH-native: all neutrals share H=270 (cold blue-violet slate);
-// extended chromatic colors locked to L=0.62, C=0.17 for strict
-// perceptual uniformity across hues (gamut-capped where needed).
-// Dual accent: red + blue.
+// Neutrals are near-achromatic (OKLCH chroma < 0.004), so the ground reads
+// neither blue-white nor beige. The accent is per theme: oxblood on the light
+// ground, a lighter red on the dark one. Every text role clears 4.5:1 on every
+// surface in both themes (lowest: dark accent on elevated, 4.66:1).
+// Extended chromatic colors stay locked to OKLCH L=0.62 for perceptual uniformity.
 const _PALETTE = {
-  accent:         '#E11107',  // oklch(0.53  0.225  29)  — primary brand
-  accentLight:    '#E95142',  // oklch(0.64  0.19   29)
   secondary:      '#488ACB',  // oklch(0.62  0.12  250)  — data/status
   secondaryLight: '#73A9E1',  // oklch(0.72  0.10  250)
 
   light: {
-    canvas:        '#F4F5F8',  // oklch(0.970 0.004 270)
-    panelSolid:    '#F9FAFC',  // oklch(0.985 0.003 270)
-    elevated:      '#FDFDFF',  // oklch(0.995 0.002 270)
-    text:          '#010203',  // oklch(0.08 0.010 270)
-    textSecondary: '#0C0D12',  // oklch(0.16 0.010 270)
-    textMuted:     '#1E1F23',  // oklch(0.24 0.008 270)
+    canvas:        '#FCFCFB',  // L 0.991 — page ground
+    panelSolid:    '#F4F3F2',  // L 0.965 — inset blocks, chips, solid HUD panels
+    elevated:      '#FFFFFF',  // L 1.000 — the rare raised surface
+    text:          '#161514',  // L 0.196
+    textSecondary: '#42413F',  // L 0.376
+    textMuted:     '#666463',  // L 0.505
+    accent:        '#983432',  // oklch(0.470 0.135 25) — oxblood
   },
 
   dark: {
-    canvas:        '#06070B',  // oklch(0.13 0.010 270)
-    panelSolid:    '#0E0F14',  // oklch(0.17 0.010 270)
-    elevated:      '#191A1F',  // oklch(0.22 0.010 270)
-    text:          '#F4F5F9',  // oklch(0.97 0.005 270)
-    textSecondary: '#D8DBE0',  // oklch(0.89 0.008 270)
-    textMuted:     '#BFC1C6',  // oklch(0.81 0.008 270)
+    canvas:        '#121111',  // L 0.179
+    panelSolid:    '#161615',  // L 0.200
+    elevated:      '#1B1A1A',  // L 0.219
+    text:          '#ECEBEA',  // L 0.941
+    textSecondary: '#BEBDBC',  // L 0.799
+    textMuted:     '#949392',  // L 0.664
+    accent:        '#DC5960',  // oklch(0.635 0.164 20)
   },
 
   // Cross-project semantic colors — OKLCH L=0.62, C=0.17 uniform
@@ -145,7 +141,7 @@ const _PALETTE = {
   extended: {
     blue:    '#0091C9',  // oklch(0.62 0.132 235)  — gamut max
     green:   '#009F68',  // oklch(0.62 0.140 160)  — gamut max
-    slate:   '#808696',  // oklch(0.62 0.025 270)  — intentionally muted
+    slate:   '#8A8580',  // oklch(0.62 0.010  75)  — intentionally muted, neutral
     orange:  '#CA6800',  // oklch(0.62 0.154  55)  — gamut max
     rose:    '#D35182',  // oklch(0.62 0.170   0)
     purple:  '#9769DC',  // oklch(0.62 0.170 300)
@@ -158,6 +154,15 @@ const _PALETTE = {
     indigo:  '#6B79EA',  // oklch(0.62 0.170 275)
   },
 };
+
+/**
+ * The palette for the theme currently on <html data-theme>.
+ * Canvas and WebGPU renderers read per-theme colors (including `accent`)
+ * through this on every theme change rather than caching one theme.
+ * @returns {object} _PALETTE.light or _PALETTE.dark
+ */
+const _themePalette = () =>
+  document.documentElement.dataset.theme === 'dark' ? _PALETTE.dark : _PALETTE.light;
 
 // ─── CSS custom property injection ───
 // Generates light-mode vars at :root and dark-mode overrides at [data-theme="dark"].
@@ -177,14 +182,15 @@ const _PALETTE = {
     ['text-secondary', 'textSecondary'],
     ['text-muted',     'textMuted'],
 
-    ['border',         'text',          0.078, 0.059],
-    ['border-strong',  'text',          0.141, 0.122],
-    ['slider-track',   'text',          0.06,  0.06],
-  ];
+    ['accent',         'accent'],
+    ['accent-line',    'accent',        0.40,  0.40],
+    ['accent-subtle',  'accent',        0.078, 0.10],
 
-  // Derive toggle track bg: desaturated, lightened version of textMuted
-  const [tH, tS] = _rgb2hsl(..._parseHex(L.textMuted));
-  const togBg = _hsl2hex(tH, tS * 0.5, 0.80);
+    ['border',         'text',          0.12,  0.13],
+    ['border-strong',  'text',          0.22,  0.24],
+    ['slider-track',   'text',          0.08,  0.10],
+    ['tog-bg',         'text',          0.16,  0.20],
+  ];
 
   const gen = (T, dark) => themed.map(([name, key, lA, dA]) => {
     const a = dark ? (dA ?? lA) : lA;
@@ -194,33 +200,15 @@ const _PALETTE = {
   const style = document.createElement('style');
   style.id = 'palette-vars';
   style.textContent = `:root {
-  --font-display: ${_FONT.display};
-  --font-sans:    ${_FONT.sans};
-  --font-serif:   ${_FONT.serif};
-  --font-mono:    ${_FONT.mono};
-  --font-emoji:   ${_FONT.emoji};
-  --fvs-prose:    ${_FONT.variationProse};
-  --fvs-mono:     ${_FONT.variationMono};
+  --font-text:  ${_FONT.text};
+  --font-code:  ${_FONT.code};
+  --font-emoji: ${_FONT.emoji};
 
 ${gen(L, false)}
 
-  --accent:            ${P.accent};
-  --accent-light:      ${P.accentLight};
-  --accent-subtle:     ${_r(P.accent, 0.078)};
-  --accent-glow:       ${_r(P.accent, 0.18)};
-  --secondary:         ${P.secondary};
-  --secondary-light:   ${P.secondaryLight};
-  --secondary-subtle:  ${_r(P.secondary, 0.078)};
-  --secondary-glow:    ${_r(P.secondary, 0.18)};
+  --secondary:      ${P.secondary};
   --text-on-accent: ${L.elevated};
 
-  --shadow-hover: 0 2px 4px #0000000a, 0 4px 16px #00000012, 0 8px 32px #0000000a;
-  --shadow-glow: 0 0 30px ${_r(P.accent, 0.2)}, 0 0 80px ${_r(P.accent, 0.12)}, 0 0 120px ${_r(P.accent, 0.06)};
-
-  --tog-bg:             ${togBg};
-  --tog-shadow:         none;
-
-  --overlay-base:     ${L.text};
   --ext-blue:         ${P.extended.blue};
   --ext-green:        ${P.extended.green};
   --ext-slate:        ${P.extended.slate};
@@ -234,23 +222,12 @@ ${gen(L, false)}
   --ext-magenta:      ${P.extended.magenta};
   --ext-lime:         ${P.extended.lime};
   --ext-indigo:       ${P.extended.indigo};
-  --overlay-text:     #FFFFFF;
-  --overlay-tint:     ${_r('#FFFFFF', 0.133)};
-  --shimmer:          ${_r('#FFFFFF', 0.063)};
   color-scheme: light;
 }
 [data-theme="dark"] {
 ${gen(D, true)}
 
-  --shadow-hover: 0 2px 4px #00000033, 0 4px 16px #0000003d, 0 8px 32px #00000028;
-  --shadow-glow: 0 0 30px ${_r(P.accent, 0.25)}, 0 0 80px ${_r(P.accent, 0.15)}, 0 0 120px ${_r(P.accent, 0.08)};
-
   --text-on-accent: ${D.elevated};
-
-  --tog-bg:             ${D.panelSolid};
-  --tog-shadow:         none;
-
-  --overlay-base:     ${D.canvas};
   color-scheme: dark;
 }`;
   document.head.appendChild(style);
@@ -291,6 +268,7 @@ window._darken = _darken;
 window._oklch2hex = _oklch2hex;
 window._FONT = _FONT;
 window._PALETTE = _PALETTE;
+window._themePalette = _themePalette;
 
 /**
  * Freeze _PALETTE (extended, light, dark) and _FONT.
