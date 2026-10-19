@@ -214,7 +214,7 @@ Every project: the static `<meta name="theme-color">` becomes `#FCFCFB`; all fon
 - [x] **miasma**: undefined `--bg-base` (`src/config.js`, `src/timeseries.js`, `styles.css`) replaced with `--bg-canvas`; `#e11107` and `#808696` fallbacks in `src/render.js` and `styles.css`; check the red infected compartment against the accent.
 - [ ] **pile**: undefined `--bg` in `styles.css` replaced with `--bg-canvas`; canvas fonts hardcoded to Recursive in `src/ui/axial.js` and `src/ui/stack.js` on `_FONT.text` at 10px or more, with the fixed +70px label offset in `stack.js` measured instead; the trip line's `rgba(255,80,80,…)`.
 - [x] **plasma**: undefined `--bg` in `styles.css`; the unused `src/gpu/shaders/clear.wgsl` deleted along with its `AGENTS.md` mention; the `#e11107` fallback in `src/stats-display.js`.
-- [ ] **scripture**: reader font options in `src/display.js` (Serif → `--font-text`, Sans → a local system-sans stack); verse numbers off mono.
+- [x] **scripture**: reader font options in `src/display.js` (Serif → `--font-text`, Sans → a local system-sans stack); verse numbers off mono.
 - [ ] **shoals**: per-theme accent in `src/strategy.js` and `src/chart.js`; crosshair label contrast in dark; option-chain and order tables, slider values, and fixed chart gutters (`src/config.js`, `src/strategy.js`) checked in Newsreader; its OG card.
 - [x] **comma** (untracked local repository, not yet registered): canvas font from `--font-text` in `src/render.js`; `#4477aa` in `main.js`.
 
