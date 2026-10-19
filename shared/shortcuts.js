@@ -20,6 +20,7 @@ function initShortcuts(shortcuts, opts) {
 
     /** Normalize key strings for lookup: lowercase, no whitespace. */
     function normalizeKey(key) {
+        if (key === ' ') return 'space';
         return key.toLowerCase().replace(/\s+/g, '');
     }
 

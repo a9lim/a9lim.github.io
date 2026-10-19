@@ -34,6 +34,7 @@ function initAboutPanel(config) {
 
     /** Format a key string for human-readable display. */
     function formatKey(key) {
+        if (key === ' ') return 'Space';
         return key
             .replace(/ctrl\+/i, 'Ctrl + ')
             .replace(/shift\+/i, 'Shift + ')
