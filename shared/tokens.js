@@ -173,7 +173,7 @@ const _themePalette = () =>
   // [css-prop-name, palette-key, light-alpha?, dark-alpha?]
   const themed = [
     ['bg-canvas',      'canvas'],
-    ['bg-panel',       'panelSolid',    0.32,  0.35],
+    ['bg-panel',       'panelSolid',    0.84,  0.86],
     ['bg-panel-solid', 'panelSolid'],
     ['bg-elevated',    'elevated'],
     ['bg-hover',       'text',          0.039, 0.051],
