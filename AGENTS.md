@@ -88,7 +88,7 @@ Always inspect `shared/` before adding project-specific UI infrastructure. Canon
 
 Important modules:
 
-- `shared/tokens.js` — synchronous token/bootstrap script; it must execute before CSS parses. Extends through each project's `colors.js`.
+- `shared/tokens.js` — synchronous token/bootstrap script; it must execute before CSS parses. Exposes `_PALETTE`, `_FONT`, `_themePalette()`, and the color helpers, and extends through each project's `colors.js`.
 - `shared/base.css` — reset, layout/design tokens, HUD surfaces, controls, overlays, dropdowns, toasts, dependency reveals, and accessibility patterns.
 - `shared/utils.js` — escaping, timing, math, toast/focus/canvas helpers.
 - `shared/toolbar.js`, `shared/forms.js`, `shared/dropdown.js`, `shared/settings.js` — canonical controls and wiring.
@@ -113,7 +113,7 @@ The Worker cache is explicitly version-scoped with `cache.cross_version_cache: f
 
 ## Design system
 
-Editorial and quiet: one serif typeface, a near-white neutral ground, a single oxblood red, and hairline rules for structure. It covers the root site, every project, generated images, and the resume. The code is migrating to it; [Redesign rollout](#redesign-rollout) tracks what already runs on it.
+Editorial and quiet: one serif typeface, a near-white neutral ground, a single oxblood red, and hairline rules for structure. It covers the root site, every project, generated images, and the resume.
 
 ### Color
 
@@ -176,53 +176,9 @@ Nothing is uppercase or letter-spaced. Japanese labels are upright, weight 500, 
 - `.fade-in.visible` outranks a plain hover selector; hover rules for those elements must include `.visible`.
 - Keep project sidebars on the `.sidebar-tabs` pattern inside `.stats-header`.
 
-## Redesign rollout
+### Known gap
 
-The design system above is ratified and the code is migrating to it. Until a box is ticked, that part still runs on the previous system (Recursive, cold slate neutrals, `#E11107`): do not extend that style, and change it only as part of its item. When every box is ticked, delete this section and the migration sentence in the design system's opening paragraph.
-
-Phases run in order. In phase 4 each project is an independent pass — a commit in its own repository, then a submodule pointer bump here — so projects can run in parallel.
-
-### 1. Shared layer (this repository; reaches every project on deploy)
-
-- [x] `shared/tokens.js`: `_PALETTE.light` and `_PALETTE.dark` set to the table above with `accent` inside each theme (top-level `accent` and `accentLight` removed); `extended.slate` retinted; `_FONT` reduced to `text`, `code`, `emoji` with `variationProse`/`variationMono` removed; inject `--font-text`, `--font-code`, `--accent`, and `--accent-line`, and stop injecting `--font-display`, `--font-sans`, `--font-serif`, `--font-mono`, and `--fvs-*`.
-- [x] `shared/base.css`: every font and `--fvs-*` use migrated; uppercase letter-spaced labels (`.group-label`, `.stats-title`, `.tab-btn`, `.about-group-label`, `.label-caps`) to sentence case; mono readouts (`.stat-value`, `.slider-value`, `.zoom-level`, `.speed-btn`, `.sim-tooltip`, `.settings-dd-val`) to `--font-text` with tabular figures; icon strokes 1.4px and round.
-- [x] `shared/icons.js` stroke attributes; `shared/toolbar.js` theme-color fallbacks.
-- [x] Fonts: Newsreader roman and italic WOFF2 (Latin, Latin Extended) with its OFL text in `static/fonts/`; `static/fonts/fonts.css` rewritten; a build-time Shippori Mincho subset (a pinned Node subsetter under `tools/`, deterministic under `--check`) covering `content/**/*.ja.md`, the Japanese dictionary in `site/i18n.js`, project Japanese strings (`projects/geon/i18n/strings.js`), and U+2190–2193.
-- [x] `static/_headers` Early Hints preload Newsreader roman instead of Recursive on every route block; `static/manifest.json` `theme_color` and `background_color`.
-- [x] Recursive removed: `static/fonts/recursive-variable.woff2`, its `@font-face`, and the Root-site specifics line describing it.
-
-### 2. Root site
-
-- [x] `site/styles.css` rebuilt to the design system (home, listings, post view, footer, keyboard cheatsheet), with the grain overlay, gradient text, page and hero entrance animations, and card shimmer and tilt removed.
-- [x] `site/src/card-effects.js` deleted with its import; `site/index.html` gets the inline-SVG seal and new `theme-color`, and loses the grain element; `site/404.html` restyled.
-- [x] `site/src/home.js` wraps the prediction `~` for the raised tilde; arrows in `site/i18n.js` strings render from the Shippori Mincho subset.
-
-### 3. Generated assets
-
-- [x] `tools/og/` (`card.css`, `a9lim.html`, `geon.html`, `shoals.html`, `icon.html`) restyled and rerun: `static/og-image.webp` (bump its `?v=`), `static/icon-192.png`, `static/icon-512.png`, `projects/geon/og-image.webp`, `projects/shoals/og-image.webp`. `static/logo.svg` and `static/favicon.ico` in `#983432`.
-- [x] Resume: `content/resume/resume.tex` set in Newsreader (upstream static instances in `content/resume/fonts/`, Recursive TTFs removed), links in oxblood.
-- [x] Blog figures in `static/blog-assets/introspection-via-kaomoji/`: the three Plotly HTML figures and the layerwise PNG pair, regenerated by `interpretability-experiments/llmoji-experiment/scripts/local/99_regen_blog_figures.py` in Newsreader on these palettes.
-- [ ] The ten `fig_emo_a_kaomoji_sim_*` heatmap pairs in the same folder sit on the new grounds and ink (their neutral axis was remapped in place), but their labels are still in the previous typeface. The same script regenerates them in Newsreader once the post's per-row hidden states (`data/local/hidden/`, `data/local/cache/`) are recaptured.
-
-### 4. Projects
-
-Every project: the static `<meta name="theme-color">` becomes `#FCFCFB`; all font, `--fvs-*`, and `_FONT.*` uses are migrated; direct `_PALETTE.accent` reads move to the per-theme accent; its own `AGENTS.md` and docs are updated in the same pass; light and dark are checked by eye.
-
-- [x] **cyano**: `_THEME` accent in `src/enzymes.js`; its canvas font cache `_F` on `_FONT.text` with nothing under 10px; adopt the shared theme-color sync (`src/theme.js` never updates the meta tag).
-- [x] **geon**: WGSL color constants in `src/gpu/gpu-constants.js` and accent/clear colors in `src/gpu/gpu-renderer.js` and `src/renderer.js` from the per-theme accent; `'9px Noto Sans Mono'` (never loaded) in `src/effective-potential.js` and `src/phase-plot.js` to `_FONT.text`; static `theme-color` `#C8553D`.
-- [x] **gerry**: `'9px Noto Sans Mono'` and `'11px Noto Sans'` (never loaded) in `src/election-sim.js` to `_FONT.text`; check the orange party against the accent and the fixed 68px `.prop-values` column.
-- [x] **miasma**: undefined `--bg-base` (`src/config.js`, `src/timeseries.js`, `styles.css`) replaced with `--bg-canvas`; `#e11107` and `#808696` fallbacks in `src/render.js` and `styles.css`; check the red infected compartment against the accent.
-- [x] **pile**: undefined `--bg` in `styles.css` replaced with `--bg-canvas`; canvas fonts hardcoded to Recursive in `src/ui/axial.js` and `src/ui/stack.js` on `_FONT.text` at 10px or more, with the fixed +70px label offset in `stack.js` measured instead; the trip line's `rgba(255,80,80,…)`.
-- [x] **plasma**: undefined `--bg` in `styles.css`; the unused `src/gpu/shaders/clear.wgsl` deleted along with its `AGENTS.md` mention; the `#e11107` fallback in `src/stats-display.js`.
-- [x] **scripture**: reader font options in `src/display.js` (Serif → `--font-text`, Sans → a local system-sans stack); verse numbers off mono.
-- [x] **shoals**: per-theme accent in `src/strategy.js` and `src/chart.js`; crosshair label contrast in dark; option-chain and order tables, slider values, and fixed chart gutters (`src/config.js`, `src/strategy.js`) checked in Newsreader; its OG card.
-- [x] **comma** (untracked local repository, not yet registered): canvas font from `--font-text` in `src/render.js`; `#4477aa` in `main.js`.
-
-### 5. Close-out
-
-- [ ] No `Recursive`, `--fvs-`, `--font-mono`, `--font-sans`, `--font-display`, `--font-serif`, `_FONT.mono`, `_FONT.sans`, `#E11107`, or `accentLight` remains in the tree.
-- [ ] `npm test` passes; every page and project checked in light and dark on `./dev.sh`; deployed with `./deploy.sh` and verified on the live site.
-- [ ] This section deleted.
+The ten `fig_emo_a_kaomoji_sim_*` heatmap pairs in `static/blog-assets/introspection-via-kaomoji/` sit on the current grounds and ink (their neutral axis was remapped in place) but keep their labels in the previous typeface. `interpretability-experiments/llmoji-experiment/scripts/local/99_regen_blog_figures.py` regenerates them in Newsreader once the post's per-row hidden states (`data/local/hidden/`, `data/local/cache/`) are recaptured; it already regenerates the post's Plotly figures and layerwise PNGs.
 
 ## SEO and identifier safety
 
