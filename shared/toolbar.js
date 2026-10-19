@@ -8,6 +8,12 @@
 var _toolbar = (function () {
     'use strict';
 
+    // Simulation canvases draw Greek, operators and arrows that only the STIX
+    // Two fallback faces carry; start loading them before the first frame.
+    if (document.body && document.body.classList.contains('sim-body') && typeof _loadTextFonts === 'function') {
+        _loadTextFonts();
+    }
+
     // ── Play / Pause ──
     // Uses _ICON from shared/icons.js (must be loaded first).
     // Safe: _ICON contains only hardcoded SVG markup, never user input.

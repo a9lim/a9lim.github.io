@@ -17,7 +17,7 @@ The top-level layout is intentional:
 - `features/surveys/` — survey scoring/data foundation. It is source-only and must not be copied into the static bundle.
 - `db/migrations/` — D1 migrations.
 - `lib/wgsl/` — dormant WGSL-to-JavaScript transpiler and runner. It is not deployed.
-- `tools/` — the build orchestrator, asset stager, Japanese font subsetter, and OG generation tooling.
+- `tools/` — the build orchestrator, asset stager, fallback-font subsetter, and OG generation tooling.
 - `dist/` — ignored, fully replaceable deploy tree.
 - `.build/` — ignored Worker/build intermediates, including `content.generated.mjs`.
 
@@ -34,7 +34,7 @@ npm test
 npm exec -- wrangler deploy --dry-run
 ```
 
-The build needs the `papers/ogdoad` submodule checked out because paper posts convert their body from LaTeX on every build. `tools/pandoc.sh` prefers a local Pandoc and otherwise downloads the pinned, checksum-verified Linux release into `.build/`; `content/resume/build.sh` does the same for Tectonic, and `tools/subset-fonts.mjs` for the Shippori Mincho source fonts (`.build/fonts/`). `git submodule update --init` if a fresh clone fails there.
+The build needs the `papers/ogdoad` submodule checked out because paper posts convert their body from LaTeX on every build. `tools/pandoc.sh` prefers a local Pandoc and otherwise downloads the pinned, checksum-verified Linux release into `.build/`; `content/resume/build.sh` does the same for Tectonic, and `tools/subset-fonts.mjs` for the STIX Two and Shippori Mincho source fonts (`.build/fonts/`). `git submodule update --init` if a fresh clone fails there.
 
 `npm run build` runs two explicit phases:
 
@@ -88,7 +88,7 @@ Always inspect `shared/` before adding project-specific UI infrastructure. Canon
 
 Important modules:
 
-- `shared/tokens.js` — synchronous token/bootstrap script; it must execute before CSS parses. Exposes `_PALETTE`, `_FONT`, `_themePalette()`, and the color helpers, and extends through each project's `colors.js`.
+- `shared/tokens.js` — synchronous token/bootstrap script; it must execute before CSS parses. Exposes `_PALETTE`, `_FONT`, `_themePalette()`, `_loadTextFonts()`, and the color helpers, and extends through each project's `colors.js`.
 - `shared/base.css` — reset, layout/design tokens, HUD surfaces, controls, overlays, dropdowns, toasts, dependency reveals, and accessibility patterns.
 - `shared/utils.js` — escaping, timing, math, toast/focus/canvas helpers.
 - `shared/toolbar.js`, `shared/forms.js`, `shared/dropdown.js`, `shared/settings.js` — canonical controls and wiring.
@@ -137,11 +137,13 @@ Editorial and quiet: one serif typeface, a near-white neutral ground, a single o
 
 ### Type
 
-- **Newsreader for everything a visitor reads**: brand, navigation, headings, body, labels, table headers, dates, figures, buttons, HUD readouts, and canvas text. Self-hosted variable WOFF2 (opsz 6–72, wght 200–800), roman and italic, Latin and Latin Extended subsets, with `font-optical-sizing: auto`.
+- **Newsreader for everything a visitor reads**: brand, navigation, headings, body, labels, table headers, dates, figures, buttons, HUD readouts, and canvas text. Glyphs it lacks come from two fallback families subset at build time by `tools/subset-fonts.mjs`, both build outputs in `dist/fonts/`, never tracked. Self-hosted variable WOFF2 (opsz 6–72, wght 200–800), roman and italic, Latin and Latin Extended subsets, with `font-optical-sizing: auto`.
 - Newsreader's default figures are lining and tabular, so dates and readouts align without a monospace face. It has no small caps and no old-style figures.
-- **Japanese is Shippori Mincho** (400 and 500). `tools/subset-fonts.mjs` subsets it at build time to kana, CJK punctuation, fullwidth forms, and every kanji in the tracked text of `content/`, `site/`, `worker/`, and the projects; `static/fonts/fonts.css` declares the matching `unicode-range` faces, so the files are build outputs in `dist/fonts/`, never tracked. Stack: `'Newsreader', 'Shippori Mincho', 'Hiragino Mincho ProN', 'Yu Mincho', serif`.
+- **Greek, Cyrillic, super/subscripts, operators, arrows, and accidentals are STIX Two**: Text (roman and italic) for letters, scripts, and combining marks, so σ̄ sets as one cluster; Math for operators, brackets, ♭ ♮ ♯, and arrows. Each `unicode-range` slice (text, italic, math, arrows) downloads only on a page that uses it, so an English page with "→" pulls only the 5 KB arrows file. `size-adjust` matches Newsreader's x-height and `ascent-`/`descent-override` restore its line metrics, so a fallback glyph never moves a baseline or a line. Math's one upright cut is declared for italic too: operators in italic runs never slant.
+- **Japanese is Shippori Mincho** (400 and 500), subset to kana, CJK punctuation, fullwidth forms, and every kanji in the tracked text of `content/`, `site/`, `worker/`, and the projects.
+- Every slice always carries a fixed core (kana; the Greek alphabet; digit super/subscripts; common operators and arrows), so a new label renders correctly before its characters reach the scanned text. Stack: `'Newsreader', 'STIX Two Text', 'STIX Two Math', 'Shippori Mincho', 'Hiragino Mincho ProN', 'Yu Mincho', serif`.
 - **Monospace only for code** (`--font-code`, a system stack with no webfont).
-- Newsreader has no arrows, Greek, math operators, `∼`, double-struck letters, or ceiling brackets. Arrows U+2190–2193 come from a separate arrows-only Shippori Mincho file, so English pages never download the Japanese subsets. Shippori has no Greek or math operators either, so project UI symbols (ρ, ∇, ≈, …) fall through to the system Mincho (Hiragino, Yu) or serif; KaTeX math renders in KaTeX's own fonts.
+- Canvas drawing never starts a webfont download, so canvas text waits on `_loadTextFonts()` (`shared/tokens.js`), which loads Newsreader and every STIX slice; `shared/toolbar.js` starts it on each `.sim-body` page, and a project that draws once redraws when it resolves. KaTeX math in posts renders in KaTeX's own fonts.
 - Font tokens are `_FONT.text`, `_FONT.code`, and `_FONT.emoji`, injected as `--font-text`, `--font-code`, and `--font-emoji`. There are no variation-settings tokens. Scripture's optional sans reading face is a local system-sans stack in that project, not a shared token.
 - Project HUD sizes are `--font-sm` / `--font-base` / `--font-lg` (0.84 / 0.92 / 1.02rem) in `shared/base.css`; numeric readouts use `font-variant-numeric: lining-nums tabular-nums`. The base reset sets `font: inherit` on form controls, so buttons and inputs never fall back to the system UI face.
 
@@ -196,7 +198,7 @@ Each project retains substantive `about.md` documentation, educational content, 
 - `data-theme` lives on `<html>`.
 - `.tog-wrap input` stays visually clipped for accessibility; never replace it with `display: none`.
 - Root and project URLs inside deployable HTML/JS are absolute. Deep SPA routes make relative asset URLs unsafe.
-- `static/fonts/` holds Newsreader (roman and italic, latin and latin-ext WOFF2), Noto Emoji, their OFL texts, the Shippori Mincho OFL text, and `fonts.css`. KaTeX project fonts still require jsDelivr in CSP.
+- `static/fonts/` holds Newsreader (roman and italic, latin and latin-ext WOFF2), Noto Emoji, the OFL texts for those and for the build-time STIX Two and Shippori Mincho subsets, and `fonts.css`. KaTeX project fonts still require jsDelivr in CSP.
 - `static/.well-known/security.txt` has an annual expiry date.
 
 ## Prose voice

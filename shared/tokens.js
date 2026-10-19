@@ -96,10 +96,11 @@ function _oklch2hex(L, C, H) {
 
 // ─── Font stacks ───
 // Left mutable — a project's colors.js may add keys before freezing.
-// Newsreader carries Latin text; Japanese and the arrows Newsreader lacks
-// fall through to the build-time Shippori Mincho subset (static/fonts/fonts.css).
+// Newsreader carries Latin text. Greek, Cyrillic, super/subscripts, operators
+// and arrows fall through to build-time STIX Two subsets, and Japanese to a
+// Shippori Mincho subset, all sized to Newsreader (static/fonts/fonts.css).
 const _FONT = {
-  text:  "'Newsreader', 'Shippori Mincho', 'Hiragino Mincho ProN', 'Yu Mincho', serif",
+  text:  "'Newsreader', 'STIX Two Text', 'STIX Two Math', 'Shippori Mincho', 'Hiragino Mincho ProN', 'Yu Mincho', serif",
   code:  "ui-monospace, 'SF Mono', 'Menlo', 'Consolas', monospace",
   emoji: "'Noto Emoji', sans-serif",
 };
@@ -154,6 +155,27 @@ const _PALETTE = {
     indigo:  '#6B79EA',  // oklch(0.62 0.170 275)
   },
 };
+
+/**
+ * Load every face canvas text can draw with: Newsreader roman and italic and
+ * the STIX Two fallback slices. Canvas drawing never starts a webfont download
+ * by itself, so a project waits on this before measuring or redrawing text;
+ * shared/toolbar.js starts it on every .sim-body page. Memoized; resolves
+ * (never rejects) once the faces have loaded or failed.
+ * @returns {Promise<void>}
+ */
+let _textFontsReady = null;
+function _loadTextFonts() {
+  if (!_textFontsReady) {
+    const fonts = document.fonts;
+    const sample = 'Aα₂∇→';  // one character from each slice
+    _textFontsReady = !fonts ? Promise.resolve() : Promise.all([
+      fonts.load(`400 16px ${_FONT.text}`, sample),
+      fonts.load(`italic 400 16px ${_FONT.text}`, sample),
+    ]).then(() => {}, () => {});
+  }
+  return _textFontsReady;
+}
 
 /**
  * The palette for the theme currently on <html data-theme>.
@@ -269,6 +291,7 @@ window._oklch2hex = _oklch2hex;
 window._FONT = _FONT;
 window._PALETTE = _PALETTE;
 window._themePalette = _themePalette;
+window._loadTextFonts = _loadTextFonts;
 
 /**
  * Freeze _PALETTE (extended, light, dark) and _FONT.
