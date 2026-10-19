@@ -111,18 +111,116 @@ Keep CSP, HSTS, COOP, robots policy, and `Vary` aligned across both. `static/_he
 
 The Worker cache is explicitly version-scoped with `cache.cross_version_cache: false`, but the live zone cache has retained canonical URLs across deployments. `tools/purge-cache.mjs` therefore purges only the `a9l.im` hostname after Wrangler succeeds; its token has only Zone Cache Purge permission and is read from the `a9l.im-cloudflare-cache-purge` Keychain item (or `CLOUDFLARE_CACHE_PURGE_TOKEN` off macOS). Public assets use stable URLs, so both `static/_headers` and Worker responses also require browser revalidation (`max-age=0, must-revalidate`); an edge purge cannot evict an already-fresh browser copy. Preserve the purge and revalidation halves together.
 
-## Design philosophy
+## Design system
 
-Command-center engineering aesthetic: sharp, geometric, flat.
+Editorial and quiet: one serif typeface, a near-white neutral ground, a single oxblood red, and hairline rules for structure. It covers the root site, every project, generated images, and the resume. The code is migrating to it; [Redesign rollout](#redesign-rollout) tracks what already runs on it.
 
-- Differentiate surfaces with background color, not container borders.
-- No resting shadows; hover may use `--shadow-hover`, focus/active may use `--shadow-glow`.
-- Opaque content panels use elevated/solid backgrounds; HUD overlays use translucent `--bg-panel` plus `blur(8px)`.
-- Lines are accents (underlines, side bars, rules), never rounded container boundaries.
-- No bounce/spring easing. Use the shared ease tokens.
-- Use design tokens instead of hardcoded CSS values. Accessibility focus outlines remain allowed.
+### Color
+
+`shared/tokens.js` owns the palette (`_PALETTE.light`, `_PALETTE.dark`) and injects it as CSS custom properties. Neutrals are near-achromatic (OKLCH chroma ≤ 0.003, hue 60–90): never cold blue-white, never beige.
+
+| Token | Light | Dark | Use |
+|---|---|---|---|
+| `canvas` | `#FCFCFB` | `#121111` | page ground |
+| `panelSolid` | `#F4F3F2` | `#161615` | inset blocks, chips, solid HUD panels |
+| `elevated` | `#FFFFFF` | `#1B1A1A` | the rare raised surface |
+| `text` | `#161514` | `#ECEBEA` | headings, ledes, post body |
+| `textSecondary` | `#42413F` | `#BEBDBC` | home-page prose, descriptions |
+| `textMuted` | `#666463` | `#949392` | labels, dates, metadata |
+| `accent` | `#983432` | `#DC5960` | links, active navigation, emphasized figures, the seal |
+
+- Rules (`--border`) are `text` at 12% (light) or 13% (dark). Link underlines are `accent` at 40%.
+- The accent is per theme: read `_PALETTE.light.accent` / `_PALETTE.dark.accent` or `var(--accent)`. There is no theme-independent accent value.
+- Every text role clears 4.5:1 on every surface in both themes; the lowest pair is dark `accent` on `elevated` at 4.66:1.
+- The navbar seal is inline SVG filled with `currentColor`, so it follows the theme's accent (light oxblood on the dark canvas is only 2.6:1). Static copies — `static/logo.svg`, the favicon, app icons, OG cards — use light `#983432`.
+- `extended` data hues are unchanged except `slate`, which is `#8A8580` (OKLCH 0.62 0.010 75) so it sits on the neutral ground. `secondary` is unchanged.
+
+### Type
+
+- **Newsreader for everything a visitor reads**: brand, navigation, headings, body, labels, table headers, dates, figures, buttons, HUD readouts, and canvas text. Self-hosted variable WOFF2 (opsz 6–72, wght 200–800), roman and italic, Latin and Latin Extended subsets, with `font-optical-sizing: auto`.
+- Newsreader's default figures are lining and tabular, so dates and readouts align without a monospace face. It has no small caps and no old-style figures.
+- **Japanese is Shippori Mincho** (400 and 500), subset at build time to the site's Japanese text. Stack: `'Newsreader', 'Shippori Mincho', 'Hiragino Mincho ProN', 'Yu Mincho', serif`.
+- **Monospace only for code** (`--font-code`, a system stack with no webfont).
+- Newsreader has no arrows, `∼`, double-struck letters, or ceiling brackets. Arrows come from the Shippori Mincho subset, which always includes U+2190–2193; math renders in KaTeX's own fonts.
+- Font tokens are `_FONT.text`, `_FONT.code`, and `_FONT.emoji`, injected as `--font-text`, `--font-code`, and `--font-emoji`. There are no variation-settings tokens. Scripture's optional sans reading face is a local system-sans stack in that project, not a shared token.
+
+### Typographic scale (root site)
+
+| Element | Size / leading | Notes |
+|---|---|---|
+| Home lede | 29 / 1.34 | `text` |
+| Home body | 18.5 / 1.62 | `textSecondary` |
+| Post body | 19.5 / 1.58 | `text`, 680px measure |
+| Post title | 54 / 1.06 | weight 400, tracking −0.018em |
+| Post h2 / h3 | 29 / 22 | h3 weight 600; section numbers inline in `textMuted` |
+| Post and project titles in lists | 25–31 | weight 400 |
+| Navigation | 18 | lowercase |
+| Labels | 17.5 | italic, sentence case, `textMuted` |
+| Metadata | 15.5 | dates, tags, bylines |
+
+Nothing is uppercase or letter-spaced. Japanese labels are upright, weight 500, tracking 0.1em; Japanese body leading is 1.9–1.95.
+
+### Treatments
+
+- Structure comes from 1px hairline rules, not cards. The root site has no container surfaces except inline chips and `kbd`, and its radius is 0. Project HUD controls keep `--radius: 2px`, solid `panelSolid` panels, and translucent `--bg-panel` overlays with `blur(8px)`.
+- Navbar: 76px, bottom rule, seal and brand at left, links centered, tools at right. The active link is `accent` with a 1px underline.
+- Prose links are `accent` with a 1px underline at 40% accent, offset 0.2em. Navigation and metadata links are not underlined.
+- Inline lists (topics, card tags) are separated by `·`, or `・` in Japanese.
+- Theorems have no surface: the head ("Theorem A.") is weight 600 and the statement italic.
+- Icons use 1.4px strokes with round caps and joins.
+- Motion is color and opacity transitions on the shared ease tokens. No hover transforms, blur or translate entrances, gradient text, shimmer, tilt, glow, grain overlay, or shadows on the root site, and no bounce or spring easing.
+- The `~` in prediction values is raised 0.16em; Newsreader's sits low enough to read as a minus.
+- Canvas text in projects is at least 10px.
+- Use design tokens instead of hardcoded values. Accessibility focus outlines remain allowed.
 - `.fade-in.visible` outranks a plain hover selector; hover rules for those elements must include `.visible`.
 - Keep project sidebars on the `.sidebar-tabs` pattern inside `.stats-header`.
+
+## Redesign rollout
+
+The design system above is ratified and the code is migrating to it. Until a box is ticked, that part still runs on the previous system (Recursive, cold slate neutrals, `#E11107`): do not extend that style, and change it only as part of its item. When every box is ticked, delete this section and the migration sentence in the design system's opening paragraph.
+
+Phases run in order. In phase 4 each project is an independent pass — a commit in its own repository, then a submodule pointer bump here — so projects can run in parallel.
+
+### 1. Shared layer (this repository; reaches every project on deploy)
+
+- [ ] `shared/tokens.js`: `_PALETTE.light` and `_PALETTE.dark` set to the table above with `accent` inside each theme (top-level `accent` and `accentLight` removed); `extended.slate` retinted; `_FONT` reduced to `text`, `code`, `emoji` with `variationProse`/`variationMono` removed; inject `--font-text`, `--font-code`, `--accent`, and `--accent-line`, and stop injecting `--font-display`, `--font-sans`, `--font-serif`, `--font-mono`, and `--fvs-*`.
+- [ ] `shared/base.css`: every font and `--fvs-*` use migrated; uppercase letter-spaced labels (`.group-label`, `.stats-title`, `.tab-btn`, `.about-group-label`, `.label-caps`) to sentence case; mono readouts (`.stat-value`, `.slider-value`, `.zoom-level`, `.speed-btn`, `.sim-tooltip`, `.settings-dd-val`) to `--font-text` with tabular figures; icon strokes 1.4px and round.
+- [ ] `shared/icons.js` stroke attributes; `shared/toolbar.js` theme-color fallbacks.
+- [ ] Fonts: Newsreader roman and italic WOFF2 (Latin, Latin Extended) with its OFL text in `static/fonts/`; `static/fonts/fonts.css` rewritten; a build-time Shippori Mincho subset (a pinned Node subsetter under `tools/`, deterministic under `--check`) covering `content/**/*.ja.md`, the Japanese dictionary in `site/i18n.js`, project Japanese strings (`projects/geon/i18n/strings.js`), and U+2190–2193.
+- [ ] `static/_headers` Early Hints preload Newsreader roman instead of Recursive on every route block; `static/manifest.json` `theme_color` and `background_color`.
+- [ ] Recursive removed: `static/fonts/recursive-variable.woff2`, its `@font-face`, and the Root-site specifics line describing it.
+
+### 2. Root site
+
+- [ ] `site/styles.css` rebuilt to the design system (home, listings, post view, footer, keyboard cheatsheet), with the grain overlay, gradient text, page and hero entrance animations, and card shimmer and tilt removed.
+- [ ] `site/src/card-effects.js` deleted with its import; `site/index.html` gets the inline-SVG seal and new `theme-color`, and loses the grain element; `site/404.html` restyled.
+- [ ] `site/src/home.js` wraps the prediction `~` for the raised tilde; arrows in `site/i18n.js` strings render from the Shippori Mincho subset.
+
+### 3. Generated assets
+
+- [ ] `tools/og/` (`card.css`, `a9lim.html`, `geon.html`, `shoals.html`, `icon.html`) restyled and rerun: `static/og-image.webp` (bump its `?v=`), `static/icon-192.png`, `static/icon-512.png`, `projects/geon/og-image.webp`, `projects/shoals/og-image.webp`. `static/logo.svg` and `static/favicon.ico` in `#983432`.
+- [ ] Resume: `content/resume/resume.tex` set in Newsreader (upstream static instances in `content/resume/fonts/`, Recursive TTFs removed), links in oxblood.
+- [ ] Blog figures in `static/blog-assets/introspection-via-kaomoji/`: the three Plotly HTML figures and the light/dark PNG pairs regenerated from llmoji-study in Newsreader on these palettes.
+
+### 4. Projects
+
+Every project: the static `<meta name="theme-color">` becomes `#FCFCFB`; all font, `--fvs-*`, and `_FONT.*` uses are migrated; direct `_PALETTE.accent` reads move to the per-theme accent; its own `AGENTS.md` and docs are updated in the same pass; light and dark are checked by eye.
+
+- [ ] **cyano**: `_THEME` accent in `src/enzymes.js`; its canvas font cache `_F` on `_FONT.text` with nothing under 10px; adopt the shared theme-color sync (`src/theme.js` never updates the meta tag).
+- [ ] **geon**: WGSL color constants in `src/gpu/gpu-constants.js` and accent/clear colors in `src/gpu/gpu-renderer.js` and `src/renderer.js` from the per-theme accent; `'9px Noto Sans Mono'` (never loaded) in `src/effective-potential.js` and `src/phase-plot.js` to `_FONT.text`; static `theme-color` `#C8553D`.
+- [ ] **gerry**: `'9px Noto Sans Mono'` and `'11px Noto Sans'` (never loaded) in `src/election-sim.js` to `_FONT.text`; check the orange party against the accent and the fixed 68px `.prop-values` column.
+- [ ] **miasma**: undefined `--bg-base` (`src/config.js`, `src/timeseries.js`, `styles.css`) replaced with `--bg-canvas`; `#e11107` and `#808696` fallbacks in `src/render.js` and `styles.css`; check the red infected compartment against the accent.
+- [ ] **pile**: undefined `--bg` in `styles.css` replaced with `--bg-canvas`; canvas fonts hardcoded to Recursive in `src/ui/axial.js` and `src/ui/stack.js` on `_FONT.text` at 10px or more, with the fixed +70px label offset in `stack.js` measured instead; the trip line's `rgba(255,80,80,…)`.
+- [ ] **plasma**: undefined `--bg` in `styles.css`; the unused `src/gpu/shaders/clear.wgsl` deleted along with its `AGENTS.md` mention; the `#e11107` fallback in `src/stats-display.js`.
+- [ ] **scripture**: reader font options in `src/display.js` (Serif → `--font-text`, Sans → a local system-sans stack); verse numbers off mono.
+- [ ] **shoals**: per-theme accent in `src/strategy.js` and `src/chart.js`; crosshair label contrast in dark; option-chain and order tables, slider values, and fixed chart gutters (`src/config.js`, `src/strategy.js`) checked in Newsreader; its OG card.
+- [ ] **comma** (untracked local repository, not yet registered): canvas font from `--font-text` in `src/render.js`; `#4477aa` in `main.js`.
+
+### 5. Close-out
+
+- [ ] No `Recursive`, `--fvs-`, `--font-mono`, `--font-sans`, `--font-display`, `--font-serif`, `_FONT.mono`, `_FONT.sans`, `#E11107`, or `accentLight` remains in the tree.
+- [ ] `npm test` passes; every page and project checked in light and dark on `./dev.sh`; deployed with `./deploy.sh` and verified on the live site.
+- [ ] This section deleted.
 
 ## SEO and identifier safety
 
