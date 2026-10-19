@@ -9,6 +9,11 @@
     padding: 0;
 }
 
+/* Form controls take the page's face instead of the UA's system font. */
+button, input, select, textarea {
+    font: inherit;
+}
+
 /* ─── Layout Tokens ─── */
 :root {
     --radius: 2px;
@@ -855,6 +860,11 @@ body {
     padding-bottom: 4px;
 }
 
+/* A later shortcut group inside the same section needs air above its label. */
+.about-row + .about-group-label {
+    margin-top: 14px;
+}
+
 .about-row {
     display: flex;
     align-items: center;
@@ -1559,6 +1569,8 @@ label.control-label {
   .mode-btn { min-height: 44px; }
 
   .sim-toolbar-actions {
+    flex-shrink: 1;
+    min-width: 0;
     overflow-x: auto;
     scrollbar-width: none;
   }

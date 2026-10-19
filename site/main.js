@@ -4,8 +4,7 @@
 import { initRouter } from './src/router.js';
 import { initTheme } from './src/theme.js';
 import { initMobileMenu } from './src/mobile-menu.js';
-import { triggerFadeIns, initNavbarScroll, initScrollReveal } from './src/animations.js';
-import { initCardTilt } from './src/card-effects.js';
+import { triggerFadeIns } from './src/animations.js';
 import { showBlogListing, showBlogPost, wireBlogI18n } from './src/blog.js';
 import { PROJECTS } from './src/projects.js';
 import { renderProjectCards, setProjectFilter } from './src/projects-page.js';
@@ -44,7 +43,6 @@ renderProjectCards({
 // ─── Init ───
 initTheme($);
 initMobileMenu($);
-initNavbarScroll($);
 
 initRouter({
     $,
@@ -56,9 +54,6 @@ initRouter({
     setProjectFilter,
 });
 
-initScrollReveal();
-initCardTilt('.project-card');
-initCardTilt('.contact-section');
 initHome();
 wireBlogI18n($);
 

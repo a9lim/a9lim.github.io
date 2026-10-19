@@ -71,7 +71,7 @@ It also carries a small paper dialect, used by posts converted from LaTeX writeu
 - `::: theorem id="thm:x" name="Optional title"` … `:::` containers for `theorem`, `proposition`, `lemma`, `corollary`, `definition`, `remark`, and `proof`. Bodies are parsed recursively. Numbering mirrors amsthm's `\newtheorem{...}[section]`: one counter shared by every numbered kind, reset at each `##`, printed as `{section}.{n}`; `proof` is unnumbered. `number="A"` supplies a named theorem's explicit display number without advancing that counter.
 - `[[label]]` renders a linked `Theorem 4.1`; `[[#label]]` renders the bare number, for prose supplying its own noun ("Sections 3–5"). An undeclared label renders visibly as `.xref-missing` rather than failing silently.
 - Headings take a trailing pandoc-style attribute block: `{#sec:x}` sets the anchor and makes the heading referenceable, `{.unnumbered}` keeps it out of the section count so an abstract or reference list does not renumber the paper between them. List items take a leading `{#id}` anchor, which is how bibliography entries become link targets.
-- Numbering requires a pre-pass, so `parseMarkdown` scans labels before rendering. Math, the switcher counter, and the label table are module-level and owned by the outermost call only — nested parses must not reset them. Math is HTML-escaped when restored: formulas routinely contain `<`, which the browser would otherwise read as markup.
+- In a paper-dialect document (any theorem environment or attributed heading), `##` and `###` headings also print their section number inline as `<span class="sec">`, counted by the same rule, so the printed number always matches `[[label]]`. Numbering requires a pre-pass, so `parseMarkdown` scans labels before rendering. Math, the switcher counter, and the label table are module-level and owned by the outermost call only — nested parses must not reset them. Math is HTML-escaped when restored: formulas routinely contain `<`, which the browser would otherwise read as markup.
 
 KaTeX is lazy-loaded from jsDelivr by `site/src/blog.js` whenever a post contains `$`, with the shared macros (`\F`, `\Tr`, `\Arf`, …) defined there rather than per formula. Math renders client-side only; SSR and feeds emit the TeX source.
 
@@ -141,9 +141,9 @@ Editorial and quiet: one serif typeface, a near-white neutral ground, a single o
 - Newsreader's default figures are lining and tabular, so dates and readouts align without a monospace face. It has no small caps and no old-style figures.
 - **Japanese is Shippori Mincho** (400 and 500). `tools/subset-fonts.mjs` subsets it at build time to kana, CJK punctuation, fullwidth forms, and every kanji in the tracked text of `content/`, `site/`, `worker/`, and the projects; `static/fonts/fonts.css` declares the matching `unicode-range` faces, so the files are build outputs in `dist/fonts/`, never tracked. Stack: `'Newsreader', 'Shippori Mincho', 'Hiragino Mincho ProN', 'Yu Mincho', serif`.
 - **Monospace only for code** (`--font-code`, a system stack with no webfont).
-- Newsreader has no arrows, `∼`, double-struck letters, or ceiling brackets. Arrows U+2190–2193 come from a separate arrows-only Shippori Mincho file, so English pages never download the Japanese subsets; math renders in KaTeX's own fonts.
+- Newsreader has no arrows, Greek, math operators, `∼`, double-struck letters, or ceiling brackets. Arrows U+2190–2193 come from a separate arrows-only Shippori Mincho file, so English pages never download the Japanese subsets. Shippori has no Greek or math operators either, so project UI symbols (ρ, ∇, ≈, …) fall through to the system Mincho (Hiragino, Yu) or serif; KaTeX math renders in KaTeX's own fonts.
 - Font tokens are `_FONT.text`, `_FONT.code`, and `_FONT.emoji`, injected as `--font-text`, `--font-code`, and `--font-emoji`. There are no variation-settings tokens. Scripture's optional sans reading face is a local system-sans stack in that project, not a shared token.
-- Project HUD sizes are `--font-sm` / `--font-base` / `--font-lg` (0.84 / 0.92 / 1.02rem) in `shared/base.css`; numeric readouts use `font-variant-numeric: lining-nums tabular-nums`.
+- Project HUD sizes are `--font-sm` / `--font-base` / `--font-lg` (0.84 / 0.92 / 1.02rem) in `shared/base.css`; numeric readouts use `font-variant-numeric: lining-nums tabular-nums`. The base reset sets `font: inherit` on form controls, so buttons and inputs never fall back to the system UI face.
 
 ### Typographic scale (root site)
 
@@ -193,9 +193,9 @@ Phases run in order. In phase 4 each project is an independent pass — a commit
 
 ### 2. Root site
 
-- [ ] `site/styles.css` rebuilt to the design system (home, listings, post view, footer, keyboard cheatsheet), with the grain overlay, gradient text, page and hero entrance animations, and card shimmer and tilt removed.
-- [ ] `site/src/card-effects.js` deleted with its import; `site/index.html` gets the inline-SVG seal and new `theme-color`, and loses the grain element; `site/404.html` restyled.
-- [ ] `site/src/home.js` wraps the prediction `~` for the raised tilde; arrows in `site/i18n.js` strings render from the Shippori Mincho subset.
+- [x] `site/styles.css` rebuilt to the design system (home, listings, post view, footer, keyboard cheatsheet), with the grain overlay, gradient text, page and hero entrance animations, and card shimmer and tilt removed.
+- [x] `site/src/card-effects.js` deleted with its import; `site/index.html` gets the inline-SVG seal and new `theme-color`, and loses the grain element; `site/404.html` restyled.
+- [x] `site/src/home.js` wraps the prediction `~` for the raised tilde; arrows in `site/i18n.js` strings render from the Shippori Mincho subset.
 
 ### 3. Generated assets
 
@@ -236,7 +236,7 @@ Each project retains substantive `about.md` documentation, educational content, 
 - `site/src/home.js` hydrates generated homepage data; `site/src/router.js` maintains `aria-current`.
 - `?tag={slug}` filters `/sims`, `/projects`, and `/blog` client-side. It is a view, not a route: `parsePath` reports it separately from page/slug, canonical and `og:url` deliberately drop it, and the Worker SSRs the unfiltered listing. Every `[data-page]` link's href is the route it navigates to, query string included — do not rebuild a path from `data-page` alone or the filter is lost on click.
 - The root Person JSON-LD entity remains `https://a9l.im/#person`.
-- The sole root `<h1>` is the hero tagline; the navbar brand is not a heading.
+- The home page's only `<h1>` is the visually hidden `a9lim` heading; the navbar brand (`.nav-brand`, inline-SVG seal plus name) is not a heading.
 - `data-theme` lives on `<html>`.
 - `.tog-wrap input` stays visually clipped for accessibility; never replace it with `display: none`.
 - Root and project URLs inside deployable HTML/JS are absolute. Deep SPA routes make relative asset URLs unsafe.

@@ -69,7 +69,8 @@ check('bare cross-reference renders the number alone',
 check('forward cross-reference resolves', thmHtml.includes('<a href="#thm-a" class="xref">Theorem&nbsp;2.1</a>'));
 check('unknown label stays visible rather than failing silently',
   thmHtml.includes('<span class="xref-missing">[[nope:x]]</span>'));
-check('explicit heading id becomes the anchor', thmHtml.includes('<h2 id="sec-one">First</h2>'));
+check('explicit heading id becomes the anchor, numbered inline',
+  thmHtml.includes('<h2 id="sec-one"><span class="sec">1</span> First</h2>'));
 check('list item anchor becomes an id', thmHtml.includes('<li id="ref-key">'));
 check('math inside a theorem body survives and is escaped', thmHtml.includes('$x&lt;y$'));
 
@@ -193,8 +194,8 @@ for (const p of PROJECTS.filter(p => !p.external && !p.planned)) {
   check(`${p.title} about panel date is current`, uiFiles.some(rel => readFileSync(rel, 'utf8').includes(`lastUpdated: '${meta.updated}'`)));
 
   const expectedImage = p.major
-    ? `https://a9l.im/${slug}/og-image.webp?v=20260725f`
-    : 'https://a9l.im/og-image.webp?v=20260725f';
+    ? `https://a9l.im/${slug}/og-image.webp?v=20261019`
+    : 'https://a9l.im/og-image.webp?v=20261019';
   const ogImage = index.match(/<meta property="og:image" content="([^"]+)">/)?.[1];
   const twitterImage = index.match(/<meta name="twitter:image" content="([^"]+)">/)?.[1];
   const ogAlt = index.match(/<meta property="og:image:alt" content="([^"]+)">/)?.[1];

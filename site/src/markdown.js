@@ -91,6 +91,12 @@ let _labels = {};
 // disagree about numbering.
 let _envNumbers = [];
 let _envIndex = 0;
+// Paper-dialect documents (any theorem environment or attributed heading)
+// print their section numbers inline before `##`/`###` headings, counted by
+// the same rule as scanLabels so the printed number matches `[[label]]`.
+let _numberSections = false;
+let _secCount = 0;
+let _subCount = 0;
 
 /**
  * First pass: assign section and environment numbers and record every
@@ -103,6 +109,9 @@ function scanLabels(lines) {
     _labels = {};
     _envNumbers = [];
     _envIndex = 0;
+    _numberSections = false;
+    _secCount = 0;
+    _subCount = 0;
     let sectionNum = 0;
     let subNum = 0;
     let envNum = 0;
@@ -123,6 +132,7 @@ function scanLabels(lines) {
         if (headingMatch) {
             const level = headingMatch[1].length;
             const attrs = splitHeadingAttrs(headingMatch[2]);
+            if (attrs.id || attrs.unnumbered) _numberSections = true;
             if (!attrs.unnumbered) {
                 if (level === 2) { sectionNum++; subNum = 0; envNum = 0; }
                 else if (level === 3) { subNum++; }
@@ -139,6 +149,7 @@ function scanLabels(lines) {
 
         const dirMatch = lines[i].match(/^:::\s*([a-z]+)\s*(.*)$/);
         if (dirMatch && THEOREM_ENVS[dirMatch[1]]) {
+            _numberSections = true;
             const env = dirMatch[1];
             if (env === 'proof') {
                 _envNumbers.push('');
@@ -414,7 +425,13 @@ function parseBlocks(src) {
             const slug = attrs.id
                 ? labelToId(attrs.id)
                 : text.toLowerCase().replace(/<[^>]+>/g, '').replace(/&[^;]+;/g, '').replace(/[^\w]+/g, '-').replace(/^-|-$/g, '');
-            html.push('<h' + level + ' id="' + slug + '">' + mdInline(mdEsc(text)) + '</h' + level + '>');
+            let num = '';
+            if (!attrs.unnumbered && (level === 2 || level === 3)) {
+                if (level === 2) { _secCount++; _subCount = 0; } else _subCount++;
+                if (_numberSections) num = level === 2 ? String(_secCount) : _secCount + '.' + _subCount;
+            }
+            const numHtml = num ? '<span class="sec">' + num + '</span> ' : '';
+            html.push('<h' + level + ' id="' + slug + '">' + numHtml + mdInline(mdEsc(text)) + '</h' + level + '>');
             i++;
             continue;
         }

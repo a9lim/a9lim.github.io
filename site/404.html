@@ -5,91 +5,67 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>404 | a9l.im</title>
     <meta name="robots" content="noindex, nofollow">
-
+    <meta name="theme-color" content="#FCFCFB">
+    <script>
+        // Same preference order as the root site: saved choice, then the OS.
+        (function () {
+            var saved = null;
+            try { saved = localStorage.getItem('theme'); } catch (e) { /* storage blocked */ }
+            var dark = saved ? saved === 'dark' : window.matchMedia('(prefers-color-scheme: dark)').matches;
+            if (dark) document.documentElement.dataset.theme = 'dark';
+        })();
+    </script>
     <link rel="stylesheet" href="/fonts/fonts.css">
-
     <script src="/shared/tokens.js"></script>
     <link rel="stylesheet" href="/shared/base.css">
-    <link rel="icon" href="favicon.ico">
-
+    <link rel="icon" href="/favicon.ico">
     <style>
         body {
-            margin: 0;
             min-height: 100dvh;
             display: flex;
             align-items: center;
             justify-content: center;
-            background: var(--bg-canvas);
-            color: var(--text);
-            font-family: var(--font-mono);
-            font-variation-settings: var(--fvs-mono);
+            padding: 32px 24px;
             text-align: center;
         }
-        .error-page {
-            max-width: 480px;
-            padding: 32px 24px;
-        }
+        .error-page { max-width: 480px; }
         .error-code {
-            font-family: var(--font-display);
-            font-variation-settings: var(--fvs-prose);
-            font-weight: 700;
-            font-size: clamp(5rem, 15vw, 9rem);
+            font-size: clamp(5rem, 15vw, 8rem);
+            font-weight: 300;
             line-height: 1;
+            letter-spacing: -0.02em;
             color: var(--text-muted);
-            letter-spacing: -3px;
         }
-        .accent-line {
+        .error-rule {
             width: 48px;
-            height: 3px;
-            background: var(--accent);
-            border-radius: 0;
-            margin: 20px auto;
+            height: 1px;
+            margin: 28px auto;
+            background: var(--border-strong);
         }
         .error-message {
-            font-size: 1.1rem;
+            font-size: 20px;
+            line-height: 1.55;
             color: var(--text-secondary);
-            line-height: 1.6;
-            margin-bottom: 32px;
+            margin-bottom: 24px;
         }
         .home-link {
-            display: inline-block;
-            font-family: var(--font-mono);
-            font-variation-settings: var(--fvs-mono);
-            font-size: 0.92rem;
-            font-weight: 500;
-            color: var(--text-on-accent);
-            text-decoration: none;
-            padding: 0.8rem 2.8rem;
-            background: var(--accent);
-            border: none;
-            border-radius: var(--radius);
-            letter-spacing: 0.02em;
-            text-transform: uppercase;
-            transition: background 0.2s var(--ease-out), box-shadow 0.2s var(--ease-out);
+            font-size: 18px;
+            color: var(--accent);
+            text-decoration: underline;
+            text-decoration-thickness: 1px;
+            text-underline-offset: 0.2em;
+            text-decoration-color: var(--accent-line);
+            transition: text-decoration-color 0.2s var(--ease-out);
         }
-        .home-link:hover {
-            background: var(--accent-light);
-            box-shadow: var(--shadow-glow);
-        }
-        .home-link:active {
-            transform: scale(0.98);
-        }
+        .home-link:hover { text-decoration-color: var(--accent); }
     </style>
 </head>
 <body>
-    <div class="error-page">
-        <div class="error-code">404</div>
-        <div class="accent-line"></div>
+    <main class="error-page">
+        <h1 class="error-code">404</h1>
+        <div class="error-rule" aria-hidden="true"></div>
         <p class="error-message">This page doesn't exist. It may have been moved or removed.</p>
         <a href="/" class="home-link">Back to a9l.im</a>
-    </div>
-
-    <script>
-        // Respect saved theme preference
-        const saved = localStorage.getItem('a9lim-theme')
-            || localStorage.getItem('geon-theme')
-            || localStorage.getItem('shoals-theme');
-        if (saved === 'dark') document.documentElement.dataset.theme = 'dark';
-    </script>
+    </main>
 </body>
 </html>

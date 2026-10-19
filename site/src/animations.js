@@ -1,10 +1,8 @@
-// ─── Scroll Animations & Fade-Ins ───
-// Two independent reveal systems: `.fade-in` (page-nav triggered) and
-// `.scroll-reveal` (IntersectionObserver, one-shot). Also drives the
-// accent stripe slide-in and hero-orb parallax.
+// ─── Fade-ins ───
+// `.fade-in` elements reveal by opacity when their page is shown.
 
 /**
- * Replay entrance animations on all `.fade-in` children of container.
+ * Replay entrance fades on all `.fade-in` children of container.
  * Double-rAF ensures the browser flushes the class removal before re-adding,
  * so the CSS transition fires even when navigating to the same page twice.
  */
@@ -17,52 +15,4 @@ export function triggerFadeIns(container) {
             els.forEach(el => el.classList.add('visible'));
         });
     });
-}
-
-/** Add `.scrolled` shadow class to navbar on scroll (rAF-throttled). */
-export function initNavbarScroll($) {
-    let ticking = false;
-    window.addEventListener('scroll', () => {
-        if (!ticking) {
-            requestAnimationFrame(() => {
-                $.navbar.classList.toggle('scrolled', window.scrollY > 20);
-                ticking = false;
-            });
-            ticking = true;
-        }
-    });
-}
-
-/** Wire up scroll-reveal observer and parallax. */
-export function initScrollReveal() {
-    const revealEls = document.querySelectorAll('.scroll-reveal');
-
-    // One-shot reveal: unobserved after first intersection
-    if (revealEls.length) {
-        const observer = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    entry.target.classList.add('visible');
-                    observer.unobserve(entry.target);
-                }
-            });
-        }, { threshold: 0.15, rootMargin: '0px 0px -40px 0px' });
-        revealEls.forEach(el => observer.observe(el));
-    }
-
-    // Parallax elements: hero orbs float with scroll
-    const orbs = document.querySelectorAll('.hero-orb');
-
-    function onScroll() {
-        // Subtle parallax on hero orbs
-        if (orbs.length) {
-            const sy = window.scrollY;
-            orbs.forEach((orb, i) => {
-                const speed = (i + 1) * 0.15;
-                orb.style.transform = `translateY(${sy * speed}px) scale(${1 - sy * 0.0003})`;
-            });
-        }
-    }
-
-    window.addEventListener('scroll', onScroll, { passive: true });
 }

@@ -95,7 +95,10 @@ function renderPredictions(rows) {
     for (const [label, p, by] of rows) {
         const tr = el('tr');
         tr.appendChild(el('td', { class: 'home-pred-l', text: label }));
-        tr.appendChild(el('td', { class: 'home-pred-p', text: p }));
+        // Newsreader's tilde sits low enough to read as a minus; .tilde raises it.
+        const parts = String(p).split('~').flatMap((s, i) =>
+            i ? [el('span', { class: 'tilde', text: '~' }), s] : [s]);
+        tr.appendChild(el('td', { class: 'home-pred-p' }, parts.filter(Boolean)));
         tr.appendChild(el('td', { class: 'home-pred-b', text: by }));
         root.appendChild(tr);
     }

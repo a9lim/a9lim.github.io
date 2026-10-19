@@ -898,10 +898,10 @@ function ssrCard(p) {
     : '';
   const footer = `<div class="project-card-footer">${packageCards}<div class="project-tags">${tagSpans}</div></div>`;
   if (p.planned) {
-    return `<article class="project-card project-card-planned"><div class="project-card-main"><div class="project-card-top">${emoji}<h3 class="project-title">${mdEsc(p.title)}</h3><span class="project-planned-tag">planned</span></div><p>${mdEsc(p.longDesc)}</p></div>${footer}</article>`;
+    return `<article class="project-card project-card-planned"><div class="project-card-main"><div class="project-card-top">${emoji}<h3 class="project-title">${mdEsc(p.title)}</h3><span class="project-planned-tag">planned</span></div><p class="project-desc">${mdEsc(p.longDesc)}</p></div>${footer}</article>`;
   }
   const ext = p.external ? ' target="_blank" rel="noopener noreferrer"' : '';
-  return `<article class="project-card fade-in visible"><a class="project-card-main" href="${p.href}"${ext}><div class="project-card-top">${emoji}<h3 class="project-title">${mdEsc(p.title)}</h3></div><p>${mdEsc(p.longDesc)}</p></a>${footer}</article>`;
+  return `<article class="project-card fade-in visible"><a class="project-card-main" href="${p.href}"${ext}><div class="project-card-top">${emoji}<h3 class="project-title">${mdEsc(p.title)}</h3></div><p class="project-desc">${mdEsc(p.longDesc)}</p></a>${footer}</article>`;
 }
 
 function ssrGrid(list) {
@@ -1094,7 +1094,7 @@ const simPath = doc => new URL(projectUrl(doc.project)).pathname;
 
 // Every route has a social image, but only major simulations own a bespoke
 // card. Smaller simulations deliberately share the root card.
-const OG_REVISION = '20260725f';
+const OG_REVISION = '20261019';
 const ROOT_OG_IMAGE = `og-image.webp?v=${OG_REVISION}`;
 const IMAGE_MAP = { '/': [ROOT_OG_IMAGE] };
 const IMAGE_CAPTIONS = { '/': site.discoveryDescription };
