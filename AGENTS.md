@@ -178,10 +178,6 @@ Nothing is uppercase or letter-spaced. Japanese labels are upright, weight 500, 
 - `.fade-in.visible` outranks a plain hover selector; hover rules for those elements must include `.visible`.
 - Keep project sidebars on the `.sidebar-tabs` pattern inside `.stats-header`.
 
-### Known gap
-
-The ten `fig_emo_a_kaomoji_sim_*` heatmap pairs in `static/blog-assets/introspection-via-kaomoji/` sit on the current grounds and ink (their neutral axis was remapped in place) but keep their labels in the previous typeface. `interpretability-experiments/llmoji-experiment/scripts/local/99_regen_blog_figures.py` regenerates them in Newsreader once the post's per-row hidden states (`data/local/hidden/`, `data/local/cache/`) are recaptured; it already regenerates the post's Plotly figures and layerwise PNGs.
-
 ## SEO and identifier safety
 
 Never invent Wikidata QIDs, DOIs, or scholarly URLs from memory. Verify QIDs with the Wikidata search API and entity JSON, DOIs with Crossref or the DOI resolver, and other references against their live primary source. If no entity exists, omit it. This applies to Worker scripture schema, project JSON-LD, `isBasedOn`, and educational references.
