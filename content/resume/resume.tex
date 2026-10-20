@@ -137,34 +137,35 @@ Independent interpretability and alignment researcher, and open-source developer
   \item Investigated correspondence between kaomoji used by LLMs and functional emotional states.
   \item Found that the kaomoji could predict the emotional content of the prompt with 80.6\% accuracy on Gemma-4-31b-it.
   \item Aligned hidden states across model families to analyze shared geometry.
-  \item Built data collection tooling and published the resulting corpus.
 \end{itemize}
 
 \entry{Elapsed-Time Encoding in LLMs}{https://github.com/a9lim/time-experiment}{Ongoing study on representations of elapsed time within LLMs}{Python, HF Transformers}{Jun 2026 – Present}
 \begin{itemize}
-  \item Used linear probes and logits to investigate the representation of elapsed time within LLMs over a conversation without timestamps.
+  \item Used linear probes to investigate the representation of elapsed time within LLMs over a conversation without timestamps.
   \item Showed elapsed time is tracked within LLMs and linearly proportional to context length using probes.
   \item Replicated findings of Discrete Minds in a Continuous World (Wang et al.).
 \end{itemize}
 
-\entry{Neuralese as a Conlang}{https://github.com/a9lim/acot-experiment}{Ongoing study on the legibility of latent reasoning}{Python, PyTorch}{Jul 2026 – Present}
+\entry{Training Evidential Cooperation}{https://github.com/a9lim/twin-credit-experiment}{Ongoing study on how training interacts with decision theory}{Python, PyTorch}{Jul 2026 – Present}
 \begin{itemize}
-  \item Train a model to reason via Abstract Chain-of-Thought (Ramji et al.) to analyze the structure and grammar of abstract tokens.
-  \item A preliminary run on a small model has so far not successfully trained it to use abstract tokens to reason.
-\end{itemize}
-
-\entry{Block Sparse Crosscoders}{https://github.com/a9lim/block-crosscoder-experiment}{Ongoing study on cross-layer multidimensional features in LLMs}{Python, PyTorch}{Jul 2026 – Present}
-\begin{itemize}
-  \item Synthesize recent work on Block Sparse Featurizers (Fel et al.) and Sparse Crosscoders (Lindsey et al.) to attempt extraction of cross-layer multidimensional features.
+  \item Trained a small model to cooperate in twin prisoner's dilemmas and observe generalization to broader reasoning.
+  \item Showed that a different reward term can cause the model to partially adopt EDT from a mixed baseline.
+  \item Preliminarily found overtraining for cooperation results in transparent reward-seeking.
 \end{itemize}
 
 \section*{Projects}
 
+\entry{Neuralese Model Organism}{https://github.com/a9lim/delta-feedback-experiment}{Small model organism with opaque reasoning}{Python, PyTorch}{Jul 2026 – Present}
+\begin{itemize}
+  \item Integrate recent research (Wang et al.) to train a model from scratch with high opaque serial depth.
+  \item Developed architecture similar to major open-weight models and fitted scaling laws.
+  \item Preliminarily have not replicated the paper's findings.
+\end{itemize}
+
 \entry{Drowse}{https://github.com/a9lim/drowse}{Mechanistic interpretability workbench}{Python, HF Transformers, PyTorch}{Apr 2026 – Present}
 \begin{itemize}
   \item Built a local interpretability workbench compatible with most open-weight LLMs and both CUDA and MPS.
-  \item Implemented curved manifold extraction from sets of concepts.
-  \item Implemented Jacobian lens readouts and steering, and nonstandard roles in chat templates.
+  \item Implemented curved manifold extraction from sets of concepts amd Jacobian lens readouts and steering.
   \item Published a Python API, dashboard, and OpenAI/Ollama-compatible server.
 \end{itemize}
 
@@ -178,11 +179,13 @@ Independent interpretability and alignment researcher, and open-source developer
 \plainentry{Other Projects}{Additional projects and tooling I've worked on}{Rust, Python, JavaScript, WebGPU}{Feb 2026 – Present}
 \begin{itemize}
   \item \textbf{\href{https://github.com/a9lim/ogdoad}{Ogdoad}:} Built a library to explore Clifford algebras over the
-  surreal numbers and Conway's combinatorial games and investigate open problems.
+  surreal numbers and Conway's combinatorial games, and investigate open problems.
+  \item \textbf{\href{https://github.com/a9lim/blam}{Blam}:} Built a library to explore algorithmic information theory
+  and made progress on finding the shortest binary lambda calculus self-interpreter.
   \item \textbf{\href{https://github.com/a9lim/gaslamp}{Gaslamp}:} Built a
   cross-agent CLI for Claude Code and Codex to dispatch each other as subagents.
   \item \textbf{\href{https://a9l.im/sims}{Interactive educational simulations}:} Built seven more browser simulations across physics,
-  finance, biology, political science, and comparative religion.
+  finance, and biology.
 \end{itemize}
 
 \section*{Technical skills}

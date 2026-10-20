@@ -13,4 +13,4 @@ tags:
   - llm
   - interpretability
 ---
-A local mechanistic interpretability workbench for probing, steering and analyzing LLMs with a Python API, web dashboard, and server. Supports linear probes, curved manifolds, SAEs, and jacobian-lens. We are currently renaming it.
+A local mechanistic interpretability workbench for probing, steering and analyzing LLMs with a Python API, web dashboard, and server. Supports linear probes, curved manifolds, SAEs, and jacobian-lens.
