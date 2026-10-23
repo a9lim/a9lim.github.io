@@ -6,10 +6,9 @@ transpiler in `lib/wgsl/transpile.js`.
 The transpiler is **not part of the deployed simulation path**. The root build
 does not generate `transpiled/` artifacts, no simulation imports the
 transpiler or runner, and `lib/wgsl/runner.js` plus
-`lib/wgsl/worker.js` are retained as dormant integration code. Geon keeps
-its own CPU backend; Plasma currently requires WebGPU. Re-enabling a browser
-CPU fallback would require an explicit build-artifact configuration and a
-simulation-side importer.
+`lib/wgsl/worker.js` are retained as dormant integration code. Geon and
+Plasma both require WebGPU. Re-enabling a browser CPU fallback would require
+an explicit build-artifact configuration and a simulation-side importer.
 
 ## Public API
 
