@@ -71,10 +71,10 @@ function isDeployableProjectFile(rel) {
   const parts = rel.split('/');
   if (parts.some(part => part.startsWith('.'))) return false;
   if (parts.includes('node_modules')) return false;
-  if (parts.includes('docs') || parts.includes('tests') || parts.includes('extract')) return false;
+  if (['docs', 'tests', 'tools', 'extract'].some(dir => parts.includes(dir))) return false;
   if (rel === 'AGENTS.md' || rel === 'CLAUDE.md') return false;
   if (rel === 'AUDIT.md' || rel === 'HANDOFF.md') return false;
-  if (/^test_.*\.mjs$/.test(rel)) return false;
+  if (/(?:^|\/)test_[^/]*\.mjs$|\.test\.mjs$/.test(rel)) return false;
   if (rel === 'raw' || rel.startsWith('raw/')) return false;
   return true;
 }
@@ -107,13 +107,6 @@ if (DRAFTS) {
   const drafts = copyDraftTree('draft/posts', join(DIST, 'content/posts'));
   copied += drafts;
   console.log(`drafts: staged ${drafts} draft post file(s) — this tree must not be deployed`);
-}
-
-// Keep the former public URLs for one migration cycle. Source and consumers
-// use /shared/*; these aliases can be removed after caches and inbound links age.
-for (const name of readdirSync(join(ROOT, 'shared')).filter(name => /\.(?:css|js)$/.test(name))) {
-  copyPath(join(ROOT, 'shared', name), join(DIST, `shared-${name}`));
-  copied += 1;
 }
 
 for (const project of PROJECTS) {

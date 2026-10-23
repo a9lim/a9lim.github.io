@@ -32,7 +32,7 @@ npm exec -- wrangler deploy --dry-run  # bundle check
 
 `npm run build` has two phases:
 
-1. `tools/stage-assets.mjs` recreates `dist/` from an allowlist: root `LICENSE`/`README.md`, the `site/` shell, `site/src/`, `static/`, `shared/`, `content/posts/`, and each project's **git-tracked** files minus dot-paths, `node_modules/`, `docs/`, `tests/`, `extract/`, `raw/`, `test_*.mjs`, and root `AGENTS.md`/`CLAUDE.md`/`AUDIT.md`/`HANDOFF.md`. A new project file therefore needs `git add` before it appears in a build, and any other root-level file in a project (`README.md`, `about.md`, other `.md`) is public.
+1. `tools/stage-assets.mjs` recreates `dist/` from an allowlist: root `LICENSE`/`README.md`, the `site/` shell, `site/src/`, `static/`, `shared/`, `content/posts/`, and each project's **git-tracked** files minus dot-paths and any `node_modules/`, `docs/`, `tests/`, `tools/`, or `extract/` directory, root `raw/`, `test_*.mjs` and `*.test.mjs` files, and root `AGENTS.md`/`CLAUDE.md`/`AUDIT.md`/`HANDOFF.md`. A new project file therefore needs `git add` before it appears in a build, and any other root-level file in a project (`README.md`, `about.md`, other `.md`) is public.
 2. `tools/build.mjs` derives everything content-dependent into `dist/` and `.build/`.
 
 Generated files exist only in `dist/` and `.build/`; a normal build leaves `git status` clean. The build needs `papers/ogdoad` checked out (`git submodule update --init`). External tools bootstrap themselves into `.build/`: `tools/pandoc.sh` uses a local Pandoc or downloads a pinned, checksum-verified release; `content/resume/build.sh` does the same for Tectonic; `tools/subset-fonts.mjs` for the STIX Two and Shippori Mincho source fonts.
@@ -77,16 +77,13 @@ Conversion order matters. `stashMath` hides every `$` span from text rewrites, s
 
 ## Shared layer
 
-Check `shared/` before building project-specific UI infrastructure. Public URLs are `/shared/{name}.js` and `/shared/base.css`.
+Check `shared/` before building project-specific UI infrastructure. Public URLs are `/shared/{name}.js` and `/shared/base.css`; the old flat `/shared-{name}` URLs are retired.
 
 - `tokens.js` runs synchronously, before CSS parses. It defines `_PALETTE`, `_FONT`, `_themePalette()`, `_loadTextFonts()`, and the color helpers, and each project's `colors.js` extends it (`_freezeTokens`, `_injectProjectVars`).
 - `base.css` holds the reset, layout and design tokens, HUD surfaces, controls, overlays, dropdowns, toasts, dependency reveals, and accessibility patterns.
 - `utils.js` (escaping, timing, math, toast/focus/canvas helpers); `toolbar.js`, `forms.js`, `dropdown.js`, `settings.js` (controls and wiring); `icons.js`, `tabs.js`, `camera.js`, `info.js`, `shortcuts.js`, `about.js`, `touch.js`, `tooltip.js`, `sparkline.js`, `haptics.js`.
 
 Apart from `tokens.js`, these are deferred plain scripts that publish globals on `window`, not ES modules. Their globals, class names (`.tab-btn`, `.tab-panel`, `.glass`, `.tool-btn`, `.about-*`, `.sim-dropdown`, `.panel-hint`, `.dep-reveal`, `.dep-hidden`), and data attributes are an API used by every project, so a change has to be checked across all of them.
-
-`stage-assets.mjs` also copies each shared file to the pre-2026-07 alias `/shared-{name}.{js,css}`. Nothing in the repo uses the aliases; they exist only for old inbound URLs.
-
 ## Worker and headers
 
 `worker/index.js` SSRs and injects SEO/JSON-LD for the SPA routes (`/sims`, `/projects`, `/blog/*`) and `/scripture/*`, redirects `/about` → `/` and `/resume` → `/resume.pdf` (308), returns secure 404s, and rejects methods other than GET/HEAD, with `POST /api/surveys` as the one exception. Scripture fetches are bounded by a timeout. The survey endpoint accepts only same-origin, schema-valid JSON, rate-limits by an in-memory IP-derived key without storing IP or request metadata, and fails closed when D1 is unavailable.

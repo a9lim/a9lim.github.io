@@ -95,12 +95,6 @@
 /shared/*
   Cloudflare-CDN-Cache-Control: public, max-age=31536000, immutable
 
-# One-cycle compatibility aliases for the former root-level URLs.
-/shared-*.js
-  Cloudflare-CDN-Cache-Control: public, max-age=31536000, immutable
-/shared-*.css
-  Cloudflare-CDN-Cache-Control: public, max-age=31536000, immutable
-
 # Subproject assets
 /geon/*.js
   Cloudflare-CDN-Cache-Control: public, max-age=31536000, immutable
