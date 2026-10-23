@@ -100,13 +100,12 @@ PLASMA_BENCH_SIZES=64,128 PLASMA_BENCH_ITERS=10 \
 
 ## Dormant artifact harness
 
-`build-smoke.js` validates a pre-generated `transpiled/` artifact tree. That
-tree and its writer were deliberately removed from `tools/build.mjs`, so the
-command is not part of the current test gate and is expected to report that
-no artifacts exist. Keep the harness only as a validation starting point if
-the artifact pipeline is restored.
+`build-smoke.js` validates a pre-generated `transpiled/` artifact tree. No
+build step writes that tree, so the harness is outside the test gate and
+reports that no artifacts exist; it is the starting point for validating an
+artifact pipeline if one is built.
 
-If the integration is re-enabled, the minimum contract is:
+A CPU fallback that ships would need at least:
 
 1. `tools/build.mjs` emits deterministic modules from repository-owned WGSL and
    records enough source, option, and transpiler hashes to detect staleness.

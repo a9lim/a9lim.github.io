@@ -15,9 +15,6 @@ Thumbs.db
 # Logs
 *.log
 
-# Generated docs
-docs/
-
 # Claude Code
 .claude/
 

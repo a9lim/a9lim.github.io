@@ -1,48 +1,46 @@
 # a9l.im
 
-Portfolio and project hub at **[a9l.im](https://a9l.im)**. The root site, eight browser projects, shared design system, Worker backend, and content pipeline live in one repository without mixing deploy artifacts into the source tree.
+Source for **[a9l.im](https://a9l.im)**: a personal site with a blog, a project index, and eight interactive browser projects. The root site, the shared design system, the content pipeline, and the Cloudflare Worker live here; each project is its own repository, mounted as a git submodule.
 
 ## Repository map
 
 ```text
-site/                  root SPA shell and browser modules
-content/               canonical copy, project registry, posts, and resume source
-shared/                design-system CSS and browser globals
-projects/              eight git submodules (published at their original URL roots)
-worker/                Cloudflare Worker router, SSR, API, headers, and analytics
-static/                copied-as-is public assets and _headers
-features/surveys/      private survey data/scoring foundation (not static assets)
-db/migrations/         D1 migrations
-lib/wgsl/              dormant WGSL-to-JavaScript tooling
-tools/                 build, staging, and OG-image tools
-tests/                 build-layout, content, and WGSL checks
-dist/                  ignored deploy tree
-.build/                ignored Worker/build intermediates
+site/              root SPA shell and browser modules
+content/           posts, project registry, homepage copy, résumé source
+shared/            design-system CSS and browser globals used by every project
+projects/          project submodules, served at /{name}/
+papers/ogdoad/     LaTeX writeups that paper posts are generated from
+worker/            Cloudflare Worker: routing, SSR, headers, survey API
+static/            public assets copied as-is, including _headers
+features/surveys/  survey data and scoring (no frontend yet; not deployed)
+db/migrations/     D1 migrations
+lib/wgsl/          WGSL-to-JavaScript transpiler (not wired into the site)
+tools/             build, staging, font subsetting, paper conversion, OG images
+tests/             content, deploy-layout, and transpiler tests
 ```
 
-Physical source paths do not change public routes: `projects/geon/` still deploys at `/geon/`, for example. Shared modules live at `/shared/{name}.js` and `/shared/base.css`; the build also emits the former `/shared-*.js` and `/shared/base.css` URLs as temporary compatibility aliases.
+`dist/` (the deploy tree) and `.build/` (Worker data and tool caches) are generated and ignored.
 
-## Content
+## Building
 
-Visitor-facing root-site copy is canonical in `content/`. Each simulation's long-form documentation and SEO summary is canonical in `projects/{name}/about.md`. `tools/build.mjs` derives the homepage regions, project registry, feeds, sitemaps, discovery files, Worker metadata, and resume into `dist/`; generated outputs are not committed.
-
-## Build and run
+Node 22 or newer. Clone with submodules (`git clone --recurse-submodules`, or `git submodule update --init` afterwards).
 
 ```bash
 npm install
-npm run build           # recreate dist/ and .build/ from source
-npm test                # build, deterministic check, layout checks, API/scoring tests
-./dev.sh                 # build, then run the pinned Wrangler dev server
+npm run build      # recreate dist/ and .build/ from source
+npm test           # build, deterministic check, content/layout checks, survey tests
+./dev.sh           # build, then run the pinned Wrangler dev server
 ```
 
-For a static-only preview after building:
+For a static preview without the Worker, serve `dist/`:
 
 ```bash
-python -m http.server --directory dist 8000
+python3 -m http.server --directory dist 8000
 ```
 
-Production deploys are manual: Cloudflare Workers Builds stays disabled, and `./deploy.sh` is the authoritative path. It runs a fresh build, deploys with the pinned Wrangler version, purges the `a9l.im` hostname cache, and confirms that the new build marker is live. The purge-only token lives in the macOS Keychain item `a9l.im-cloudflare-cache-purge`; `CLOUDFLARE_CACHE_PURGE_TOKEN` is the non-macOS fallback. Stable public asset URLs also require browser revalidation, so a successful deploy appears immediately. A normal build must leave `git status` clean.
-Linux builders bootstrap pinned, checksum-verified Pandoc and Tectonic binaries into the ignored `.build/` cache when those tools are not already installed.
+Pandoc, Tectonic, and the fallback fonts download into `.build/` (pinned and checksum-verified) when they aren't installed locally. Root-site copy lives in `content/`. Each project's long-form documentation and SEO summary lives in its `about.md`, and the build derives the homepage, project grid, feeds, sitemaps, discovery files, and résumé from these. A build leaves the working tree unchanged.
+
+Deployment is manual through `./deploy.sh`. It builds, deploys with the pinned Wrangler, purges the hostname cache, and confirms the new build marker is live.
 
 ## Projects
 
