@@ -5,7 +5,7 @@ order: 130
 major: true
 external: false
 emoji: 📈
-seoName: Shoals — Options Trading Simulator
+seoName: Shoals — Trading the AI Race
 tags:
   - finance
   - statistics
