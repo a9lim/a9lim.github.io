@@ -56,7 +56,6 @@
 /lumen/*
   Link: </shared/tokens.js>; rel=preload; as=script
   Link: </shared/base.css>; rel=preload; as=style
-  Link: </shared/hud.css>; rel=preload; as=style
   Link: </lumen/styles.css>; rel=preload; as=style
   Link: </lumen/main.js>; rel=modulepreload
   Link: </fonts/newsreader-roman-latin.woff2>; rel=preload; as=font; crossorigin
@@ -64,7 +63,6 @@
 /shoals/*
   Link: </shared/tokens.js>; rel=preload; as=script
   Link: </shared/base.css>; rel=preload; as=style
-  Link: </shared/hud.css>; rel=preload; as=style
   Link: </shoals/styles.css>; rel=preload; as=style
   Link: </shoals/main.js>; rel=modulepreload
   Link: </fonts/newsreader-roman-latin.woff2>; rel=preload; as=font; crossorigin
@@ -72,7 +70,6 @@
 /miasma/*
   Link: </shared/tokens.js>; rel=preload; as=script
   Link: </shared/base.css>; rel=preload; as=style
-  Link: </shared/hud.css>; rel=preload; as=style
   Link: </miasma/styles.css>; rel=preload; as=style
   Link: </miasma/main.js>; rel=modulepreload
 

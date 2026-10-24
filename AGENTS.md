@@ -81,9 +81,8 @@ Conversion order matters. `stashMath` hides every `$` span from text rewrites, s
 Check `shared/` before building project-specific UI infrastructure. Public URLs are `/shared/{name}.js` and `/shared/base.css`; the old flat `/shared-{name}` URLs are retired.
 
 - `tokens.js` runs synchronously, before CSS parses. It defines `_PALETTE` (each theme with its `inks`), `_INKS`, `_FONT`, `_themePalette()`, `_loadTextFonts()`, and the color helpers, and each project's `colors.js` extends it (`_freezeTokens`, `_injectProjectVars`).
-- `base.css` holds the reset, layout and design tokens, the root navbar's tool buttons and segmented controls, the colophon and caption, overlays, the about panel, info tips, toasts, dependency reveals, and accessibility patterns.
-- `hud.css` is transitional: the floating HUD of the sims not yet moved to the colophon (sidebar and tabs, zoom stack, hint pill, toggles, sliders, dropdowns). A converted sim stops loading it; it is deleted with `toolbar.js` when the last sim converts (`docs/sim-overhaul/PLAN.md`).
-- `colophon.js` (the theme, the colophon's wiring, and the caption setter; the root site uses only the theme); `utils.js` (escaping, timing, math, toast/focus/canvas helpers); `toolbar.js` (transitional, see `hud.css`), `forms.js`, `dropdown.js`, `settings.js` (controls and wiring); `icons.js`, `tabs.js`, `camera.js`, `info.js`, `shortcuts.js`, `about.js`, `touch.js`, `tooltip.js`, `sparkline.js`, `haptics.js`.
+- `base.css` holds the reset, layout and design tokens, the root navbar's tool buttons and segmented controls, the colophon and caption, overlays, the about panel, info tips, toasts, dependency reveals, and accessibility patterns. It does not style the sims' controls: each sim styles its own (`docs/sim-overhaul/PLAN.md`).
+- `colophon.js` (the theme, the colophon's wiring, and the caption setter; the root site uses only the theme); `utils.js` (escaping, timing, math, toast/focus/canvas helpers); `forms.js`, `dropdown.js` (controls and wiring; behavior only); `icons.js` (including the seal), `tabs.js`, `camera.js`, `info.js`, `shortcuts.js`, `about.js`, `touch.js`, `tooltip.js`, `haptics.js`.
 
 Apart from `tokens.js`, these are deferred plain scripts that publish globals on `window`, not ES modules. Their globals, class names (`.colophon*`, `.caption`, `.tab-btn`, `.tab-panel`, `.glass`, `.tool-btn`, `.about-*`, `.sim-dropdown`, `.panel-hint`, `.dep-reveal`, `.dep-hidden`), and data attributes are an API used by every project, so a change has to be checked across all of them.
 ## Worker and headers
@@ -157,7 +156,7 @@ Nothing is uppercase or letter-spaced. Japanese labels are upright, weight 500, 
 
 ### Treatments
 
-- Structure comes from 1px hairline rules, not cards. On the root site the only surfaces are inline chips and `kbd`, and radius is 0. Sims not yet converted keep the floating HUD (`hud.css`: `--radius: 2px`, solid `panelSolid` panels, translucent `--bg-panel` overlays with `blur(8px)`, `.sidebar-tabs` inside `.stats-header`); converted sims follow "Inside the scene" below.
+- Structure comes from 1px hairline rules, not cards. On the root site the only surfaces are inline chips and `kbd`, and radius is 0. The sims follow "Inside the scene" below.
 - Navbar: 76px tall with a bottom rule; seal and brand at left, links centered, tools at right. The active link is `accent` with a 1px underline.
 - Prose links are `accent` with a 1px underline at 40% accent, offset 0.2em. Navigation and metadata links have no underline.
 - Inline lists are separated by `·` (`・` in Japanese). Theorems have no surface: the head is weight 600 and the statement italic. Icons use 1.4px round strokes. The `~` in prediction values is raised 0.16em so it doesn't read as a minus.

@@ -108,6 +108,8 @@ var _colophon = (function () {
     /**
      * Wire the page's .colophon. Each handler is optional; a button whose
      * handler is missing is removed, so a sim with no step loses that button.
+     * A help button with id="about-btn" is about.js's own (it binds that id and
+     * "?"), so without onHelp it stays and the colophon adds no second toggle.
      * @param {Object} opts
      * @param {string} [opts.themeKey] - localStorage key for the theme.
      * @param {function} [opts.onTheme] - Called with the theme after any change.
@@ -132,7 +134,11 @@ var _colophon = (function () {
         var wire = function (name, handler) {
             var b = btn(name);
             if (!b) return null;
-            if (!handler) { b.remove(); return null; }
+            if (!handler) {
+                if (name === 'help' && b.id === 'about-btn') { b.type = 'button'; return b; }
+                b.remove();
+                return null;
+            }
             b.type = 'button';
             b.addEventListener('click', function () { tap(); handler(); });
             return b;
