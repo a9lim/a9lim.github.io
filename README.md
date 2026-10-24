@@ -1,6 +1,6 @@
 # a9l.im
 
-Source for **[a9l.im](https://a9l.im)**: a personal site with a blog, a project index, and eight interactive browser projects. The root site, the shared design system, the content pipeline, and the Cloudflare Worker live here; each project is its own repository, mounted as a git submodule.
+Source for **[a9l.im](https://a9l.im)**: a personal site with a blog, a project index, and four interactive browser simulations. The root site, the shared design system, the content pipeline, and the Cloudflare Worker live here; each project is its own repository, mounted as a git submodule.
 
 ## Repository map
 
@@ -49,12 +49,8 @@ Deployment is manual through `./deploy.sh`. It builds, deploys with the pinned W
 |---------|-------------|
 | [Geon](https://a9l.im/geon) | Explore relativistic many-body dynamics, electromagnetism, compact objects, scalar fields, and nontrivial topologies across fifteen browser presets. |
 | [Cyano](https://a9l.im/cyano) | Trace connected carbon metabolism, electron transport, conserved cofactor pools, enzyme feedback, and reactive oxygen species across five stylized cell presets. |
-| [Gerry](https://a9l.im/gerry) | Draw districts on a procedural hex map, compare six fairness measures, generate pack-and-crack or neutral plans, and stress-test Monte Carlo elections. |
 | [Shoals](https://a9l.im/shoals) | Trade stock, bonds, VXHCN volatility futures, American options, and AI-milestone binaries through the last years of the race — stochastic pricing, a hidden capability model, and six ways it ends. |
-| [Scripture](https://a9l.im/scripture/) | Read, search, annotate, compare, and listen to sixteen sacred works with chapter and verse deep links, concordance, and related passages. |
 | [Miasma](https://a9l.im/miasma) | Seed and contain stochastic multi-strain epidemics on six hex-grid topologies with vaccination, quarantine, reservoirs, mutation, and painted interventions. |
-| [Pile](https://a9l.im/pile) | Operate PWR, RBMK-1000, and molten-salt reactor models with axial kinetics, xenon, plant systems, faults, procedures, and guided scenarios. |
-| [Plasma](https://a9l.im/plasma) | Explore shocks, reconnection, waves, transport, radiation, self-gravity, and cylindrical flows in a WebGPU 2.5D magnetohydrodynamics laboratory. |
 <!-- /content:sim-table -->
 
 ## License

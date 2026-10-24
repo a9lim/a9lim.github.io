@@ -58,10 +58,8 @@ function lerp(a, b, t) {
 
 /**
  * Mulberry32 — fast 32-bit seeded PRNG. Returns a generator yielding
- * floats in [0, 1) on each call, deterministic from `seed`. Canonical
- * form shared by gerry (deterministic map generation) and miasma
- * (seeded runs); `1|a`/`a|1` and the XOR ordering are interchangeable,
- * so this matches both prior in-sim implementations bit-for-bit.
+ * floats in [0, 1) on each call, deterministic from `seed`; miasma uses
+ * it for seeded runs.
  * @param {number} seed  32-bit integer seed
  * @returns {() => number} Generator yielding floats in [0, 1)
  */

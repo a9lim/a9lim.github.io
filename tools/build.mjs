@@ -74,35 +74,12 @@ function emitInternal(rel, content) {
 
 // --- helpers ---
 
-function gitLastmod(filePath) {
-  const parts = filePath.split('/');
-  let cwd = ROOT;
-  let trackedPath = filePath;
-  for (let i = parts.length - 1; i > 0; i--) {
-    const candidate = join(ROOT, ...parts.slice(0, i));
-    if (!existsSync(join(candidate, '.git'))) continue;
-    cwd = candidate;
-    trackedPath = parts.slice(i).join('/');
-    break;
-  }
-  try {
-    const iso = execFileSync('git', ['log', '-1', '--format=%aI', '--', trackedPath], {
-      cwd, encoding: 'utf8'
-    }).trim();
-    return iso ? iso.slice(0, 10) : null;
-  } catch { return null; }
-}
-
 function projectSource(slug, rel = '') {
   return ['projects', slug, rel].filter(Boolean).join('/');
 }
 
 function today() {
   return new Date().toISOString().slice(0, 10);
-}
-
-function readJSON(rel) {
-  return JSON.parse(readFileSync(join(ROOT, rel), 'utf8'));
 }
 
 function readText(rel) {
@@ -1123,50 +1100,12 @@ for (const r of staticRoutes) {
   add(r.path, r.lastmod, IMAGE_MAP[r.path] || null, r.changefreq, r.priority, IMAGE_CAPTIONS[r.path] || null);
 }
 
-// 1b. Scripture work-level routes
-const workIds = readJSON('projects/scripture/data/works.json');
-for (const workId of workIds) {
-  const workLastmod = gitLastmod(`projects/scripture/data/${workId}/manifest.json`);
-  add(`/scripture/${workId}`, workLastmod, null, 'monthly', 0.7);
-}
-
 // 2. Blog posts (loaded from content/posts/ above)
 for (const p of posts) {
   add(`/blog/${p.slug}`, p.updated || p.date, null, 'yearly', 0.6);
 }
 
-// 3. Scripture deep routes
-
-for (const workId of workIds) {
-  const manifest = readJSON(`projects/scripture/data/${workId}/manifest.json`);
-  const workLastmod = gitLastmod(`projects/scripture/data/${workId}/manifest.json`);
-
-  for (const book of manifest.books) {
-    const start = book.start || 1;
-    for (let i = 0; i < book.chapters; i++) {
-      const chapterId = `${book.id}-${start + i}`;
-      add(`/scripture/${workId}/${chapterId}`, workLastmod, null, 'yearly', 0.65);
-    }
-  }
-}
-
-// --- generate sitemaps ---
-
-// Split URLs into main (root, projects, blog, sims) and scripture (work-level + chapters)
-const scriptureChapterPattern = /^https:\/\/a9l\.im\/scripture\/[^/]+\/.+$/;
-const scriptureWorkPattern = /^https:\/\/a9l\.im\/scripture\/[^/]+$/;
-const scriptureIndexPattern = /^https:\/\/a9l\.im\/scripture\/$/;
-
-const mainUrls = [];
-const scriptureUrls = [];
-
-for (const u of urls) {
-  if ((scriptureChapterPattern.test(u.loc) || scriptureWorkPattern.test(u.loc)) && !scriptureIndexPattern.test(u.loc)) {
-    scriptureUrls.push(u);
-  } else {
-    mainUrls.push(u);
-  }
-}
+// --- generate sitemap ---
 
 function renderUrlset(urlList) {
   return [
@@ -1189,33 +1128,8 @@ function renderUrlset(urlList) {
   ].join('\n');
 }
 
-emit('sitemap-main.xml', renderUrlset(mainUrls));
-console.log(`sitemap-main.xml: ${mainUrls.length} URLs`);
-
-emit('sitemap-scripture.xml', renderUrlset(scriptureUrls));
-console.log(`sitemap-scripture.xml: ${scriptureUrls.length} URLs`);
-
-// Sitemap index
-const mainLastmod = mainUrls.reduce((max, u) => u.lastmod > max ? u.lastmod : max, mainUrls[0]?.lastmod || today());
-const scriptureLastmod = scriptureUrls.reduce((max, u) => u.lastmod > max ? u.lastmod : max, scriptureUrls[0]?.lastmod || today());
-
-const sitemapIndex = [
-  '<?xml version="1.0" encoding="UTF-8"?>',
-  '<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',
-  `  <sitemap>`,
-  `    <loc>${SITE}/sitemap-main.xml</loc>`,
-  `    <lastmod>${mainLastmod}</lastmod>`,
-  `  </sitemap>`,
-  `  <sitemap>`,
-  `    <loc>${SITE}/sitemap-scripture.xml</loc>`,
-  `    <lastmod>${scriptureLastmod}</lastmod>`,
-  `  </sitemap>`,
-  '</sitemapindex>',
-  ''
-].join('\n');
-
-emit('sitemap.xml', sitemapIndex);
-console.log(`sitemap.xml: sitemap index (${urls.length} total URLs)`);
+emit('sitemap.xml', renderUrlset(urls));
+console.log(`sitemap.xml: ${urls.length} URLs`);
 
 // --- generate feed.xml (RSS 2.0) ---
 

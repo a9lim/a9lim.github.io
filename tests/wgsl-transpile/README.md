@@ -6,8 +6,8 @@ transpiler in `lib/wgsl/transpile.js`.
 The transpiler is **not part of the deployed simulation path**. The root build
 does not generate `transpiled/` artifacts, no simulation imports the
 transpiler or runner, and `lib/wgsl/runner.js` plus
-`lib/wgsl/worker.js` are retained as dormant integration code. Geon and
-Plasma both require WebGPU. Re-enabling a browser CPU fallback would require
+`lib/wgsl/worker.js` are retained as dormant integration code. Geon
+requires WebGPU. Re-enabling a browser CPU fallback would require
 an explicit build-artifact configuration and a simulation-side importer.
 
 ## Public API
@@ -41,8 +41,9 @@ executable modules are constructed from the generated JavaScript with
 `transpileWGSL()` is the required API for any future deployed artifact
 pipeline; runtime browser compilation is not compatible with the site policy.
 
-The supported surface is the compute-shader subset covered by the Geon and
-Plasma corpora and the synthetic smoke suite. This is not a general WGSL
+The supported surface is the compute-shader subset covered by the Geon
+corpus, the shaders of the retired Plasma simulation it was first built
+against, and the synthetic smoke suite. This is not a general WGSL
 implementation: render entry points, textures and samplers, and matrix
 execution are outside the current contract. Barriers are supported when they
 occur at the top level of a compute entry; barriers nested in control flow are
@@ -69,7 +70,7 @@ node tests/wgsl-transpile/runner-smoke.js
 The corpus runner accepts a path substring and a quiet flag:
 
 ```sh
-node tests/wgsl-transpile/run.js plasma
+node tests/wgsl-transpile/run.js geon
 node tests/wgsl-transpile/run.js --quiet
 ```
 
@@ -86,15 +87,6 @@ and vary with V8 warmup and garbage collection.
 ```sh
 node tests/wgsl-transpile/bench.js
 BENCH_N=100000 BENCH_ITERS=20 node tests/wgsl-transpile/bench.js
-```
-
-`plasma-bench.js` compiles selected live Plasma shaders directly and times
-them on the CPU. It does not imply that Plasma ships a CPU fallback.
-
-```sh
-node tests/wgsl-transpile/plasma-bench.js
-PLASMA_BENCH_SIZES=64,128 PLASMA_BENCH_ITERS=10 \
-  node tests/wgsl-transpile/plasma-bench.js
 ```
 
 ## Dormant artifact harness

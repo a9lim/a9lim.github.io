@@ -16,7 +16,7 @@ import { fileURLToPath } from 'node:url';
 
 const ROOT = dirname(dirname(fileURLToPath(import.meta.url)));
 const DIST = join(ROOT, 'dist');
-const PROJECTS = ['cyano', 'geon', 'gerry', 'miasma', 'pile', 'plasma', 'scripture', 'shoals'];
+const PROJECTS = ['cyano', 'geon', 'miasma', 'shoals'];
 
 const ROOT_FILES = ['LICENSE', 'README.md'];
 const SITE_FILES = ['404.html', 'i18n.js', 'main.js', 'styles.css'];

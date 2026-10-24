@@ -52,13 +52,12 @@
 
     <link rel="icon" href="/favicon.ico">
     <link rel="manifest" href="/manifest.json">
-    <link rel="search" type="application/opensearchdescription+xml" title="a9l.im" href="/opensearch.xml">
     <link rel="alternate" type="application/rss+xml" title="a9l.im (RSS)" href="https://a9l.im/feed.xml">
     <link rel="alternate" type="application/atom+xml" title="a9l.im (Atom)" href="https://a9l.im/feed.atom">
     <link rel="sitemap" type="application/xml" href="/sitemap.xml">
 
     <script type="speculationrules">
-    {"prefetch":[{"source":"document","where":{"href_matches":["/sims","/projects","/blog","/geon","/cyano","/gerry","/shoals","/scripture","/scripture/*","/miasma","/pile","/plasma"]},"eagerness":"moderate"}],"prerender":[{"source":"document","where":{"href_matches":["/sims","/projects","/blog"]},"eagerness":"conservative"}]}
+    {"prefetch":[{"source":"document","where":{"href_matches":["/sims","/projects","/blog","/geon","/cyano","/shoals","/miasma"]},"eagerness":"moderate"}],"prerender":[{"source":"document","where":{"href_matches":["/sims","/projects","/blog"]},"eagerness":"conservative"}]}
     </script>
 
     <script type="application/ld+json">
@@ -98,16 +97,6 @@
           "@type": "Thing",
           "@id": "https://www.wikidata.org/wiki/Q187860",
           "name": "Option (finance)"
-        },
-        {
-          "@type": "Thing",
-          "@id": "https://www.wikidata.org/wiki/Q476310",
-          "name": "Gerrymandering"
-        },
-        {
-          "@type": "Thing",
-          "@id": "https://www.wikidata.org/wiki/Q179461",
-          "name": "Religious text"
         }
       ],
       "potentialAction": {
@@ -148,38 +137,14 @@
         {
           "@type": "ListItem",
           "position": 3,
-          "url": "https://a9l.im/gerry",
-          "name": "Gerry — Gerrymandering & Electoral Fairness Simulator"
-        },
-        {
-          "@type": "ListItem",
-          "position": 4,
           "url": "https://a9l.im/shoals",
           "name": "Shoals — Options Trading Simulator"
         },
         {
           "@type": "ListItem",
-          "position": 5,
-          "url": "https://a9l.im/scripture/",
-          "name": "Scripture — Sacred Text Reader"
-        },
-        {
-          "@type": "ListItem",
-          "position": 6,
+          "position": 4,
           "url": "https://a9l.im/miasma",
           "name": "Miasma — Stochastic Spatial Epidemic Simulator"
-        },
-        {
-          "@type": "ListItem",
-          "position": 7,
-          "url": "https://a9l.im/pile",
-          "name": "Pile — Nuclear Reactor Simulator"
-        },
-        {
-          "@type": "ListItem",
-          "position": 8,
-          "url": "https://a9l.im/plasma",
-          "name": "Plasma — 2D Resistive MHD Simulator"
         }
       ]
     },
@@ -210,8 +175,7 @@
         {"@type": "WebPage", "name": "Home", "url": "https://a9l.im"},
         {"@type": "WebPage", "name": "Simulations", "url": "https://a9l.im/sims"},
         {"@type": "WebPage", "name": "Projects", "url": "https://a9l.im/projects"},
-        {"@type": "WebPage", "name": "Blog", "url": "https://a9l.im/blog"},
-        {"@type": "WebPage", "name": "Scripture", "url": "https://a9l.im/scripture/"}
+        {"@type": "WebPage", "name": "Blog", "url": "https://a9l.im/blog"}
       ]
     }
     </script>
@@ -237,8 +201,6 @@
         "Particle physics simulation",
         "Cellular metabolism",
         "Options pricing",
-        "Gerrymandering and electoral fairness",
-        "Sacred text analysis",
         "AI agents",
         "Activation steering",
         "WebGPU",
@@ -258,7 +220,7 @@
         "itemOffered": {
           "@type": "CreativeWork",
           "name": "Educational Simulations",
-          "description": "Open-source interactive simulations for physics, biology, finance, and political science",
+          "description": "Open-source interactive simulations for physics, biology, epidemiology, and finance",
           "url": "https://a9l.im/sims"
         }
       },

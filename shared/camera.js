@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════════
    shared/camera.js — Reusable viewport/camera module
-   for the three a9l.im simulation projects (geon, cyano, gerry).
+   for the a9l.im simulation projects.
    Supports Canvas 2D and SVG viewBox rendering, mouse/touch/button input.
    ═══════════════════════════════════════════════ */
 
@@ -291,8 +291,7 @@ function createCamera(opts) {
         /**
          * Bind touch gestures (pinch-zoom + two-finger pan).
          * Single-finger gestures are intentionally left unbound — each project
-         * uses single-finger for different things (geon: spawn, cyano: pan,
-         * gerry: paint hexes).
+         * uses single-finger for different things (geon: spawn, cyano: pan).
          *
          * @param {HTMLElement} el
          * @param {Object} [options]

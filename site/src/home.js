@@ -194,9 +194,9 @@ async function loadAndRender() {
 function initCheatsheet() {
     const SHORTCUTS = [
         ['g h', 'home'],
+        ['g s', 'sims'],
         ['g p', 'projects'],
         ['g b', 'blog'],
-        ['g s', 'scripture'],
         ['t',   'toggle theme'],
         ['?',   'this cheatsheet'],
         ['esc', 'close overlay'],
@@ -262,7 +262,7 @@ function initCheatsheet() {
         // `g <letter>` sequences
         if (gPending) {
             gPending = false; if (gTimer) clearTimeout(gTimer);
-            const map = { h: '/', p: '/projects', b: '/blog', s: '/scripture/' };
+            const map = { h: '/', s: '/sims', p: '/projects', b: '/blog' };
             const target = map[e.key.toLowerCase()];
             if (target) { e.preventDefault(); go(target); }
             return;

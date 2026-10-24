@@ -20,18 +20,11 @@
       "/projects",
       "/blog",
       "/blog/*",
-      "/scripture",
-      "/scripture/*",
       "/about",
       "/about/",
       "/resume",
       "/resume/",
-      "/api/*",
-      "!/scripture/*.js",
-      "!/scripture/*.css",
-      "!/scripture/*.md",
-      "!/scripture/data/*",
-      "!/scripture/text/*"
+      "/api/*"
     ]
   },
   "analytics_engine_datasets": [

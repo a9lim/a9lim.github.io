@@ -1,6 +1,3 @@
-[submodule "gerry"]
-	path = projects/gerry
-	url = https://github.com/a9lim/gerry.git
 [submodule "geon"]
 	path = projects/geon
 	url = https://github.com/a9lim/geon.git
@@ -10,18 +7,9 @@
 [submodule "cyano"]
 	path = projects/cyano
 	url = https://github.com/a9lim/cyano.git
-[submodule "scripture"]
-	path = projects/scripture
-	url = https://github.com/a9lim/scripture.git
 [submodule "miasma"]
 	path = projects/miasma
 	url = https://github.com/a9lim/miasma.git
-[submodule "pile"]
-	path = projects/pile
-	url = https://github.com/a9lim/pile.git
-[submodule "plasma"]
-	path = projects/plasma
-	url = https://github.com/a9lim/plasma.git
 [submodule "papers/ogdoad"]
 	path = papers/ogdoad
 	url = https://github.com/a9lim/ogdoad.git

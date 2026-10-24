@@ -1,7 +1,7 @@
 {
   "name": "a9l.im \u2014 a9lim's research, sims & experiments",
   "short_name": "a9l.im",
-  "description": "LLM interpretability research plus interactive simulations for physics, biology, finance, political science, and sacred texts.",
+  "description": "LLM interpretability research plus interactive simulations for physics, biology, epidemiology, and finance.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
@@ -30,22 +30,11 @@
     }
   ],
   "shortcuts": [
+    {"name": "Simulations", "url": "/sims", "description": "Browse interactive simulations"},
     {"name": "Projects", "url": "/projects", "description": "Browse open-source projects"},
-    {"name": "Blog", "url": "/blog", "description": "Read articles"},
-    {"name": "Scripture", "url": "/scripture", "description": "Sacred text reader"},
-    {"name": "Miasma", "url": "/miasma", "description": "Stochastic spatial epidemic simulator on a hex grid"},
-    {"name": "Pile", "url": "/pile", "description": "Nuclear reactor simulator with PWR, RBMK, and MSR types"},
-    {"name": "Plasma", "url": "/plasma", "description": "2.5D resistive magnetohydrodynamics simulator"}
+    {"name": "Blog", "url": "/blog", "description": "Read articles"}
   ],
   "screenshots": [
     {"src": "/og-image.webp?v=20261023", "sizes": "1200x630", "type": "image/webp", "form_factor": "wide"}
-  ],
-  "share_target": {
-    "action": "/scripture/",
-    "method": "GET",
-    "enctype": "application/x-www-form-urlencoded",
-    "params": {
-      "text": "q"
-    }
-  }
+  ]
 }

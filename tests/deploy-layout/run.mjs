@@ -50,8 +50,6 @@ for (const required of [
   'fonts/noto-emoji-variable.woff2',
   'fonts/OFL-NotoEmoji.txt',
   'geon/index.html',
-  'scripture/index.html',
-  'scripture/data/works.json',
   'resume.pdf',
   '_headers',
 ]) {
@@ -82,7 +80,6 @@ for (const forbidden of [
   /^worker(?:\/|$)/,
   /^lib(?:\/|$)/,
   /^tools(?:\/|$)/,
-  /^scripture\/raw(?:\/|$)/,
   /^_worker\.js$/,
   /^_build\.mjs$/,
   /^_routes\.json$/,
@@ -101,8 +98,6 @@ for (const generated of [
   'llms.txt',
   'posts.json',
   'resume.pdf',
-  'sitemap-main.xml',
-  'sitemap-scripture.xml',
   'sitemap.xml',
   'site/src/projects.js',
 ]) {

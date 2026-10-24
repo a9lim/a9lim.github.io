@@ -7,7 +7,7 @@
 
    Usage:
      node tests/wgsl-transpile/run.js          # run all shaders
-     node tests/wgsl-transpile/run.js plasma   # only plasma shaders
+     node tests/wgsl-transpile/run.js geon     # only geon shaders
      node tests/wgsl-transpile/run.js --quiet  # only failures
 
    Exit code 0 if all expected stages pass; 1 if any regression.
