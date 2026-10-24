@@ -7,7 +7,7 @@
 
    Usage:
      node tests/wgsl-transpile/run.js          # run all shaders
-     node tests/wgsl-transpile/run.js geon     # only geon shaders
+     node tests/wgsl-transpile/run.js worldline   # only worldline shaders
      node tests/wgsl-transpile/run.js --quiet  # only failures
 
    Exit code 0 if all expected stages pass; 1 if any regression.
@@ -79,7 +79,7 @@ async function findShaders(root) {
 /** Quick check: does a parsed shader define any entry point?
  *  Files with no @compute/@vertex/@fragment fn are treated as helpers and
  *  get prepended to every other shader in the same directory during the
- *  resolve phase — matching how plasma/geon assemble shaders before
+ *  resolve phase — matching how plasma/worldline assemble shaders before
  *  `createShaderModule({ code: helpers + perPassShader })`. */
 function hasEntryPoint(ast) {
     for (const item of ast.items) {
@@ -230,7 +230,7 @@ async function testShader(absPath, dirIndex) {
 
     // ── resolve (module-level symbol table) ─────────────────────────
     // Builds the resolve unit as (sibling helpers ++ self), matching the
-    // shader assembly that plasma/geon do before createShaderModule. For
+    // shader assembly that plasma/worldline do before createShaderModule. For
     // helper files, "siblings" excludes self so we don't duplicate decls.
     try {
         if (phases.parse.status === 'ok') {

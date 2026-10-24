@@ -8,7 +8,7 @@ Root site for **a9l.im**: a hand-written SPA, a content pipeline, a Cloudflare W
 - `content/` — everything a root-site visitor reads: posts, the project registry, homepage cards, and the résumé source.
 - `draft/` — unpublished mirror of `content/`, local only (see Content).
 - `shared/` — shared CSS and plain-script globals used by the root site and every project.
-- `projects/{cyano,geon,miasma,shoals}/` — git submodules, each with its own `AGENTS.md`. They deploy at `/{name}/` regardless of the physical `projects/` nesting.
+- `projects/{lumen,miasma,shoals,worldline}/` — git submodules, each with its own `AGENTS.md`. They deploy at `/{name}/` regardless of the physical `projects/` nesting.
 - `papers/ogdoad/` — submodule holding the LaTeX writeups that paper posts are generated from. The build reads `writeups/{name}.{tex,bib,pdf}`; nothing else from it is staged.
 - `worker/` — `index.js` (routing, SSR, SEO/JSON-LD), `http.js` (response policy), `surveys.js` (`POST /api/surveys`), `analytics.js` (Analytics Engine writes).
 - `static/` — copied as-is to the deploy root: `_headers`, fonts, icons, blog assets, `.well-known/security.txt` (its `Expires` date needs renewing yearly).
@@ -86,7 +86,7 @@ Check `shared/` before building project-specific UI infrastructure. Public URLs 
 Apart from `tokens.js`, these are deferred plain scripts that publish globals on `window`, not ES modules. Their globals, class names (`.tab-btn`, `.tab-panel`, `.glass`, `.tool-btn`, `.about-*`, `.sim-dropdown`, `.panel-hint`, `.dep-reveal`, `.dep-hidden`), and data attributes are an API used by every project, so a change has to be checked across all of them.
 ## Worker and headers
 
-`worker/index.js` SSRs and injects SEO/JSON-LD for the SPA routes (`/sims`, `/projects`, `/blog/*`), redirects `/about` → `/` and `/resume` → `/resume.pdf` (308), returns secure 404s, and rejects methods other than GET/HEAD, with `POST /api/surveys` as the one exception. The survey endpoint accepts only same-origin, schema-valid JSON, rate-limits by an in-memory IP-derived key without storing IP or request metadata, and fails closed when D1 is unavailable.
+`worker/index.js` SSRs and injects SEO/JSON-LD for the SPA routes (`/sims`, `/projects`, `/blog/*`), redirects `/about` → `/`, `/resume` → `/resume.pdf`, and the renamed sims' old paths `/geon/*` → `/worldline/*` and `/cyano/*` → `/lumen/*` (308), returns secure 404s, and rejects methods other than GET/HEAD, with `POST /api/surveys` as the one exception. The survey endpoint accepts only same-origin, schema-valid JSON, rate-limits by an in-memory IP-derived key without storing IP or request metadata, and fails closed when D1 is unavailable.
 
 Security policy is set in two places that must agree: `worker/http.js` for Worker responses and `static/_headers` for static assets, which also carries Early Hints, COEP, and per-path cache rules. Keep CSP, HSTS, COOP, robots, and `Vary` aligned between them. `_headers` has a 100-rule limit. The CSP has no `unsafe-eval`, so runtime `Function`/`eval` is unavailable in production, and KaTeX needs jsDelivr in `script-src`, `style-src`, and `font-src`.
 

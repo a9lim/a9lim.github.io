@@ -47,8 +47,8 @@ Deployment is manual through `./deploy.sh`. It builds, deploys with the pinned W
 <!-- content:sim-table generated into dist/README.md by tools/build.mjs; edit content/projects/ and projects/{sim}/about.md -->
 | Project | Description |
 |---------|-------------|
-| [Geon](https://a9l.im/geon) | Explore relativistic many-body dynamics, electromagnetism, compact objects, scalar fields, and nontrivial topologies across fifteen browser presets. |
-| [Cyano](https://a9l.im/cyano) | Trace connected carbon metabolism, electron transport, conserved cofactor pools, enzyme feedback, and reactive oxygen species across five stylized cell presets. |
+| [Worldline](https://a9l.im/worldline) | Explore relativistic many-body dynamics, electromagnetism, compact objects, scalar fields, and nontrivial topologies across fifteen browser presets. |
+| [Lumen](https://a9l.im/lumen) | Trace connected carbon metabolism, electron transport, conserved cofactor pools, enzyme feedback, and reactive oxygen species across five stylized cell presets. |
 | [Shoals](https://a9l.im/shoals) | Trade stock, bonds, VXHCN volatility futures, American options, and AI-milestone binaries through the last years of the race — stochastic pricing, a hidden capability model, and six ways it ends. |
 | [Miasma](https://a9l.im/miasma) | Seed and contain stochastic multi-strain epidemics on six hex-grid topologies with vaccination, quarantine, reservoirs, mutation, and painted interventions. |
 <!-- /content:sim-table -->

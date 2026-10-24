@@ -1,12 +1,12 @@
-[submodule "geon"]
-	path = projects/geon
-	url = https://github.com/a9lim/geon.git
+[submodule "worldline"]
+	path = projects/worldline
+	url = https://github.com/a9lim/worldline.git
 [submodule "shoals"]
 	path = projects/shoals
 	url = https://github.com/a9lim/shoals.git
-[submodule "cyano"]
-	path = projects/cyano
-	url = https://github.com/a9lim/cyano.git
+[submodule "lumen"]
+	path = projects/lumen
+	url = https://github.com/a9lim/lumen.git
 [submodule "miasma"]
 	path = projects/miasma
 	url = https://github.com/a9lim/miasma.git

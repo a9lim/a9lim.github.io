@@ -291,7 +291,7 @@ function createCamera(opts) {
         /**
          * Bind touch gestures (pinch-zoom + two-finger pan).
          * Single-finger gestures are intentionally left unbound — each project
-         * uses single-finger for different things (geon: spawn, cyano: pan).
+         * uses single-finger for different things (worldline: spawn, lumen: pan).
          *
          * @param {HTMLElement} el
          * @param {Object} [options]

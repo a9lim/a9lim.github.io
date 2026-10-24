@@ -216,7 +216,7 @@ function testByteIdenticalBodies(artifacts) {
 function testArtifactMetrics(artifacts) {
     console.log('test: artifact metric headers match fresh transpile and perf budgets');
     let allMatch = true;
-    // Compute artifacts must reach rt.* = 0. A few geon shaders carry
+    // Compute artifacts must reach rt.* = 0. A few worldline shaders carry
     // known, correct rt.* fallbacks that have no inline form today; allow those
     // exact counts so the zero-budget gate flags *new* fallbacks without
     // flagging correct code. Exact metrics are still pinned by the header-vs-
@@ -224,10 +224,10 @@ function testArtifactMetrics(artifacts) {
     const RT_BUDGET = new Map([
         // CAS on array<atomic<u32>> storage → rt.atomicCompareExchangeWeakAt.
         // Single-threaded CAS is correct via the runtime helper; no inline yet.
-        ['geon/src/gpu/shaders/boson-tree.wgsl', { rtAtomic: 9 }],
-        ['geon/src/gpu/shaders/tree-build.wgsl', { rtAtomic: 1 }],
+        ['worldline/src/gpu/shaders/boson-tree.wgsl', { rtAtomic: 9 }],
+        ['worldline/src/gpu/shaders/tree-build.wgsl', { rtAtomic: 1 }],
         // WGSL round() → rt.roundEven (ties-to-even). Math.round would be wrong.
-        ['geon/src/gpu/shaders/disintegration.wgsl', { rtNumeric: 4 }],
+        ['worldline/src/gpu/shaders/disintegration.wgsl', { rtNumeric: 4 }],
     ]);
     for (const abs of artifacts) {
         const text = readFileSync(abs, 'utf8');

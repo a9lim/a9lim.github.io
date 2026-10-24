@@ -6,7 +6,7 @@ transpiler in `lib/wgsl/transpile.js`.
 The transpiler is **not part of the deployed simulation path**. The root build
 does not generate `transpiled/` artifacts, no simulation imports the
 transpiler or runner, and `lib/wgsl/runner.js` plus
-`lib/wgsl/worker.js` are retained as dormant integration code. Geon
+`lib/wgsl/worker.js` are retained as dormant integration code. Worldline
 requires WebGPU. Re-enabling a browser CPU fallback would require
 an explicit build-artifact configuration and a simulation-side importer.
 
@@ -41,7 +41,7 @@ executable modules are constructed from the generated JavaScript with
 `transpileWGSL()` is the required API for any future deployed artifact
 pipeline; runtime browser compilation is not compatible with the site policy.
 
-The supported surface is the compute-shader subset covered by the Geon
+The supported surface is the compute-shader subset covered by the Worldline
 corpus, the shaders of the retired Plasma simulation it was first built
 against, and the synthetic smoke suite. This is not a general WGSL
 implementation: render entry points, textures and samplers, and matrix
@@ -70,7 +70,7 @@ node tests/wgsl-transpile/runner-smoke.js
 The corpus runner accepts a path substring and a quiet flag:
 
 ```sh
-node tests/wgsl-transpile/run.js geon
+node tests/wgsl-transpile/run.js worldline
 node tests/wgsl-transpile/run.js --quiet
 ```
 

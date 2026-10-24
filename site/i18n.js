@@ -13,7 +13,7 @@
 //   <meta name="description" data-i18n-content="meta.desc"> // content
 //   <a data-i18n-href="links.about">…</a>                   // href (rare)
 //
-// Models geon/src/i18n.js but exposed as a global (window._i18n) instead of an
+// Models worldline/src/i18n.js but exposed as a global (window._i18n) instead of an
 // ES module export, matching the rest of the root site's shared-*.js pattern.
 // No inner-HTML assignment anywhere — the project's pre-Write hook blocks it.
 

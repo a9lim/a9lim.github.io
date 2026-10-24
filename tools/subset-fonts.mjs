@@ -101,7 +101,7 @@ const ALWAYS_MATH = codepoints('∂∅∇∈∉∏∑∓∘√∝∞∠∥∧∨
 const ALWAYS_ARROWS = [...span(0x2190, 0x2199), 0x21A6, 0x21CC, ...span(0x21D0, 0x21D5)];
 
 const TEXT_EXTENSIONS = new Set(['.md', '.js', '.mjs', '.html']);
-const PROJECTS = ['cyano', 'geon', 'miasma', 'shoals'];
+const PROJECTS = ['lumen', 'miasma', 'shoals', 'worldline'];
 
 const inRanges = (cp, ranges) => ranges.some(([lo, hi]) => cp >= lo && cp <= hi);
 const sha256 = buf => createHash('sha256').update(buf).digest('hex');

@@ -14,7 +14,7 @@
 
      B. Verlet spring step — storage-I/O dominant, with a neighbor read,
         sqrt+max, branch early-out, and dual write-back. Shape mirrors
-        a real geon physics step. Honest baseline for measuring
+        a real worldline physics step. Honest baseline for measuring
         Tier 1 emitter changes (write-through, flat TypedArray) against.
 
      C. N-body short-range accumulator — `var` accumulator + compound

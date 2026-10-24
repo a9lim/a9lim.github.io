@@ -49,7 +49,7 @@ for (const required of [
   'fonts/OFL-STIXTwoMath.txt',
   'fonts/noto-emoji-variable.woff2',
   'fonts/OFL-NotoEmoji.txt',
-  'geon/index.html',
+  'worldline/index.html',
   'resume.pdf',
   '_headers',
 ]) {

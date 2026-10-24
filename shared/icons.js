@@ -108,7 +108,7 @@ var _ICON = (function () {
         // ── Mode toggles (project-specific, kept inline for CSS/JS toggling) ──
         modeNormal:  s('<circle cx="12" cy="12" r="9"/><line x1="8" y1="12" x2="16" y2="12"/>', M20),
 
-        modeCyano:   s('<line x1="6" y1="12" x2="17" y2="12"/><polyline points="14,8 18,12 14,16"/>', ' class="mode-fwd"' + M20) +
+        modeLumen:   s('<line x1="6" y1="12" x2="17" y2="12"/><polyline points="14,8 18,12 14,16"/>', ' class="mode-fwd"' + M20) +
                      s('<line x1="7" y1="12" x2="18" y2="12"/><polyline points="10,8 6,12 10,16"/>', ' class="mode-rev"' + M20),
 
         modeShoals:  s('<polyline points="2,14 6,10 10,10 15,5"/><polyline points="12,4 16,4 16,8"/>', ' id="mode-icon-buy" width="20" height="18" viewBox="0 0 20 18"' + A.slice(A.indexOf(' fill'))) +

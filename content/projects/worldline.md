@@ -1,11 +1,11 @@
 ---
-title: Geon
-href: /geon
+title: Worldline
+href: /worldline
 order: 100
 major: true
 external: false
 emoji: 🪐
-seoName: Geon — Relativistic Particle Physics Simulator
+seoName: Worldline — Relativistic Particle Physics Simulator
 tags:
   - physics
   - relativity

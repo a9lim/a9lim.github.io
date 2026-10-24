@@ -1,10 +1,10 @@
 ---
-title: Cyano
-href: /cyano
+title: Lumen
+href: /lumen
 order: 110
 external: false
 emoji: 🧫
-seoName: Cyano — Cellular Biochemistry Simulator
+seoName: Lumen — Cellular Biochemistry Simulator
 tags:
   - biology
   - chemistry

@@ -212,11 +212,11 @@ const ogTemplates = readdirSync(join(ROOT, 'tools', 'og'))
   .filter(name => name.endsWith('.html') && name !== 'icon.html')
   .sort();
 check('OG source templates are limited to root and major simulations',
-  JSON.stringify(ogTemplates) === JSON.stringify(['a9lim.html', 'geon.html', 'shoals.html']));
+  JSON.stringify(ogTemplates) === JSON.stringify(['a9lim.html', 'shoals.html', 'worldline.html']));
 const ogArt = readdirSync(join(ROOT, 'tools', 'og', 'art')).sort();
 check('OG aquarelle sources are limited to root and major simulations',
-  JSON.stringify(ogArt) === JSON.stringify(['geon.webp', 'root.webp', 'shoals.webp']));
-for (const [template, art] of [['a9lim.html', 'root.webp'], ['geon.html', 'geon.webp'], ['shoals.html', 'shoals.webp']]) {
+  JSON.stringify(ogArt) === JSON.stringify(['root.webp', 'shoals.webp', 'worldline.webp']));
+for (const [template, art] of [['a9lim.html', 'root.webp'], ['worldline.html', 'worldline.webp'], ['shoals.html', 'shoals.webp']]) {
   check(`${template} uses its aquarelle source`,
     readFileSync(join(ROOT, 'tools', 'og', template), 'utf8').includes(`art/${art}`));
 }

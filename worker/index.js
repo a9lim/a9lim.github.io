@@ -171,6 +171,14 @@ export default {
       return Response.redirect(`${origin}/resume.pdf`, 308);
     }
 
+    // Geon and Cyano were renamed Worldline and Lumen (2026-10-23). Their old
+    // paths have no assets, so they fall through to here.
+    const renamed = pathname.match(/^\/(geon|cyano)(\/.*)?$/);
+    if (renamed) {
+      const target = renamed[1] === 'geon' ? '/worldline' : '/lumen';
+      return Response.redirect(`${origin}${target}${renamed[2] || ''}${url.search}`, 308);
+    }
+
     // Root SPA routes — serve index.html with per-route meta injection
     if (pathname === '/sims' || pathname === '/projects' || pathname === '/blog' || pathname.startsWith('/blog/')) {
       const response = await env.ASSETS.fetch(new URL('/index.html', origin));

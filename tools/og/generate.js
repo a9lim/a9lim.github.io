@@ -7,7 +7,7 @@ const ROOT = path.resolve(__dirname, '..', '..');
 
 const CARDS = [
   { html: 'a9lim.html', output: path.join(ROOT, 'static', 'og-image.webp') },
-  { html: 'geon.html', output: path.join(ROOT, 'projects', 'geon', 'og-image.webp') },
+  { html: 'worldline.html', output: path.join(ROOT, 'projects', 'worldline', 'og-image.webp') },
   { html: 'shoals.html', output: path.join(ROOT, 'projects', 'shoals', 'og-image.webp') },
 ];
 

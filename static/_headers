@@ -12,8 +12,8 @@
   Vary: Accept-Encoding
   Cache-Control: public, max-age=0, must-revalidate
 
-# Cross-origin isolation for geon (enables SharedArrayBuffer / high-res timers for WebGPU)
-/geon/*
+# Cross-origin isolation for worldline (enables SharedArrayBuffer / high-res timers for WebGPU)
+/worldline/*
   Cross-Origin-Embedder-Policy: credentialless
 
 # Early Hints — preload critical resources for root SPA
@@ -50,14 +50,14 @@
   Link: </main.js>; rel=modulepreload
   Link: </fonts/newsreader-roman-latin.woff2>; rel=preload; as=font; crossorigin
 # Subapp Early Hints — shared resources + project-specific CSS and module entry
-# /geon/* omitted: COEP: credentialless invalidates 103 preloads (fetched pre-policy)
-/geon/*
+# /worldline/* omitted: COEP: credentialless invalidates 103 preloads (fetched pre-policy)
+/worldline/*
   Link: <https://cdn.jsdelivr.net>; rel=preconnect; crossorigin
-/cyano/*
+/lumen/*
   Link: </shared/tokens.js>; rel=preload; as=script
   Link: </shared/base.css>; rel=preload; as=style
-  Link: </cyano/styles.css>; rel=preload; as=style
-  Link: </cyano/main.js>; rel=modulepreload
+  Link: </lumen/styles.css>; rel=preload; as=style
+  Link: </lumen/main.js>; rel=modulepreload
   Link: </fonts/newsreader-roman-latin.woff2>; rel=preload; as=font; crossorigin
   Link: <https://cdn.jsdelivr.net>; rel=preconnect; crossorigin
 /shoals/*
@@ -80,13 +80,13 @@
   Cloudflare-CDN-Cache-Control: public, max-age=31536000, immutable
 
 # Subproject assets
-/geon/*.js
+/worldline/*.js
   Cloudflare-CDN-Cache-Control: public, max-age=31536000, immutable
-/geon/*.css
+/worldline/*.css
   Cloudflare-CDN-Cache-Control: public, max-age=31536000, immutable
-/cyano/*.js
+/lumen/*.js
   Cloudflare-CDN-Cache-Control: public, max-age=31536000, immutable
-/cyano/*.css
+/lumen/*.css
   Cloudflare-CDN-Cache-Control: public, max-age=31536000, immutable
 /shoals/*.js
   Cloudflare-CDN-Cache-Control: public, max-age=31536000, immutable
