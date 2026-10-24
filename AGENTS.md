@@ -8,7 +8,7 @@ Root site for **a9l.im**: a hand-written SPA, a content pipeline, a Cloudflare W
 - `content/` — everything a root-site visitor reads: posts, the project registry, homepage cards, and the résumé source.
 - `draft/` — unpublished mirror of `content/`, local only (see Content).
 - `shared/` — shared CSS and plain-script globals used by the root site and every project.
-- `projects/{cyano,geon,miasma,shoals}/` — git submodules, each with its own `AGENTS.md`. They deploy at `/{name}/` regardless of the physical `projects/` nesting. `projects/comma/` is a local-only repo that is not yet a submodule or registered, so the build ignores it.
+- `projects/{cyano,geon,miasma,shoals}/` — git submodules, each with its own `AGENTS.md`. They deploy at `/{name}/` regardless of the physical `projects/` nesting.
 - `papers/ogdoad/` — submodule holding the LaTeX writeups that paper posts are generated from. The build reads `writeups/{name}.{tex,bib,pdf}`; nothing else from it is staged.
 - `worker/` — `index.js` (routing, SSR, SEO/JSON-LD), `http.js` (response policy), `surveys.js` (`POST /api/surveys`), `analytics.js` (Analytics Engine writes).
 - `static/` — copied as-is to the deploy root: `_headers`, fonts, icons, blog assets, `.well-known/security.txt` (its `Expires` date needs renewing yearly).
