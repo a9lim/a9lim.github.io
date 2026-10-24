@@ -93,10 +93,13 @@ var _colophon = (function () {
 
     // ── Colophon ──
 
-    function setPlayIcon(btn, playing) {
+    var ENGLISH = { play: 'Play', pause: 'Pause', step: 'Step', theme: 'Light or dark', help: 'About and shortcuts' };
+
+    function setPlayIcon(btn, playing, labels) {
         if (!btn) return;
-        btn.setAttribute('aria-label', playing ? 'Pause' : 'Play');
-        btn.title = playing ? 'Pause (Space)' : 'Play (Space)';
+        var L = labels || ENGLISH;
+        btn.setAttribute('aria-label', playing ? L.pause : L.play);
+        btn.title = (playing ? L.pause : L.play) + ' (Space)';
         btn.textContent = '';
         btn.insertAdjacentHTML('afterbegin', playing ? _ICON.pause : _ICON.play); // eslint-disable-line no-unsanitized/method
         btn.setAttribute('aria-pressed', String(!playing));
@@ -112,7 +115,9 @@ var _colophon = (function () {
      * @param {boolean} [opts.playing] - Initial running state.
      * @param {function} [opts.onStep]
      * @param {function} [opts.onHelp]
-     * @returns {{ el: HTMLElement, setPlaying: function(boolean) }}
+     * @param {function} [opts.labels] - Returns { play, pause, step, theme, help } in the page's
+     *   language; called again by relabel() after a language change. English by default.
+     * @returns {{ el: HTMLElement, setPlaying: function(boolean), relabel: function() }}
      */
     function mount(opts) {
         opts = opts || {};
@@ -122,28 +127,46 @@ var _colophon = (function () {
 
         initTheme(opts.themeKey, opts.onTheme);
 
-        var wire = function (name, handler, label) {
+        var labels = function () { return opts.labels ? opts.labels() : ENGLISH; };
+        var playing = opts.playing !== false;
+        var wire = function (name, handler) {
             var b = btn(name);
             if (!b) return null;
             if (!handler) { b.remove(); return null; }
-            if (label) { b.setAttribute('aria-label', label); if (!b.title) b.title = label; }
             b.type = 'button';
             b.addEventListener('click', function () { tap(); handler(); });
             return b;
         };
 
-        var playBtn = wire('play', opts.onPlay && function () { setPlayIcon(playBtn, opts.onPlay()); });
-        setPlayIcon(playBtn, opts.playing !== false);
-        wire('step', opts.onStep, 'Step');
-        wire('theme', function () {
+        var playBtn = wire('play', opts.onPlay && function () {
+            playing = opts.onPlay();
+            setPlayIcon(playBtn, playing, labels());
+        });
+        var stepBtn = wire('step', opts.onStep);
+        var themeBtn = wire('theme', function () {
             var t = toggleTheme(opts.themeKey);
             if (opts.onTheme) opts.onTheme(t);
-        }, 'Light or dark');
-        wire('help', opts.onHelp, 'About and shortcuts (?)');
+        });
+        var helpBtn = wire('help', opts.onHelp);
+
+        var relabel = function () {
+            var L = labels();
+            setPlayIcon(playBtn, playing, L);
+            var name = function (b, text, key) {
+                if (!b) return;
+                b.setAttribute('aria-label', text);
+                b.title = key ? text + ' (' + key + ')' : text;
+            };
+            name(stepBtn, L.step);
+            name(themeBtn, L.theme, 'T');
+            name(helpBtn, L.help, '?');
+        };
+        relabel();
 
         return {
             el: el,
-            setPlaying: function (playing) { setPlayIcon(playBtn, playing); },
+            setPlaying: function (p) { playing = p; setPlayIcon(playBtn, p, labels()); },
+            relabel: relabel,
         };
     }
 
