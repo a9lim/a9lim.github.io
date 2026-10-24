@@ -181,7 +181,7 @@ var _colophon = (function () {
      */
     function caption(el, minInterval) {
         var gap = minInterval == null ? 200 : minInterval;
-        var last = 0, text = '';
+        var last = -Infinity, text = '';   // the first call always writes
         return function (t, force) {
             if (!el) return;
             var now = performance.now();
