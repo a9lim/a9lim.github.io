@@ -3,6 +3,7 @@
 //   BASE   e.g. http://localhost:8790 (docs/sim-overhaul/serve.mjs) or http://localhost:8787 (wrangler dev)
 //   width  < 600 emulates a phone (touch, DPR 2)
 //   evalJS evaluated in the page after the wait; its value is printed as "ev"
+// Env: REDUCED_MOTION=1 emulates reduced motion; DPR=2 a retina pixel ratio at any width.
 // Prints JSON per path: { overflow, fps, errs, ev }. Uses Exploratory's playwright-core and Chrome for Testing,
 // with WebGPU enabled.
 import { createRequire } from 'node:module';
@@ -11,9 +12,10 @@ const { chromium } = require('playwright-core');
 const CHROME = process.env.HOME + '/Library/Caches/ms-playwright/chromium-1243/chrome-mac-arm64/Google Chrome for Testing.app/Contents/MacOS/Google Chrome for Testing';
 const [base, out, paths, scheme = 'light', width = '1280', wait = '3000', evalJS = ''] = process.argv.slice(2);
 const reduced = process.env.REDUCED_MOTION === '1';
+const dprEnv = +process.env.DPR || 0;   // DPR=2 renders a desktop width at a retina pixel ratio
 const browser = await chromium.launch({ executablePath: CHROME, headless: true, args: ['--enable-unsafe-webgpu', '--use-angle=metal'] });
 const w = +width, h = w < 600 ? 844 : 860;
-const ctx = await browser.newContext({ viewport: { width: w, height: h }, colorScheme: scheme, reducedMotion: reduced ? 'reduce' : 'no-preference', deviceScaleFactor: w < 600 ? 2 : 1, isMobile: w < 600, hasTouch: w < 600 });
+const ctx = await browser.newContext({ viewport: { width: w, height: h }, colorScheme: scheme, reducedMotion: reduced ? 'reduce' : 'no-preference', deviceScaleFactor: dprEnv || (w < 600 ? 2 : 1), isMobile: w < 600, hasTouch: w < 600 });
 const res = {};
 for (const p of paths.split(',')) {
   const page = await ctx.newPage();
