@@ -1,0 +1,46 @@
+<section id="worldline" aria-labelledby="h-wl">
+  <h2 id="h-wl">Worldline <span class="sub">the canvas tilts into spacetime</span></h2>
+  <div class="prose">
+    <p>The bubble chamber is gone. It was a detector's picture of particles, and Worldline's bodies, bosons and fields don't behave like tracks in a liquid. The spacetime view moves from the side panel onto the main canvas instead. The canvas opens as the plane you know. Drag down and it tilts, and every trail rises into the world line it was the shadow of: orbits become helices, light becomes 45° lines, a pion's short life becomes a slanted stub ending in two photons.</p>
+    <p>Worldline already records every world line for signal delay and the Frames tab, so the view only reads what the sim keeps. The boost slider and the Lab and Observer buttons show one spacetime two ways. In lab coordinates the observer's present is a tilted plane. In the observer's own coordinates the plane lies flat and everything else shears, while light stays on its 45° lines.</p>
+  </div>
+  <figure class="fig">
+    <div class="frame">
+      <canvas id="cv-wl" class="grab wl-tall" role="img" aria-label="A Worldline scene: a binary, two twins, a pion emitter and photons. It starts as a flat plane and tilts to show each body's world line rising through time, cut by the plane of the present."></canvas>
+      <div class="colo" aria-hidden="true">{{SEAL}}<span>Worldline</span></div>
+    </div>
+    <div class="bar">
+      <p class="cap"><span class="n">Fig. 2</span><span id="cap-wl">Plane view.</span></p>
+      <div class="ctl">
+        <span class="seg" role="group" aria-label="View"><button class="b" id="wl-plane" type="button" aria-pressed="true">Plane</button><button class="b" id="wl-st" type="button" aria-pressed="false">Spacetime</button></span>
+        <span class="seg" role="group" aria-label="Coordinates"><button class="b" id="wl-lab" type="button" aria-pressed="true">Lab</button><button class="b" id="wl-obs" type="button" aria-pressed="false">Observer</button></span>
+        <label class="range" for="wl-v">Boost <input id="wl-v" type="range" min="-0.8" max="0.8" step="0.01" value="0"> <output id="wl-out" for="wl-v">v = 0.00c</output></label>
+        <button class="b" id="pp-wl" type="button">Pause</button>
+      </div>
+    </div>
+  </figure>
+  <style>
+    .frame canvas.wl-tall { aspect-ratio: 16 / 9.4; }
+    @media (max-width: 640px) { .frame canvas.wl-tall { aspect-ratio: 3 / 4; } }
+  </style>
+  <div class="cols">
+    <table class="binds">
+      <caption>Bound to the model</caption>
+      <thead><tr><th scope="col">On the canvas</th><th scope="col">Reads</th></tr></thead>
+      <tbody>
+        <tr><td>Height above the plane</td><td>Time before the observer's present, from the world-line history the sim already records.</td></tr>
+        <tr><td>Beads along a world line</td><td>Equal steps of that body's proper time. The twin who travels lays down fewer between meetings.</td></tr>
+        <tr><td>The plane and its rulers</td><td>The observer's surface of simultaneity and the lab rulers on it. A boost tilts the plane in lab coordinates and contracts the rulers in the observer's.</td></tr>
+        <tr><td>Rings under the red body</td><td>Its past light cone: everything that can have reached it.</td></tr>
+        <tr><td>Photon color</td><td>The photon's energy in the lab against its emitter's rest frame: sienna when redshifted, indigo when blueshifted.</td></tr>
+        <tr><td>Disk shape</td><td>The rest-frame disk contracted along its motion, with the spoke turning on proper time, as Worldline draws bodies today.</td></tr>
+        <tr><td>The red</td><td>The selected body, its world line and its light cone.</td></tr>
+      </tbody>
+    </table>
+    <div class="notes">
+      <div><p class="label">What stays from the plate</p><p>Proper-time beads, photon color by Doppler shift, combed field textures for E and B, contour relief for the scalar fields, and a real star field behind the lensing plane. All of them read the model; none of them needed the bubble chamber.</p></div>
+      <div><p class="label">Where the side plot goes</p><p>The Frame tab's spacetime diagram becomes redundant once the canvas itself tilts. The tab keeps the frame controls and the lag readout and drops the plot.</p></div>
+      <div><p class="label">Build</p><p>A second camera in the existing WebGPU pipeline: instanced line strips from the history buffer, an orbit camera that eases between the plane and an oblique view, and the boost applied as a Lorentz transform in the vertex shader. The 2D view is the same camera looking straight down the time axis, so the two never disagree.</p></div>
+    </div>
+  </div>
+</section>

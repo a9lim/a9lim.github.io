@@ -1,0 +1,20 @@
+<section id="shared" aria-labelledby="h-shared">
+  <h2 id="h-shared">What happens to <span style="font-style: italic">shared/</span></h2>
+  <div class="prose">
+    <p>Keep a shared skeleton and give each sim its own skin. Going fully standalone would copy the keyboard, touch, focus and dropdown accessibility code into four repositories without changing a pixel. The uniform look comes from <em>base.css</em> and the toolbar-and-sidebar layout, so those are what change.</p>
+  </div>
+  <div class="tablewrap">
+    <table class="plan">
+      <thead><tr><th scope="col">File</th><th scope="col">Fate</th><th scope="col">Why</th></tr></thead>
+      <tbody>
+        <tr><td><code>shortcuts</code> <code>touch</code> <code>haptics</code> <code>utils</code> <code>camera</code></td><td>Keep</td><td>Behaviour with no look of its own.</td></tr>
+        <tr><td><code>dropdown</code> <code>forms</code> <code>tabs</code> <code>tooltip</code></td><td>Keep the logic, drop the styling</td><td>Each sim styles its own controls to its medium.</td></tr>
+        <tr><td><code>about</code> <code>info</code></td><td>Keep</td><td>The about panel is part of the shared colophon.</td></tr>
+        <tr><td><code>toolbar</code></td><td>Becomes <code>colophon</code></td><td>Seal, name, play and step, theme, help. Each sim places everything else.</td></tr>
+        <tr><td><code>base.css</code></td><td>Split</td><td>The shared part keeps the reset, focus, accessibility, colophon, caption and about panel. HUD surfaces move into each sim.</td></tr>
+        <tr><td><code>tokens</code></td><td>Shrinks, and takes the inks</td><td>Ground, text, accent, type and the eleven inks stay shared. The old extended keys are renamed in one pass across the four projects, with no aliases left behind. Each sim's <code>colors.js</code> maps its states to inks.</td></tr>
+        <tr><td><code>sparkline</code></td><td>Moves into the sims</td><td>Each medium draws its own small charts.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>

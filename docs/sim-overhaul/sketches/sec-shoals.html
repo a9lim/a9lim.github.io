@@ -1,0 +1,160 @@
+<section id="shoals" aria-labelledby="h-sh">
+  <style>
+    .sh-wrap { padding: 50px 22px 20px; }
+    .sh-news { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px 18px; border-top: 3px double var(--rule-strong); border-bottom: 1px solid var(--rule); padding: 8px 0; }
+    .sh-news .lbl { font-style: italic; color: var(--muted); font-size: 15px; }
+    .sh-news button[disabled] { opacity: .45; cursor: default; }
+    .sh-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0 26px; }
+    .sh-panel { border-bottom: 1px solid var(--rule); padding: 14px 0 6px; min-width: 0; }
+    .sh-panel h4 { font-weight: 600; font-size: 15.5px; margin: 0; }
+    .sh-panel h4 span { font-weight: 400; font-style: italic; color: var(--muted); }
+    .sh-panel p { font-size: 14px; line-height: 1.4; color: var(--text2); margin: 2px 0 6px; min-height: 2.8em; }
+    .sh-panel canvas { display: block; width: 100%; height: auto; aspect-ratio: 16 / 10; }
+    .sh-sand { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: 0 30px; padding-top: 16px; }
+    .sh-sand h4 { font-weight: 600; font-size: 15.5px; margin: 0 0 6px; }
+    .sh-sand h4 span { font-weight: 400; font-style: italic; color: var(--muted); }
+    .sh-book td.sh-l { text-align: left; }
+    .sh-book th:first-child { text-align: left; }
+    .sh-x { font: inherit; font-size: 15px; line-height: 1; color: var(--muted); background: none; border: 0; padding: 0 4px; cursor: pointer; }
+    .sh-x:hover { color: var(--text); }
+    .sh-empty { font-size: 14px; font-style: italic; color: var(--muted); margin-top: 6px; }
+    .sh-under { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; margin-top: 10px; }
+    .sh-scen-t { width: 100%; border-collapse: collapse; font-size: 13.5px; font-variant-numeric: lining-nums tabular-nums; table-layout: fixed; }
+    .sh-scen-t th { font-weight: 400; font-style: italic; color: var(--muted); padding: 2px 4px 5px; text-align: center; }
+    .sh-scen-t thead th:first-child { width: 27%; text-align: left; }
+    .sh-scen-t tbody th { text-align: left; color: var(--text2); white-space: nowrap; }
+    .sh-scen-t td { text-align: center; padding: 7px 2px; border: 1px solid var(--canvas); transition: background-color .3s ease, color .3s ease; }
+    .sh-scen-t td.sh-na { color: var(--muted); }
+    .sh-vh { font-size: 12.5px; }
+    .sh-read { font-size: 16px; line-height: 1.45; color: var(--text); margin-top: 10px; text-wrap: pretty; }
+    #cv-sh-race { display: block; width: 100%; height: auto; aspect-ratio: 2 / 1.02; }
+    @media (max-width: 900px) { .sh-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .sh-sand { grid-template-columns: minmax(0, 1fr); gap: 22px; } }
+    @media (max-width: 640px) { .sh-wrap { padding: 44px 12px 16px; } .sh-grid { grid-template-columns: minmax(0, 1fr); } #cv-sh-race { aspect-ratio: 4 / 5; } .sh-scen-t { font-size: 12px; } .sh-scen-t tbody th { white-space: normal; } }
+  </style>
+  <h2 id="h-sh">Shoals <span class="sub">the Brief</span></h2>
+  <div class="prose">
+    <p>Shoals already has a house paper. <em>The Meridian Brief</em> is the firm's morning note, and the event files quote it. So the interface becomes the Brief. Each sim day is an edition. Prices are set like a newspaper's agate tables. Event popups arrive as dispatches, and the epilogue is the last edition.</p>
+  </div>
+  <figure class="fig">
+    <div class="frame">
+      <div class="brief" id="brief">
+        <div class="mast">
+          <div class="ears"><span>Meridian Capital · for the desk</span><span id="br-ed">Edition 412</span></div>
+          <div class="mast-title">The Meridian Brief</div>
+          <div class="dateline"><span id="br-day">Day 412</span><span>Dynamic regime</span><span id="br-hcn">HCN 100.00</span><span id="br-vx">VXHCN 20.0</span></div>
+        </div>
+        <div class="brief-a">
+          <article class="lead" id="br-lead" aria-live="polite">
+            <p class="kick" id="br-kick">The Fed</p>
+            <h3 id="br-head">A hold that says nothing</h3>
+            <p class="body" id="br-body"></p>
+            <p class="src">Item text from Shoals' event files; heads added for the sketch.</p>
+          </article>
+          <div>
+            <canvas id="cv-tape" role="img" aria-label="HCN price over the last 120 sessions: a close line over a band of daily ranges, with news days marked."></canvas>
+            <p class="small">HCN, last 120 sessions. The line is the close, the band the day's range; marks are news days.</p>
+          </div>
+        </div>
+        <div class="brief-b">
+          <div>
+            <h4>HCN options <span>· 30 days</span></h4>
+            <div class="tablewrap">
+              <table class="agate" aria-label="HCN option prices, 30 days">
+                <thead><tr><th>Call</th><th>Chg</th><th class="k">Strike</th><th>Put</th><th>Chg</th></tr></thead>
+                <tbody id="br-chain"></tbody>
+              </table>
+            </div>
+          </div>
+          <div>
+            <h4>Implied volatility <span>· by strike and expiry</span></h4>
+            <canvas id="cv-vol" role="img" aria-label="A rotating surface of implied volatility over strike and expiry, rising toward low strikes."></canvas>
+          </div>
+        </div>
+      </div>
+      <div class="colo" aria-hidden="true">{{SEAL}}<span>Shoals</span></div>
+    </div>
+    <div class="bar">
+      <p class="cap"><span class="n">Fig. 5</span><span id="cap-brief">One edition per session.</span></p>
+      <div class="ctl"><button class="b" id="pp-brief" type="button">Pause</button></div>
+    </div>
+  </figure>
+  <figure class="fig sig">
+    <div class="prose">
+      <p class="label">The markets page: every market is a curve</p>
+      <p>Shoals trades six kinds of thing, and each one is the market drawing a curve over a different axis. The stock is a single number moving through time. A futures curve prices the expected level of something at each date. The option smile prices a whole distribution of where HCN could land. A Consensus curve prices a probability over time: how likely a rung is certified by each deadline. Drawn the same way, side by side, the contrasts become legible, and so does the coupling. Fire a news item and watch which curves move together and which ignore it.</p>
+      <p>The curves are also where you trade. Click any point to add that contract to your book; click it again to go short. The grid underneath prices the whole book across the outcomes that matter at the next quarter: where HCN goes, and how far the race gets.</p>
+    </div>
+    <div class="frame">
+      <div class="sh-wrap">
+        <div class="sh-news" role="group" aria-label="News">
+          <span class="lbl">Day 412 · news</span>
+          <span class="ctl">
+            <span class="seg"><button class="b" type="button" data-sh-news="cert">Halcyon certifies R3</button><button class="b" type="button" data-sh-news="blockade">Blockade scare</button><button class="b" type="button" data-sh-news="hike">Fed hikes</button></span>
+            <button class="b" id="sh-news-reset" type="button">Reset</button>
+          </span>
+        </div>
+        <div class="sh-grid">
+          <div class="sh-panel"><h4>HCN <span>· the stock</span></h4><p>One number: what Halcyon is worth today.</p><canvas id="cv-sh-hcn" role="img" aria-label="HCN closing prices over 120 sessions."></canvas></div>
+          <div class="sh-panel"><h4>Rates <span>· the yield curve</span></h4><p>The Fed's expected path, plus what lenders charge for waiting.</p><canvas id="cv-sh-rates" role="img" aria-label="Treasury yields by maturity, three months to ten years."></canvas></div>
+          <div class="sh-panel"><h4>VXHCN futures <span>· vol term structure</span></h4><p>Expected HCN volatility by expiry. An upward slope is calm; inverted is fear.</p><canvas id="cv-sh-vx" role="img" aria-label="VXHCN futures prices by month to expiry."></canvas></div>
+          <div class="sh-panel"><h4>Options <span>· the 63-day smile</span></h4><p>A distribution over HCN's price, read off implied volatility by strike.</p><canvas id="cv-sh-smile" role="img" aria-label="Implied volatility by strike for 63-day HCN options."></canvas></div>
+          <div class="sh-panel"><h4>Cambria compute <span>· the forward curve</span></h4><p>Expected compute price each quarter. Backwardation means a scramble for chips now.</p><canvas id="cv-sh-cmp" role="img" aria-label="Cambria compute futures by quarterly maturity."></canvas></div>
+          <div class="sh-panel"><h4>Consensus <span>· milestone binaries</span></h4><p>The chance a frontier lab is certified at each rung by each deadline.</p><canvas id="cv-sh-cons" role="img" aria-label="Probability of certification of rungs R2 to R5 by deadline day."></canvas></div>
+        </div>
+        <div class="sh-sand">
+          <div class="sh-book">
+            <h4>Your book <span id="sh-book-sub">· an example to start</span></h4>
+            <div class="tablewrap"><table class="agate" aria-label="Positions">
+              <thead><tr><th>Contract</th><th>Side</th><th>Entry</th><th><span class="sh-vh">Remove</span></th></tr></thead>
+              <tbody id="sh-book"></tbody>
+            </table></div>
+            <p class="sh-empty" id="sh-book-empty" hidden>No legs yet. Click a point on any curve.</p>
+            <div class="sh-under"><span class="sh-empty">Triangles on the curves mark your legs: up for long, down for short.</span><button class="b" id="sh-clear" type="button">Clear</button></div>
+          </div>
+          <div>
+            <h4>Profit and loss at day 475 <span>· $ thousands, by HCN move</span></h4>
+            <div class="tablewrap"><table class="sh-scen-t" id="sh-scen" aria-label="Scenario profit and loss"></table></div>
+            <p class="sh-read" id="sh-read" aria-live="polite"></p>
+          </div>
+        </div>
+      </div>
+      <div class="colo" aria-hidden="true">{{SEAL}}<span>Shoals</span></div>
+    </div>
+    <div class="bar">
+      <p class="cap"><span class="n">Fig. 6</span><span id="cap-sh-mk">Day 412.</span></p>
+    </div>
+  </figure>
+  <figure class="fig sig">
+    <div class="prose">
+      <p class="label">The race page</p>
+      <p>Structured like <a href="https://epoch.ai/eci">Epoch's Capabilities Index</a>: one capability scale, every public model placed on it by release date. Here the scale is Shoals' own rung ladder. Dots are releases, filled diamonds are certifications, and hollow ones are claims nobody has adjudicated. Along each rung still ahead, Consensus's implied crossing date is drawn as a distribution, so the page shows the market's uncertainty instead of a single forecast. The Fixedpoint Index sits apart, because Halcyon sets and grades it and Consensus will not list it. The epilogue reveals what the labs had in house.</p>
+    </div>
+    <div class="frame">
+      <canvas id="cv-sh-race" role="img" aria-label="Capability in rung units over four years: releases by lab, certifications, the frontier, and Consensus distributions for when R3 to R5 are crossed."></canvas>
+      <div class="colo" aria-hidden="true">{{SEAL}}<span>Shoals</span></div>
+    </div>
+    <div class="bar">
+      <p class="cap"><span class="n">Fig. 7</span><span id="cap-sh-race">Day 412.</span></p>
+      <div class="ctl"><button class="b" id="sh-epi" type="button" aria-pressed="false">Epilogue</button></div>
+    </div>
+  </figure>
+  <div class="cols">
+    <table class="binds">
+      <caption>Bound to the model</caption>
+      <thead><tr><th scope="col">On the page</th><th scope="col">Reads</th></tr></thead>
+      <tbody>
+        <tr><td>Edition number and dateline</td><td>The sim day; an extra edition marks a regime change or crisis.</td></tr>
+        <tr><td>The six curves</td><td>HCN's path, the Vasicek yield curve, the VXHCN term structure, the Heston smile, the Cambria ladder, and Consensus's logistic crossing laws.</td></tr>
+        <tr><td>Ghost lines</td><td>The same curves before the latest news, so co-movement is visible at a glance.</td></tr>
+        <tr><td>The scenario grid</td><td>Every leg revalued at the next quarter across HCN moves and race outcomes, in one currency.</td></tr>
+        <tr><td>Density strips on the rungs</td><td>The belief hazard curve for each rung, from the public view only.</td></tr>
+        <tr><td>The red</td><td>Losses and down moves, by trading convention. Gains take one ink.</td></tr>
+      </tbody>
+    </table>
+    <div class="notes">
+      <div><p class="label">What the coupling teaches</p><p>A certification moves everything: the stock, vol, the compute curve into backwardation, and every later rung's timeline. A Fed hike moves the money markets and leaves the binaries where they were. A blockade scare lifts the far end of the compute curve most and pushes the timelines out. The sandbox makes the same point from the other side: a compute future and a milestone binary are two prices for one bet.</p></div>
+      <div><p class="label">Also considered</p><p><em>Terminal noir:</em> a dark trading terminal with dense panes. It suits the genre, but it means monospace chrome, which the site avoids.</p></div>
+      <div><p class="label">Build</p><p>Mostly DOM and Canvas 2D. The curves read prices the engines already compute, and the scenario grid reuses the portfolio's own valuation. The race page reads only the public view, the same rule the Consensus quoter keeps. Medium to large.</p></div>
+    </div>
+  </div>
+</section>

@@ -1,0 +1,46 @@
+<section id="lumen" aria-labelledby="h-lu">
+  <style>
+    .frame canvas.lu-tall { aspect-ratio: 16 / 11; }
+    @media (max-width: 640px) { .frame canvas.lu-tall { aspect-ratio: 9 / 22; } }
+  </style>
+  <h2 id="h-lu">Lumen <span class="sub">the cross-section and the map</span></h2>
+  <div class="prose">
+    <p>The page uses two registers, split at the membrane. Above it is the physical layer, drawn in the manner of David Goodsell's molecular paintings: lipids, complexes and carriers at roughly true relative size. Below it is the logical layer, the whole carbon network drawn as a transit map.</p>
+    <p>The full network is where a transit map works best. Transit maps were invented to make large, tangled networks readable, and Lumen's network has about thirty stations on seven lines, the size of a small city's metro. Intermediates that several pathways share, such as F6P, G3P, 3-PGA, pyruvate and acetyl-CoA, become interchange stations instead of being drawn twice. The Calvin cycle runs back along the glycolysis corridor on its own track, so the map shows that the two pathways are near-reverses of each other. On a phone the map turns upright, and the real sim would pan and zoom it.</p>
+  </div>
+  <figure class="fig">
+    <div class="frame">
+      <canvas id="cv-lumen" class="lu-tall" role="img" aria-label="Animated cell: above, a membrane where protons gather and ATP synthase turns; below, the carbon network as a transit map whose active lines thicken and carry moving tokens."></canvas>
+      <div class="colo" aria-hidden="true">{{SEAL}}<span>Lumen</span></div>
+    </div>
+    <div class="bar">
+      <p class="cap"><span class="n">Fig. 3</span><span id="cap-lumen">Light.</span></p>
+      <div class="ctl">
+        <span class="seg" role="group" aria-label="Condition">
+          <button class="b" id="lu-c-light" type="button" aria-pressed="true">Light</button><button class="b" id="lu-c-aerobic" type="button" aria-pressed="false">Dark, aerobic</button><button class="b" id="lu-c-anaerobic" type="button" aria-pressed="false">Anaerobic</button><button class="b" id="lu-c-fasting" type="button" aria-pressed="false">Fasting</button>
+        </span>
+        <button class="b" id="pp-lumen" type="button">Pause</button>
+      </div>
+    </div>
+  </figure>
+  <div class="cols">
+    <table class="binds">
+      <caption>Bound to the model</caption>
+      <thead><tr><th scope="col">In the drawing</th><th scope="col">Reads</th></tr></thead>
+      <tbody>
+        <tr><td>Line weight and token speed</td><td>Flux through each pathway. Idle lines thin to hairlines, so the active route through the cell stands out.</td></tr>
+        <tr><td>Tokens running backward</td><td>A reversed pathway. Fasting runs glycolysis backward, and the key renames it gluconeogenesis.</td></tr>
+        <tr><td>Interchange stations</td><td>Shared intermediates, drawn once.</td></tr>
+        <tr><td>Protons in the lumen</td><td>The stored proton gradient. The protons are Lumen's red.</td></tr>
+        <tr><td>ATP synthase turning</td><td>Proton flow through it, with one ATP leaving the head every third of a turn.</td></tr>
+        <tr><td>Photons and O₂</td><td>Light arriving at PSII and PSI, oxygen leaving PSII in the light and arriving at cytochrome oxidase in the dark.</td></tr>
+        <tr><td>Pool gauges</td><td>The four conserved cofactor pairs and the gradient.</td></tr>
+      </tbody>
+    </table>
+    <div class="notes">
+      <div><p class="label">Signature: the specimen changes</p><p>Each organism preset changes the drawing as well as the switches. The cyanobacterium gets a thylakoid, the animal cell folded mitochondrial cristae, and the archaeon a purple membrane packed with bacteriorhodopsin. Pathways the organism lacks drop off the map entirely.</p></div>
+      <div><p class="label">Also considered</p><p><em>One painting for everything:</em> the network drawn as Goodsell-style enzymes along the cytoplasm. Thirty enzymes in that register would bury the routes. <em>Biosensor microscopy:</em> the cell as a confocal image read through ATP and pH sensors. It is striking, but its fluorescent look fights the site.</p></div>
+      <div><p class="label">Build</p><p>Canvas 2D is enough. The map is a fixed octilinear layout that is laid out once by hand, with flux read from the existing reaction dispatcher. The membrane is procedural vector drawing, so it themes and scales. The reaction engine stays; the renderer and layout are new. Medium.</p></div>
+    </div>
+  </div>
+</section>

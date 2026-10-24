@@ -1,0 +1,46 @@
+<section id="miasma" aria-labelledby="h-mi">
+  <style>#miasma .seg { flex-wrap: wrap; }</style>
+  <h2 id="h-mi">Miasma <span class="sub">the atlas</span></h2>
+  <div class="prose">
+    <p>The hex lattice becomes a plate from a nineteenth-century epidemiological atlas, in the line of John Snow's 1854 cholera map. The disease is the red; immunity is stipple; vaccination is hatching; deaths are small crosses. Contour lines record the day the wave arrived, so the plate keeps the outbreak's history after the wave has passed. You can see where it raced, where it stalled, and where a vaccinated block bent it.</p>
+    <p>The 3D surface from the first draft is gone. Miasma's world is a hexagon, and its six topologies come from gluing its three pairs of opposite edges. The plate now shows that the way a topology textbook draws a fundamental polygon. Chevrons mark the glued edges, one, two or three per pair, and their direction says whether a pair is glued straight, with a twist, or through the center. Faded copies of the world sit beyond each glued edge, so a wave visibly leaves one edge and carries on from its partner. Edges that are not glued are shores, drawn with a heavier rule and hachures.</p>
+  </div>
+  <figure class="fig">
+    <div class="frame">
+      <canvas id="cv-atlas" class="cross" role="img" aria-label="Animated epidemic atlas on a hexagonal world: red infected cells spread from seeds, contour lines of arrival day trail behind the wave, and faded copies beyond the glued edges show the wave continuing across them."></canvas>
+      <div class="colo" aria-hidden="true">{{SEAL}}<span>Miasma</span></div>
+    </div>
+    <div class="bar">
+      <p class="cap"><span class="n">Fig. 4</span><span id="mi-cap">Day 0.</span></p>
+      <div class="ctl">
+        <span class="seg" role="group" aria-label="Topology"><button class="b" type="button" data-mi-topo="plane" aria-pressed="false">Plane</button><button class="b" type="button" data-mi-topo="cylinder" aria-pressed="false">Cylinder</button><button class="b" type="button" data-mi-topo="torus" aria-pressed="true">Torus</button><button class="b" type="button" data-mi-topo="mobius" aria-pressed="false">Möbius</button><button class="b" type="button" data-mi-topo="klein" aria-pressed="false">Klein</button><button class="b" type="button" data-mi-topo="rp2" aria-pressed="false">RP²</button></span>
+        <span class="seg" role="group" aria-label="Brush"><button class="b" id="mi-seed" type="button" aria-pressed="true">Seed</button><button class="b" id="mi-vax" type="button" aria-pressed="false">Vaccinate</button></span>
+        <button class="b" id="mi-reset" type="button">Reset</button>
+        <button class="b" id="mi-pp" type="button">Pause</button>
+      </div>
+    </div>
+  </figure>
+  <div class="cols">
+    <table class="binds">
+      <caption>Bound to the model</caption>
+      <thead><tr><th scope="col">On the plate</th><th scope="col">Reads</th></tr></thead>
+      <tbody>
+        <tr><td>Isochrones</td><td>The tick each cell was first exposed, contoured every eight days and labeled every twenty-four.</td></tr>
+        <tr><td>Red, solid and pale</td><td>Infectious and exposed cells.</td></tr>
+        <tr><td>Stipple</td><td>Recovered cells.</td></tr>
+        <tr><td>Hatching</td><td>Vaccinated cells. Four strains would take four hatch angles instead of four hues.</td></tr>
+        <tr><td>Small crosses</td><td>Deaths.</td></tr>
+        <tr><td>Pale ground, no dots</td><td>Empty cells.</td></tr>
+        <tr><td>Chevrons on an edge</td><td>Which edges are glued. One, two or three chevrons name the pair. Arrows that agree mean a straight gluing; arrows that disagree mean a twist or a half turn.</td></tr>
+        <tr><td>Faded copies beyond an edge</td><td>The world as it continues across that edge: shifted for a straight gluing, mirrored for a twist, turned 180° for RP².</td></tr>
+        <tr><td>Heavy rule with hachures</td><td>A shore. The edge is not glued, so neighbors stop there.</td></tr>
+        <tr><td>Reference and scale bar</td><td>The legend and the lattice's own scale.</td></tr>
+      </tbody>
+    </table>
+    <div class="notes">
+      <div><p class="label">Around the plate</p><p>The stacked-area counts become Nightingale's rose of 1858, the original epidemic graphic. The lineage forest becomes a time-scaled phylogeny. The oncoviral preset reskins the same lattice as an H&amp;E-stained histology slide, so the two readings of Z become two specimens.</p></div>
+      <div><p class="label">A question about Klein</p><p>The header comment in <em>topology.js</em> says Klein glues all three edge pairs, like the torus. <em>wrapKlein</em> glues pair 1 with a twist and pair 2 straight, and leaves pair 3 open, so the sketch draws pair 3 as a shore. Which one is intended? With pair 3 open, the surface still has a boundary.</p></div>
+      <div><p class="label">Build</p><p>A fragment shader draws the lattice from a state texture (WebGPU, with a Canvas fallback). The faded copies are the same texture drawn under three transforms, and contours run on the CPU every few ticks. Medium.</p></div>
+    </div>
+  </div>
+</section>

@@ -1,0 +1,108 @@
+<section id="language" aria-labelledby="h-lang">
+  <h2 id="h-lang">The shared language</h2>
+  <div class="prose">
+    <p>The thread between the four should be the paper, and the inks should be free. That keeps them recognizably a9l.im while letting each one look like nothing else on the web.</p>
+  </div>
+  <div class="split">
+    <div>
+      <p class="label">Shared by all four</p>
+      <ul>
+        <li><strong>The ground.</strong> The site's neutral canvas in both themes. No sim gets its own background color.</li>
+        <li><strong>Newsreader for every word,</strong> in the chrome and on the canvas.</li>
+        <li><strong>The colophon.</strong> Seal and name at the top left, same size and place in every sim. It replaces the toolbar strip.</li>
+        <li><strong>A live figure caption</strong> under the scene, in italic, saying what you are looking at with its current values. It replaces the hint pill.</li>
+        <li><strong>Hairline structure</strong> in the controls: no cards, shadows or rounded panels.</li>
+        <li><strong>One set of inks</strong> for data, named for pigments and paired per theme.</li>
+        <li><strong>One red per sim,</strong> spent on the thing you would point at.</li>
+        <li><strong>The keyboard grammar and the about panel.</strong></li>
+      </ul>
+    </div>
+    <div>
+      <p class="label">Owned by each</p>
+      <ul>
+        <li><strong>The medium:</strong> a spacetime you can tilt, a molecular painting over a transit map, an atlas, a newspaper.</li>
+        <li><strong>Its choice of inks</strong> from the shared set below, and what the red means there.</li>
+        <li><strong>The renderer:</strong> WebGPU where the scene needs it, Canvas or plain DOM where it doesn't.</li>
+        <li><strong>The control layout,</strong> shaped to the medium instead of one sidebar for all.</li>
+        <li><strong>A signature view</strong> that only that subject could have.</li>
+      </ul>
+    </div>
+  </div>
+  <div class="rules">
+    <div><h3>Depict, don't decorate</h3><p>The site's ban on glow, grain, shimmer and flourish stays in force for chrome. Inside a scene, an effect ships only if it reads a quantity in the model: density is concentration, line weight is flux, bead spacing is proper time. If we can't name the quantity, the effect doesn't ship.</p></div>
+    <div><h3>Open on a living frame</h3><p>No splash screen and no empty state. Each sim boots into its best preset, already running, so the first frame shows what the sim is for.</p></div>
+    <div><h3>Pattern before hue</h3><p>Where a scene encodes state, pair color with a pattern: stipple, hatching, dash, bead. The scene then survives grayscale, print and color-vision differences, and gains texture that means something.</p></div>
+  </div>
+  <div class="sig" id="inks">
+    <div class="prose">
+      <p class="label">The extended palette, as inks</p>
+      <p>Today's extended palette is thirteen hues at one lightness and full chroma, shared by both themes. Next to Newsreader on near-white paper they read as screen colors, and slate is a warm gray that sits off the site's neutral axis. The proposal is eleven inks named for pigments, each with its own light and dark value. Every ink clears 4.5:1 on the canvas and on panels in both themes, so any of them can set a label as well as mark data. Red leaves the set, because oxblood is the one red. Slate's jobs go to graphite, the site's own muted neutral.</p>
+    </div>
+    <figure class="fig">
+      <div class="tablewrap">
+        <table class="pal" aria-label="Current extended hues and the proposed inks, with contrast against the canvas and panel in each theme">
+          <thead><tr><th scope="col">Now</th><th scope="col">Ink</th><th scope="col" class="pal-l">Light · on canvas · on panel</th><th scope="col" class="pal-d">Dark · on canvas · on panel</th></tr></thead>
+          <tbody>
+        <tr><td class="pal-old"><i style="background:#6B79EA"></i>indigo</td><td class="pal-name">indigo</td>
+          <td class="pal-l"><i style="background:#586AB2"></i><span style="color:#586AB2">indigo</span><code>#586AB2</code><em>5.0 · 4.6</em></td>
+          <td class="pal-d"><i style="background:#7486CB"></i><span style="color:#7486CB">indigo</span><code>#7486CB</code><em>5.4 · 5.2</em></td></tr>
+        <tr><td class="pal-old"><i style="background:#0091C9"></i>blue</td><td class="pal-name">prussian</td>
+          <td class="pal-l"><i style="background:#3473A3"></i><span style="color:#3473A3">prussian</span><code>#3473A3</code><em>5.0 · 4.6</em></td>
+          <td class="pal-d"><i style="background:#548EBE"></i><span style="color:#548EBE">prussian</span><code>#548EBE</code><em>5.4 · 5.2</em></td></tr>
+        <tr><td class="pal-old"><i style="background:#009A9A"></i>cyan</td><td class="pal-name">verdigris</td>
+          <td class="pal-l"><i style="background:#2A7976"></i><span style="color:#2A7976">verdigris</span><code>#2A7976</code><em>5.0 · 4.6</em></td>
+          <td class="pal-d"><i style="background:#4A9593"></i><span style="color:#4A9593">verdigris</span><code>#4A9593</code><em>5.4 · 5.2</em></td></tr>
+        <tr><td class="pal-old"><i style="background:#009F68"></i>green</td><td class="pal-name">viridian</td>
+          <td class="pal-l"><i style="background:#317B55"></i><span style="color:#317B55">viridian</span><code>#317B55</code><em>5.0 · 4.6</em></td>
+          <td class="pal-d"><i style="background:#4F9770"></i><span style="color:#4F9770">viridian</span><code>#4F9770</code><em>5.4 · 5.2</em></td></tr>
+        <tr><td class="pal-old"><i style="background:#449D2E"></i>lime</td><td class="pal-name">sap</td>
+          <td class="pal-l"><i style="background:#5B7637"></i><span style="color:#5B7637">sap</span><code>#5B7637</code><em>5.0 · 4.6</em></td>
+          <td class="pal-d"><i style="background:#779252"></i><span style="color:#779252">sap</span><code>#779252</code><em>5.4 · 5.2</em></td></tr>
+        <tr><td class="pal-old"><i style="background:#998700"></i>yellow</td><td class="pal-name">ochre</td>
+          <td class="pal-l"><i style="background:#8B681B"></i><span style="color:#8B681B">ochre</span><code>#8B681B</code><em>5.0 · 4.6</em></td>
+          <td class="pal-d"><i style="background:#A8843C"></i><span style="color:#A8843C">ochre</span><code>#A8843C</code><em>5.4 · 5.2</em></td></tr>
+        <tr><td class="pal-old"><i style="background:#CA6800"></i>orange</td><td class="pal-name">sienna</td>
+          <td class="pal-l"><i style="background:#9F5D31"></i><span style="color:#9F5D31">sienna</span><code>#9F5D31</code><em>5.0 · 4.6</em></td>
+          <td class="pal-d"><i style="background:#BC7950"></i><span style="color:#BC7950">sienna</span><code>#BC7950</code><em>5.4 · 5.2</em></td></tr>
+        <tr><td class="pal-old"><i style="background:#B97500"></i>brown</td><td class="pal-name">umber</td>
+          <td class="pal-l"><i style="background:#7C6049"></i><span style="color:#7C6049">umber</span><code>#7C6049</code><em>5.6 · 5.2</em></td>
+          <td class="pal-d"><i style="background:#997D64"></i><span style="color:#997D64">umber</span><code>#997D64</code><em>4.9 · 4.7</em></td></tr>
+        <tr><td class="pal-old"><i style="background:#D35182"></i>rose</td><td class="pal-name">madder</td>
+          <td class="pal-l"><i style="background:#A65179"></i><span style="color:#A65179">madder</span><code>#A65179</code><em>5.0 · 4.7</em></td>
+          <td class="pal-d"><i style="background:#C07095"></i><span style="color:#C07095">madder</span><code>#C07095</code><em>5.4 · 5.2</em></td></tr>
+        <tr><td class="pal-old"><i style="background:#BD5AB6"></i>magenta</td><td class="pal-name">mulberry</td>
+          <td class="pal-l"><i style="background:#97588E"></i><span style="color:#97588E">mulberry</span><code>#97588E</code><em>5.0 · 4.6</em></td>
+          <td class="pal-d"><i style="background:#B275A9"></i><span style="color:#B275A9">mulberry</span><code>#B275A9</code><em>5.4 · 5.2</em></td></tr>
+        <tr><td class="pal-old"><i style="background:#9769DC"></i>purple</td><td class="pal-name">violet</td>
+          <td class="pal-l"><i style="background:#7D60A6"></i><span style="color:#7D60A6">violet</span><code>#7D60A6</code><em>5.0 · 4.6</em></td>
+          <td class="pal-d"><i style="background:#977DBF"></i><span style="color:#977DBF">violet</span><code>#977DBF</code><em>5.4 · 5.2</em></td></tr>
+        <tr><td class="pal-old"><i style="background:#DA534F"></i>red</td><td class="pal-name">the accent</td>
+          <td class="pal-l"><i style="background:#983432"></i><span style="color:#983432">oxblood</span><code>#983432</code><em>7.1 · 6.6</em></td>
+          <td class="pal-d"><i style="background:#DC5960"></i><span style="color:#DC5960">oxblood</span><code>#DC5960</code><em>5.1 · 4.9</em></td></tr>
+        <tr><td class="pal-old"><i style="background:#8A8580"></i>slate</td><td class="pal-name">graphite</td>
+          <td class="pal-l"><i style="background:#666463"></i><span style="color:#666463">graphite</span><code>#666463</code><em>5.7 · 5.3</em></td>
+          <td class="pal-d"><i style="background:#949392"></i><span style="color:#949392">graphite</span><code>#949392</code><em>6.1 · 5.9</em></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="bar"><p class="cap"><span class="n">Fig. 1</span>Each specimen is set on its own theme's canvas, whatever theme you're reading in. Contrast is WCAG 2 against the canvas, then the panel. The inks were fitted in OKLCH at chroma 0.05 to 0.12.</p></div>
+    </figure>
+  </div>
+  <style>
+    .pal { width: 100%; border-collapse: collapse; font-size: 15.5px; line-height: 1.3; font-variant-numeric: lining-nums tabular-nums; }
+    .pal th { text-align: left; font-weight: 400; font-style: italic; color: var(--muted); font-size: 14.5px; padding: 0 12px 8px; border-bottom: 1px solid var(--rule-strong); white-space: nowrap; }
+    .pal td { padding: 0 12px; height: 38px; border-bottom: 1px solid var(--rule); white-space: nowrap; }
+    .pal i { display: inline-block; width: 15px; height: 15px; vertical-align: -2px; margin-right: 9px; }
+    .pal-old { color: var(--muted); font-style: italic; }
+    .pal-old i { width: 11px; height: 11px; vertical-align: 0; }
+    .pal-name { color: var(--text); }
+    td.pal-l { background: #FCFCFB; } td.pal-d { background: #121111; }
+    th.pal-l, th.pal-d { padding-left: 14px; }
+    .pal td.pal-l, .pal td.pal-d { padding-left: 14px; }
+    .pal span { display: inline-block; min-width: 5.6em; }
+    .pal code { font-family: ui-monospace, 'SF Mono', Menlo, monospace; font-size: 12px; display: inline-block; min-width: 6.4em; }
+    td.pal-l code, td.pal-l em { color: #666463; } td.pal-d code, td.pal-d em { color: #949392; }
+    .pal em { font-size: 14px; }
+    td.pal-l { border-bottom-color: rgba(22,21,20,.12); } td.pal-d { border-bottom-color: rgba(236,235,234,.13); }
+  </style>
+</section>

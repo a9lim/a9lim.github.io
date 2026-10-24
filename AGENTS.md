@@ -13,6 +13,7 @@ Root site for **a9l.im**: a hand-written SPA, a content pipeline, a Cloudflare W
 - `worker/` — `index.js` (routing, SSR, SEO/JSON-LD), `http.js` (response policy), `surveys.js` (`POST /api/surveys`), `analytics.js` (Analytics Engine writes).
 - `static/` — copied as-is to the deploy root: `_headers`, fonts, icons, blog assets, `.well-known/security.txt` (its `Expires` date needs renewing yearly).
 - `features/surveys/` — data, scoring, local storage, and generator for the planned `/surveys/` page. The frontend isn't built, so nothing here is staged, and `tests/deploy-layout` rejects `surveys/` and `features/` in `dist/` until it ships. Its `AGENTS.md` covers what exists; `PLAN.md` covers the design and remaining work.
+- `docs/sim-overhaul/` — the ratified plan for rebuilding the four sims' visuals (`PLAN.md`) and its reference sketches. Not staged.
 - `db/migrations/` — D1 migrations for the `SURVEYS_DB` binding (`a9lim-surveys`).
 - `lib/wgsl/` — WGSL→JavaScript transpiler and runner, kept but not wired into anything (see `tests/wgsl-transpile/README.md`).
 - `tools/` — `stage-assets.mjs`, `build.mjs`, `subset-fonts.mjs`, `tex-to-post.mjs`, `pandoc.sh`, `og/` (social cards), `purge-cache.mjs`, `verify-deploy.mjs`.
