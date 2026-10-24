@@ -5,9 +5,9 @@ export function getTheme() {
 }
 
 export function initTheme($) {
-    _toolbar.initTheme('theme');
+    _colophon.initTheme('theme');
     $.themeToggle.addEventListener('click', () => {
-        _toolbar.toggleTheme('theme');
+        _colophon.toggleTheme('theme');
         if (typeof _haptics !== 'undefined') _haptics.trigger('light');
     });
 }

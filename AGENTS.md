@@ -80,11 +80,12 @@ Conversion order matters. `stashMath` hides every `$` span from text rewrites, s
 
 Check `shared/` before building project-specific UI infrastructure. Public URLs are `/shared/{name}.js` and `/shared/base.css`; the old flat `/shared-{name}` URLs are retired.
 
-- `tokens.js` runs synchronously, before CSS parses. It defines `_PALETTE`, `_FONT`, `_themePalette()`, `_loadTextFonts()`, and the color helpers, and each project's `colors.js` extends it (`_freezeTokens`, `_injectProjectVars`).
-- `base.css` holds the reset, layout and design tokens, HUD surfaces, controls, overlays, dropdowns, toasts, dependency reveals, and accessibility patterns.
-- `utils.js` (escaping, timing, math, toast/focus/canvas helpers); `toolbar.js`, `forms.js`, `dropdown.js`, `settings.js` (controls and wiring); `icons.js`, `tabs.js`, `camera.js`, `info.js`, `shortcuts.js`, `about.js`, `touch.js`, `tooltip.js`, `sparkline.js`, `haptics.js`.
+- `tokens.js` runs synchronously, before CSS parses. It defines `_PALETTE` (each theme with its `inks`), `_INKS`, `_FONT`, `_themePalette()`, `_loadTextFonts()`, and the color helpers, and each project's `colors.js` extends it (`_freezeTokens`, `_injectProjectVars`).
+- `base.css` holds the reset, layout and design tokens, the root navbar's tool buttons and segmented controls, the colophon and caption, overlays, the about panel, info tips, toasts, dependency reveals, and accessibility patterns.
+- `hud.css` is transitional: the floating HUD of the sims not yet moved to the colophon (sidebar and tabs, zoom stack, hint pill, toggles, sliders, dropdowns). A converted sim stops loading it; it is deleted with `toolbar.js` when the last sim converts (`docs/sim-overhaul/PLAN.md`).
+- `colophon.js` (the theme, the colophon's wiring, and the caption setter; the root site uses only the theme); `utils.js` (escaping, timing, math, toast/focus/canvas helpers); `toolbar.js` (transitional, see `hud.css`), `forms.js`, `dropdown.js`, `settings.js` (controls and wiring); `icons.js`, `tabs.js`, `camera.js`, `info.js`, `shortcuts.js`, `about.js`, `touch.js`, `tooltip.js`, `sparkline.js`, `haptics.js`.
 
-Apart from `tokens.js`, these are deferred plain scripts that publish globals on `window`, not ES modules. Their globals, class names (`.tab-btn`, `.tab-panel`, `.glass`, `.tool-btn`, `.about-*`, `.sim-dropdown`, `.panel-hint`, `.dep-reveal`, `.dep-hidden`), and data attributes are an API used by every project, so a change has to be checked across all of them.
+Apart from `tokens.js`, these are deferred plain scripts that publish globals on `window`, not ES modules. Their globals, class names (`.colophon*`, `.caption`, `.tab-btn`, `.tab-panel`, `.glass`, `.tool-btn`, `.about-*`, `.sim-dropdown`, `.panel-hint`, `.dep-reveal`, `.dep-hidden`), and data attributes are an API used by every project, so a change has to be checked across all of them.
 ## Worker and headers
 
 `worker/index.js` SSRs and injects SEO/JSON-LD for the SPA routes (`/sims`, `/projects`, `/blog/*`), redirects `/about` → `/`, `/resume` → `/resume.pdf`, and the renamed sims' old paths `/geon/*` → `/worldline/*` and `/cyano/*` → `/lumen/*` (308), returns secure 404s, and rejects methods other than GET/HEAD, with `POST /api/surveys` as the one exception. The survey endpoint accepts only same-origin, schema-valid JSON, rate-limits by an in-memory IP-derived key without storing IP or request metadata, and fails closed when D1 is unavailable.
@@ -115,7 +116,21 @@ Editorial and quiet: one serif typeface, a near-white neutral ground, a single o
 - The accent differs per theme. CSS reads `var(--accent)`, while canvas and WebGPU code reads `_themePalette().accent` on each theme change. There is no theme-independent accent.
 - Every text role clears 4.5:1 on every surface in both themes; the tightest pair is dark `accent` on `elevated` at 4.66:1.
 - The navbar seal is inline SVG in `currentColor`, so it follows the accent. Static copies (`static/logo.svg`, favicon, app icons, OG cards) use the light `#983432`.
-- `_PALETTE.extended` holds data hues for projects; `slate` is `#8A8580` so it sits on the neutral ground.
+- The inks are the data hues: eleven pigments, each paired per theme and clearing 4.5:1 on `canvas` and `panelSolid` in both, so any ink can set text. They live on each theme (`_PALETTE.light.inks`, `_themePalette().inks.ochre`) and in CSS as `--ink-{name}`. Red is not an ink: the accent is the one red. The neutral data hue, graphite, is `textMuted`. Inks differ per theme, so canvas and WebGPU code reads them on each theme change, like the accent. `docs/sim-overhaul/sketches/inks.py` fitted them (OKLCH chroma 0.05–0.12).
+
+| Ink | Light | Dark |
+|---|---|---|
+| `indigo` | `#586AB2` | `#7486CB` |
+| `prussian` | `#3473A3` | `#548EBE` |
+| `verdigris` | `#2A7976` | `#4A9593` |
+| `viridian` | `#317B55` | `#4F9770` |
+| `sap` | `#5B7637` | `#779252` |
+| `ochre` | `#8B681B` | `#A8843C` |
+| `sienna` | `#9F5D31` | `#BC7950` |
+| `umber` | `#7C6049` | `#997D64` |
+| `madder` | `#A65179` | `#C07095` |
+| `mulberry` | `#97588E` | `#B275A9` |
+| `violet` | `#7D60A6` | `#977DBF` |
 
 ### Type
 
@@ -123,7 +138,7 @@ Editorial and quiet: one serif typeface, a near-white neutral ground, a single o
 - **STIX Two** covers what Newsreader lacks: Text (roman and italic) for Greek, Cyrillic, super/subscripts, and combining marks, so σ̄ sets as one cluster; Math for operators, brackets, ♭ ♮ ♯, and arrows. `tools/subset-fonts.mjs` subsets both at build time into `unicode-range` slices (text, italic, math, arrows) that download only where used. `size-adjust` and the ascent/descent overrides match Newsreader's metrics, so fallback glyphs don't shift baselines. The math cut is declared for italic too, so operators never slant.
 - **Shippori Mincho** (400, 500) sets Japanese, subset to kana, CJK punctuation, fullwidth forms, and every kanji in the tracked text of `content/`, `site/`, `worker/`, and the projects. Every slice also carries a fixed core (kana, Greek, digit scripts, common operators and arrows), so a new label renders before a rebuild picks up its characters.
 - Stack: `'Newsreader', 'STIX Two Text', 'STIX Two Math', 'Shippori Mincho', 'Hiragino Mincho ProN', 'Yu Mincho', serif`. Tokens: `_FONT.text`/`--font-text`, `_FONT.code`/`--font-code` (system monospace, for code only), `_FONT.emoji`/`--font-emoji`.
-- Canvas drawing never triggers a webfont download. Canvas text therefore waits on `_loadTextFonts()`, which `shared/toolbar.js` starts on every `.sim-body` page, and a project that draws once redraws when it resolves. KaTeX uses its own fonts.
+- Canvas drawing never triggers a webfont download. Canvas text therefore waits on `_loadTextFonts()`, which `shared/colophon.js` starts on every `.sim-body` page, and a project that draws once redraws when it resolves. KaTeX uses its own fonts.
 - Project HUD sizes are `--font-sm`/`--font-base`/`--font-lg` (0.84/0.92/1.02rem). Numeric readouts use `font-variant-numeric: lining-nums tabular-nums`. Form controls inherit the font. Canvas text is at least 10px.
 
 | Root-site element | Size / leading | Notes |
@@ -142,12 +157,22 @@ Nothing is uppercase or letter-spaced. Japanese labels are upright, weight 500, 
 
 ### Treatments
 
-- Structure comes from 1px hairline rules, not cards. On the root site the only surfaces are inline chips and `kbd`, and radius is 0. Project HUDs keep `--radius: 2px`, solid `panelSolid` panels, and translucent `--bg-panel` overlays with `blur(8px)`. Project sidebars use `.sidebar-tabs` inside `.stats-header`.
+- Structure comes from 1px hairline rules, not cards. On the root site the only surfaces are inline chips and `kbd`, and radius is 0. Sims not yet converted keep the floating HUD (`hud.css`: `--radius: 2px`, solid `panelSolid` panels, translucent `--bg-panel` overlays with `blur(8px)`, `.sidebar-tabs` inside `.stats-header`); converted sims follow "Inside the scene" below.
 - Navbar: 76px tall with a bottom rule; seal and brand at left, links centered, tools at right. The active link is `accent` with a 1px underline.
 - Prose links are `accent` with a 1px underline at 40% accent, offset 0.2em. Navigation and metadata links have no underline.
 - Inline lists are separated by `·` (`・` in Japanese). Theorems have no surface: the head is weight 600 and the statement italic. Icons use 1.4px round strokes. The `~` in prediction values is raised 0.16em so it doesn't read as a minus.
 - Motion is limited to color and opacity transitions on the shared ease tokens. The site uses no hover transforms, entrance animations, gradient text, shimmer, glow, grain, shadows, or bounce easing. Focus outlines stay.
 - `.fade-in.visible` outranks a plain hover selector, so hover rules on those elements include `.visible`.
+
+### Inside the scene
+
+The sims share the paper and choose their own medium: "same paper, different inks" (`docs/sim-overhaul/PLAN.md`, ratified 2026-10-24). Every sim keeps the neutral ground in both themes, Newsreader for every word on the canvas too, the colophon (seal and name at the top left, with play, step, theme and help), a live italic figure caption under the scene, hairline structure in its controls (no cards, shadows or rounded panels), the inks, the keyboard grammar and the about panel. Each sim spends the one red on the thing you would point at: Worldline the selected body, its world line and light cone; Lumen the protons; Miasma the disease; Shoals losses and down moves. Its medium, renderer, control layout and signature view are its own.
+
+Three rules hold inside every scene:
+
+1. **Depict, don't decorate.** The ban on glow, grain, shimmer and flourish still holds for chrome. Inside a scene an effect ships only if it reads a quantity in the model (density is concentration, line weight is flux, bead spacing is proper time). An effect whose quantity can't be named doesn't ship.
+2. **Open on a living frame.** No splash screen and no empty state: each sim boots into its best preset, already running. Under reduced motion it opens on a still, complete frame.
+3. **Pattern before hue.** Where a scene encodes state, color comes paired with a pattern (stipple, hatching, dash, bead), so the scene survives grayscale and color-vision differences.
 
 ## Root-site details
 

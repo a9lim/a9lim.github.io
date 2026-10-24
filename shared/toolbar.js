@@ -1,18 +1,13 @@
 /* ═══════════════════════════════════════════════
-   shared/toolbar.js — Toolbar button utilities
-   Shared across all projects for consistent toolbar controls:
-   play/pause, speed, theme toggle, sidebar toggle.
+   shared/toolbar.js — Toolbar strip utilities of the pre-overhaul sims:
+   play/pause and speed buttons, the sidebar toggle. The theme forwards to
+   shared/colophon.js. Delete this file with shared/hud.css when the last
+   sim moves to the colophon (docs/sim-overhaul/PLAN.md).
    ═══════════════════════════════════════════════ */
 
 // eslint-disable-next-line no-unused-vars
 var _toolbar = (function () {
     'use strict';
-
-    // Simulation canvases draw Greek, operators and arrows that only the STIX
-    // Two fallback faces carry; start loading them before the first frame.
-    if (document.body && document.body.classList.contains('sim-body') && typeof _loadTextFonts === 'function') {
-        _loadTextFonts();
-    }
 
     // ── Play / Pause ──
     // Uses _ICON from shared/icons.js (must be loaded first).
@@ -38,68 +33,6 @@ var _toolbar = (function () {
         var label = btn.querySelector('.speed-label');
         if (label) label.textContent = speed + 'x';
         btn.title = 'Speed: ' + speed + 'x';
-    }
-
-    // ── Theme ──
-
-    /** Update <meta name="theme-color"> to match the current theme canvas color.
-     *  Creates the tag if missing. Safari/iOS uses this for the status bar tint. */
-    function _syncThemeColor() {
-        var theme = document.documentElement.dataset.theme || 'light';
-        var color = (typeof _PALETTE !== 'undefined' && _PALETTE[theme])
-            ? _PALETTE[theme].canvas
-            : (theme === 'dark' ? '#121111' : '#FCFCFB');
-        var meta = document.querySelector('meta[name="theme-color"]');
-        if (!meta) {
-            meta = document.createElement('meta');
-            meta.name = 'theme-color';
-            document.head.appendChild(meta);
-        }
-        meta.content = color;
-    }
-
-    /**
-     * Read saved theme or system preference and set data-theme on <html>.
-     * Wires a system-preference change listener (only fires when no explicit save).
-     * @param {string} [storageKey] - localStorage key for persistence. Omit to skip persistence.
-     * @param {function} [onChange] - Called with the new theme string after any automatic change.
-     */
-    function initTheme(storageKey, onChange) {
-        var saved = null;
-        if (storageKey) {
-            try { saved = localStorage.getItem(storageKey); } catch (e) { /* ignore */ }
-        }
-        if (saved === 'dark' || saved === 'light') {
-            document.documentElement.dataset.theme = saved;
-        } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
-            document.documentElement.dataset.theme = 'dark';
-        }
-        _syncThemeColor();
-        // Follow system preference when user hasn't made an explicit choice
-        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function (e) {
-            if (storageKey) {
-                try { if (localStorage.getItem(storageKey)) return; } catch (ex) { /* ignore */ }
-            }
-            document.documentElement.dataset.theme = e.matches ? 'dark' : 'light';
-            _syncThemeColor();
-            if (onChange) onChange(document.documentElement.dataset.theme);
-        });
-    }
-
-    /**
-     * Toggle data-theme between light/dark and persist if storageKey given.
-     * @param {string} [storageKey] - localStorage key for persistence.
-     * @returns {string} The new theme ('light' or 'dark').
-     */
-    function toggleTheme(storageKey) {
-        var html = document.documentElement;
-        var next = html.dataset.theme === 'dark' ? 'light' : 'dark';
-        html.dataset.theme = next;
-        if (storageKey) {
-            try { localStorage.setItem(storageKey, next); } catch (e) { /* ignore */ }
-        }
-        _syncThemeColor();
-        return next;
     }
 
     // ── Sidebar ──
@@ -201,8 +134,9 @@ var _toolbar = (function () {
     return {
         updatePlayBtn: updatePlayBtn,
         updateSpeedBtn: updateSpeedBtn,
-        initTheme: initTheme,
-        toggleTheme: toggleTheme,
+        // The theme lives in shared/colophon.js, which loads first.
+        initTheme: _colophon.initTheme,
+        toggleTheme: _colophon.toggleTheme,
         toggleSidebar: toggleSidebar,
         closeSidebar: closeSidebar,
         initSidebar: initSidebar

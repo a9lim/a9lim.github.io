@@ -112,19 +112,39 @@ const _FONT = {
 // neither blue-white nor beige. The accent is per theme: oxblood on the light
 // ground, a lighter red on the dark one. Every text role clears 4.5:1 on every
 // surface in both themes (lowest: dark accent on elevated, 4.66:1).
-// Extended chromatic colors stay locked to OKLCH L=0.62 for perceptual uniformity.
-const _PALETTE = {
-  secondary:      '#488ACB',  // oklch(0.62  0.12  250)  — data/status
-  secondaryLight: '#73A9E1',  // oklch(0.72  0.10  250)
+//
+// The inks are the data hues: eleven pigments fitted in OKLCH at chroma
+// 0.05–0.12, each paired per theme so it clears 4.5:1 on canvas and panel in
+// both, and any ink can set text (docs/sim-overhaul/sketches/inks.py). Red is
+// not an ink: the accent is the one red. Graphite, the neutral data hue, is
+// textMuted. Inks differ per theme, so canvas and WebGPU code reads them from
+// _themePalette() on every theme change, as it reads the accent.
+const _INKS = {
+  //            light      dark
+  indigo:    ['#586AB2', '#7486CB'],
+  prussian:  ['#3473A3', '#548EBE'],
+  verdigris: ['#2A7976', '#4A9593'],
+  viridian:  ['#317B55', '#4F9770'],
+  sap:       ['#5B7637', '#779252'],
+  ochre:     ['#8B681B', '#A8843C'],
+  sienna:    ['#9F5D31', '#BC7950'],
+  umber:     ['#7C6049', '#997D64'],
+  madder:    ['#A65179', '#C07095'],
+  mulberry:  ['#97588E', '#B275A9'],
+  violet:    ['#7D60A6', '#977DBF'],
+};
+const _inksFor = (i) => Object.fromEntries(Object.entries(_INKS).map(([k, v]) => [k, v[i]]));
 
+const _PALETTE = {
   light: {
     canvas:        '#FCFCFB',  // L 0.991 — page ground
     panelSolid:    '#F4F3F2',  // L 0.965 — inset blocks, chips, solid HUD panels
     elevated:      '#FFFFFF',  // L 1.000 — the rare raised surface
     text:          '#161514',  // L 0.196
     textSecondary: '#42413F',  // L 0.376
-    textMuted:     '#666463',  // L 0.505
+    textMuted:     '#666463',  // L 0.505 — also graphite, the neutral data hue
     accent:        '#983432',  // oklch(0.470 0.135 25) — oxblood
+    inks:          _inksFor(0),
   },
 
   dark: {
@@ -135,24 +155,7 @@ const _PALETTE = {
     textSecondary: '#BEBDBC',  // L 0.799
     textMuted:     '#949392',  // L 0.664
     accent:        '#DC5960',  // oklch(0.635 0.164 20)
-  },
-
-  // Cross-project semantic colors — OKLCH L=0.62, C=0.17 uniform
-  // (gamut-capped to sRGB ceiling where needed)
-  extended: {
-    blue:    '#0091C9',  // oklch(0.62 0.132 235)  — gamut max
-    green:   '#009F68',  // oklch(0.62 0.140 160)  — gamut max
-    slate:   '#8A8580',  // oklch(0.62 0.010  75)  — intentionally muted, neutral
-    orange:  '#CA6800',  // oklch(0.62 0.154  55)  — gamut max
-    rose:    '#D35182',  // oklch(0.62 0.170   0)
-    purple:  '#9769DC',  // oklch(0.62 0.170 300)
-    brown:   '#B97500',  // oklch(0.62 0.134  70)  — gamut max
-    red:     '#DA534F',  // oklch(0.62 0.170  25)
-    cyan:    '#009A9A',  // oklch(0.62 0.106 195)  — gamut max
-    yellow:  '#998700',  // oklch(0.62 0.129 100)  — gamut max
-    magenta: '#BD5AB6',  // oklch(0.62 0.170 330)
-    lime:    '#449D2E',  // oklch(0.62 0.170 140)
-    indigo:  '#6B79EA',  // oklch(0.62 0.170 275)
+    inks:          _inksFor(1),
   },
 };
 
@@ -160,7 +163,7 @@ const _PALETTE = {
  * Load every face canvas text can draw with: Newsreader roman and italic and
  * the STIX Two fallback slices. Canvas drawing never starts a webfont download
  * by itself, so a project waits on this before measuring or redrawing text;
- * shared/toolbar.js starts it on every .sim-body page. Memoized; resolves
+ * shared/colophon.js starts it on every .sim-body page. Memoized; resolves
  * (never rejects) once the faces have loaded or failed.
  * @returns {Promise<void>}
  */
@@ -219,6 +222,8 @@ const _themePalette = () =>
     return `  --${name}: ${a != null ? _r(T[key], a) : T[key]};`;
   }).join('\n');
 
+  const genInks = (T) => Object.entries(T.inks).map(([k, v]) => `  --ink-${k}: ${v};`).join('\n');
+
   const style = document.createElement('style');
   style.id = 'palette-vars';
   style.textContent = `:root {
@@ -228,34 +233,20 @@ const _themePalette = () =>
 
 ${gen(L, false)}
 
-  --secondary:      ${P.secondary};
   --text-on-accent: ${L.elevated};
-
-  --ext-blue:         ${P.extended.blue};
-  --ext-green:        ${P.extended.green};
-  --ext-slate:        ${P.extended.slate};
-  --ext-orange:       ${P.extended.orange};
-  --ext-rose:         ${P.extended.rose};
-  --ext-purple:       ${P.extended.purple};
-  --ext-brown:        ${P.extended.brown};
-  --ext-red:          ${P.extended.red};
-  --ext-cyan:         ${P.extended.cyan};
-  --ext-yellow:       ${P.extended.yellow};
-  --ext-magenta:      ${P.extended.magenta};
-  --ext-lime:         ${P.extended.lime};
-  --ext-indigo:       ${P.extended.indigo};
+${genInks(L)}
   color-scheme: light;
 }
 [data-theme="dark"] {
 ${gen(D, true)}
 
   --text-on-accent: ${D.elevated};
+${genInks(D)}
   color-scheme: dark;
 }`;
   document.head.appendChild(style);
 
-  // Theme-color <meta> is set by shared/toolbar.js _syncThemeColor() on theme init/toggle.
-  // No duplicate here — toolbar owns theme-color lifecycle.
+  // Theme-color <meta> is set by shared/colophon.js syncThemeColor() on theme init/toggle.
 })();
 
 /**
@@ -290,15 +281,17 @@ window._darken = _darken;
 window._oklch2hex = _oklch2hex;
 window._FONT = _FONT;
 window._PALETTE = _PALETTE;
+window._INKS = _INKS;
 window._themePalette = _themePalette;
 window._loadTextFonts = _loadTextFonts;
 
 /**
- * Freeze _PALETTE (extended, light, dark) and _FONT.
+ * Freeze _PALETTE (light, dark, their inks) and _FONT.
  * Called by each project's colors.js after extending with project-specific keys.
  */
 function _freezeTokens() {
-  Object.freeze(_PALETTE.extended);
+  Object.freeze(_PALETTE.light.inks);
+  Object.freeze(_PALETTE.dark.inks);
   Object.freeze(_PALETTE.light);
   Object.freeze(_PALETTE.dark);
   Object.freeze(_FONT);
