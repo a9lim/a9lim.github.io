@@ -457,6 +457,15 @@ for (const doc of simDocs) {
   html = html.replace(/("description"\s*:\s*)"[^"]*"/, `$1${JSON.stringify(doc.meta.description)}`);
   if (!/"dateModified"\s*:\s*"[^"]*"/.test(html)) throw new Error(`${indexRel}: missing JSON-LD dateModified`);
   html = html.replace(/("dateModified"\s*:\s*)"[^"]*"/, `$1${JSON.stringify(doc.meta.updated)}`);
+  // A major sim's social card is the one its page names, with its own revision (a redrawn
+  // card bumps its ?v=), and the sitemap lists that same URL
+  if (doc.project.major === true) {
+    const ogImage = html.match(/<meta property="og:image" content="([^"]+)">/)?.[1] ?? '';
+    if (!ogImage.startsWith(`${SITE}/${slug}/og-image.webp?v=`)) {
+      throw new Error(`${indexRel}: og:image must be ${SITE}/${slug}/og-image.webp?v=…`);
+    }
+    doc.ogImage = ogImage.slice(SITE.length + 1);
+  }
   emit(indexRel, html);
 
   const uiCandidates = [`${slug}/main.js`, `${slug}/src/ui.js`]
@@ -1070,16 +1079,15 @@ const urls = [];
 const simPath = doc => new URL(projectUrl(doc.project)).pathname;
 
 // Every route has a social image, but only major simulations own a bespoke
-// card. Smaller simulations deliberately share the root card.
+// card, at the revision its page names. Smaller simulations deliberately share
+// the root card.
 const OG_REVISION = '20261023';
 const ROOT_OG_IMAGE = `og-image.webp?v=${OG_REVISION}`;
 const IMAGE_MAP = { '/': [ROOT_OG_IMAGE] };
 const IMAGE_CAPTIONS = { '/': site.discoveryDescription };
 for (const doc of simDocs) {
   const hasBespokeCard = doc.project.major === true;
-  IMAGE_MAP[simPath(doc)] = [
-    hasBespokeCard ? `${doc.project.slug}/og-image.webp?v=${OG_REVISION}` : ROOT_OG_IMAGE,
-  ];
+  IMAGE_MAP[simPath(doc)] = [hasBespokeCard ? doc.ogImage : ROOT_OG_IMAGE];
   IMAGE_CAPTIONS[simPath(doc)] = hasBespokeCard ? doc.meta.description : site.discoveryDescription;
 }
 
