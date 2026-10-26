@@ -193,8 +193,10 @@ for (const p of PROJECTS.filter(p => !p.external && !p.planned)) {
     .map(rel => join(DIST, slug, rel)).filter(existsSync);
   check(`${p.title} about panel date is current`, uiFiles.some(rel => readFileSync(rel, 'utf8').includes(`lastUpdated: '${meta.updated}'`)));
 
+  // A bespoke card redrawn after the shared revision carries its own (Worldline's 2.0 card)
+  const cardRevision = { worldline: '20261024' }[slug] ?? '20261023';
   const expectedImage = p.major
-    ? `https://a9l.im/${slug}/og-image.webp?v=20261023`
+    ? `https://a9l.im/${slug}/og-image.webp?v=${cardRevision}`
     : 'https://a9l.im/og-image.webp?v=20261023';
   const ogImage = index.match(/<meta property="og:image" content="([^"]+)">/)?.[1];
   const twitterImage = index.match(/<meta name="twitter:image" content="([^"]+)">/)?.[1];
