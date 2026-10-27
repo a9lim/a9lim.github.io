@@ -173,6 +173,8 @@ Three rules hold inside every scene:
 2. **Open on a living frame.** No splash screen and no empty state: each sim boots into its best preset, already running. Under reduced motion it opens on a still, complete frame.
 3. **Pattern before hue.** Where a scene encodes state, color comes paired with a pattern (stipple, hatching, dash, bead), so the scene survives grayscale and color-vision differences.
 
+**Show, don't tell.** A sim's interface names things and reads out values; it doesn't explain them. Labels, units, live values and glyph keys stay on the surface. What a mark means, how a control works and why the model behaves as it does belong in the about panel, or in an info tip where a concept can't be inferred, never in captions, ledes, hints or empty states. The figure caption is the view's name and its live values, in a line. Readouts are label–value pairs, not sentences. Prefer a symbol, a key or the drawing itself to a sentence, and an affordance (cursor, hover, a dotted value) to an instruction. Nothing on screen repeats what another element already shows.
+
 ## Root-site details
 
 - `site/main.js` builds a DOM cache and passes it to the `init*` functions. `site/src/home.js` hydrates `home-data.json`, and `site/src/router.js` handles routes and `aria-current`.

@@ -23,7 +23,7 @@ Shared by all four:
 - The site's neutral ground in both themes.
 - Newsreader for every word, in the chrome and on the canvas.
 - The colophon: seal and name at the top left, the same size and place in every sim. It replaces the toolbar strip.
-- A live figure caption under the scene, in italic, saying what you are looking at with its current values. It replaces the hint pill.
+- A live figure caption under the scene, in italic: the view's name and its current values, in a line, with no explanation or instructions (amended 2026-10-27, "Show, don't tell" in the root AGENTS.md). It replaces the hint pill.
 - Hairline structure in the controls: no cards, shadows or rounded panels.
 - One set of inks for data (below).
 - One red per sim, spent on the thing you would point at. Worldline: the selected body, its world line and light cone. Lumen: protons. Miasma: the disease, so painted interventions move from red to ink. Shoals: losses and down moves.
@@ -124,7 +124,7 @@ The bubble-chamber plate from the first draft is dropped: Worldline's bodies, bo
 
 - **Medium.** The interface becomes *The Meridian Brief*, the firm's own morning note, which the event files already quote. Each sim day is an edition, and an extra edition marks a regime change or crisis. Prices are set like newspaper agate tables. Event popups arrive as dispatches, and the epilogue is the last edition. The candles are redrawn in Tufte's manner: the close as a line over a band of the day's range, with news days marked.
 - **Markets page.** Every market is a curve, drawn identically as small multiples: the HCN path, the Vasicek yield curve, the VXHCN futures term structure, the option smile, the Cambria compute forward curve, and the Consensus implied crossing curves for R2–R5. Each says in one line what it prices. News moves them together through the real coupled model and leaves a ghost of the prior curves.
-- **Sandbox.** Clicking a point on any curve adds that contract (click again for short, again to remove). An agate book lists the legs. A scenario grid prices the book over HCN moves at horizon against how far the race gets, from the red (losses) through the paper to viridian (gains), with one plain sentence on what the book is betting on. It needs a keyboard path to add legs; the sketch has none.
+- **Sandbox.** Clicking a point on any curve adds that contract (click again for short, again to remove). An agate book lists the legs. A scenario grid prices the book over HCN moves at horizon against how far the race gets, from the red (losses) through the paper to viridian (gains). (The plain sentence on what the book is betting on was cut on 2026-10-27: the grid shows it.) It needs a keyboard path to add legs; the sketch has none.
 - **Race page.** Modeled on the Epoch Capabilities Index (https://epoch.ai/eci): one capability scale with every public release placed by date. Here the scale is Shoals' rung ladder R1–R5. It shows releases per lab, filled certifications, hollow unadjudicated claims, and the released frontier. On each rung still ahead, Consensus's implied crossing date is drawn as a distribution. The self-graded Fixedpoint Index sits apart, labeled unlisted. The epilogue reveals the hidden internal tracks. The quote path must never read hidden state; that rule is in `src/race/consensus.js`.
 - **Build.** Mostly DOM and Canvas 2D; the volatility surface is a small mesh. The market and event engines are untouched. Reference: `sketches/sk-shoals.js` (the Brief, `sh_Markets` and `sh_Race`).
 
