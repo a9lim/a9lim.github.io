@@ -132,18 +132,18 @@ Independent interpretability and alignment researcher, and open-source developer
 
 \section*{Research}
 
+\entry{Neuron Lens}{https://drowse.ai/neuron-lens}{A new technique to interpret neurons and attention heads}{Python, PyTorch}{Oct 2026 – Present}
+\begin{itemize}
+  \item Developed variants of R-lens (S-lens, mid-layer reads) to better read activations in early layers.
+  \item Directly applied lenses to attention heads and neurons to examine inputs and outputs.
+  \item Cross-referenced reads against qualitative interpretation of steering and activations to estimate reliability.
+\end{itemize}
+
 \entry{Introspection via Kaomoji}{https://a9l.im/blog/introspection-via-kaomoji}{Study on legibility of emotional representation in LLMs}{Python, HF Transformers}{Apr 2026 – Jun 2026}
 \begin{itemize}
   \item Investigated correspondence between kaomoji used by LLMs and functional emotional states.
   \item Found that the kaomoji could predict the emotional content of the prompt with 80.6\% accuracy on Gemma-4-31b-it.
   \item Aligned hidden states across model families to analyze shared geometry.
-\end{itemize}
-
-\entry{Elapsed-Time Encoding in LLMs}{https://github.com/a9lim/time-experiment}{Ongoing study on representations of elapsed time within LLMs}{Python, HF Transformers}{Jun 2026 – Present}
-\begin{itemize}
-  \item Used linear probes to investigate the representation of elapsed time within LLMs over a conversation without timestamps.
-  \item Showed elapsed time is tracked within LLMs and linearly proportional to context length using probes.
-  \item Replicated findings of Discrete Minds in a Continuous World (Wang et al.).
 \end{itemize}
 
 \entry{Training Evidential Cooperation}{https://github.com/a9lim/twin-credit-experiment}{Ongoing study on how training interacts with decision theory}{Python, PyTorch}{Oct 2026 – Present}
@@ -162,7 +162,7 @@ Independent interpretability and alignment researcher, and open-source developer
   \item Code and scaling laws available upon request due to capability uplift concerns
 \end{itemize}
 
-\entry{Drowse}{https://github.com/a9lim/drowse}{Mechanistic interpretability workbench}{Python, HF Transformers, PyTorch}{Apr 2026 – Present}
+\entry{Drowse}{https://drowse.ai}{Mechanistic interpretability workbench}{Python, HF Transformers, PyTorch}{Apr 2026 – Present}
 \begin{itemize}
   \item Built a local interpretability workbench compatible with most open-weight LLMs and both CUDA and MPS.
   \item Implemented curved manifold extraction from sets of concepts and Jacobian lens readouts and steering.

@@ -1,6 +1,6 @@
 ---
 title: Drowse
-href: https://github.com/stdlogits/drowse
+href: https://drowse.ai
 order: 10
 major: true
 external: true
