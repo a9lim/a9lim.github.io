@@ -1,13 +1,13 @@
 ---
 title: Drowse
-href: https://github.com/a9lim/drowse
+href: https://github.com/stdlogits/drowse
 order: 10
 major: true
 external: true
 emoji: 💤
 seoName: Drowse — Activation Steering for HuggingFace Transformers
 packages:
-  - PyPI | saklas | https://pypi.org/project/saklas/ | pip install saklas
+  - PyPI | drowse.ai | https://pypi.org/project/drowse.ai/ | pip install drowse.ai
 tags:
   - python
   - llm
