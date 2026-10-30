@@ -1,6 +1,6 @@
 ---
 title: Neuron Lens
-href: https://drowse.ai/neuron-lens
+href: https://neuron-lens.com
 order: 0
 major: true
 external: true
