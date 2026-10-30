@@ -10,4 +10,4 @@ tags:
   - llm
   - interpretability
 ---
-A database that lets you explore every single neuron and attention head in Qwen 3 8B, with activations, R-lens, and S-lens readouts.
+A database that lets you explore every single neuron and attention head in Qwen 3 8B and Gemma 4 12B, with activations, R-lens, and S-lens readouts.
