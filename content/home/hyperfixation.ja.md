@@ -1,7 +1,7 @@
 ---
 label: 今月のテーマ
-title: OpenAI のインシデント
-link: https://metr.org/blog/2026-08-26-openai-hugging-face-incident-investigation/
+title: ニューラルネットワークはすでにクリーン
+link: https://already-clean.goodfire.com/
 linkLabel: ブログ記事
 ---
-なんてこった。
+この記事が出た当初はかなり懐疑的だったが、自分で調べてみると、多義性は言われていたよりずっと小さな問題であるように本当に思える。今では、野心的な解釈可能性の実現可能性について、慎重ながらも楽観的になっている。
