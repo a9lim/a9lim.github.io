@@ -16,8 +16,8 @@ const POINTS = HORIZON.points;
 // Each y view has its own series (a model's reported value where it has one,
 // converted otherwise), its own fits, and its own bands, all in its own units.
 const Y = {
-    hours: { dom: [-12, 21.5], fmt: (y) => hours(2 ** y), ticks: () => HOUR_TICKS.map((h, i) => [Math.log2(h), u().ticks[i]]) },
-    aeci:  { dom: [85, 245], fmt: (y) => `AECI ${y.toFixed(0)}`, ticks: () => AECI_TICKS.map((a) => [a, String(a)]) },
+    hours: { dom: [-12, 21.5], ticks: () => HOUR_TICKS.map((h, i) => [Math.log2(h), u().ticks[i]]) },
+    aeci:  { dom: [85, 245], ticks: () => AECI_TICKS.map((a) => [a, String(a)]) },
 };
 const AECI_TICKS = [100, 120, 140, 160, 180, 200, 220, 240];
 // Weeks and years of work time (40 h, 2,000 h), the unit METR's horizons are in.
@@ -134,6 +134,31 @@ function reading(view, i) {
         return `${pre}AECI ${v.toFixed(d)}${lo == null ? '' : ` (95%: ${lo.toFixed(d)}–${hi.toFixed(d)})`}`;
     }
     return `${pre}${hours(2 ** v)}${lo == null ? '' : ` (95%: ${hours(2 ** lo)} – ${hours(2 ** hi)})`}`;
+}
+
+// A fit's 95% band at time t, interpolated on the view's band grid; Infinity
+// where the band runs past a bootstrap replicate's singularity.
+function bandAt(view, name, t) {
+    const band = HORIZON.views[view].band, grid = band.t;
+    if (!(t > grid[0] && t < grid[grid.length - 1])) return null;
+    let lo = 0, hi = grid.length - 1;
+    while (hi - lo > 1) { const mid = (lo + hi) >> 1; if (grid[mid] <= t) lo = mid; else hi = mid; }
+    const f = grid[hi] > grid[lo] ? (t - grid[lo]) / (grid[hi] - grid[lo]) : 0;
+    const at = (k) => {
+        const a = band[name][lo][k], b = band[name][hi][k];
+        return a == null || b == null ? Infinity : a + (b - a) * f;
+    };
+    return [at(0), at(1)];
+}
+
+// "hyperbolic AECI 193 (95%: 186–205)", "double exponential 1,924 h (95%: 980 h – 3,900 h)"
+function fitReading(view, y, band) {
+    const v = !Number.isFinite(y) ? '∞' : view === 'aeci' ? `AECI ${y.toFixed(0)}` : hours(2 ** y);
+    if (!band || !Number.isFinite(band[0])) return v;
+    const ci = view === 'aeci'
+        ? `${band[0].toFixed(0)}–${Number.isFinite(band[1]) ? band[1].toFixed(0) : '∞'}`
+        : `${hours(2 ** band[0])} – ${hours(2 ** band[1])}`;
+    return `${v} (95%: ${ci})`;
 }
 
 export function initHorizon() {
@@ -319,10 +344,8 @@ export function initHorizon() {
             if (Number.isFinite(y)) {
                 const py = geo.yOf(y);
                 if (py >= geo.m.t && py <= geo.m.t + geo.ph) node('circle', { class: cls, cx: x, cy: py, r: 3.2 }, layer);
-                parts.push(`${copy(key)} ${Y[state.y].fmt(y)}`);
-            } else {
-                parts.push(`${copy(key)} ∞`);
             }
+            parts.push(`${copy(key)} ${fitReading(state.y, y, bandAt(state.y, name, t))}`);
         }
         cap.textContent = parts.join(f.sep);
     }
