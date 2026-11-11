@@ -1397,6 +1397,7 @@ a.contact-social:hover { color: var(--accent); }
 .hz-hyp { stroke: var(--accent); }
 .hz-dexp { stroke: var(--ink-prussian); stroke-dasharray: 6 4; }
 
+.hz-sing-band { fill: var(--accent); fill-opacity: 0.05; }
 .hz-band-hyp { fill: var(--accent); fill-opacity: 0.11; }
 .hz-band-dexp { fill: var(--ink-prussian); fill-opacity: 0.11; }
 .hz-bar { stroke: var(--text-muted); stroke-width: 1; }

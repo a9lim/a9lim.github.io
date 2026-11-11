@@ -266,6 +266,12 @@ export function initHorizon() {
         node('rect', { x: m.l, y: m.t, width: pw, height: ph }, node('clipPath', { id: clip }, node('defs', {}, svg)));
         const g = node('g', { 'clip-path': `url(#${clip})` }, svg);
 
+        // the singularity's 95% interval, behind everything (date axis only)
+        if (state.x === 'lin') {
+            const x0 = xOf(V.hyperbolic.low), x1 = Math.min(xOf(V.hyperbolic.high), m.l + pw);
+            node('rect', { class: 'hz-sing-band', x: x0, y: m.t, width: Math.max(0, x1 - x0), height: ph }, g);
+        }
+
         // bands: 95% of the bootstrap curves; null means past the replicate's singularity
         for (const name of ['dexp', 'hyp']) {
             const lower = [], upper = [];
