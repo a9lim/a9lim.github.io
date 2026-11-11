@@ -93,9 +93,10 @@ function node(tag, attrs, parent, text) {
 }
 
 // /#fits lands on the figure, but the cards above it fill in after load and
-// push it down. Scroll to it now, again once the cards and fonts are in, and
-// on any later layout change while visible, until the visitor scrolls or the
-// page has been still for a moment.
+// push it down, and so do fonts that load late (Japanese text starts its font
+// only once the hydrated cards render it). Scroll to it now, again once the
+// cards are in, after every font load, and on any layout change, until the
+// visitor scrolls or the page has been still for five seconds.
 function pinIntoView(el) {
     if (!el) return;
     const events = ['wheel', 'touchstart', 'keydown', 'pointerdown'];
@@ -105,16 +106,18 @@ function pinIntoView(el) {
         done = true;
         clearTimeout(timer);
         ro.disconnect();
+        if (document.fonts) document.fonts.removeEventListener('loadingdone', go);
         for (const e of events) window.removeEventListener(e, stop, opts);
     };
     const go = () => {
         if (done) return;
         el.scrollIntoView({ block: 'start', behavior: 'instant' });
         clearTimeout(timer);
-        if (document.visibilityState === 'visible') timer = setTimeout(stop, 1500);
+        if (document.visibilityState === 'visible') timer = setTimeout(stop, 5000);
     };
     const ro = new ResizeObserver(go);
     for (const e of events) window.addEventListener(e, stop, opts);
+    if (document.fonts) document.fonts.addEventListener('loadingdone', go);
     ro.observe(el.closest('.home-wrap') || document.body);
     go();
     Promise.all([homeReady, document.fonts ? document.fonts.ready : null]).then(go);
