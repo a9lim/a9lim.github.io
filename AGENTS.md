@@ -16,7 +16,7 @@ Root site for **a9l.im**: a hand-written SPA, a content pipeline, a Cloudflare W
 - `docs/sim-overhaul/` — the ratified plan for rebuilding the four sims' visuals (`PLAN.md`) and its reference sketches. Not staged.
 - `db/migrations/` — D1 migrations for the `SURVEYS_DB` binding (`a9lim-surveys`).
 - `lib/wgsl/` — WGSL→JavaScript transpiler and runner, kept but not wired into anything (see `tests/wgsl-transpile/README.md`).
-- `tools/` — `stage-assets.mjs`, `build.mjs`, `subset-fonts.mjs`, `tex-to-post.mjs`, `pandoc.sh`, `og/` (social cards), `purge-cache.mjs`, `verify-deploy.mjs`.
+- `tools/` — `stage-assets.mjs`, `build.mjs`, `horizon-fit.mjs`, `subset-fonts.mjs`, `tex-to-post.mjs`, `pandoc.sh`, `og/` (social cards), `purge-cache.mjs`, `verify-deploy.mjs`.
 - `tests/` — `content-pipeline/`, `deploy-layout/`, `wgsl-transpile/`.
 - `dist/` and `.build/` — ignored, fully regenerated build output.
 
@@ -49,13 +49,14 @@ Deployment is manual; Cloudflare Workers Builds is disabled. `./deploy.sh` clear
 - **Posts** (`content/posts/{slug}.md`): `title`, `date`, optional `updated`, `tag`, `excerpt`, `authors` (list), and `links` (`- label | href`, site-absolute or https, validated). Authors and links render as a byline opposite the date line. `paper: {name}` makes the body come from `papers/ogdoad/writeups/{name}.tex` (see Papers).
 - **Projects** (`content/projects/{slug}.md`): card and registry metadata (`title`, `href`, `kind`, `order`, optional `major`/`planned`/`external`, `emoji`, `seoName`, `seoUrl`, `tags`, optional `packages` entries `Registry | name | URL | install`).
 - **Home** (`content/home/*.md`): homepage cards; `site.md` holds route and head metadata.
+- **Horizons** (`content/home/horizons.md`): the time-horizon figure at the foot of the home page (`/#fits`, drawn by `site/src/horizon.js`). Frontmatter holds its copy; the body holds the source note, the record series table, and a calibration-only table, each row a date plus a METR horizon and/or an AECI score with 95% intervals. `tools/horizon-fit.mjs` fits everything at build time with a seeded bootstrap: the AECI–horizon map, a hyperbola and a double exponential in each y view, the bands, and the singularity interval. Editing the table refits; no fit numbers are kept by hand.
 - **Résumé**: `content/resume/` (TeX, fonts, `build.sh`) → `/resume.pdf`.
 
 **Tags.** Post `tag` and project `tags` drive the `?tag=` filter. Each tag's URL slug comes from the English label, so a filtered link survives a language switch, and Japanese labels are matched by position: a `.ja.md` list must have the same length and order (`checkTagPair` enforces this). Project entries carry 2–4 tags from a deliberately small vocabulary, about a dozen per grid and drawn from subject and language rather than rendering tech, so the filter chips stay one usable row. Reuse an existing tag before minting a near-synonym.
 
 **Project docs.** Each registered project's `about.md` carries `name` (must equal its registry `title`), `title`, `description`, and `updated` (YYYY-MM-DD), plus the long-form documentation shown in its about panel. The build writes these into the staged copies of the project's `index.html` (title, meta and social tags, JSON-LD `description` and `dateModified`), its one UI source containing `lastUpdated` (`main.js` or `src/ui.js`), and `i18n/strings.js` where one exists. To date a material behavior change, bump `updated` in `about.md`. Project source is never modified by the build.
 
-**Outputs.** `posts.json`, `src/projects.js`, `src/route-meta.js`, the generated regions of `index.html` and `i18n.js`, `home-data.json`, `README.md` (with the project table), feeds, sitemaps, `llms.txt`/`llms-full.txt`/`about.md`, font subsets, `resume.pdf`, synchronized project HTML/UI copies, and `.build/content.generated.mjs`.
+**Outputs.** `posts.json`, `src/projects.js`, `src/route-meta.js`, `src/horizon-data.js`, the generated regions of `index.html` and `i18n.js`, `home-data.json`, `README.md` (with the project table), feeds, sitemaps, `llms.txt`/`llms-full.txt`/`about.md`, font subsets, `resume.pdf`, synchronized project HTML/UI copies, and `.build/content.generated.mjs`.
 
 **Drafts.** `draft/` mirrors `content/` and is read only when `DRAFTS=1`, which `./dev.sh` and `npm run dev` set. `./deploy.sh`, `npm run check`, and `npm test` clear it, and `build.mjs --check` refuses to run with drafts on. A draft shadows the `content/` file with the same slug; draft posts render through the normal client and SSR paths with a `draft` badge. Everything in `draft/` except its README is gitignored, so drafts exist only on this machine. Publishing means moving the file into `content/`.
 

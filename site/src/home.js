@@ -12,6 +12,11 @@ let _homeInited = false;
 let _homeRendered = false;
 let _homeCache = { data: null, posts: null };
 
+// Resolves once the hydrated cards are in the DOM (or failed to load), so
+// code that positions against the page (the /#fits deep link) can wait.
+let _homeDone;
+export const homeReady = new Promise((resolve) => { _homeDone = resolve; });
+
 function pickLang(obj, base) {
     if (!obj) return null;
     const lang = (window._i18n && window._i18n.getLang) ? window._i18n.getLang() : 'en';
@@ -180,6 +185,7 @@ async function loadAndRender() {
 
     _homeCache = { data, posts };
     renderFromCache();
+    _homeDone();
 
     // Re-render hydrated content when the language flips. Static markup in
     // index.html is handled by _i18n.applyDOM() automatically; this rerender

@@ -62,6 +62,11 @@
         // ── Home: blog ──
         'home.blog.all':       'All posts →',
 
+        // ── Home: time-horizon toggles (the figure's copy is in content/home/horizons.md) ──
+        'horizon.lin':             'linear',
+        'horizon.log':             'log',
+        'horizon.hours':           'horizon',
+
         // ── Footer ──
         'footer.source': 'source',
         'footer.rss':    'rss',
@@ -154,6 +159,11 @@
 
         // ── Home: blog ──
         'home.blog.all':       'すべての投稿 →',
+
+        // ── Home: time-horizon toggles ──
+        'horizon.lin':             '線形',
+        'horizon.log':             '対数',
+        'horizon.hours':           'ホライズン',
 
         // ── Footer ──
         'footer.source': 'ソース',

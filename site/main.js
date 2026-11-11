@@ -55,6 +55,11 @@ initRouter({
 });
 
 initHome();
+// The time-horizon figure and its data load once the page is idle.
+const loadHorizon = () => import('./src/horizon.js').then((m) => m.initHorizon());
+if (location.hash === '#fits') loadHorizon();
+else if (typeof requestIdleCallback === 'function') requestIdleCallback(loadHorizon, { timeout: 1500 });
+else setTimeout(loadHorizon, 300);
 wireBlogI18n($);
 
 // ─── Language switcher ───

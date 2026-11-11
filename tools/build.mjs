@@ -6,6 +6,7 @@ import { dirname, join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createHash } from 'node:crypto';
 import { parseMarkdown, mdEsc, splitMarkdownTableRow } from '../site/src/markdown.js';
+import { fitHorizons } from './horizon-fit.mjs';
 import { convertTex, renderPaperBody } from './tex-to-post.mjs';
 import { buildFontSubsets } from './subset-fonts.mjs';
 
@@ -547,7 +548,7 @@ ${lines.join('\n')}
 const homeCards = {};
 for (const slug of contentSlugs('content/home')) homeCards[slug] = loadContentPair('content/home', slug);
 for (const req of ['site', 'bio', 'contact', 'now', 'hyperfixation', 'predictions',
-  'ask-me-about', 'other-things']) {
+  'ask-me-about', 'other-things', 'horizons']) {
   if (!homeCards[req]) throw new Error(`content/home/${req}.md missing`);
 }
 
@@ -760,6 +761,124 @@ let homeChips, homeChipsJa;
     ...en.map((li, i) => IND + '        ' + i18nBlock('li', `c.other.li${i + 1}`, li, ja[i], 'content/home/other-things.md')),
     IND + '    </ul>',
   ].join('\n');
+}
+
+// horizons — the time-horizon figure (site/src/horizon.js). Copy goes to the
+// i18n dictionary and three index.html regions (heading, key, source note).
+// The EN body is the source note, the record series table, and a table of
+// calibration-only models; tools/horizon-fit.mjs fits the AECI map and both
+// curves from them, and src/horizon-data.js carries the result.
+{
+  const c = homeCards['horizons'];
+  const rel = c.enRel;
+  const LABELS = ['heading', 'alt', 'keyHyperbolic', 'keyDoubleExponential', 'keyReported', 'keyConverted',
+    'axisDate', 'axisLeft', 'axisAeci', 'axisHorizon', 'today', 'singularity', 'caption'];
+  for (const k of LABELS) {
+    if (typeof c.meta[k] !== 'string') throw new Error(`${rel}: missing ${k}`);
+    i18nScalar(`c.hz.${k}`, c.meta[k], c.ja?.meta[k]);
+  }
+
+  const blocks = mdBlocksOf(c.body);
+  const isTable = b => b.trimStart().startsWith('|');
+  const tables = blocks.filter(isTable);
+  const notes = blocks.filter(b => !isTable(b));
+  const notesJa = c.ja ? mdBlocksOf(c.ja.body) : [];
+  if (tables.length !== 2) throw new Error(`${rel}: expected the series table and the calibration table, got ${tables.length} tables`);
+  if (notes.length !== 1) throw new Error(`${rel}: expected one source note, got ${notes.length}`);
+  if (c.ja && notesJa.length !== 1) throw new Error(`${c.jaRel}: expected one source note, got ${notesJa.length}`);
+
+  // Decimal year, as the fits use it: year + elapsed days / days in the year.
+  const decimalYear = (iso, where) => {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(iso) || Number.isNaN(Date.parse(iso + 'T00:00:00Z'))) {
+      throw new Error(`${where}: bad date "${iso}"`);
+    }
+    const y = Number(iso.slice(0, 4));
+    const a = Date.UTC(y, 0, 1), b = Date.UTC(y + 1, 0, 1);
+    return y + (Date.parse(iso + 'T00:00:00Z') - a) / (b - a);
+  };
+  const NUM = /^\d+(?:\.\d+)?$/;
+  // A value with an optional 95% interval "lo–hi"; horizons become log2 hours.
+  const reading = (v, ci, where, what, toUnits) => {
+    if (v === '') {
+      if (ci !== '') throw new Error(`${where}: ${what} interval without a value`);
+      return null;
+    }
+    if (!NUM.test(v)) throw new Error(`${where}: bad ${what} "${v}"`);
+    const out = { v: toUnits(Number(v)), lo: null, hi: null };
+    if (ci !== '') {
+      const m = ci.match(/^(\d+(?:\.\d+)?)\s*[–-]\s*(\d+(?:\.\d+)?)$/);
+      if (!m || !(Number(m[1]) <= Number(v) && Number(v) <= Number(m[2]))) throw new Error(`${where}: bad ${what} interval "${ci}"`);
+      out.lo = toUnits(Number(m[1]));
+      out.hi = toUnits(Number(m[2]));
+    }
+    return out;
+  };
+  const log2h = (min) => Math.log2(min / 60);
+  const parseRows = (block, first) => {
+    const t = parseTableBlock(block, rel);
+    const want = [first, 'Date', 'Horizon (min)', 'Horizon 95%', 'AECI', 'AECI 95%'];
+    if (t.header.join('|') !== want.join('|')) throw new Error(`${rel}: table header must be ${want.join(' | ')}`);
+    return t.rows.map(([name, date, th, thCi, aeci, aeciCi], i) => {
+      const where = `${rel}: ${first} row ${i + 1}`;
+      if (!name) throw new Error(`${where}: missing model`);
+      const m = {
+        name,
+        t: decimalYear(date, where),
+        th: reading(th, thCi, where, 'horizon', log2h),
+        aeci: reading(aeci, aeciCi, where, 'AECI', (x) => x),
+      };
+      if (!m.th && !m.aeci) throw new Error(`${where}: needs a horizon or an AECI`);
+      return m;
+    });
+  };
+  const series = parseRows(tables[0], 'Model');
+  const calibration = parseRows(tables[1], 'Calibration only');
+  for (let i = 1; i < series.length; i++) {
+    if (series[i].t < series[i - 1].t) throw new Error(`${rel}: series rows must be in date order (${series[i].name})`);
+  }
+
+  const glyphs = {
+    keyHyperbolic: '<svg width="22" height="12" aria-hidden="true"><rect class="hz-band-hyp" x="0" y="2" width="22" height="8"/><line class="hz-hyp" x1="1" y1="6" x2="21" y2="6"/></svg>',
+    keyDoubleExponential: '<svg width="22" height="12" aria-hidden="true"><rect class="hz-band-dexp" x="0" y="2" width="22" height="8"/><line class="hz-dexp" x1="0" y1="6" x2="22" y2="6"/></svg>',
+    keyReported: '<svg width="12" height="12" aria-hidden="true"><circle class="hz-pt-m" cx="6" cy="6" r="3.6"/></svg>',
+    keyConverted: '<svg width="14" height="14" aria-hidden="true"><path class="hz-pt-d" d="M7 2L12 7L7 12L2 7Z"/></svg>',
+  };
+  regions.horizons = IND + `<h2 class="home-h" id="home-horizon-heading" data-i18n="c.hz.heading">${mdEsc(c.meta.heading)}</h2>`;
+  regions['horizons-key'] = Object.entries(glyphs)
+    .map(([k, g]) => IND + `        <li>${g}<span data-i18n="c.hz.${k}">${mdEsc(c.meta[k])}</span></li>`).join('\n');
+  regions['horizons-source'] = IND + i18nBlock('p', 'c.hz.src', notes[0], c.ja ? notesJa[0] : null, rel, ' class="horizon-src"');
+
+  const started = Date.now();
+  const fit = fitHorizons(series, calibration);
+  const r4 = (v) => (v == null ? null : Math.round(v * 1e4) / 1e4);
+  const reported = (r) => (r ? [r4(r.v), r4(r.lo), r4(r.hi)] : null);
+  const points = series.map((m) => ({ name: m.name, t: r4(m.t), th: reported(m.th), aeci: reported(m.aeci) }));
+  const views = Object.entries(fit.views).map(([k, v]) => `    ${k}: {
+        points: ${JSON.stringify(v.points)},
+        hyperbolic: ${JSON.stringify(v.hyperbolic)},
+        doubleExponential: ${JSON.stringify(v.doubleExponential)},
+        band: {
+            t: ${JSON.stringify(v.band.t)},
+            hyp: ${JSON.stringify(v.band.hyp)},
+            dexp: ${JSON.stringify(v.band.dexp)},
+        },
+    },`).join('\n');
+  emit('src/horizon-data.js', `// GENERATED by tools/build.mjs from content/home/horizons.md — do not hand-edit.
+// t is a decimal year; horizons are log2 hours. map: log2 h = b0 + b1·(AECI − 150).
+// Each view's points are [value, low, high, converted] in that view's units;
+// see tools/horizon-fit.mjs for the fits and the bands.
+export const HORIZON = {
+    map: ${JSON.stringify(fit.map)},
+    points: [
+${points.map(p => '        ' + JSON.stringify(p) + ',').join('\n')}
+    ],
+    views: {
+${views}
+    },
+};
+`);
+  const fmt = (h) => `singularity ${h.ts} [${h.low}, ${h.high}], exponent ${h.exponent}`;
+  console.log(`src/horizon-data.js: ${points.length} points; map ${(1 / fit.map.b1).toFixed(2)} AECI per doubling, ${(2 ** fit.map.b0).toFixed(2)} h at 150 (n=${fit.map.n}); hours ${fmt(fit.views.hours.hyperbolic)}; aeci ${fmt(fit.views.aeci.hyperbolic)} (${Date.now() - started} ms)`);
 }
 
 // site — <head> metadata + per-route titles/descriptions

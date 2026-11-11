@@ -82,7 +82,11 @@ export function navigateTo(page, slug, deps, tag) {
     const target = document.getElementById('page-' + page);
     if (target) {
         target.classList.add('active');
-        window.scrollTo({ top: 0 });
+        // A fragment inside the page (/#fits) scrolls there; anything else starts at the top.
+        const id = location.hash ? decodeURIComponent(location.hash.slice(1)) : '';
+        const anchor = id && document.getElementById(id);
+        if (anchor && target.contains(anchor)) anchor.scrollIntoView({ block: 'start' });
+        else window.scrollTo({ top: 0 });
     }
 
     navLinks.forEach(l => {
