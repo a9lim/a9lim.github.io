@@ -41,3 +41,7 @@ dist/
 # Unpublished content (DRAFTS=1 only); the README documents the contract
 draft/*
 !draft/README.md
+
+# Social-card paintings: painted by tools/og/paint/*.py, reused by generate.js
+tools/og/art/
+__pycache__/

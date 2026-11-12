@@ -4,17 +4,21 @@
   <meta charset="utf-8">
   <title>Shoals social card</title>
   <link rel="stylesheet" href="card.css">
+  <style>
+    /* The chart puts deep water at the top left, so all the type sits there. */
+    .card { justify-content: flex-start; }
+    .head { margin-top: 36px; }
+  </style>
 </head>
-<body>
-  <img class="art" src="art/shoals.webp" alt="">
+<body class="dark">
+  <img class="art" src="art/shoals.png" alt="">
   <main class="card">
     <div class="lockup">
-      <img src="../../static/logo.svg" alt="">
+      <span class="seal"></span>
       <span>a9l.im</span>
     </div>
     <div class="head">
       <h1>Shoals</h1>
-      <p class="dek">Trading the AI race</p>
     </div>
   </main>
 </body>

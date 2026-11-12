@@ -1,6 +1,7 @@
-/* Social cards and app icons: the design system's light theme at 1200×630.
-   Newsreader is declared here directly from static/fonts so the cards do not
-   depend on the site stylesheet. */
+/* Social cards at 1200×630: a painting (paint/{name}.py → art/{name}.png) with
+   the seal, a9l.im and, on a sim's card, its name set over it. Newsreader is
+   declared here directly from static/fonts so the cards do not depend on the
+   site stylesheet. */
 
 @font-face {
   font-family: "Newsreader";
@@ -38,14 +39,19 @@
   unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
 }
 
-/* Light-theme tokens from shared/tokens.js (_PALETTE.light). */
+/* Type on a light painting takes the light theme's tokens (shared/tokens.js,
+   _PALETTE.light); `body.dark` is for a dark painting. Its seal is a deeper
+   red than the dark theme's accent (#DC5960), which is tuned for small text
+   on the site's near-black and reads coral on a coloured ground. A template
+   may set these again, or move its type, in a <style> of its own. */
 :root {
-  --canvas: #fcfcfb;
   --text: #161514;
-  --text-secondary: #42413f;
-  --text-muted: #666463;
   --accent: #983432;
-  --border: rgba(22, 21, 20, 0.12);
+}
+
+.dark {
+  --text: #f4f3f1;
+  --accent: #d63a40;
 }
 
 * {
@@ -64,7 +70,7 @@ body {
 body {
   position: relative;
   color: var(--text);
-  background: var(--canvas);
+  background: #fcfcfb;
   font-family: "Newsreader", serif;
   font-kerning: normal;
   font-optical-sizing: auto;
@@ -90,7 +96,8 @@ body {
   justify-content: space-between;
 }
 
-/* The navbar lockup, scaled: seal and brand share one size. */
+/* The navbar lockup, scaled: seal and brand share one size. generate.js sets
+   the seal inline, so it takes the card's accent. */
 .lockup {
   display: flex;
   align-items: center;
@@ -98,14 +105,20 @@ body {
   font-size: 40px;
   line-height: 1;
   letter-spacing: -0.005em;
-  color: var(--text);
 }
 
-.lockup img {
+.seal {
   position: relative;
   top: -0.08em;
   width: 1em;
   height: 1em;
+  color: var(--accent);
+}
+
+.seal svg {
+  display: block;
+  width: 100%;
+  height: 100%;
 }
 
 .head {
@@ -119,26 +132,10 @@ h1 {
   font-weight: 400;
   line-height: 1;
   letter-spacing: -0.018em;
-  color: var(--text);
 }
 
-.dek {
-  margin-top: 26px;
-  padding-top: 22px;
-  border-top: 1px solid var(--border);
-  font-size: 34px;
-  font-style: italic;
-  line-height: 1.25;
-  color: var(--text-secondary);
-}
-
-/* Root card: the lockup is the title. The aquarelle's reds were painted
-   against the retired vermilion; a slight shift seats them beside oxblood. */
-.root .art {
-  filter: hue-rotate(-7deg) saturate(0.85);
-}
-
-.root .lockup.big {
+/* Root card: the lockup is the title. */
+.lockup.big {
   font-size: 128px;
   gap: 0.3em;
   letter-spacing: -0.018em;

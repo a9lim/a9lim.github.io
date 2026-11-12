@@ -16,7 +16,7 @@ Root site for **a9l.im**: a hand-written SPA, a content pipeline, a Cloudflare W
 - `docs/sim-overhaul/` — the ratified plan for rebuilding the four sims' visuals (`PLAN.md`) and its reference sketches. Not staged.
 - `db/migrations/` — D1 migrations for the `SURVEYS_DB` binding (`a9lim-surveys`).
 - `lib/wgsl/` — WGSL→JavaScript transpiler and runner, kept but not wired into anything (see `tests/wgsl-transpile/README.md`).
-- `tools/` — `stage-assets.mjs`, `build.mjs`, `horizon-fit.mjs`, `subset-fonts.mjs`, `tex-to-post.mjs`, `pandoc.sh`, `og/` (social cards), `purge-cache.mjs`, `verify-deploy.mjs`.
+- `tools/` — `stage-assets.mjs`, `build.mjs`, `horizon-fit.mjs`, `subset-fonts.mjs`, `tex-to-post.mjs`, `pandoc.sh`, `og/` (the social cards, each a painting made as a program; see Social cards), `purge-cache.mjs`, `verify-deploy.mjs`.
 - `tests/` — `content-pipeline/`, `deploy-layout/`, `wgsl-transpile/`.
 - `dist/` and `.build/` — ignored, fully regenerated build output.
 
@@ -96,7 +96,7 @@ Caching: public URLs are stable, not content-hashed. Browsers always revalidate 
 
 ## Design system
 
-Editorial and quiet: one serif typeface, a near-white neutral ground, a single oxblood red, and hairline rules for structure. It applies to the root site, every project, the social cards and icons, and the résumé. Projects open straight into the app, without intro or splash screens. A project's title is just its name, and its description says what a visitor learns or does.
+Editorial and quiet: one serif typeface, a near-white neutral ground, a single oxblood red, and hairline rules for structure. It applies to the root site, every project, the icons, and the résumé; the social cards set its type and seal over paintings of their own (Social cards). Projects open straight into the app, without intro or splash screens. A project's title is just its name, and its description says what a visitor learns or does.
 
 ### Color
 
@@ -115,7 +115,7 @@ Editorial and quiet: one serif typeface, a near-white neutral ground, a single o
 - `--border` is `text` at 12% (light) or 13% (dark); link underlines are `accent` at 40%.
 - The accent differs per theme. CSS reads `var(--accent)`, while canvas and WebGPU code reads `_themePalette().accent` on each theme change. There is no theme-independent accent.
 - Every text role clears 4.5:1 on every surface in both themes; the tightest pair is dark `accent` on `elevated` at 4.66:1.
-- The navbar seal is inline SVG in `currentColor`, so it follows the accent. Static copies (`static/logo.svg`, favicon, app icons, OG cards) use the light `#983432`.
+- The navbar seal is inline SVG in `currentColor`, so it follows the accent. Static copies (`static/logo.svg`, favicon, app icons) use the light `#983432`; a social card sets the seal to suit its painting (`tools/og/card.css`).
 - The inks are the data hues: eleven pigments, each paired per theme and clearing 4.5:1 on `canvas` and `panelSolid` in both, so any ink can set text. They live on each theme (`_PALETTE.light.inks`, `_themePalette().inks.ochre`) and in CSS as `--ink-{name}`. Red is not an ink: the accent is the one red. The neutral data hue, graphite, is `textMuted`. Inks differ per theme, so canvas and WebGPU code reads them on each theme change, like the accent. `docs/sim-overhaul/sketches/inks.py` fitted them (OKLCH chroma 0.05–0.12).
 
 | Ink | Light | Dark |
@@ -175,6 +175,25 @@ Three rules hold inside every scene:
 3. **Pattern before hue.** Where a scene encodes state, color comes paired with a pattern (stipple, hatching, dash, bead), so the scene survives grayscale and color-vision differences.
 
 **Show, don't tell.** A sim's interface names things and reads out values; it doesn't explain them. Labels, units, live values and glyph keys stay on the surface. What a mark means, how a control works and why the model behaves as it does belong in the about panel, or in an info tip where a concept can't be inferred, never in captions, ledes, hints or empty states. The figure caption is the view's name and its live values, in a line. Readouts are label–value pairs, not sentences. Prefer a symbol, a key or the drawing itself to a sentence, and an affordance (cursor, hover, a dotted value) to an instruction. Nothing on screen repeats what another element already shows.
+
+## Social cards
+
+Each card is a painting made as a program, with the site's type set over it. No image model draws any of it and nothing is traced.
+
+- `tools/og/paint/brush.py` is a small bristle-brush engine (numpy, scipy, Pillow): a stroke is a path and a width, laid down bristle by bristle, with a frisket and a glaze layer beside it. `tools/og/paint/{name}.py` paints one card by calling it a few thousand times; each file's docstring says what the picture shows and what each mark reads. Paintings are 1200 × 630 nominal, painted at twice that and reduced, and are seeded, so the same program gives the same picture.
+- `tools/og/{name}.html` and `card.css` set the type over the painting in Newsreader: the seal with a9l.im, and on a sim's card its name. Nothing else is set; a card carries no tagline or rule. `body.dark` is light type for a dark painting, and a template may move its type in a `<style>` of its own (Shoals does).
+- `cd tools/og && npm install && npm run generate` paints and writes every card; `node generate.js worldline --repaint` does one, and `--preview DIR` writes PNGs elsewhere for looking at. Paintings are kept in `tools/og/art/` (ignored) and reused until `--repaint`. Painting needs Python with numpy, scipy and Pillow (`PYTHON`, or `python3`); the cards are committed, so the site build needs neither Python nor Puppeteer.
+- The root card (`static/og-image.webp`) serves every root route and post. Each sim owns its card (`projects/{slug}/og-image.webp`), which its `index.html` names with a `?v=` revision that the build copies into the sitemap. After repainting, bump the revision so caches refetch: the sim's two image tags, or for the root card `site/index.html`, `worker/index.js`, `static/manifest.json` and `OG_REVISION` in `tools/build.mjs` and `tests/content-pipeline/run.mjs`.
+
+The pictures follow the scenes' rules: every mark reads something in the model, and each card spends one red, on what its sim spends it on.
+
+| Card | Painting | The red |
+|---|---|---|
+| a9l.im | A grove (the seal's 林) in ink and fog, after Tōhaku's pine screens: a near pair of pines, others going grey behind them | the seal, as the stamp on an ink painting |
+| Worldline | The spacetime view as a nocturne: the present is a lit sheet, and each body's world line hangs beneath it, beaded at equal proper time | the selected body, its world line and its past light cone |
+| Lumen | A cyanobacterial thylakoid in cross-section, in Goodsell's manner: both membranes and their complexes around the lumen | the protons, whose crowding is the stored gradient |
+| Miasma | A town at night, one house per hex cell, its windows the state of a seeded SEIR run: lit, infectious, dark where the wave has passed, with a vaccinated quarter the front split around and a river it crossed only by the bridge | the infectious windows |
+| Shoals | A sandbar from the air whose edge is a price path from the sim's own model (GBM, Heston variance, Merton jumps) | a buoy on each day the close fell more than 3.5% |
 
 ## Root-site details
 

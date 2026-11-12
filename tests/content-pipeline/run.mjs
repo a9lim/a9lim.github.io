@@ -12,6 +12,8 @@ import { parseMarkdown, splitMarkdownTableRow } from '../../site/src/markdown.js
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const DIST = join(ROOT, 'dist');
 const BUILD = join(ROOT, '.build');
+// The social cards' revision: the ?v= every page names its card at
+const OG_REVISION = '20261111';
 let failures = 0;
 function check(name, ok, detail = '') {
   if (ok) { console.log('  ok: ' + name); return; }
@@ -193,34 +195,42 @@ for (const p of PROJECTS.filter(p => !p.external && !p.planned)) {
     .map(rel => join(DIST, slug, rel)).filter(existsSync);
   check(`${p.title} about panel date is current`, uiFiles.some(rel => readFileSync(rel, 'utf8').includes(`lastUpdated: '${meta.updated}'`)));
 
-  // A bespoke card redrawn after the shared revision carries its own (Worldline's 2.0 card)
-  const cardRevision = { worldline: '20261024' }[slug] ?? '20261023';
-  const expectedImage = p.major
-    ? `https://a9l.im/${slug}/og-image.webp?v=${cardRevision}`
-    : 'https://a9l.im/og-image.webp?v=20261023';
+  // Every sim owns a social card, and its page names it at the card's revision
+  const expectedImage = `https://a9l.im/${slug}/og-image.webp?v=${OG_REVISION}`;
   const ogImage = index.match(/<meta property="og:image" content="([^"]+)">/)?.[1];
   const twitterImage = index.match(/<meta name="twitter:image" content="([^"]+)">/)?.[1];
   const ogAlt = index.match(/<meta property="og:image:alt" content="([^"]+)">/)?.[1];
   const twitterAlt = index.match(/<meta name="twitter:image:alt" content="([^"]+)">/)?.[1];
-  check(`${p.title} uses the ${p.major ? 'bespoke' : 'root fallback'} social card`,
+  check(`${p.title} uses its own social card`,
     ogImage === expectedImage && twitterImage === expectedImage);
   check(`${p.title} social card alt metadata agrees`,
     Boolean(ogAlt) && ogAlt === twitterAlt);
-  check(`${p.title} ${p.major ? 'owns' : 'does not own'} a project OG asset`,
-    existsSync(join(ROOT, 'projects', slug, 'og-image.webp')) === Boolean(p.major));
+  // The stager copies tracked files only, so a card that isn't committed doesn't deploy
+  check(`${p.title} ships its social card`,
+    existsSync(join(DIST, slug, 'og-image.webp')));
 }
 
+// A card is a painting program with a template that sets the type over it
+const ogCards = ['root', ...PROJECTS.filter(p => !p.external && !p.planned)
+  .map(p => p.href.replace(/^\//, '').replace(/\/$/, ''))];
 const ogTemplates = readdirSync(join(ROOT, 'tools', 'og'))
   .filter(name => name.endsWith('.html') && name !== 'icon.html')
   .sort();
-check('OG source templates are limited to root and major simulations',
-  JSON.stringify(ogTemplates) === JSON.stringify(['a9lim.html', 'shoals.html', 'worldline.html']));
-const ogArt = readdirSync(join(ROOT, 'tools', 'og', 'art')).sort();
-check('OG aquarelle sources are limited to root and major simulations',
-  JSON.stringify(ogArt) === JSON.stringify(['root.webp', 'shoals.webp', 'worldline.webp']));
-for (const [template, art] of [['a9lim.html', 'root.webp'], ['worldline.html', 'worldline.webp'], ['shoals.html', 'shoals.webp']]) {
-  check(`${template} uses its aquarelle source`,
-    readFileSync(join(ROOT, 'tools', 'og', template), 'utf8').includes(`art/${art}`));
+check('OG templates are the root and each simulation',
+  JSON.stringify(ogTemplates) === JSON.stringify(ogCards.map(name => `${name === 'root' ? 'a9lim' : name}.html`).sort()));
+const ogPaintings = readdirSync(join(ROOT, 'tools', 'og', 'paint'))
+  .filter(name => name.endsWith('.py') && name !== 'brush.py')
+  .sort();
+check('OG paintings are the root and each simulation',
+  JSON.stringify(ogPaintings) === JSON.stringify(ogCards.map(name => `${name}.py`).sort()));
+for (const name of ogCards) {
+  const template = `${name === 'root' ? 'a9lim' : name}.html`;
+  check(`${template} sets its type over its painting`,
+    readFileSync(join(ROOT, 'tools', 'og', template), 'utf8').includes(`art/${name}.png`));
+}
+for (const rel of ['site/index.html', 'worker/index.js', 'static/manifest.json']) {
+  check(`${rel} names the root social card at its revision`,
+    readFileSync(join(ROOT, rel), 'utf8').includes(`/og-image.webp?v=${OG_REVISION}`));
 }
 
 console.log('project registry ↔ discovery files');

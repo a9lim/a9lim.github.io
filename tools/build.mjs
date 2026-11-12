@@ -458,15 +458,13 @@ for (const doc of simDocs) {
   html = html.replace(/("description"\s*:\s*)"[^"]*"/, `$1${JSON.stringify(doc.meta.description)}`);
   if (!/"dateModified"\s*:\s*"[^"]*"/.test(html)) throw new Error(`${indexRel}: missing JSON-LD dateModified`);
   html = html.replace(/("dateModified"\s*:\s*)"[^"]*"/, `$1${JSON.stringify(doc.meta.updated)}`);
-  // A major sim's social card is the one its page names, with its own revision (a redrawn
+  // A sim's social card is the one its page names, with its own revision (a repainted
   // card bumps its ?v=), and the sitemap lists that same URL
-  if (doc.project.major === true) {
-    const ogImage = html.match(/<meta property="og:image" content="([^"]+)">/)?.[1] ?? '';
-    if (!ogImage.startsWith(`${SITE}/${slug}/og-image.webp?v=`)) {
-      throw new Error(`${indexRel}: og:image must be ${SITE}/${slug}/og-image.webp?v=…`);
-    }
-    doc.ogImage = ogImage.slice(SITE.length + 1);
+  const ogImage = html.match(/<meta property="og:image" content="([^"]+)">/)?.[1] ?? '';
+  if (!ogImage.startsWith(`${SITE}/${slug}/og-image.webp?v=`)) {
+    throw new Error(`${indexRel}: og:image must be ${SITE}/${slug}/og-image.webp?v=…`);
   }
+  doc.ogImage = ogImage.slice(SITE.length + 1);
   emit(indexRel, html);
 
   const uiCandidates = [`${slug}/main.js`, `${slug}/src/ui.js`]
@@ -1197,17 +1195,15 @@ const urls = [];
 
 const simPath = doc => new URL(projectUrl(doc.project)).pathname;
 
-// Every route has a social image, but only major simulations own a bespoke
-// card, at the revision its page names. Smaller simulations deliberately share
-// the root card.
-const OG_REVISION = '20261023';
+// Every route has a social image: each simulation owns a card, at the revision its
+// page names, and every other route shares the root card.
+const OG_REVISION = '20261111';
 const ROOT_OG_IMAGE = `og-image.webp?v=${OG_REVISION}`;
 const IMAGE_MAP = { '/': [ROOT_OG_IMAGE] };
 const IMAGE_CAPTIONS = { '/': site.discoveryDescription };
 for (const doc of simDocs) {
-  const hasBespokeCard = doc.project.major === true;
-  IMAGE_MAP[simPath(doc)] = [hasBespokeCard ? doc.ogImage : ROOT_OG_IMAGE];
-  IMAGE_CAPTIONS[simPath(doc)] = hasBespokeCard ? doc.meta.description : site.discoveryDescription;
+  IMAGE_MAP[simPath(doc)] = [doc.ogImage];
+  IMAGE_CAPTIONS[simPath(doc)] = doc.meta.description;
 }
 
 function add(path, lastmod, images, changefreq, priority, imageCaption) {
