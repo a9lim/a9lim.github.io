@@ -44,16 +44,16 @@ const U = {
         months: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
         month: (y, m) => `${U.en.months[m]} ${y}`,
         yr: (v) => v >= 1 ? `${v} yr` : `${Math.round(v * 12)} mo`,
-        h: (v) => `${v} h`, min: (v) => `${v} min`, s: (v) => `${v} s`,
-        mh: (h) => `${(h / 1e6).toFixed(1)} million h`,
+        units: ['sec', 'min', 'hr', 'day', 'wk', 'yr'],
+        amount: (n, unit) => `${n} ${unit}`,
         ticks: ['1 sec', '1 min', '1 hr', '1 wk', '1 yr', '100 yr'],
         sep: ' · ',
     },
     ja: {
         month: (y, m) => `${y}年${m + 1}月`,
         yr: (v) => v >= 1 ? `${v}年` : `${Math.round(v * 12)}か月`,
-        h: (v) => `${v} 時間`, min: (v) => `${v} 分`, s: (v) => `${v} 秒`,
-        mh: (h) => `${Math.round(h / 1e4).toLocaleString('en-US')}万時間`,
+        units: ['秒', '分', '時間', '日', '週', '年'],
+        amount: (n, unit) => `${n}${unit}`,
         ticks: ['1秒', '1分', '1時間', '1週', '1年', '100年'],
         sep: '・',
     },
@@ -68,14 +68,16 @@ function month(t) {
     return u().month(y, Math.min(11, Math.floor((t - y) * 12)));
 }
 
+// Work time, as on the axis: a day is 8 hours, a week 40, a year 2,000.
+const UNIT_HOURS = [1 / 3600, 1 / 60, 1, 8, 40, 2000];
+
 function hours(h) {
     const f = u();
     if (!Number.isFinite(h)) return '∞';
-    if (h < 1 / 60) return f.s(Math.max(1, Math.round(h * 3600)));
-    if (h < 1) return f.min(Math.round(h * 60));
-    if (h < 10) return f.h(h.toFixed(1));
-    if (h < 1e6) return f.h(Math.round(h).toLocaleString('en-US'));
-    return f.mh(h);
+    let i = UNIT_HOURS.length - 1;
+    while (i > 0 && h < UNIT_HOURS[i]) i--;
+    const v = h / UNIT_HOURS[i];
+    return f.amount(v < 10 ? v.toFixed(1) : Math.round(v).toLocaleString('en-US'), f.units[i]);
 }
 
 function decimalYear(d) {
