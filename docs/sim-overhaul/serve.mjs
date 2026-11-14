@@ -11,7 +11,7 @@ import { readFile, stat } from 'node:fs/promises';
 import { extname, join, normalize, resolve } from 'node:path';
 
 const ROOT = resolve(new URL('../..', import.meta.url).pathname);
-const PROJECTS = ['worldline', 'lumen', 'miasma', 'shoals'];
+const PROJECTS = ['worldline', 'lumen', 'miasma', 'shoals', 'isochron'];
 const port = +(process.argv[2] || 8790);
 const TYPES = {
   '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.mjs': 'text/javascript; charset=utf-8',
