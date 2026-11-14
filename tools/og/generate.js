@@ -19,7 +19,7 @@ const ART = path.join(__dirname, 'art');
 
 const CARDS = [
   { name: 'root', html: 'a9lim.html', output: path.join(ROOT, 'static', 'og-image.webp') },
-  ...['worldline', 'lumen', 'miasma', 'shoals'].map(name => ({
+  ...['worldline', 'lumen', 'miasma', 'shoals', 'isochron'].map(name => ({
     name, html: `${name}.html`, output: path.join(ROOT, 'projects', name, 'og-image.webp'),
   })),
 ];
