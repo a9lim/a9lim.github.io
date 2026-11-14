@@ -13,3 +13,6 @@
 [submodule "papers/ogdoad"]
 	path = papers/ogdoad
 	url = https://github.com/a9lim/ogdoad.git
+[submodule "isochron"]
+	path = projects/isochron
+	url = https://github.com/a9lim/isochron.git
