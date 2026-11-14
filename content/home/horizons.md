@@ -9,14 +9,22 @@ axisDate: date
 axisLeft: time before the singularity
 axisAeci: AECI
 axisHorizon: 50% time horizon
+axisToGo: time left, as fitted then
+refitAlt: The hyperbola refit as of each model release, and the singularity each refit puts.
 today: today
 singularity: fitted singularity
 caption: fitted singularity {date} (95%: {low} – {high})
+captionLeft: {left} before the fitted singularity (95%: {low} – {high})
 # The build fits everything from the two tables below (tools/horizon-fit.mjs):
 # the AECI–horizon map through every model that has both values (it comes out
 # as Nikola Jurkovic's, x.com/nikolaj2030/status/2118777653981507716), then a hyperbola and a double exponential in each y view,
 # with 95% bands from 2,000 bootstrap replicates that redraw the map and
 # resample each fit's residuals.
+#
+# The second chart refits the hyperbola in hours with only the models released
+# by each date, back to the fifth model, and plots the singularity each refit
+# puts, or the time it then left until it. Near starts at the first refit
+# after which none puts the singularity 4 years away or more.
 #
 # Intervals are METR's 95%: horizons from METR's file, AECI read off the
 # whiskers of METR's chart (3.5 Sonnet is the AECI anchor and has none).

@@ -384,7 +384,7 @@
                 <!-- content:horizons (generated from content/home/horizons.md — edit there, then `npm run build`) -->
                 <h2 class="home-h" id="home-horizon-heading" data-i18n="c.hz.heading">Time horizons</h2>
                 <!-- /content:horizons -->
-                <div class="horizon-bar">
+                <div class="horizon-bar" data-for="horizon-fig">
                     <div class="horizon-group" role="group" aria-labelledby="horizon-x-k">
                         <span class="horizon-k" id="horizon-x-k">x</span>
                         <button class="horizon-opt" type="button" data-axis="x" data-view="lin" aria-pressed="false" data-i18n="horizon.lin">linear</button>
@@ -402,6 +402,19 @@
                 </div>
                 <div class="horizon-fig" id="horizon-fig"></div>
                 <p class="horizon-cap" id="horizon-cap" aria-live="polite"></p>
+                <div class="horizon-bar refit-bar" data-for="refit-fig">
+                    <div class="horizon-group" role="group" aria-label="range" data-i18n-aria="refit.range">
+                        <button class="horizon-opt" type="button" data-axis="zoom" data-view="far" aria-pressed="true" data-i18n="refit.far">far</button>
+                        <button class="horizon-opt" type="button" data-axis="zoom" data-view="near" aria-pressed="false" data-i18n="refit.near">near</button>
+                    </div>
+                    <div class="horizon-group" role="group" aria-labelledby="refit-y-k">
+                        <span class="horizon-k" id="refit-y-k">y</span>
+                        <button class="horizon-opt" type="button" data-axis="y" data-view="date" aria-pressed="false" data-i18n="refit.date">date</button>
+                        <button class="horizon-opt" type="button" data-axis="y" data-view="left" aria-pressed="true" data-i18n="refit.left">time left</button>
+                    </div>
+                </div>
+                <div class="horizon-fig" id="refit-fig"></div>
+                <p class="horizon-cap" id="refit-cap" aria-live="polite"></p>
                 <!-- content:horizons-source (generated from content/home/horizons.md — edit there, then `npm run build`) -->
                 <!-- /content:horizons-source -->
             </section>

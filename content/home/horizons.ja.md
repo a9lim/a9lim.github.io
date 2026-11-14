@@ -9,8 +9,11 @@ axisDate: 日付
 axisLeft: 特異点までの時間
 axisAeci: AECI
 axisHorizon: 50% タイムホライズン
+axisToGo: その時点の推定残り時間
+refitAlt: 各モデルの公開時点までのデータで当てはめ直した双曲線と、それぞれの推定特異点。
 today: 今日
 singularity: 推定特異点
 caption: 推定特異点 {date}（95%: {low}〜{high}）
+captionLeft: 推定特異点まで{left}（95%: {low}〜{high}）
 ---
 実測値: [METR v1.1](https://metr.org/time-horizons/)（2026年4月まで）。AECI: [METR が 2026年11月5日に公表したスコア](https://metr.org/blog/2026-11-05-anthropic-ai-rd-acceleration-assessment/)。[Benjamin Todd の11月9日のグラフ](https://x.com/ben_j_todd/status/2119787039210049930)に着想を得た。フィットは Claude による。

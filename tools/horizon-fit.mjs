@@ -20,9 +20,16 @@
 // 5. Point intervals: native ones are METR's; converted ones come from
 //    Monte Carlo over the source interval, the map's parameters, and the
 //    map's residual scatter.
+// 6. The singularity as of each release: the hyperbola refit in the hours
+//    view with only the models, and the map pairs, released by then, each
+//    with its own bootstrap. Until AECI-only models arrive (April 2026) the
+//    hours view needs no map, so this runs back to the fifth model, the
+//    first that leaves the bootstrap two residuals to work with (with one,
+//    it reports a tight interval around a meaningless fit). Its profile runs
+//    to 1,000 years; an interval that reaches that far has no top, and its
+//    high is null.
 
 const T0 = 2019;
-const LN2 = Math.LN2;
 
 function rng(seed) {
     let s = seed >>> 0;
@@ -78,11 +85,11 @@ function profile(f, lo, hi, n) {
     return f(x) <= bv ? x : g[bi];
 }
 
-function fitHyp(t, y) {
+function fitHyp(t, y, maxGap = 60) {
     const tmax = Math.max(...t);
     const x = new Float64Array(t.length);
     const at = (gap) => { for (let i = 0; i < t.length; i++) x[i] = -Math.log2(tmax + gap - t[i]); return line(x, y); };
-    const gap = profile((g) => at(g).sse, 0.003, 60, 160);
+    const gap = profile((g) => at(g).sse, 0.003, maxGap, 160);
     const { b0, b1, sse } = at(gap);
     const ts = tmax + gap;
     return { a: b0, alpha: b1, ts, sse, f: (s) => (s < ts ? b0 - b1 * Math.log2(ts - s) : Infinity) };
@@ -108,6 +115,29 @@ function drawFrom(R, v, lo, hi) {
     return v + z * (z < 0 ? v - lo : hi - v) / 1.96;
 }
 
+// The AECI–horizon map through these pairs, and a sampler for its parameters
+// (multivariate t, from the least-squares covariance with x centred at 150).
+function fitMap(pairs, R) {
+    const px = pairs.map((m) => m.aeci.v - 150), py = pairs.map((m) => m.th.v);
+    const L = line(px, py);
+    const n = pairs.length, df = n - 2;
+    const s2 = L.sse / df;
+    const v11 = s2 / L.sxx, v01 = -L.mx * v11, v00 = s2 / n + L.mx * L.mx * v11;
+    const c00 = Math.sqrt(v00), c10 = v01 / c00, c11 = Math.sqrt(v11 - c10 * c10);
+    const map = { b0: L.b0, b1: L.b1, s: Math.sqrt(s2), n, df };
+    const drawMap = () => {
+        const z0 = R.normal(), z1 = R.normal(), k = Math.sqrt(R.chi2(df) / df);
+        return { b0: L.b0 + (c00 * z0) / k, b1: L.b1 + (c10 * z0 + c11 * z1) / k };
+    };
+    return { map, drawMap };
+}
+const toAeci = (y, m) => 150 + (y - m.b0) / m.b1;
+const toHours = (a, m) => m.b0 + m.b1 * (a - 150);
+const VIEWS = {
+    hours: (m, mp) => (m.th ? m.th.v : toHours(m.aeci.v, mp)),
+    aeci: (m, mp) => (m.aeci ? m.aeci.v : toAeci(m.th.v, mp)),
+};
+
 const r4 = (v) => (Number.isFinite(v) ? Math.round(v * 1e4) / 1e4 : null);
 const r3 = (v) => (Number.isFinite(v) ? Math.round(v * 1e3) / 1e3 : null);
 
@@ -120,29 +150,13 @@ export function fitHorizons(series, calibration, { B = 2000, seed = 20261111 } =
 
     // 1. map
     const pairs = [...series, ...calibration].filter((m) => m.th && m.aeci);
-    const px = pairs.map((m) => m.aeci.v - 150), py = pairs.map((m) => m.th.v);
-    const L = line(px, py);
-    const df = pairs.length - 2;
-    const s2 = L.sse / df, n = pairs.length;
-    // covariance of (b0, b1) for x centred at 150
-    const v11 = s2 / L.sxx, v01 = -L.mx * v11, v00 = s2 / n + L.mx * L.mx * v11;
-    const c00 = Math.sqrt(v00), c10 = v01 / c00, c11 = Math.sqrt(v11 - c10 * c10);
-    const map = { b0: L.b0, b1: L.b1, s: Math.sqrt(s2), n, df };
-    const drawMap = () => {
-        const z0 = R.normal(), z1 = R.normal(), k = Math.sqrt(R.chi2(df) / df);
-        return { b0: L.b0 + (c00 * z0) / k, b1: L.b1 + (c10 * z0 + c11 * z1) / k };
-    };
-    const toAeci = (y, m) => 150 + (y - m.b0) / m.b1;
-    const toHours = (a, m) => m.b0 + m.b1 * (a - 150);
+    const { map, drawMap } = fitMap(pairs, R);
+    const df = map.df;
 
     // 2. views
     const t = series.map((m) => m.t);
-    const VIEWS = {
-        hours: (m, mp) => (m.th ? m.th.v : toHours(m.aeci.v, mp)),
-        aeci: (m, mp) => (m.aeci ? m.aeci.v : toAeci(m.th.v, mp)),
-    };
 
-    const out = { map: { b0: r4(map.b0), b1: r4(map.b1), s: r4(map.s), n }, views: {} };
+    const out = { map: { b0: r4(map.b0), b1: r4(map.b1), s: r4(map.s), n: map.n }, views: {} };
     for (const [view, value] of Object.entries(VIEWS)) {
         const y = series.map((m) => value(m, map));
         const converted = series.map((m) => (view === 'hours' ? !m.th : !m.aeci));
@@ -209,6 +223,38 @@ export function fitHorizons(series, calibration, { B = 2000, seed = 20261111 } =
             doubleExponential: { d0: r4(dex.d0), d1: r4(dex.d1), c: r4(dex.c) },
             band: { t: grid.map(r4), hyp: band.hyp, dexp: band.dexp },
         };
+    }
+
+    // 6. the singularity as of each release, on a stream of its own so the
+    //    fits above don't move; the refit with every model is the full fit,
+    //    so it reports the full fit's numbers
+    const RA = rng(seed + 1);
+    out.asOf = [];
+    for (let k = 5; k <= series.length; k++) {
+        const S = series.slice(0, k), asof = S[k - 1].t;
+        if (k < series.length && series[k].t === asof) continue; // same-day releases enter together
+        if (k === series.length) {
+            const h = out.views.hours.hyperbolic;
+            out.asOf.push([k - 1, h.ts, h.low, h.high]);
+            continue;
+        }
+        const converted = S.map((m) => !m.th);
+        const P = pairs.filter((m) => m.t <= asof);
+        if (converted.some(Boolean) && P.length < 3) throw new Error(`horizon fit: as of ${S[k - 1].name}, converted models need a map with three pairs`);
+        const M = converted.some(Boolean) ? fitMap(P, RA) : null;
+        const tk = S.map((m) => m.t);
+        const y = S.map((m) => VIEWS.hours(m, M && M.map));
+        const hyp = fitHyp(tk, y, 1000);
+        const fitted = tk.map((s) => hyp.f(s)), res = y.map((v, i) => v - fitted[i]);
+        const ts = new Float64Array(B), yb = new Float64Array(k);
+        for (let b = 0; b < B; b++) {
+            const mp = M && M.drawMap();
+            for (let i = 0; i < k; i++) yb[i] = fitted[i] + (converted[i] ? VIEWS.hours(S[i], mp) - y[i] : 0) + res[RA.int(k)];
+            ts[b] = fitHyp(tk, yb, 1000).ts;
+        }
+        ts.sort();
+        const high = quantile(ts, 0.975);
+        out.asOf.push([k - 1, r4(hyp.ts), r4(quantile(ts, 0.025)), high > asof + 999 ? null : r4(high)]);
     }
     return out;
 }

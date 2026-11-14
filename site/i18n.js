@@ -66,6 +66,11 @@
         'horizon.lin':             'linear',
         'horizon.log':             'log',
         'horizon.hours':           'horizon',
+        'refit.date':              'date',
+        'refit.left':              'time left',
+        'refit.range':             'range',
+        'refit.far':               'far',
+        'refit.near':              'near',
 
         // ── Footer ──
         'footer.source': 'source',
@@ -164,6 +169,11 @@
         'horizon.lin':             '線形',
         'horizon.log':             '対数',
         'horizon.hours':           'ホライズン',
+        'refit.date':              '日付',
+        'refit.left':              '残り時間',
+        'refit.range':             '表示範囲',
+        'refit.far':               '遠景',
+        'refit.near':              '近景',
 
         // ── Footer ──
         'footer.source': 'ソース',
