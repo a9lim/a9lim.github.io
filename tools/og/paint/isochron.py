@@ -1,738 +1,926 @@
-"""Isochron — an ocean opening on a globe.
+"""Isochron — the asymptote.
 
-One hemisphere of a planet, on paper. An ocean has opened about an Euler pole
-that lies under the sea ice at the top, so the whole basin is a fan: the ridge
-runs down its middle, and everything the ridge has made lies either side of it
-in bands that widen away from the pole. The plate to the west carries a
-continent on a passive margin; the plate to the east goes down a trench under
-a second continent, which has a cordillera for it. The brush follows the
-isochrons: every stroke on the sea floor lies along crust of one age.
+A camp on a kopje before sunrise, and the plain it looks across. Along the
+horizon time runs from left to right: the card's left edge is the first
+hominins, and the spire stands where the dial runs out. The night is still
+over the camp. The day comes up beyond the spire.
+
+Nothing along that horizon is placed by hand. It is one seeded run of
+Isochron's people (isochron-run.json, which isochron-run.mjs writes from
+`tools/people-run.mjs earthlike`) laid on the follow dial's axis, where a
+doubling of whatever grows fastest takes the same width: 1.56 million years
+of foragers in the first tenth, ten thousand years of farming in the next
+third, 289 years of industry in the three tenths after that, and the last
+five years in the last quarter.
 
 What each mark reads:
 
-- The red rule is the ridge, where the mantle reaches the surface. Its
-  segments lie on great circles through the Euler pole and are offset along
-  small circles about it (the transforms, drawn as fine dark rules), which is
-  the only way rigid plates can part on a sphere.
-- The bands are the polarity record. The field's reversals are drawn once, at
-  random intervals; a band's age is its angle from the ridge over the half
-  rate, so the two sides carry the same record mirrored, a band's width is
-  the rate times the interval, and both shrink toward the pole. Where a
-  transform offsets the ridge the bands are offset with it (fracture zones).
-- The sea's value is depth: the floor deepens as the square root of its age,
-  shoals over the sediment of the passive margin's shelf and the fans off its
-  river mouths (which bury the bands), and drops into the trench.
-- The dark rule with sawteeth is the trench, teeth on the plate that stays on
-  top. The red points behind it are the arc's volcanoes; the range under them
-  is hachured downslope and lit from the upper left.
-- The red ringed points are hotspots, fixed in the mantle. Each has left a
-  chain of seamounts on the plate that passed over it, along a small circle
-  about the pole, older and smaller with distance; the eastern chain is on
-  its way down the trench.
-- Rivers are routed over the land's height to the sea, their weight the
-  discharge (rain times the area drained). The land's colour is its climate:
-  rain in a band at the equator and in the westerlies, dry subtropics, a dry
-  trade-wind coast and a rain shadow behind the range, cold with latitude and
-  height. Where the year stays frozen there is ice: sea ice past a hard edge,
-  an ice sheet on the land, snow along the high range.
-- The globe is lit from the upper left, so the far limb falls into shade.
+- The spire is the minds, people's and machines' together, drawn linear: a
+  unit of height is everyone alive when the dial runs out (12.2 billion). At
+  that scale all of history is a line one unit high, which is why the horizon
+  is flat. The curve leaves it in the last fifteenth of the card and is out of
+  the picture just past the dial. The spire's left flank is the run's own
+  curve, step for step, and its right edge is the vertical at the first step
+  above the frame.
+- A red light is people: a forager's fire, a village, a city. There are as
+  many along a stretch of the horizon as the 0.45 power of the people alive
+  then, alone among foragers and gathered into towns as the land is farmed
+  and industry comes. The red line along the spire's foot is the same people,
+  one unit high. The camp's fire is the first of them, and the lights on the
+  Moon's dark side are the last: 2.4 million people live off-world when the
+  dial runs out, and seven of the Moon's fourteen sites are lit.
+- The fields are as thick as the farmed share of the land, furrowed either
+  way, and the wild acacias thin as they spread.
+- Chimneys come with fossil carbon's power, as many along a stretch as its
+  orders of magnitude above a gigawatt. The brown haze above them is coal's
+  sulfate, as deep as its forcing.
+- A verdigris light is a machine's. On the plain a cluster of them is a
+  datacenter, in proportion to compute's share of the power (a third of the
+  clusters at the dial). Up the spire they are everything above the red line.
 
-Nothing else is red. The paper is left bare at the left, where the card's type
-is set.
+The rest is the view: the camp, the kopje, the river the towns keep to, the
+acacias, the smoke on one wind, and the light. The spire is tall enough that
+its top already has the Sun while the ground is in the Earth's shadow, so its
+lights are on only below that line. The sky's upper left is left quiet, where
+the card's type is set.
 
     python3 isochron.py [scale=2] [out=../art/isochron.png]
 
-Painted by Claude, 2026-11-14.
+Painted by Claude, 2026-11-16.
 """
-import heapq
+import json
 import os
 import sys
 import time
 
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+HERE = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, HERE)
 
 import numpy as np
-from scipy.ndimage import gaussian_filter, gaussian_filter1d, map_coordinates
 
-from brush import (F, Canvas, replace, col, rgb, mix, arc, resample, path_len,
-                   FLAT, ROUND, FILBERT, LINE, LINER, DAB, SOFT)
+from brush import F, Canvas, col, mix, rect, arc, spline, FLAT, ROUND, FILBERT, DRY, SOFT, LINE, LINER
 
 W, H = 1200, 630
 SCALE = float(sys.argv[1]) if len(sys.argv) > 1 else 2.0
-OUT = sys.argv[2] if len(sys.argv) > 2 else os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                                                         "..", "art", "isochron.png")
-SEED = 4104
+OUT = sys.argv[2] if len(sys.argv) > 2 else os.path.join(HERE, "..", "art", "isochron.png")
 t0 = time.time()
-RAD = np.pi / 180
+cv = Canvas(W, H, SCALE, ground=(0.05, 0.07, 0.16), seed=1559)
+rng = cv.rng
 
 
-def smoothstep(a, b, x):
-    t = np.clip((np.asarray(x, float) - a) / (b - a), 0, 1)
+def clip01(v):
+    return np.clip(v, 0, 1)
+
+
+def smooth(a, b, x):
+    t = clip01((np.asarray(x, float) - a) / (b - a))
     return t * t * (3 - 2 * t)
 
 
-def unit(v):
-    v = np.asarray(v, float)
-    return v / np.linalg.norm(v)
+# ----------------------------------------------------------------- the run ---
+RUN = json.load(open(os.path.join(HERE, "isochron-run.json")))
+AX = np.array(RUN["axis"], float)
+COL = {name: i for i, name in enumerate(RUN["columns"])}
+FLANK = np.array(RUN["flank"], float)
+UNIT = RUN["mindsPerUnit"]                    # minds to a unit of height: everyone alive at the dial
+F_FARM, F_IND, F_NOW = (RUN["events"][k]["f"] for k in ("farming", "industry", "present"))
 
 
-def at(lat, lon):
-    return np.array([np.cos(lat * RAD) * np.cos(lon * RAD), np.cos(lat * RAD) * np.sin(lon * RAD), np.sin(lat * RAD)])
+def run(name, f):
+    """A column of the run at the fraction f of the way to the dial."""
+    return np.interp(f, AX[:, 0], AX[:, COL[name]])
 
 
-# -------------------------------------------------------------- the view ----
-# Orthographic. The globe is cropped by the card at the right.
-CX, CY, R = 914.0, 334.0, 330.0
-LAT0, LON0, ROLL = 27.0, 0.0, -9.0
-NORTH = np.array([0.0, 0.0, 1.0])
-_f = at(LAT0, LON0)
-_r = unit(np.cross(NORTH, _f))
-_u = np.cross(_f, _r)
-_cr, _sr = np.cos(ROLL * RAD), np.sin(ROLL * RAD)
-VR, VU, VF = _cr * _r + _sr * _u, -_sr * _r + _cr * _u, _f
+HOR = 338.0                                   # the horizon
+X0, XD = 0.0, 1088.0                          # the first hominins, and the dial running out
 
 
-def project(p):
-    p = np.asarray(p, float)
-    return CX + R * (p @ VR), CY - R * (p @ VU), p @ VF
+def fx(f):
+    return X0 + (XD - X0) * np.asarray(f, float)
 
 
-def unproject(x, y):
-    """World point under a card point; off the disc, the nearest point of the limb."""
-    a, b = (np.asarray(x, float) - CX) / R, -(np.asarray(y, float) - CY) / R
-    r = np.hypot(a, b)
-    k = np.where(r > 0.9995, 0.9995 / np.maximum(r, 1e-9), 1.0)
-    a, b = a * k, b * k
-    c = np.sqrt(np.clip(1 - a * a - b * b, 0, 1))
-    return a[..., None] * VR + b[..., None] * VU + c[..., None] * VF, r
+def xf(x):
+    return (np.asarray(x, float) - X0) / (XD - X0)
 
 
-# ------------------------------------------------------------ the plates ----
-# The two plates part about the Euler pole E. In E's own latitude and longitude
-# (phi, lam) a ridge segment is a meridian and a transform a parallel.
-ANCHOR = at(17.0, -2.0)                              # the ridge passes through here
-_n = unit(NORTH - (NORTH @ ANCHOR) * ANCHOR)
-_e = unit(np.cross(NORTH, ANCHOR))
-_az, _far = 13.0 * RAD, 84.0 * RAD
-E = ANCHOR * np.cos(_far) + (_n * np.cos(_az) + _e * np.sin(_az)) * np.sin(_far)
-E1 = unit(ANCHOR - (ANCHOR @ E) * E)
-E2 = np.cross(E, E1)
-HALF_RATE = 0.30                                     # degrees of lam per Myr, each side
+X_EDGE = float(fx(FLANK[-1, 0]))              # the spire's right edge: the first step above the picture
+SUN = np.array([1150.0, HOR + 3.0])
+MOON = np.array([930.0, 112.0])
+FIRE = np.array([319.0, 488.0])
+BAND = 86.0                                   # the depth of plain, in units below the horizon, that carries the run
+
+RED = col(0.93, 0.19, 0.16)
+RED_GLOW = col(0.86, 0.15, 0.12)
+VERD = col(0.42, 0.84, 0.78)
+VERD_GLOW = col(0.20, 0.62, 0.58)
+EMBER = col(1.0, 0.36, 0.17)                  # what the camp's fire throws on rock and skin
 
 
-def pole(p):
-    return np.arcsin(np.clip(p @ E, -1, 1)) / RAD, np.arctan2(p @ E2, p @ E1) / RAD
+# ------------------------------------------------------------------- light ---
+def sky(x, y):
+    t = clip01(y / HOR)
+    c = mix(col(0.030, 0.040, 0.115), col(0.070, 0.110, 0.250), t ** 0.9)
+    c = mix(c, col(0.125, 0.185, 0.350), clip01((t - 0.5) / 0.5) ** 1.6)
+    d = np.hypot((x - SUN[0]) / 2.0, (y - SUN[1]) * 1.2)
+    c = mix(c, col(0.270, 0.390, 0.540), 0.85 * np.exp(-(d / 520.0) ** 2))
+    c = mix(c, col(0.560, 0.640, 0.650), 0.78 * np.exp(-(d / 330.0) ** 2))
+    c = mix(c, col(0.990, 0.800, 0.585), 0.90 * np.exp(-(d / 185.0) ** 2))
+    c = mix(c, col(1.000, 0.900, 0.700), 0.85 * np.exp(-(d / 78.0) ** 2))
+    return c
 
 
-def world(phi, lam):
-    phi, lam = np.asarray(phi, float) * RAD, np.asarray(lam, float) * RAD
-    return (np.cos(phi) * np.cos(lam))[..., None] * E1 + (np.cos(phi) * np.sin(lam))[..., None] * E2 \
-        + np.sin(phi)[..., None] * E
+def dawn(x):
+    """How much of the morning a place along the horizon has."""
+    return float(np.exp(-((x - SUN[0]) / 430.0) ** 2))
 
 
-_g = np.random.default_rng(SEED)
-
-# The ridge: segments between transforms, each on its own meridian.
-_edges = [-80.0]
-while _edges[-1] < 88:
-    _edges.append(_edges[-1] + _g.uniform(11.0, 24.0))
-BAND = np.array(_edges)
-_o, _offs = 0.0, []
-for k in range(len(BAND) - 1):
-    _o = float(np.clip(0.45 * _o + _g.normal(0, 2.6), -5.5, 5.5))
-    _offs.append(_o + 2.5 * np.sin(0.5 * (BAND[k] + BAND[k + 1]) * RAD * 2.2))
-RIDGE = np.array(_offs)                              # lam of each segment
+def ground(x, y):
+    u = clip01((y - HOR) / (H - HOR))
+    g = dawn(x)
+    far = mix(col(0.090, 0.125, 0.235), col(0.400, 0.345, 0.385), 0.9 * g)
+    far = mix(far, col(0.760, 0.560, 0.430), 0.55 * np.exp(-((x - SUN[0]) / 150.0) ** 2))
+    near = mix(col(0.026, 0.034, 0.070), col(0.075, 0.062, 0.090), g)
+    c = mix(far, near, u ** 0.42)
+    z = 1.0 / (y - HOR + 7.0)
+    patch = np.sin(x * 0.0125 + 41.0 * z) * np.sin(0.006 * x - 330.0 * z + 1.3) + 0.5 * np.sin(0.031 * x + 620.0 * z)
+    return c * (1 + 0.085 * patch)
 
 
-def ridge_lam(phi):
-    return RIDGE[np.clip(np.searchsorted(BAND, phi) - 1, 0, len(RIDGE) - 1)]
+def water(x, y):
+    """The river shows the sky above it, a little darker: the horizon's light far off, the zenith at our feet."""
+    c = sky(x, max(8.0, HOR - 1.05 * (y - HOR) - 5))
+    return mix(c, col(0.040, 0.055, 0.125), 0.22 + 0.42 * clip01((y - HOR) / (H - HOR)) ** 0.8)
 
 
-# The field's reversals, in Myr before present: random intervals, drawn once.
-_t, _rev = 0.0, [0.0]
-while _t < 400:
-    _t += 1.7 + _g.exponential(3.7)
-    _rev.append(_t)
-REVERSALS = np.array(_rev)
+def firelight(x, y, reach=95.0):
+    d2 = (x - FIRE[0]) ** 2 + ((y - FIRE[1]) * 1.25) ** 2
+    return 1.0 / (1 + d2 / reach ** 2) ** 1.35
 
 
-def coast_east(phi):                                 # the active margin, lam
-    return 33.0 + 4.0 * np.sin(phi * RAD * 2.3 + 0.5) + 1.6 * np.sin(phi * RAD * 5.7 + 2.0)
+# --------------------------------------------------------------------- sky ---
+def in_type(x, y):
+    """The quiet part of the sky, where the card's type is set."""
+    return 40 < x < 560 and 36 < y < 268
 
 
-def coast_west(phi):                                 # the passive margin
-    return -37.0 + 4.5 * np.sin(phi * RAD * 2.0 + 2.2) + 2.0 * np.sin(phi * RAD * 4.9 + 0.4)
-
-
-TRENCH_OFF, ARC_OFF = 2.0, 4.4                       # degrees seaward / landward of the active coast
-
-# Hotspots, fixed in the mantle (phi, lam east of the local ridge), and the ages of the
-# seamounts each has left. The plate carries a seamount away at the half rate.
-HOTSPOTS = [(-19.0, -8.5), (38.0, 9.0)]
-SEAMOUNTS = []                                       # (world point, age Myr, height km, radius deg)
-for hp, hl in HOTSPOTS:
-    side = np.sign(hl)
-    lam0 = float(ridge_lam(hp)) + hl
-    t = 0.0
-    while True:
-        lam = lam0 + side * HALF_RATE * t
-        d_e, d_w = coast_east(hp) - TRENCH_OFF - lam, lam - coast_west(hp) - 6.0
-        if d_e < 0 or d_w < 0:
-            break
-        SEAMOUNTS.append((world(hp + _g.normal(0, 0.35), lam), t,
-                          4.6 * np.exp(-t / 45) * _g.uniform(0.75, 1.1), 1.05 * _g.uniform(0.8, 1.15)))
-        t += _g.uniform(5.0, 9.0)
-HOT = [world(hp, float(ridge_lam(hp)) + hl) for hp, hl in HOTSPOTS]
-
-
-# ----------------------------------------------------------------- noise ----
-def make_noise(seed, f0, octaves=5, gain=0.5, ndir=7):
-    g = np.random.default_rng(seed)
-    d = g.standard_normal((octaves, ndir, 3))
-    d /= np.linalg.norm(d, axis=-1, keepdims=True)
-    ph = g.uniform(0, 2 * np.pi, (octaves, ndir))
-    norm = np.sqrt(0.5 * ndir * sum(gain ** (2 * o) for o in range(octaves)))
-
-    def noise(p):
-        out = np.zeros(p.shape[:-1], F)
-        for o in range(octaves):
-            for j in range(ndir):
-                out += (gain ** o) * np.sin(f0 * 2 ** o * (p @ d[o, j]) + ph[o, j]).astype(F)
-        return out / norm
-
-    return noise
-
-
-N_COAST, N_RANGE, N_ROUGH, N_CLIM = make_noise(1, 13.0), make_noise(2, 9.0, 2), make_noise(3, 40.0, 4), \
-    make_noise(4, 6.0, 3)
-
-
-# ------------------------------------------------------------ the planet ----
-def planet(x, y, mouths=(), lake=None):
-    """Every field of the model at card points (arrays)."""
-    p, r = unproject(x, y)
-    phi, lam = pole(p)
-    cphi = np.cos(phi * RAD)
-    lat = np.arcsin(np.clip(p[..., 2], -1, 1)) / RAD
-    nc, nr, ng, nk = N_COAST(p), N_RANGE(p), N_ROUGH(p), N_CLIM(p)
-
-    # crust
-    off = ridge_lam(phi)
-    age = np.abs(lam - off) / HALF_RATE
-    normal = np.searchsorted(REVERSALS, age) % 2 == 1          # the present interval is normal
-    d_e = (lam - coast_east(phi)) * cphi                       # degrees inland, each margin
-    d_w = (coast_west(phi) - lam) * cphi
-    east = lam > 0
-
-    def shore(d):                                             # the coast's own shape, fading inland
-        return np.clip(0.16 * d, -1.2, 0.3) + 0.30 * nc * (1 - 0.8 * smoothstep(1.0, 5.0, d))
-
-    rise_e, rise_w = smoothstep(-0.5, 1.5, d_e), smoothstep(-0.5, 1.5, d_w)
-    cord = 3.3 * np.exp(-((d_e - ARC_OFF) / 2.5) ** 2) * (0.72 + 0.28 * nr)
-    elev_e = shore(d_e) + rise_e * (cord + 0.30 + 0.9 * np.exp(-((d_e - 10.0) / 5.0) ** 2)
-                                    - 0.013 * np.clip(d_e - 12, 0, 14) + ng * (0.05 + 0.22 * cord)
-                                    + 0.30 * np.abs(ng) * cord)
-    old = 1.5 * np.exp(-((d_w - 8.0) / 2.8) ** 2) * np.clip(0.38 + 0.85 * nr, 0, 1.2)      # an old range, with gaps
-    elev_w = shore(d_w) + rise_w * (old + 0.30 + 0.022 * np.clip(d_w, 0, 30) + ng * (0.05 + 0.2 * old))
-    elev = np.where(east, elev_e, elev_w)
-    land = elev > 0
-
-    # the sea floor's depth, km
-    depth = 2.5 + 0.34 * np.sqrt(np.minimum(age, 150.0))
-    swell = np.zeros_like(depth)
-    for q in HOT:
-        swell += 0.55 * np.exp(-(np.arccos(np.clip(p @ q, -1, 1)) / (4.5 * RAD)) ** 2)
-    mount = np.zeros_like(depth)
-    for q, _, hgt, rad in SEAMOUNTS:
-        mount = np.maximum(mount, hgt * np.exp(-(np.arccos(np.clip(p @ q, -1, 1)) / (rad * RAD)) ** 2))
-    depth = depth - swell
-    fan = np.zeros_like(depth)                                 # sediment off the river mouths, degrees
-    for q, size in mouths:
-        fan += 3.6 * size * np.exp(-(np.arccos(np.clip(p @ q, -1, 1)) / ((1.6 + 2.8 * size) * RAD)) ** 2)
-    out = -elev / 0.16                                         # degrees offshore, roughly
-    shelf_w = 0.06 + 0.07 * out + 5.6 * smoothstep(2.0 + fan, 4.6 + fan, out)
-    shelf_e = 0.06 + 5.6 * smoothstep(0.25, 1.3, out)
-    depth = np.where(east, np.minimum(depth, shelf_e) + 2.9 * np.exp(-((d_e + TRENCH_OFF) / 0.55) ** 2),
-                     np.minimum(depth, shelf_w))
-    buried = 1 - smoothstep(0.5, 2.4, np.where(east, shelf_e, shelf_w))
-    depth = depth - mount
-
-    # climate
-    alat = np.abs(lat)
-    temp = 27.0 - 46.0 * np.sin(lat * RAD) ** 2 - 6.0 * np.clip(elev, 0, None) + 1.3 * nk
-    rain = 0.20 + 1.0 * np.exp(-(lat / 10.0) ** 2) + 0.62 * np.exp(-((alat - 49.0) / 14.0) ** 2)
-    wester = smoothstep(26, 36, alat)                          # trades below, westerlies above
-    lee = np.tanh((d_e - ARC_OFF) / 1.4)                       # -1 on the range's sea side, +1 behind it
-    rain_e = rain * (1 + wester * (-0.75 * lee + 0.15) + (1 - wester) * (0.62 * lee - 0.28)) \
-        * (1 + 0.5 * np.exp(-((d_e - ARC_OFF) / 2.5) ** 2))
-    rain_w = rain * (1.25 - 0.3 * wester) * (0.8 + 0.6 * np.exp(-d_w / 12.0))
-    rain = np.clip(np.where(east, rain_e, rain_w) * (1 + 0.18 * nk), 0.02, None)
-    sea_temp = 27.0 - 46.0 * np.sin(lat * RAD) ** 2 + 1.6 * nk
-    ice = np.where(land, temp < -13.5, sea_temp < -12.5)
-    icef = np.where(land, -13.5 - temp, -12.5 - sea_temp)      # > 0 where frozen
-    wet = np.zeros(land.shape, bool) if lake is None else (lake(x, y) > 0.5) & land & ~ice
-    return dict(p=p, r=r, phi=phi, lam=lam, lat=lat, age=age, normal=normal, east=east, d_e=d_e, d_w=d_w,
-                elev=elev, land=land, depth=depth, buried=buried, temp=temp, rain=rain, ice=ice, icef=icef,
-                mount=mount, lake=wet)
-
-
-# ---------------------------------------------------------------- colour ----
-PAPER = col(0.988, 0.988, 0.984)
-INK = col(0.086, 0.082, 0.078)
-RED = rgb("#983432")
-SEA_INK = col(0.110, 0.285, 0.455)
-_DEPTHS = np.array([0.0, 0.5, 2.6, 4.5, 6.0, 8.8])
-_SEA = np.array([(0.820, 0.895, 0.895), (0.700, 0.835, 0.865), (0.470, 0.665, 0.790), (0.235, 0.475, 0.655),
-                 (0.130, 0.330, 0.510), (0.055, 0.160, 0.290)], F)
-LAKE = col(0.560, 0.735, 0.830)
-PALE, DARK = col(0.870, 0.905, 0.920), col(0.075, 0.225, 0.400)
-ICE = col(0.940, 0.955, 0.965)
-SNOW = col(0.955, 0.960, 0.962)
-TROPIC, TEMPER, BOREAL = rgb("#3E7A4B"), rgb("#5F8148"), rgb("#4B6A52")
-STEPPE, DESERT, TUNDRA, ROCK = rgb("#ADA670"), rgb("#D6C4A0"), rgb("#A39C8C"), rgb("#7C6049")
-LIGHT = unit([-0.50, 0.58, 0.64])                    # in (right, up, toward us)
-
-
-def colour(f, hill=None):
-    d = np.clip(f["depth"], 0, 8.8)
-    sea = np.stack([np.interp(d, _DEPTHS, _SEA[:, i]) for i in range(3)], -1).astype(F)
-    k = (1 - f["buried"])[..., None]
-    sea = np.where(f["normal"][..., None], sea + (PALE - sea) * 0.46 * k, sea + (DARK - sea) * 0.40 * k)
-
-    t, rain, elev = f["temp"], f["rain"], f["elev"]
-    wood = BOREAL + (TEMPER - BOREAL) * smoothstep(0, 9, t)[..., None]
-    wood = wood + (TROPIC - wood) * smoothstep(16, 23, t)[..., None]
-    c = wood + (STEPPE - wood) * (0.9 * (1 - smoothstep(0.36, 0.85, rain)))[..., None]
-    c = c + (DESERT - c) * (1 - smoothstep(0.20, 0.44, rain))[..., None]
-    c = c + (TUNDRA - c) * (1 - smoothstep(-7, 1, t))[..., None]
-    c = c + (ROCK - c) * (0.75 * smoothstep(1.7, 3.0, elev))[..., None]
-    if hill is not None:
-        c = c * (1 + np.clip(hill, -0.36, 0.24))[..., None]
-    c = np.where(f["lake"][..., None], LAKE, c)
-    out = np.where(f["land"][..., None], c, sea)
-    white = np.where(f["land"], 1.0, 0.0)[..., None] * SNOW + np.where(f["land"], 0.0, 1.0)[..., None] * ICE
-    if hill is not None:
-        white = white * (1 + 0.35 * np.clip(hill, -0.30, 0.26))[..., None]
-    out = np.where(f["ice"][..., None], white, out)
-
-    # the sphere's own light
-    p = f["p"]
-    n_l = np.clip((p @ VR) * LIGHT[0] + (p @ VU) * LIGHT[1] + (p @ VF) * LIGHT[2], 0, 1)
-    return (out * (1 - 0.34 * (1 - n_l) ** 1.7)[..., None]).astype(F)
-
-
-def hillshade(elev, cell):
-    """Relief lit from the upper left; `cell` is the grid's spacing in card units."""
-    gy, gx = np.gradient(np.clip(elev, 0, None), cell)
-    return -(gx * -0.62 + gy * -0.78) * 2.3
-
-
-# ------------------------------------------------------------- the rivers ---
-G = 1.25                                             # routing grid, card units
-gx_ = np.arange(CX - R - 4, min(W + 30, CX + R + 4), G)
-gy_ = np.arange(CY - R - 4, CY + R + 4, G)
-GX, GY = np.meshgrid(gx_, gy_)
-grid = planet(GX, GY)
-NYG, NXG = GX.shape
-
-
-def gsamp(field, x, y, order=1):
-    x, y = np.asarray(x, float), np.asarray(y, float)
-    out = map_coordinates(np.asarray(field, F), [(np.atleast_1d(y) - gy_[0]) / G, (np.atleast_1d(x) - gx_[0]) / G],
-                          order=order, mode="nearest")
-    return out.reshape(x.shape)
-
-
-def route(f):
-    """Fill and drain the land (priority flood from the sea), then sum rain down the tree."""
-    elev = np.where(f["ice"], np.clip(f["elev"], 0, None) + 0.2, f["elev"]).astype(float)
-    dry = f["land"] & (f["r"] < 0.992)
-    ny, nx = elev.shape
-    recv = np.full(ny * nx, -1, np.int64)
-    fill = elev.ravel().copy()
-    done = ~dry.ravel()
-    flat = elev.ravel()
-    heap = []
-    idx = np.flatnonzero(done.reshape(ny, nx)[1:-1, 1:-1].ravel())
-    inner = (idx // (nx - 2) + 1) * nx + idx % (nx - 2) + 1
-    nb = (-nx - 1, -nx, -nx + 1, -1, 1, nx - 1, nx, nx + 1)
-    dry_f = dry.ravel()
-    for c in inner.tolist():                         # sea cells that touch land
-        if any(dry_f[c + o] for o in nb):
-            heap.append((flat[c], c))
-    heapq.heapify(heap)
-    order = []
-    while heap:
-        h, c = heapq.heappop(heap)
-        if dry_f[c]:
-            order.append(c)
-        j, i = divmod(c, nx)
-        if j == 0 or i == 0 or j == ny - 1 or i == nx - 1:
+def paint_sky():
+    whole = np.array([(-40, -30), (W + 40, -30), (W + 40, HOR + 8), (-40, HOR + 8)], F)
+    cv.fill(whole, sky, FILBERT, width=44, angle=-3, length=(220, 480), overlap=0.52, streak=0.016, chroma=0.006,
+            jitter=0.008, frisket=False, dry=0)
+    cv.fill(whole, sky, FILBERT, width=32, angle=3, length=(180, 420), overlap=0.42, curve=7, streak=0.014,
+            chroma=0.006, jitter=0.008, frisket=False, opacity=0.6, pickup=0.25, shuffle=True)
+    # stars, going out toward the morning
+    n = 0
+    while n < 300:
+        x, y = rng.uniform(0, W), rng.uniform(0, HOR - 14)
+        d = np.hypot((x - SUN[0]) / 2.0, (y - SUN[1]) * 1.2)
+        vis = clip01((d - 250) / 380) * clip01(1.12 - 0.55 * y / HOR)
+        if in_type(x, y):
+            vis *= 0.16
+        if rng.random() > vis:
             continue
-        for o in nb:
-            n = c + o
-            if not done[n]:
-                done[n] = True
-                recv[n] = c
-                fill[n] = max(flat[n], h + 1e-5)
-                heapq.heappush(heap, (fill[n], n))
-    area = 1 / np.clip(np.sqrt(np.clip(1 - f["r"] ** 2, 0, 1)), 0.12, 1)       # a cell near the limb is more ground
-    acc = np.where(dry, f["rain"] * area * np.where(f["ice"], 0.25, 1.0), 0.0).ravel().copy()
-    for c in reversed(order):
-        acc[recv[c]] += acc[c]
-    return recv, acc, dry_f, np.where(dry, (fill - elev.ravel()).reshape(ny, nx), 0.0)
+        n += 1
+        mag = rng.random() ** 3.2
+        if in_type(x, y):
+            mag *= 0.35
+        c = mix(sky(x, y), mix(col(0.74, 0.82, 1.0), col(1.0, 0.93, 0.82), rng.random()), (0.40 + 0.60 * mag) * (0.35 + 0.65 * vis))
+        cv.dab((x, y), 0.7 + 1.2 * mag, c, soft=0.5, thick=0.25)
+        if mag > 0.55:
+            cv.glow((x, y), 4.5 + 5 * mag, c, 0.22)
 
 
-RECV, ACC, DRY, POND = route(grid)
-# A basin the land cannot drain fills to its sill: a lake, where it is deep and wide enough.
-_lake = gaussian_filter((POND > 0.06).astype(F), 1.2)
-_marsh = gaussian_filter((POND > 0.003).astype(F), 0.8)
+def paint_moon():
+    """An old Moon ahead of the Sun: a thin lit limb, earthshine on the rest, and the city on its dark side."""
+    r = 15.5
+    to_sun = (SUN - MOON) / np.hypot(*(SUN - MOON))
+    disc = arc(MOON[0], MOON[1], r)
+    cv.glow(MOON, 30, col(0.30, 0.40, 0.56), 0.16)
+    cv.fill(disc, mix(sky(*MOON), col(0.300, 0.360, 0.480), 0.62), FILBERT, width=5, angle=30, length=(10, 30),
+            streak=0.03, dry=0, thick=0.1)
+    for cx, cy, rr in ((-4.5, -3.5, 4.2), (2.5, 3.5, 3.0), (-2.0, 6.0, 2.4), (5.0, -6.5, 2.2)):   # maria
+        cv.dab(MOON + (cx, cy), rr, mix(sky(*MOON), col(0.205, 0.250, 0.365), 0.75), soft=0.6, thick=0, opacity=0.7)
+    # the lit limb: the disc less a disc shifted away from the Sun
+    lit = cv.poly_mask(disc) * (1 - cv.poly_mask(arc(MOON[0] - to_sun[0] * 4.6, MOON[1] - to_sun[1] * 4.6, r * 1.03), feather=0.35))
+    with cv.frisket(lit):
+        cv.fill(arc(MOON[0], MOON[1], r + 1), col(1.0, 0.955, 0.86), FILBERT, width=4, angle=-40, length=(10, 30),
+                streak=0.02, dry=0, frisket=False, thick=0.3)
+    cv.glow(MOON + to_sun * r * 0.8, 9, col(1.0, 0.92, 0.78), 0.22)
+    # the city: as many of its fourteen sites lit as the people off-world have grown, from a thousand to ten billion
+    grown = clip01((np.log10(max(run("space", 1.0), 1.0)) - 3) / 7)
+    sites = [(-6.5, 1.5), (-3.0, -1.5), (-8.0, -4.5), (-1.0, 2.5), (-5.0, 5.5), (-9.5, 0.5), (0.5, -5.0),
+             (-3.5, -7.5), (2.0, 0.0), (-7.0, 8.0), (-11.0, -3.0), (-0.5, 7.5), (3.5, -8.5), (-4.5, -11.0)]
+    for cx, cy in sites[:int(round(grown * len(sites)))]:
+        p = MOON + (cx, cy) + rng.normal(0, 0.25, 2)
+        cv.glow(p, 1.7, RED_GLOW, 0.34, falloff=1.6)
+        cv.dab(p, 0.50, RED, soft=0.4, thick=0.2)
 
 
-def lake_at(x, y):
-    return gsamp(_lake, x, y)
+def paint_clouds():
+    """Bars of cloud low in the east, lit from underneath."""
+    for _ in range(9):
+        x0, y0 = rng.uniform(470, 1230), rng.uniform(HOR - 128, HOR - 26)
+        if y0 < 276:
+            x0 = max(x0, 640.0)                                    # clear of the type
+        size = 0.55 + (y0 - (HOR - 128)) / 160
+        for j in range(rng.integers(2, 5)):
+            x = x0 + abs(rng.normal(0, 70))
+            y = y0 + j * rng.uniform(2.2, 5.0)
+            ln = rng.uniform(120, 380) * size
+            w = rng.uniform(3.5, 10) * (1.25 - 0.5 * (y0 - (HOR - 128)) / 102)
+            near = np.exp(-((x + ln / 2 - SUN[0]) / 400.0) ** 2)
+            body = mix(sky(x + ln / 2, y), col(0.185, 0.165, 0.290), 0.55)
+            path = spline([(x, y + rng.normal(0, 1.2)), (x + ln * 0.3, y - rng.uniform(0, 3.5)),
+                           (x + ln * 0.7, y - rng.uniform(0, 2.5)), (x + ln, y + rng.normal(0, 1.2))], 6)
+            cv.stroke(path, w, body, FILBERT, taper=(0.35, 0.45), tip=0.05, dry=0.45, grain=1.1, streak=0.03, opacity=0.9)
+            cv.stroke(path + np.array([0, w * 0.36], F), max(1.3, w * 0.36), mix(body, col(1.0, 0.66, 0.50), 0.2 + 0.75 * near),
+                      ROUND, taper=(0.35, 0.45), tip=0.05, opacity=0.4 + 0.5 * near)
 
 
-RIVER_MIN = 150.0
-_is_river = DRY & (ACC > RIVER_MIN)
-_up = {}
-for c in np.flatnonzero(_is_river).tolist():
-    _up.setdefault(int(RECV[c]), []).append(c)
-RIVERS, MOUTHS = [], []                              # (polyline, discharge along it)
-_seen = set()
-for c in sorted(np.flatnonzero(_is_river).tolist(), key=lambda c: -ACC[c]):
-    if c in _seen:
-        continue
-    path = [int(RECV[c]), c]                         # begin on the stem (or the sea) it joins
-    _seen.add(c)
-    while True:
-        ups = [u for u in _up.get(path[-1], []) if u not in _seen]
-        if not ups:
-            break
-        nxt = max(ups, key=lambda u: ACC[u])         # at each confluence the larger river runs on
-        _seen.add(nxt)
-        path.append(nxt)
-    if len(path) < 7:
-        continue
-    jj, ii = np.divmod(np.array(path), NXG)
-    pts = np.stack([gx_[ii], gy_[jj]], -1)
-    q = np.stack([gaussian_filter1d(pts[:, 0], 2.2, mode="nearest"), gaussian_filter1d(pts[:, 1], 2.2, mode="nearest")], -1)
-    q[0] = pts[0]
-    RIVERS.append((q[::-1].astype(F), ACC[np.array(path)][::-1]))      # source to mouth
-    if not DRY[path[0]]:
-        MOUTHS.append((pts[0], float(ACC[c])))
-_qmax = max(a for _, a in MOUTHS)
-FANS = [(unproject(m[0], m[1])[0], (a / _qmax) ** 0.5) for m, a in MOUTHS if a > 0.04 * _qmax]
-
-grid = planet(GX, GY, FANS, lake_at)                          # again, with the fans laid down
-SLOPE = np.gradient(gaussian_filter(np.where(grid["land"], np.clip(grid["elev"], 0, None), 0.0), 1.6), G)
+def paint_sun_glow():
+    cv.glow(SUN, 150, col(1.0, 0.80, 0.56), 0.20)
+    cv.glow(SUN, 62, col(1.0, 0.88, 0.66), 0.36)
 
 
-# -------------------------------------------------------------- contours ----
-def contours(field, level, minlen=0.0):
-    """Level set of a field on the routing grid, as polylines in card units (marching squares)."""
-    b = field > level
-    ny, nx = field.shape
-    with np.errstate(divide="ignore", invalid="ignore"):
-        th = (level - field[:, :-1]) / (field[:, 1:] - field[:, :-1])
-        tv = (level - field[:-1, :]) / (field[1:, :] - field[:-1, :])
-    ch = b[:, :-1] != b[:, 1:]
-    cv_ = b[:-1, :] != b[1:, :]
-    top, bot, lef, rig = ch[:-1, :], ch[1:, :], cv_[:, :-1], cv_[:, 1:]
-    jj, ii = np.mgrid[0:ny - 1, 0:nx - 1]
-    nhv = ny * nx
-    ids = ((top, jj * nx + ii), (bot, (jj + 1) * nx + ii), (lef, nhv + jj * nx + ii), (rig, nhv + jj * nx + ii + 1))
-    cnt = top.astype(int) + bot + lef + rig
-    two, four = cnt == 2, cnt == 4
-    pairs = []
-    for a in range(4):
-        for c in range(a + 1, 4):
-            m = two & ids[a][0] & ids[c][0]
-            pairs.append(np.stack([ids[a][1][m], ids[c][1][m]], 1))
-    pairs.append(np.stack([ids[0][1][four], ids[2][1][four]], 1))
-    pairs.append(np.stack([ids[1][1][four], ids[3][1][four]], 1))
-    adj = {}
-    for p, q in np.vstack(pairs).tolist():
-        adj.setdefault(p, []).append(q)
-        adj.setdefault(q, []).append(p)
-
-    def point(k):
-        if k < nhv:
-            j, i = divmod(k, nx)
-            return gx_[0] + (i + th[j, i]) * G, gy_[0] + j * G
-        j, i = divmod(k - nhv, nx)
-        return gx_[0] + i * G, gy_[0] + (j + tv[j, i]) * G
-
-    seen, out = set(), []
-
-    def walk(k):
-        path = [k]
-        seen.add(k)
-        while True:
-            nxt = [n for n in adj[k] if n not in seen]
-            if not nxt:
-                return path
-            k = nxt[0]
-            seen.add(k)
-            path.append(k)
-
-    for k in [k for k, v in adj.items() if len(v) == 1]:
-        if k not in seen:
-            out.append(walk(k))
-    for k in adj:
-        if k not in seen:
-            p = walk(k)
-            out.append(p + [p[0]])
-    polys = [np.array([point(k) for k in p], F) for p in out if len(p) > 2]
-    return [p for p in polys if path_len(p) >= minlen]
+def paint_sun():
+    """Its upper limb, through the haze."""
+    above = np.array([(SUN[0] - 60, HOR - 60), (SUN[0] + 60, HOR - 60), (SUN[0] + 60, HOR - 0.3), (SUN[0] - 60, HOR - 0.3)], F)
+    with cv.frisket(above):
+        cv.fill(arc(SUN[0], SUN[1], 21, n=72), col(1.0, 0.968, 0.850), FLAT, width=5, angle=0, length=(50, 90), overlap=0.5,
+                streak=0.006, chroma=0.002, dry=0, gap=0, jitter=0.004, thick=0.1, taper=(0, 0), tip=1.0)
+        cv.fill(arc(SUN[0], SUN[1] + 4, 14, n=60), col(1.0, 0.995, 0.950), FLAT, width=4, angle=0, length=(40, 70), overlap=0.5,
+                streak=0.004, chroma=0.001, dry=0, gap=0, jitter=0.003, thick=0.05, opacity=0.7, taper=(0, 0), tip=1.0)
+    cv.glow(SUN + (0, -8), 30, col(1.0, 0.94, 0.78), 0.50)
+    cv.stroke([(SUN[0] - 130, HOR - 1.0), (SUN[0] + 80, HOR - 1.0)], 2.2, col(1.0, 0.93, 0.76), SOFT, opacity=0.6,
+              taper=(0.45, 0.3), tip=0.05, soft=0.8)
 
 
-def on_globe(poly, margin=1.5):
-    """The runs of a polyline that lie on the visible disc and the card."""
-    poly = np.asarray(poly, F)
-    ok = (np.hypot(poly[:, 0] - CX, poly[:, 1] - CY) < R - margin) & (poly[:, 0] < W + 8) \
-        & (poly[:, 1] > -8) & (poly[:, 1] < H + 8)
-    runs, start = [], None
-    for i, o in enumerate(ok):
-        if o and start is None:
-            start = i
-        if not o and start is not None:
-            runs.append(poly[start:i])
-            start = None
-    if start is not None:
-        runs.append(poly[start:])
-    return [q for q in runs if len(q) >= 2]
+# ------------------------------------------------------------------- spire ---
+def spire_outline():
+    """The run's curve, from where it leaves the ground to where it leaves the picture, and the vertical there."""
+    x = fx(FLANK[:, 0])
+    y = HOR - FLANK[:, 1] / UNIT
+    top = int(np.argmax(y < -14)) + 1 if (y < -14).any() else len(y)      # as far as one step above the frame
+    flank = np.stack([x[:top], y[:top]], -1)
+    return np.vstack([[(x[0] - 6.0, HOR + 1.0)], flank, [(X_EDGE, y[top - 1]), (X_EDGE, HOR + 1.0)]]).astype(F), flank
 
 
-def smooth(p, k=2.0):
-    if len(p) < 5:
-        return p
-    q = np.stack([gaussian_filter1d(p[:, 0], k, mode="nearest"), gaussian_filter1d(p[:, 1], k, mode="nearest")], -1)
-    q[0], q[-1] = p[0], p[-1]
-    return q.astype(F)
+def paint_spire():
+    poly, flank = spire_outline()
+
+    def lit(hgt):
+        """How far up the Sun has already reached it: the ground is still in the Earth's shadow."""
+        return smooth(96, 205, hgt)
+
+    def body(x, y):
+        hgt = HOR - y
+        c = mix(col(0.066, 0.078, 0.146), col(0.110, 0.140, 0.250), smooth(40, 200, hgt))
+        c = mix(c, sky(x, HOR - 4) * 0.62, 0.50 * np.exp(-hgt / 46.0))               # its foot stands in the morning's air
+        sun = mix(col(0.800, 0.520, 0.400), col(1.000, 0.885, 0.700), smooth(120, 330, hgt))
+        return mix(c, sun, 0.88 * lit(hgt))
+
+    cv.fill(poly, body, FLAT, width=5, angle=90, length=(60, 180), overlap=0.45, streak=0.022, chroma=0.006, dry=0,
+            gap=0, jitter=0.012, thick=0.2, bleed=0.4)
+    # the Sun finds the edge the curve never crosses
+    edge = np.array([(X_EDGE + 0.2, HOR - 1.0), (X_EDGE + 0.2, -6.0)], F)
+    cv.lit_line(edge, 1.25, lambda x, y: mix(col(1.0, 0.84, 0.62), col(1.0, 0.95, 0.82), smooth(40, 330, HOR - y)), LINE,
+                chunk=26, opacity=0.9)
+    up = np.arange(HOR - 100, -8, -6.0)
+    shade = np.stack([np.interp(up, flank[::-1, 1], flank[::-1, 0]) + 0.35, up], -1)
+    cv.lit_line(shade, 0.9, lambda x, y: col(0.150, 0.140, 0.220), LINE, chunk=26, opacity=0.55)            # the side away from it
+    # machines' lights up it, thinning with height
+    xs, ys = flank[:, 0], flank[:, 1]
+    n = 0
+    while n < 300:
+        hgt = (HOR - 3.0) * rng.random() ** 2.6 + 2.6
+        y = HOR - hgt
+        xl = float(np.interp(-y, -ys, xs))                    # the flank at this height
+        if xl > X_EDGE - 0.8:
+            continue
+        x = rng.uniform(xl + 0.5, X_EDGE - 0.5)
+        if rng.random() > (X_EDGE - xl) / 34.0 + 0.25:           # fewer where it is thin
+            continue
+        n += 1
+        if rng.random() < lit(hgt) * 0.92:                       # lights are for the part still in the night
+            continue
+        b = rng.uniform(0.55, 1.0) * (1 - 0.35 * hgt / HOR)
+        cv.glow((x, y), 2.0, VERD_GLOW, 0.34 * b, falloff=1.6)
+        cv.dab((x, y), 0.46 + 0.25 * rng.random(), VERD * b, soft=0.5, thick=0.15)
+    # and the people, one unit high along its foot
+    for x in np.arange(poly[0][0] - 4, X_EDGE + 0.5, 1.55):
+        p = (x + rng.normal(0, 0.3), HOR - 0.7 + rng.normal(0, 0.15))
+        cv.glow(p, 2.2, RED_GLOW, 0.36, falloff=1.6)
+        cv.dab(p, 0.55, RED, soft=0.45, thick=0.15)
 
 
-def arc_on_globe(phi, lam, n=None):
-    """A line given in the pole's coordinates, as its visible runs on the card."""
-    phi, lam = np.broadcast_arrays(np.asarray(phi, float), np.asarray(lam, float))
-    x, y, c = project(world(phi, lam))
-    pts = np.stack([x, y], -1)
-    pts[c < 0.02] = 1e6                              # behind the limb
-    return on_globe(pts)
+def paint_near_cloud():
+    """A bar of cloud nearer than the spire, which is a long way off and very tall."""
+    for x, y, ln, w in ((948, HOR - 58, 262, 5.2),):
+        body = mix(sky(x + ln / 2, y), col(0.215, 0.185, 0.300), 0.50)
+        path = spline([(x, y + 0.8), (x + ln * 0.3, y - 2.2), (x + ln * 0.7, y - 1.4), (x + ln, y + 0.6)], 6)
+        cv.stroke(path, w, body, FILBERT, taper=(0.35, 0.45), tip=0.05, dry=0.4, grain=1.0, streak=0.03, opacity=0.92)
+        cv.stroke(path + np.array([0, w * 0.36], F), max(1.3, w * 0.36), mix(body, col(1.0, 0.70, 0.52), 0.85), ROUND,
+                  taper=(0.35, 0.45), tip=0.05, opacity=0.85)
 
 
-# ----------------------------------------------------------------- paint ----
-cv = Canvas(W, H, SCALE, ground=PAPER, seed=SEED)
-rng = cv.rng
-S = cv.s
-
-# The globe is stained with the model before any paint goes on: every field, at every pixel.
-bx0, bx1 = int(max(0, (CX - R - 2) * S)), int(min(cv.W, (CX + R + 2) * S))
-by0, by1 = int(max(0, (CY - R - 2) * S)), int(min(cv.H, (CY + R + 2) * S))
-_py, _px = np.mgrid[by0:by1, bx0:bx1]
-_px, _py = (_px + 0.5) / S, (_py + 0.5) / S
-full = planet(_px, _py, FANS, lake_at)
-stain = colour(full, hillshade(full["elev"], 1 / S))
-disc = np.clip((R - np.hypot(_px - CX, _py - CY)) * S + 0.5, 0, 1).astype(F)
-cv.img[by0:by1, bx0:bx1] = PAPER * (1 - disc[..., None]) + stain * disc[..., None]
-
-
-def whole(m):
-    out = np.zeros((cv.H, cv.W), F)
-    out[by0:by1, bx0:bx1] = m
-    return out
-
-
-M_ICE = whole(disc * full["ice"])
-M_SEA = whole(disc * (~full["land"] & ~full["ice"]))
-M_LAND = whole(disc * (full["land"] & ~full["ice"] & ~full["lake"]))
-M_DISC = whole(disc)
-del _px, _py
+# ------------------------------------------------------------------ ground ---
+def paint_ground():
+    edges = [HOR, 342, 348, 357, 369, 386, 410, 444, 492, 556, H + 30]
+    for y0, y1 in zip(edges[:-1], edges[1:]):
+        w = float(np.clip((y1 - y0) * 0.55, 2.4, 34))
+        band = np.array([(-40, y0), (W + 40, y0), (W + 40, y1 + 0.8), (-40, y1 + 0.8)], F)
+        cv.fill(band, ground, FLAT, width=w, angle=rng.normal(0, 0.3), length=(w * 8, w * 22), overlap=0.45,
+                streak=0.028, dry=0.05, gap=0.0, jitter=0.035)
+    low = np.array([(-40, HOR + 34), (W + 40, HOR + 34), (W + 40, H + 30), (-40, H + 30)], F)
+    cv.fill(low, ground, FILBERT, width=17, angle=2.5, length=(70, 240), overlap=0.3, curve=5, streak=0.02, dry=0.25,
+            grain=0.9, jitter=0.03, opacity=0.5, pickup=0.25, shuffle=True, frisket=False)
+    # the grain of the grass, nearer the eye
+    for _ in range(230):
+        y = HOR + 26 + (H - HOR - 20) * rng.random() ** 1.6
+        x = rng.uniform(-20, W + 20)
+        s = (y - HOR) / (H - HOR)
+        ln = rng.uniform(26, 190) * (0.25 + s)
+        c = ground(x, y) * rng.choice([0.78, 0.88, 1.12, 1.22])
+        cv.stroke([(x, y), (x + ln, y + rng.normal(0, 1.4 * s))], 1.0 + 6.0 * s * rng.random(), c, DRY, opacity=0.5,
+                  taper=(0.2, 0.5), tip=0.15)
 
 
-def stained(x, y):
-    j = int(np.clip(y * S - by0, 0, by1 - by0 - 1))
-    i = int(np.clip(x * S - bx0, 0, bx1 - bx0 - 1))
-    return stain[j, i]
+RIVER = np.array([(1078, 339.6, 0.45), (1036, 342.2, 0.70), (990, 345.6, 0.95), (940, 344.8, 1.15), (888, 348.6, 1.4),
+                  (836, 352.6, 1.7), (782, 352.4, 2.0), (730, 357.0, 2.4), (684, 362.8, 3.0), (650, 370.0, 3.8),
+                  (641, 380.0, 4.8), (668, 391.0, 6.2), (724, 402.0, 8.0), (770, 418.0, 10.5), (762, 440.0, 14.0),
+                  (704, 462.0, 18.0), (652, 492.0, 22.0), (678, 526.0, 28.0), (756, 560.0, 37.0), (828, 604.0, 50.0),
+                  (850, 664.0, 66.0)], float)
 
 
-def stamp(poly, color, opacity=1.0):
-    """A cut shape, for the chart's symbols."""
-    m = cv.poly_mask(np.asarray(poly, F)) * M_DISC * opacity
-    cv.img[:] = cv.img * (1 - m[..., None]) + np.asarray(color, F) * m[..., None]
+def river_banks():
+    c = spline(RIVER[:, :2], 4)
+    d = np.concatenate([[0.0], np.cumsum(np.hypot(*(c[1:] - c[:-1]).T))])
+    k = np.concatenate([[0.0], np.cumsum(np.hypot(*(RIVER[1:, :2] - RIVER[:-1, :2]).T))])
+    hw = np.interp(d, k * d[-1] / k[-1], RIVER[:, 2]) * 0.74
+    hw = hw * (1 + 0.16 * np.sin(d * 0.045 + 1.0) + 0.10 * np.sin(d * 0.11 + 4.0))
+    t = np.gradient(c, axis=0)
+    nrm = np.stack([-t[:, 1], t[:, 0]], -1)
+    nrm /= np.maximum(np.hypot(nrm[:, 0], nrm[:, 1]), 1e-6)[:, None]
+    # seen this low, a reach that runs across the picture is foreshortened and one that runs toward the eye is not
+    squash = np.stack([np.ones(len(c)), np.full(len(c), 0.42)], -1)
+    return c, (c + nrm * hw[:, None] * squash).astype(F), (c - nrm * hw[:, None] * squash).astype(F), hw
 
 
-FLOOR = replace(FILBERT, streak=0.030, chroma=0.008, jitter=0.012, dry=0.06, thick=0.35, taper=(0.03, 0.05), tip=0.85)
-GROUND = replace(FILBERT, streak=0.045, chroma=0.014, jitter=0.02, dry=0.2, thick=0.5)
+def river_mask():
+    c, left, right, hw = river_banks()
+    return cv.poly_mask(np.vstack([left, right[::-1]]))
 
-# 1. The sea floor, along its isochrons: band by band outward from the ridge, each stroke on
-#    one meridian of the Euler pole, between one transform's parallel and the next.
-with cv.frisket(M_SEA):
-    for k in range(len(RIDGE)):
-        p_lo, p_hi = BAND[k], BAND[k + 1]
-        pm = 0.5 * (p_lo + p_hi)
-        for side in (-1, 1):
-            a_max = (coast_east(pm) + 6 - RIDGE[k]) / HALF_RATE if side > 0 else (RIDGE[k] - coast_west(pm) + 9) / HALF_RATE
-            for j in range(len(REVERSALS) - 1):
-                a0, a1 = REVERSALS[j], REVERSALS[j + 1]
-                if a0 > a_max:
-                    break
-                l0, l1 = RIDGE[k] + side * HALF_RATE * a0, RIDGE[k] + side * HALF_RATE * a1
-                xa, ya, ca = project(world(pm, l0))
-                xb, yb, cb = project(world(pm, l1))
-                if min(ca, cb) < 0.03:
+
+def paint_river(mask):
+    c, left, right, hw = river_banks()
+    with cv.frisket(mask):
+        for y in np.arange(HOR + 1, H + 12, 2.0):
+            s = (y - HOR) / (H - HOR)
+            w = 1.4 + 7.0 * s
+            xs = c[np.abs(c[:, 1] - y) < 8 + 30 * s, 0]
+            if not len(xs):
+                continue
+            x0, x1 = xs.min() - 80 * s - 14, xs.max() + 80 * s + 14
+            x = x0
+            while x < x1:
+                ln = rng.uniform(26, 100) * (0.4 + 1.6 * s)
+                cv.stroke([(x, y + rng.normal(0, 0.3)), (x + ln, y + rng.normal(0, 0.3))], w, water(x + ln / 2, y), FLAT,
+                          streak=0.02, dry=0, gap=0, jitter=0.014, taper=(0.02, 0.02), tip=0.9, thick=0.1)
+                x += ln * 0.8
+        # the current: slack water darker under the near bank, a few bright riffles
+        for _ in range(150):
+            y = HOR + 40 + (H - HOR - 30) * rng.random() ** 1.2
+            s = (y - HOR) / (H - HOR)
+            xs = c[np.abs(c[:, 1] - y) < 10, 0]
+            if not len(xs):
+                continue
+            x = rng.uniform(xs.min() - 60 * s, xs.max() + 60 * s)
+            ln = rng.uniform(10, 46) * (0.4 + 1.2 * s)
+            bright = rng.random() < 0.45
+            cc = water(x, y) * (1.32 if bright else 0.66)
+            cv.stroke([(x, y), (x + ln, y + rng.normal(0, 0.4))], 0.8 + 1.8 * s * rng.random(), cc, DRY, opacity=0.5,
+                      taper=(0.3, 0.4), tip=0.1)
+    # the far reach is a thread of the morning
+    far = c[c[:, 1] < HOR + 34]
+    cv.lit_line(far, 1.5, lambda x, y: mix(water(x, y), sky(x + 60, HOR - 5), 0.6) * 1.06, LINE, chunk=18, opacity=0.92)
+    # the banks: a dark lip toward the eye
+    for bank in (left, right):
+        m = bank[:, 1] > HOR + 40
+        if m.sum() > 2:
+            cv.lit_line(bank[m], 1.5, lambda x, y: ground(x, y) * 0.5, LINER, chunk=40, opacity=0.6)
+            for p in bank[m][:: 3]:                                        # reeds
+                if rng.random() < 0.55:
                     continue
-                wide = float(np.hypot(xb - xa, yb - ya))
-                lanes = max(1, int(round(wide / 6.5)))
-                for i in range(lanes):
-                    lam = l0 + (l1 - l0) * (i + 0.5) / lanes
-                    s = p_lo - rng.uniform(0, 2.0)
-                    while s < p_hi:
-                        ln = rng.uniform(5.0, 12.0)
-                        e = min(s + ln, p_hi)
-                        if p_hi - e < 1.5:
-                            e = p_hi
-                        ph = np.linspace(max(s, p_lo), e, max(3, int((e - s) * 1.5)))
-                        for q in arc_on_globe(ph, lam):
-                            if len(q) < 2:
-                                continue
-                            if rng.random() < 0.5:
-                                q = q[::-1]
-                            cv.stroke(q, max(1.3, wide / lanes * 1.18), stained(*q[0]), FLOOR,
-                                      color_end=stained(*q[-1]), opacity=0.86)
-                        s = e + 1e-3 if e >= p_hi else e - 0.8
+                s = (p[1] - HOR) / (H - HOR)
+                for _ in range(rng.integers(2, 6)):
+                    q = p + (rng.normal(0, 5 * s + 1), rng.normal(0, 1.5 * s))
+                    hgt = rng.uniform(4, 15) * (0.25 + s)
+                    cv.stroke([q, q + (rng.normal(0, hgt * 0.3), -hgt)], max(0.7, hgt * 0.10), ground(q[0], q[1]) * rng.choice([0.4, 0.55, 1.3]),
+                              ROUND, taper=(0.0, 0.8), tip=0.1)
 
-# 2. The land, hachured: short strokes run down the slope, so their direction is the way water goes.
-_cand = np.stack([rng.uniform(gx_[0], gx_[-1], 26000), rng.uniform(gy_[0], gy_[-1], 26000)], -1)
-_keep = (gsamp(grid["land"], _cand[:, 0], _cand[:, 1], 0) > 0.5) & (gsamp(grid["r"], _cand[:, 0], _cand[:, 1]) < 0.998) \
-    & (gsamp(grid["lake"], _cand[:, 0], _cand[:, 1], 0) < 0.5)
-_cand = _cand[_keep]
-with cv.frisket(M_LAND):
-    for x, y in _cand:
-        if x > W + 6 or y < -6 or y > H + 6:
-            continue
-        pts = [np.array([x, y])]
-        steep = 0.0
-        for _ in range(3):
-            g = np.array([float(gsamp(SLOPE[1], *pts[-1])), float(gsamp(SLOPE[0], *pts[-1]))])
-            gn = float(np.hypot(*g))
-            steep = max(steep, gn)
-            if gn < 1e-5:
-                break
-            pts.append(pts[-1] - g / gn * (2.2 + 18.0 * min(gn, 0.16)))
-        if len(pts) < 2:
-            continue
-        mid = pts[len(pts) // 2]
-        cv.stroke(np.array(pts), rng.uniform(2.6, 4.6) * (1.25 - 2.2 * min(steep, 0.16)), stained(*mid), GROUND,
-                  opacity=0.8)
 
-# 3. Ice. On land it flows down its own surface; at sea it drifts round the pole.
-_cand = np.stack([rng.uniform(gx_[0], gx_[-1], 9000), rng.uniform(gy_[0], gy_[-1], 9000)], -1)
-_keep = (gsamp(grid["ice"], _cand[:, 0], _cand[:, 1], 0) > 0.5) & (gsamp(grid["r"], _cand[:, 0], _cand[:, 1]) < 0.998)
-with cv.frisket(M_ICE):
-    for x, y in _cand[_keep]:
-        if y < -6:
-            continue
-        p0 = unproject(x, y)[0]
-        if float(gsamp(grid["land"], x, y, 0)) > 0.5:
-            g = np.array([float(gsamp(SLOPE[1], x, y)), float(gsamp(SLOPE[0], x, y))])
-            gn = float(np.hypot(*g))
-            if gn < 1e-5:
+def paint_mist():
+    """The night's air lying in the low ground, between the settled plain and the eye."""
+    with cv.layer(col(0.330, 0.390, 0.530), mode="normal", opacity=0.13, blur=5.0):
+        for _ in range(26):
+            y = rng.uniform(420, 500)
+            x = rng.uniform(380, W + 60)
+            ln = rng.uniform(160, 520)
+            xs = np.linspace(x - ln / 2, x + ln / 2, 5)
+            cv.stroke(spline(np.stack([xs, y + rng.normal(0, 1.6, 5)], -1), 10), rng.uniform(4, 12), 0, SOFT, opacity=1.0,
+                      taper=(0.3, 0.3), tip=0.1, soft=0.8, gap=0, streak=0)
+
+
+# ---------------------------------------------------------------- the band ---
+def band_y(u):
+    """A depth in the band: more of it lies far off."""
+    return HOR + 1.6 + (BAND - 1.6) * u ** 1.75
+
+
+def depth(y):
+    return clip01((y - HOR) / BAND)
+
+
+def wet(mask, x, y):
+    i, j = int(y * cv.s), int(x * cv.s)
+    return 0 <= i < cv.H and 0 <= j < cv.W and mask[i, j] > 0.3
+
+
+def paint_wild(mask):
+    """Acacias on the far plain: all of it at first, what the fields leave after."""
+    n = 0
+    while n < 150:
+        f0 = rng.uniform(-0.02, 1.08)
+        y0 = band_y(rng.random()) + 2
+        for _ in range(int(1 + rng.pareto(1.6) * 2.5) if rng.random() < 0.7 else 1):
+            x = float(fx(f0)) + rng.normal(0, 9 + 30 * depth(y0))
+            y = y0 + rng.normal(0, 0.6 + 2.2 * depth(y0))
+            farmed = run("farm", clip01(float(xf(x))))
+            if y < HOR + 2 or rng.random() < farmed * 1.12 or wet(mask, x, y):
                 continue
-            q = np.array([[x, y], np.array([x, y]) - g / gn * 9.0])
-        else:
-            east = unit(np.cross(NORTH, p0))
-            pts = [unit(p0 + east * t) for t in np.linspace(-0.05, 0.05, 5)]
-            px, py, _ = project(np.array(pts))
-            q = np.stack([px, py], -1)
-        cv.stroke(q, rng.uniform(3.5, 6.0), stained(x, y), GROUND, opacity=0.75, streak=0.02, chroma=0.004)
+            s = depth(y)
+            k = rng.uniform(0.6, 1.5)
+            w, hgt = (2.0 + 9.0 * s) * k, (0.8 + 2.3 * s) * k
+            c = mix(ground(x, y), col(0.020, 0.030, 0.050), 0.62)
+            cv.stroke([(x - w / 2, y - hgt * 0.9), (x + w / 2, y - hgt * 0.9 + rng.normal(0, 0.2))], hgt, c, FILBERT,
+                      taper=(0.25, 0.25), tip=0.3, dry=0.1, streak=0.02)
+            if s > 0.25:
+                cv.line((x, y), (x + rng.normal(0, 0.5), y - hgt * 0.9), 0.5 + 0.7 * s, c)
+        n += 1
 
-# 4. Rivers, source to mouth, their weight the discharge.
-with cv.frisket(M_LAND):
-    for pts, q in sorted(RIVERS, key=lambda r: r[1][-1]):
-        for run in on_globe(pts, 0.5):
-            dry = gsamp(_marsh, run[:, 0], run[:, 1]) < 0.5      # a river breaks where its basin is filled
-            if dry.sum() < 4:
-                continue
-            run = run[np.argmax(dry):len(dry) - np.argmax(dry[::-1])]
-            wgt = 0.7 + 1.9 * (q[-1] / _qmax) ** 0.45
-            cv.stroke(run, wgt, mix(SEA_INK, stained(*run[len(run) // 2]), 0.18), LINER, taper=(0.6, 0.02), tip=0.25,
-                      opacity=0.92)
 
-# 5. The coast and the ice's edge: hairlines.
-for poly in contours(grid["elev"], 0.0, minlen=6):
-    for run in on_globe(smooth(poly, 1.2), 1.0):
-        if float(gsamp(grid["icef"], *run[len(run) // 2])) > 0:
+FIELD = (col(0.250, 0.330, 0.190), col(0.330, 0.360, 0.200), col(0.420, 0.370, 0.220), col(0.160, 0.215, 0.165),
+         col(0.215, 0.175, 0.150), col(0.300, 0.290, 0.170))
+
+
+def paint_fields(mask):
+    """Parcels, as much of the land as the run farms at each moment; furrowed, the pattern before the hue."""
+    n = 0
+    tries = 0
+    while n < 1500 and tries < 60000:
+        tries += 1
+        f = rng.uniform(F_FARM, 1.06)
+        farmed = run("farm", min(f, 1.0))
+        if rng.random() > farmed / 0.87:
             continue
-        cv.stroke(run, 0.8, mix(INK, SEA_INK, 0.45), LINE, opacity=0.55)
-for poly in contours(gaussian_filter(grid["icef"], 1.0), 0.0, minlen=10):
-    for run in on_globe(smooth(poly, 1.5), 1.0):
-        cv.stroke(run, 0.8, mix(INK, SEA_INK, 0.6), LINE, opacity=0.5)
+        y = HOR + 2.6 + (BAND * 1.35) * rng.random() ** 1.5
+        x = float(fx(f))
+        if wet(mask, x, y) or x > X_EDGE + 70:
+            continue
+        s = (y - HOR) / BAND
+        if rng.random() < smooth(0.40, 1.30, s):                      # the settled land thins toward the eye
+            continue
+        n += 1
+        w = (16 + 50 * rng.random()) * (0.16 + min(s, 1.2))
+        d = max(1.1, (2.4 + 6.0 * rng.random()) * min(s, 1.2))
+        lean = np.clip((600 - x) / 520, -1, 1) * d * 1.3
+        quad = np.array([(x - w / 2 + lean / 2, y - d / 2), (x + w / 2 + lean / 2, y - d / 2),
+                         (x + w / 2 - lean / 2, y + d / 2), (x - w / 2 - lean / 2, y + d / 2)], F)
+        g = dawn(x)
+        base = FIELD[rng.integers(len(FIELD))]
+        tone = mix(base, col(0.20, 0.24, 0.30) * (base.sum() / 0.74), 0.55 * (1 - g))
+        c = mix(ground(x, y), tone * (0.50 + 0.80 * g) + col(0.10, 0.045, 0.02) * g, 0.62 * (1 - 0.78 * smooth(0.45, 1.3, s)))
+        cv.fill(quad, c, FLAT, width=max(1.0, d * 0.6), angle=0, length=(w, w * 2), overlap=0.3, streak=0.03, dry=0.05,
+                gap=0, jitter=0.03, thick=0.15, bleed=0.2)
+        if d > 2.6 and rng.random() < 0.5:                            # furrows across the eye
+            k = int(2 + d / 1.6)
+            for j in range(1, k):
+                t = j / k
+                a, b = quad[0] + (quad[3] - quad[0]) * t, quad[1] + (quad[2] - quad[1]) * t
+                cv.stroke([a, b], 0.45, c * 0.66, LINE, opacity=0.6)
+        elif d > 2.0:                                                 # or away from it
+            k = int(3 + w / 5.0)
+            for j in range(1, k):
+                t = j / k
+                a, b = quad[0] + (quad[1] - quad[0]) * t, quad[3] + (quad[2] - quad[3]) * t
+                cv.stroke([a, b], 0.45, c * 0.68, LINE, opacity=0.5)
 
-# 6. Seamounts, paler for standing nearer the surface; those that break it are islands.
-for q, age, hgt, rad in SEAMOUNTS:
-    x, y, c = project(q)
-    if c < 0.05:
-        continue
-    f1 = planet(np.array([x]), np.array([y]), FANS)
-    if bool(f1["ice"][0]) or bool(f1["land"][0]):
-        continue
-    k = 0.55 + 0.45 * float(c)
-    cv.dab((x, y), k * rad * R * RAD * (0.35 + 0.65 * np.sqrt(hgt / 4.6)), stained(x, y), opacity=1.0, soft=0.35)
-    if float(f1["depth"][0]) < 0:
-        cv.dab((x, y), k * (1.0 + 1.3 * min(1.0, -float(f1["depth"][0]) / 2)), mix(ROCK, INK, 0.25), opacity=0.9)
 
-# 7. The trench: a rule, with sawteeth on the plate that stays on top.
-_phi = np.arange(BAND[0], BAND[-1], 0.25)
-_trench = coast_east(_phi) - TRENCH_OFF / np.cos(_phi * RAD)
-TOOTH, TOOTH_GAP = 6.4, 16.0
-for run in arc_on_globe(_phi, _trench):
-    run = resample(run, 2.0)
-    cv.stroke(run, 1.5, INK, LINE, opacity=0.9)
-    d = np.concatenate([[0.0], np.cumsum(np.hypot(*(run[1:] - run[:-1]).T))])
-    for s in np.arange(TOOTH_GAP / 2, d[-1] - 4, TOOTH_GAP):
-        i = int(np.searchsorted(d, s))
-        t = unit(run[min(i + 2, len(run) - 1)] - run[max(i - 2, 0)])
-        c_here = project(unproject(run[i, 0], run[i, 1])[0])[2]
-        over = np.array([t[1], -t[0]])                # toward the continent
-        probe = run[i] + over * 6
-        if float(gsamp(grid["d_e"], *probe)) < float(gsamp(grid["d_e"], *run[i])):
-            over = -over
-        k = 0.55 + 0.45 * float(c_here)               # symbols shrink toward the limb, with the ground
-        stamp([run[i] - t * TOOTH * 0.62 * k, run[i] + t * TOOTH * 0.62 * k, run[i] + over * TOOTH * k], INK, 0.92)
+def chimney_share(f):
+    """One more chimney for each order of magnitude of fossil power a stretch burns, from a gigawatt."""
+    return max(0.0, np.log10(max(run("Ef", min(f, 1.0)), 1.0)) - 9.0) / 4.6
 
-# 8. Transforms: fine rules along the pole's parallels, from one ridge segment to the next.
-for k in range(len(RIDGE) - 1):
-    lam = np.linspace(RIDGE[k], RIDGE[k + 1], 12)
-    for run in arc_on_globe(BAND[k + 1], lam):
-        cv.stroke(run, 1.15, INK, LINE, opacity=0.8)
 
-# 9. The red: the ridge, the arc's volcanoes, the hotspots.
-for k in range(len(RIDGE)):
-    ph = np.linspace(BAND[k], BAND[k + 1], 24)
-    for run in arc_on_globe(ph, RIDGE[k]):
-        cv.stroke(run, 3.3, RED, LINE, jitter=0.0, soft=0.22, thick=0.5)
-_arc = coast_east(_phi) + ARC_OFF / np.cos(_phi * RAD)
-for run in arc_on_globe(_phi, _arc):
-    run = resample(run, 2.0)
-    d = np.concatenate([[0.0], np.cumsum(np.hypot(*(run[1:] - run[:-1]).T))])
-    s = 6.0
-    while s < d[-1]:
-        i = int(np.searchsorted(d, s))
-        x, y = run[i] + rng.normal(0, 1.2, 2)
-        c_here = float(np.sqrt(max(0.0, 1 - ((x - CX) ** 2 + (y - CY) ** 2) / R ** 2)))
-        if float(gsamp(grid["land"], x, y, 0)) > 0.5:
-            cv.dab((x, y), 2.5 * (0.55 + 0.45 * c_here), RED, jitter=0.0, gap=0.0, streak=0.01, soft=0.25, thick=0.9)
-        s += rng.uniform(13.0, 20.0)
-for q in HOT:
-    x, y, c = project(q)
-    if c > 0.05:
-        cv.dab((x, y), 2.6, RED, jitter=0.0, gap=0.0, streak=0.01, soft=0.25, thick=0.9)
-        cv.stroke(arc(x, y, 6.4, 0, 360, n=40), 1.25, RED, LINE, jitter=0.0)
+def paint_industry(mask):
+    stacks = []
+    tries = 0
+    while len(stacks) < 64 and tries < 20000:
+        tries += 1
+        f = rng.uniform(F_IND, 1.03)
+        if rng.random() > chimney_share(f):
+            continue
+        hgt = rng.uniform(3.2, 7.5)
+        y = band_y(rng.random() ** 1.3) + hgt + 1.5
+        x = float(fx(f))
+        if wet(mask, x, y) or abs(x - X_EDGE) < 3:
+            continue
+        stacks.append((x, y, hgt * (0.55 + 0.9 * depth(y))))
+    stacks.sort(key=lambda t: t[1])
+    for x, y, hgt in stacks:
+        k = 0.5 + depth(y)
+        c = mix(ground(x, y), col(0.026, 0.028, 0.048), 0.80)
+        side = rng.choice([-1, 1])
+        shed = rect(x + side * 3.2 * k, y - 0.8 * k, 6.5 * k * rng.uniform(0.8, 1.4), 1.9 * k)
+        cv.fill(shed, c, FLAT, width=max(1.0, 1.4 * k), angle=0, length=(6, 20), streak=0.02, dry=0, gap=0, jitter=0.01, thick=0.2)
+        cv.stroke([(x, y), (x, y - hgt)], 0.75 + 0.55 * depth(y), c, LINE, taper=(0.0, 0.0))
+    return stacks
 
-# 10. The limb.
-cv.stroke(arc(CX, CY, R, 0, 360, n=400), 0.9, INK, LINE, opacity=0.5)
 
-os.makedirs(os.path.dirname(os.path.abspath(OUT)), exist_ok=True)
-cv.save_card(OUT, relief=0.4, tooth=0.02)
-print(f"{cv.count} strokes, {len(RIVERS)} rivers, {cv.W}x{cv.H}, {time.time() - t0:.1f}s -> {OUT}")
+def paint_smoke(stacks):
+    """Each chimney's plume, bent by one wind, and coal's sulfate lying over the stretch that burns it."""
+    for x, y, hgt in stacks:
+        top = np.array([x, y - hgt])
+        rise, drift = rng.uniform(2.5, 6) + 0.05 * (y - HOR), rng.uniform(50, 150)
+        path = spline([top, top + (drift * 0.05, -rise * 0.62), top + (drift * 0.22, -rise * 0.96),
+                       top + (drift * 0.60, -rise * 1.08 + rng.normal(0, 0.8)), top + (drift, -rise * 1.12 + rng.normal(0, 1.2))], 3)
+        c = mix(col(0.330, 0.350, 0.450), col(0.800, 0.600, 0.520), dawn(x + 120))          # the morning is on the nearer ones
+        with cv.layer(c, mode="normal", opacity=0.30, blur=0.8):
+            cv.stroke(path, 1.3 + 2.0 * rng.random(), 0, SOFT, opacity=0.95, taper=(0.03, 0.75), tip=0.35, soft=0.55, gap=0, streak=0)
+    # the haze: one film, as deep as the sulfate's forcing
+    worst = np.abs(AX[:, COL["aer"]]).max()
+    with cv.layer(col(0.455, 0.345, 0.365), mode="normal", opacity=0.46, blur=4.0):
+        for _ in range(70):
+            f = rng.uniform(F_IND, 1.05)
+            deep = abs(run("aer", min(f, 1.0))) / worst
+            if rng.random() > deep:
+                continue
+            x = float(fx(f))
+            y = HOR - 2 - rng.uniform(0, 22) * deep
+            ln = rng.uniform(60, 170)
+            cv.stroke([(x - ln / 2, y + rng.normal(0, 1)), (x, y + rng.normal(0, 1.2)), (x + ln / 2, y + rng.normal(0, 1))],
+                      rng.uniform(4, 11) * (0.4 + deep), 0, SOFT, opacity=0.55 * deep, taper=(0.3, 0.3), tip=0.1, soft=0.8,
+                      gap=0, streak=0)
+
+
+def light(p, r, core, glowc, b=1.0, air=2.2):
+    cv.glow(p, air * (0.6 + r), glowc, 0.20 * b, falloff=1.7)
+    cv.dab(p, r, mix(core, col(1.0, 0.86, 0.80), 0.30 * max(0.0, b - 0.7) / 0.3), soft=0.4, thick=0.12, opacity=0.55 + 0.45 * b)
+
+
+def paint_lights(mask):
+    """People: as many lights along the horizon as the 0.45 power of the people alive then."""
+    c_riv = spline(RIVER[:, :2], 4)
+
+    def river_y(x):
+        m = c_riv[:, 1] < HOR + 34
+        return float(np.interp(x, c_riv[m, 0][::-1], c_riv[m, 1][::-1])) if c_riv[m, 0].min() < x < c_riv[m, 0].max() else None
+
+    f = np.linspace(0, 1.0, 600)
+    lam = 0.110 * (run("people", f) / 1e6) ** 0.45                      # lights to a unit of the horizon
+    cum = np.concatenate([[0.0], np.cumsum(0.5 * (lam[1:] + lam[:-1]) * np.diff(fx(f)))])
+    total = int(cum[-1])
+    placed = 0
+    while placed < total:
+        fc = float(np.interp(rng.uniform(0, cum[-1]), cum, f))
+        together = run("farm", fc) * 0.5 + run("ind", fc) * 0.5             # foragers camp alone; farmers and cities gather
+        size = 1 if rng.random() > together * 1.4 + 0.02 else int(min(90, 2 + rng.pareto(1.15) * (2 + 10 * run("ind", fc))))
+        x0 = float(fx(fc))
+        ry = river_y(x0)
+        y0 = band_y(rng.random())
+        if ry is not None and rng.random() < 0.45 * together:             # towns keep to the river
+            y0 = ry + rng.normal(0, 2.2) + rng.choice([-1, 1]) * 1.6
+        s0 = depth(y0)
+        if rng.random() < smooth(0.45, 1.0, s0) * 0.97:
+            continue
+        sx = (2.6 + 2.3 * np.sqrt(size)) * (0.40 + 1.2 * s0)
+        compute = run("Ecomp", fc) / max(run("Ef", fc), 1.0) if fc > F_NOW else 0.0
+        machines = rng.random() < 6.0 * compute                         # a datacenter, lit in the machines' colour
+        for _ in range(size):
+            x, y = x0 + rng.normal(0, sx), y0 + rng.normal(0, 0.11 * sx + 0.2)
+            placed += 1
+            if y < HOR + 1.2 or wet(mask, x, y) or x > X_EDGE + 40:
+                continue
+            s = depth(y)
+            b = rng.uniform(0.35, 1.0) ** 1.4 * (0.75 + 0.25 * run("ind", fc))
+            r = (0.30 + 0.26 * rng.random()) * (0.8 + 0.8 * s)
+            if machines:
+                light((x, y), r * 1.1, VERD, VERD_GLOW, b)
+            else:
+                light((x, y), r, RED, RED_GLOW, b)
+
+
+# ------------------------------------------------------------ the foreground ---
+def acacia(base, hgt, lean=0.0, seed=0, rim=0.0):
+    """An umbrella thorn: a leaning trunk, a few forks, and a flat crown in layers."""
+    r = np.random.default_rng(seed)
+    bx, by = base
+    dark = mix(ground(bx, by), col(0.012, 0.016, 0.030), 0.86)
+    top = np.array([bx + lean * hgt, by - hgt * 0.62])
+    trunk = spline([(bx, by), (bx + lean * hgt * 0.25, by - hgt * 0.28), top], 3)
+    cv.stroke(trunk, hgt * 0.062, dark, ROUND, taper=(0.0, 0.3), tip=0.6, streak=0.02)
+    crown_w = hgt * 1.25
+    for k in range(5):
+        t = (k + 0.5) / 5 - 0.5
+        tip = top + (t * crown_w * 0.86, -hgt * (0.30 - 0.20 * abs(t)) + r.normal(0, hgt * 0.02))
+        mid = top + (t * crown_w * 0.42, -hgt * 0.10)
+        cv.stroke(spline([top + (0, hgt * 0.06), mid, tip], 3), hgt * 0.030, dark, ROUND, taper=(0, 0.6), tip=0.3)
+    cy = top[1] - hgt * 0.30
+    for layer in range(3):
+        y = cy + (layer - 1) * hgt * 0.055
+        wd = crown_w * (0.62 + 0.38 * (1 - abs(layer - 1) * 0.5)) * (1.0 if layer else 0.8)
+        n = int(7 + wd / 9)
+        for i in range(n):
+            x = top[0] + (i / (n - 1) - 0.5) * wd + r.normal(0, hgt * 0.02)
+            ww = hgt * r.uniform(0.16, 0.30)
+            cv.stroke([(x - ww / 2, y + r.normal(0, hgt * 0.012)), (x + ww / 2, y + r.normal(0, hgt * 0.012))],
+                      hgt * r.uniform(0.055, 0.085), dark * r.uniform(0.9, 1.15), FILBERT, taper=(0.3, 0.3), tip=0.25, dry=0.3,
+                      grain=0.9, streak=0.03)
+    if rim > 0:                                                       # first light along the top of the crown, from the east
+        for i in range(int(crown_w / 7)):
+            x = top[0] + r.uniform(-0.12, 0.5) * crown_w
+            cv.stroke([(x - 3, cy - hgt * 0.085 + r.normal(0, 0.6)), (x + 3, cy - hgt * 0.085 + r.normal(0, 0.6))], 0.9,
+                      col(0.62, 0.47, 0.44), LINER, opacity=0.5 * rim)
+
+
+BOULDERS = [  # back to front: outline, the centre and radii its roundness is shaded about
+    ([(30, 670), (18, 548), (44, 464), (92, 412), (150, 393), (210, 403), (252, 442), (272, 506), (282, 670)], (150, 505, 132, 116)),
+    ([(-40, 670), (-40, 502), (2, 472), (48, 484), (78, 534), (90, 670)], (20, 570, 70, 102)),
+    ([(158, 670), (164, 570), (186, 518), (226, 496), (300, 491), (392, 491), (448, 499), (480, 530), (494, 594), (506, 670)],
+     (332, 594, 172, 106)),
+    ([(46, 670), (56, 608), (100, 580), (170, 584), (208, 612), (218, 670)], (132, 640, 86, 62)),
+    ([(420, 670), (430, 614), (464, 586), (520, 580), (560, 600), (582, 670)], (500, 644, 82, 66)),
+]
+LEDGE = 491.0
+
+
+def paint_kopje():
+    def rock(cx, cy, rx, ry):
+        def c(x, y):
+            nx, ny = (x - cx) / rx, (y - cy) / ry
+            rr = min(1.0, nx * nx + ny * ny)
+            nz = np.sqrt(1 - rr)
+            to_fire = np.array([FIRE[0] - x, (FIRE[1] - 10) - y, 46.0])
+            to_fire /= np.linalg.norm(to_fire)
+            lam = max(0.0, nx * to_fire[0] + ny * to_fire[1] + nz * to_fire[2])
+            east = max(0.0, 0.55 * nx - 0.62 * ny + 0.25 * nz)             # the morning, from the upper right
+            base = mix(col(0.040, 0.044, 0.078), col(0.082, 0.090, 0.140), 0.5 + 0.5 * (-ny))
+            return base + col(0.150, 0.160, 0.235) * east ** 1.6 + EMBER * 0.78 * lam * firelight(x, y, 120)
+        return c
+
+    for outline, (cx, cy, rx, ry) in BOULDERS:
+        poly = spline(np.array(outline, F), 6, closed=True)
+        with cv.layer(col(0.30, 0.28, 0.36), "multiply", 0.55, blur=3.0):       # where it stands against the one behind
+            top = poly[poly[:, 1] < cy + 10]
+            cv.stroke(top[np.argsort(top[:, 0])] + (0, -3), 9, 0, SOFT, opacity=1, soft=0.8)
+        shade = rock(cx, cy, rx, ry)
+        ang = rng.uniform(-24, -10)
+        cv.fill(poly, shade, FILBERT, width=20, angle=ang, length=(50, 130), overlap=0.5, curve=7, streak=0.018,
+                chroma=0.006, dry=0.03, grain=0.3, gap=0, jitter=0.015, thick=0.4)
+        cv.fill(poly, shade, FILBERT, width=13, angle=ang + 55, length=(30, 80), overlap=0.35, curve=5, streak=0.016,
+                chroma=0.006, dry=0.05, grain=0.4, gap=0, jitter=0.012, opacity=0.5, pickup=0.3, shuffle=True, thick=0.3)
+        # the light along its shoulder
+        top = poly[poly[:, 1] < cy - ry * 0.25]
+        top = top[np.argsort(top[:, 0])]
+        cv.lit_line(top, 1.2, lambda x, y: col(0.130, 0.150, 0.235) + EMBER * 0.55 * firelight(x, y, 90) + col(0.20, 0.16, 0.16) * dawn(x + 520),
+                    LINER, chunk=24, opacity=0.6)
+    # the grain of granite, and its joints
+    for _ in range(420):
+        x, y = rng.uniform(-10, 580), rng.uniform(396, 632)
+        i, j = int(y * cv.s), int(x * cv.s)
+        here = cv.img[min(i, cv.H - 1), min(max(j, 0), cv.W - 1)]
+        cv.dab((x, y), rng.uniform(0.5, 1.3), here * rng.choice([0.72, 0.84, 1.18, 1.32]), soft=0.5, thick=0.2, opacity=0.5)
+    for x, y, ln, a in ((70, 470, 60, 0.9), (196, 430, 48, 1.25), (118, 540, 40, 0.3), (300, 560, 70, 0.12), (410, 540, 44, 0.8),
+                        (238, 600, 50, -0.2), (24, 590, 40, 1.1), (470, 620, 36, 0.4)):
+        path = [(x, y), (x + 0.5 * ln * np.cos(a) + rng.normal(0, 2), y + 0.5 * ln * np.sin(a) + rng.normal(0, 2)),
+                (x + ln * np.cos(a), y + ln * np.sin(a))]
+        cv.stroke(spline(path, 3), 1.3, col(0.020, 0.022, 0.042), LINER, opacity=0.55)
+    # the ledge: what the fire lights around itself
+    cv.glow(FIRE + (0, 8), 70, EMBER, 0.20)
+    with cv.frisket(spline(np.array(BOULDERS[2][0], F), 6, closed=True)):
+        for _ in range(60):
+            x = FIRE[0] + rng.normal(0, 60)
+            y = LEDGE + 3 + abs(rng.normal(0, 7))
+            k = firelight(x, y, 78)
+            cv.stroke([(x - 10, y), (x + 10, y + rng.normal(0, 0.6))], rng.uniform(1.5, 4.0), EMBER * (0.25 + 0.75 * k), DRY,
+                      opacity=0.45 * k + 0.04, taper=(0.3, 0.3), tip=0.3)
+
+
+def grass(x0, x1, y0, y1, n, tall=(5, 15)):
+    """Clumps of it, each a fan of blades."""
+    for _ in range(n):
+        x, y = rng.uniform(x0, x1), y0 + (y1 - y0) * rng.random() ** 0.7
+        k = 0.45 + (y - HOR) / (H - HOR)
+        tone = rng.choice([0.5, 0.62, 1.35, 1.6])
+        for _ in range(rng.integers(3, 9)):
+            hgt = rng.uniform(*tall) * k
+            bx = x + rng.normal(0, 3.0 * k)
+            bend = rng.normal(0, 0.45)
+            c = ground(bx, y) * tone * rng.uniform(0.85, 1.15) + EMBER * 0.30 * firelight(bx, y, 90)
+            cv.stroke(spline([(bx, y), (bx + bend * hgt * 0.35, y - hgt * 0.6), (bx + bend * hgt, y - hgt)], 2), max(0.7, hgt * 0.085), c,
+                      ROUND, taper=(0.0, 0.8), tip=0.1)
+
+
+# ----------------------------------------------------------------- the camp ---
+SKIN = col(0.026, 0.028, 0.052)                # a body against the light: almost the night's colour
+
+
+class Body:
+    """A figure drawn from its feet: u across (toward where it faces), v up, in units of its height."""
+
+    def __init__(self, base, hgt, facing=1):
+        self.b, self.h, self.f = np.asarray(base, float), float(hgt), facing
+
+    def at(self, u, v):
+        return self.b + (self.f * u * self.h, -v * self.h)
+
+    def pts(self, uv):
+        return np.array([self.at(u, v) for u, v in uv], F)
+
+    def path(self, uv):
+        return spline(self.pts(uv), 2) if len(uv) > 2 else self.pts(uv)
+
+    def limb(self, uv, w, c=SKIN, brush=LINE, **kw):
+        cv.stroke(self.path(uv), w * self.h, c, brush, **kw)
+
+    def shape(self, uv, c=SKIN, w=0.07, angle=90):
+        cv.fill(spline(self.pts(uv), 2, closed=True), c, FILBERT, width=max(1.4, w * self.h), angle=angle,
+                length=(self.h * 0.3, self.h), overlap=0.45, streak=0.02, dry=0, gap=0, jitter=0.01, thick=0.3, bleed=0.3)
+
+    def head(self, u, v, r=0.066, hair=()):
+        cv.dab(self.at(u, v), r * self.h, SKIN, soft=0.22, thick=0.3)
+        for hu, hv, hr in hair:
+            cv.dab(self.at(hu, hv), hr * self.h, SKIN, soft=0.3, thick=0.3)
+
+    def rim(self, uv, c, w=0.018, op=0.8):
+        cv.stroke(self.path(uv), max(0.8, w * self.h), c, LINER, opacity=op)
+
+
+WARM = col(1.0, 0.43, 0.21)
+COOL = col(0.52, 0.52, 0.64)
+
+
+def shadow(pts, w, op=0.5):
+    with cv.layer(col(0.20, 0.17, 0.24), "multiply", op, blur=1.8):
+        cv.stroke(np.array(pts, F), w, 0, SOFT, opacity=1, taper=(0.02, 0.6), tip=0.3, soft=0.4)
+
+
+def lookout():
+    """Standing on the highest rock with a spear, looking the way the river runs."""
+    m = Body((153, 394.5), 80, 1)
+    m.limb([(0.285, 0.0), (0.245, 1.14)], 0.017)                                    # the spear
+    m.limb([(0.245, 1.14), (0.242, 1.25)], 0.036, brush=ROUND, taper=(0.15, 0.85), tip=0.05)
+    m.limb([(-0.070, 0.0), (-0.060, 0.25), (-0.035, 0.50)], 0.085)
+    m.limb([(0.075, 0.0), (0.066, 0.25), (0.035, 0.50)], 0.085)
+    m.limb([(-0.090, 0.012), (0.020, 0.012)], 0.036)
+    m.limb([(0.060, 0.012), (0.170, 0.012)], 0.036)
+    m.shape([(-0.130, 0.800), (-0.020, 0.850), (0.120, 0.805), (0.160, 0.620), (0.150, 0.400), (0.020, 0.360), (-0.180, 0.390),
+             (-0.178, 0.620)])                                                       # a hide over the shoulders
+    m.limb([(0.110, 0.775), (0.200, 0.675), (0.255, 0.735)], 0.050)                  # the arm on the spear
+    m.limb([(-0.120, 0.775), (-0.165, 0.610), (-0.150, 0.470)], 0.050)
+    m.limb([(0.0, 0.83), (0.014, 0.90)], 0.056)
+    m.head(0.022, 0.936, r=0.064, hair=((-0.016, 0.948, 0.058), (-0.034, 0.905, 0.044)))
+    # what light there is: the fire from below on his right, the east on his face and shoulder
+    m.rim([(0.166, 0.60), (0.156, 0.42)], WARM, op=0.42)
+    m.rim([(0.108, 0.03), (0.100, 0.25), (0.072, 0.47)], WARM, op=0.36)
+    m.rim([(0.272, 0.05), (0.262, 0.55)], WARM, 0.010, op=0.36)
+    m.rim([(0.078, 0.976), (0.090, 0.934), (0.076, 0.890)], COOL, 0.014, op=0.75)
+    m.rim([(0.062, 0.832), (0.130, 0.800), (0.164, 0.700)], COOL, 0.014, op=0.55)
+    m.rim([(0.254, 0.78), (0.248, 1.12)], COOL, 0.009, op=0.55)
+
+
+def seated(base, facing, hgt=78, stick=False):
+    """Sitting at the fire, knees up, leaning toward it."""
+    m = Body(base, hgt, facing)
+    m.limb([(-0.04, 0.085), (0.02, 0.26), (0.10, 0.44)], 0.215, brush=FILBERT, taper=(0.1, 0.15), tip=0.7, streak=0.02)   # the back
+    m.shape([(-0.135, 0.06), (-0.125, 0.30), (-0.03, 0.495), (0.085, 0.515), (0.055, 0.36), (-0.02, 0.09)])              # a hide
+    m.limb([(0.0, 0.085), (0.150, 0.215), (0.262, 0.305)], 0.090)                    # thigh
+    m.limb([(0.262, 0.305), (0.290, 0.150), (0.305, 0.025)], 0.072)                  # shin
+    m.limb([(0.285, 0.014), (0.375, 0.014)], 0.034)                                  # foot
+    m.limb([(0.110, 0.450), (0.215, 0.330), (0.300, 0.345)], 0.048)                  # the arm, to the knee
+    m.limb([(0.110, 0.47), (0.140, 0.53)], 0.056)
+    m.head(0.165, 0.578, hair=((0.128, 0.592, 0.062), (0.105, 0.545, 0.050)))
+    if stick:
+        m.limb([(0.300, 0.345), (0.585, 0.130)], 0.012)
+    # the fire is in front of them
+    m.rim([(0.226, 0.606), (0.238, 0.566), (0.214, 0.524)], WARM, 0.017, op=0.95)       # face
+    m.rim([(0.150, 0.470), (0.235, 0.366), (0.318, 0.372)], WARM, 0.015, op=0.85)       # arm
+    m.rim([(0.300, 0.300), (0.324, 0.150), (0.338, 0.040)], WARM, 0.017, op=0.90)       # shin
+    m.rim([(0.130, 0.245), (0.270, 0.345)], WARM, 0.013, op=0.50)                       # thigh
+    m.rim([(0.150, 0.50), (0.120, 0.40), (0.075, 0.26)], WARM, 0.013, op=0.40)          # chest
+    return m
+
+
+def child():
+    """The one who has seen it."""
+    m = Body((436, 497), 49, 1)
+    m.limb([(-0.07, 0.0), (-0.055, 0.24), (-0.03, 0.47)], 0.092)
+    m.limb([(0.09, 0.0), (0.075, 0.24), (0.04, 0.47)], 0.092)
+    m.limb([(-0.09, 0.014), (0.02, 0.014)], 0.042)
+    m.limb([(0.07, 0.014), (0.19, 0.014)], 0.042)
+    m.limb([(0.0, 0.44), (0.012, 0.60), (0.03, 0.775)], 0.205, brush=FILBERT, taper=(0.1, 0.2), tip=0.7)
+    m.limb([(0.09, 0.745), (0.275, 0.815), (0.460, 0.905)], 0.048)                     # the arm, out toward the spire
+    m.limb([(-0.085, 0.745), (-0.135, 0.585), (-0.115, 0.450)], 0.050)
+    m.limb([(0.025, 0.79), (0.04, 0.85)], 0.066)
+    m.head(0.050, 0.898, r=0.082, hair=((0.010, 0.915, 0.076), (-0.012, 0.860, 0.058)))
+    # the fire behind, the morning ahead
+    m.rim([(-0.112, 0.76), (-0.150, 0.60), (-0.130, 0.46)], WARM, 0.020, op=0.85)
+    m.rim([(-0.103, 0.03), (-0.090, 0.24), (-0.073, 0.46)], WARM, 0.020, op=0.80)
+    m.rim([(-0.052, 0.960), (-0.080, 0.890), (-0.066, 0.800)], WARM, 0.018, op=0.75)
+    m.rim([(0.122, 0.938), (0.140, 0.895), (0.118, 0.852)], COOL, 0.018, op=0.80)
+    m.rim([(0.12, 0.772), (0.285, 0.840), (0.460, 0.926)], COOL, 0.012, op=0.60)
+
+
+def flame(base, hgt, hw, sway, c, wiggle=0.0):
+    """A tongue of fire: a teardrop leaning the way it sways."""
+    b = np.asarray(base, float)
+    pts = [b + (-hw * 0.72, 0.5), b + (-hw * 1.04, -hgt * 0.20), b + (-hw * 0.62 + sway * 0.45 + wiggle, -hgt * 0.58),
+           b + (sway, -hgt), b + (hw * 0.50 + sway * 0.55 - wiggle, -hgt * 0.60), b + (hw * 1.02, -hgt * 0.22), b + (hw * 0.72, 0.5)]
+    poly = spline(np.array(pts, F), 1.5, closed=True)
+    cv.fill(poly, c, ROUND, width=max(1.6, hw * 0.55), angle=90, length=(hgt * 0.5, hgt * 1.2), overlap=0.5, streak=0.03, dry=0,
+            gap=0, jitter=0.02, thick=0.35, bleed=0.2, taper=(0.1, 0.5), tip=0.2)
+
+
+def fire():
+    f = FIRE
+    for a, b in (((-20, 3.5), (13, -1.5)), ((-12, -1.5), (20, 3.5)), ((-6, 5), (5, -4))):       # the wood
+        cv.stroke([f + a, f + b], 3.8, col(0.045, 0.028, 0.032), ROUND, taper=(0.1, 0.1), tip=0.6)
+    cv.glow(f + (0, -12), 190, EMBER, 0.085)
+    cv.glow(f + (0, -12), 84, EMBER, 0.24)
+    cv.glow(f + (0, -12), 32, col(1.0, 0.40, 0.20), 0.60)
+    deep, red, hot, pale = col(0.60, 0.065, 0.065), col(0.93, 0.185, 0.115), col(1.0, 0.46, 0.25), col(1.0, 0.80, 0.60)
+    flame(f + (-12, 1), 22, 5.0, -5, deep)
+    flame(f + (12, 1), 25, 5.5, 6, deep)
+    flame(f + (0, 1), 46, 12.5, 3, deep, 1.5)
+    flame(f + (-9, 1), 19, 4.2, -3, red)
+    flame(f + (10, 1), 21, 4.4, 4, red)
+    flame(f + (0, 1), 37, 9.5, 2, red, 1.0)
+    flame(f + (0.5, 1), 26, 6.2, 1, hot, 0.5)
+    flame(f + (0.5, 0.5), 14, 3.6, 0, pale)
+    flame(f + (5, -44), 9, 2.2, 3, red)                                              # a lick that has let go
+    cv.glow(f + (0, -9), 12, col(1.0, 0.72, 0.52), 0.50)
+    # smoke, taken by the same wind as the chimneys'
+    path = spline([f + (3, -48), f + (10, -84), f + (40, -128), f + (104, -166), f + (196, -190), f + (300, -202)], 5)
+    with cv.layer(col(0.36, 0.33, 0.40), mode="normal", opacity=0.20, blur=3.0):
+        cv.stroke(path, 17, 0, SOFT, opacity=1, taper=(0.04, 0.6), tip=0.12, soft=0.8, gap=0, streak=0)
+    with cv.layer(EMBER, mode="screen", opacity=0.12, blur=2.5):
+        cv.stroke(path[: len(path) // 4], 10, 0, SOFT, opacity=1, taper=(0.05, 0.9), tip=0.1, soft=0.8)
+    for _ in range(30):                                                              # sparks
+        t = rng.random() ** 1.5
+        i = int(t * (len(path) - 1) * 0.45)
+        p = path[i] + rng.normal(0, 2.4 + 8 * t, 2)
+        cv.glow(p, 2.2, EMBER, 0.5 * (1 - t))
+        cv.dab(p, 0.55, col(1.0, 0.62, 0.38) * (1 - 0.5 * t), soft=0.5)
+
+
+def paint_camp():
+    shadow([(266, LEDGE + 4), (170, LEDGE + 12)], 15, 0.5)
+    shadow([(372, LEDGE + 4), (476, LEDGE + 12)], 15, 0.5)
+    shadow([(442, LEDGE + 8), (492, LEDGE + 16)], 8, 0.4)
+    lookout()
+    fire()
+    seated((260, LEDGE + 0.5), 1)
+    seated((378, LEDGE + 0.5), -1, stick=True)
+    child()
+
+
+def vignette():
+    for p, r, k in (((0, H), 420, 0.40), ((W, H), 430, 0.40), ((W / 2, H + 240), 620, 0.30), ((0, 0), 380, 0.22)):
+        cv.glow(p, r, col(0.48, 0.50, 0.70), k, mode="multiply", falloff=1.3)
+
+
+paint_sky()
+paint_moon()
+paint_clouds()
+paint_sun_glow()
+paint_spire()
+paint_near_cloud()
+paint_ground()
+river = river_mask()
+paint_wild(river)
+paint_fields(river)
+paint_river(river)
+chimneys = paint_industry(river)
+paint_lights(river)
+paint_smoke(chimneys)
+paint_sun()
+paint_mist()
+for base, hgt, lean, seed, rim in (((566, 454), 34, -0.06, 3, 0.0), ((842, 446), 22, 0.05, 11, 0.5), ((906, 462), 30, -0.04, 12, 0.7),
+                                   ((604, 432), 17, 0.04, 13, 0.0), ((1128, 478), 42, -0.05, 8, 0.8), ((968, 548), 80, 0.07, 5, 1.0)):
+    acacia(base, hgt, lean=lean, seed=seed, rim=rim)
+grass(560, W, 500, 634, 54)
+paint_kopje()
+paint_camp()
+grass(0, 600, 604, 636, 34, tall=(9, 22))
+vignette()
+
+cv.save_card(OUT)
+print(f"{cv.count} strokes, {cv.W}x{cv.H}, {time.time() - t0:.1f}s -> {OUT}")

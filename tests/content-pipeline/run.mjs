@@ -12,7 +12,7 @@ import { parseMarkdown, splitMarkdownTableRow } from '../../site/src/markdown.js
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const DIST = join(ROOT, 'dist');
 const BUILD = join(ROOT, '.build');
-// The social cards' revision: the ?v= every page names its card at
+// The root social card's revision: the ?v= the root pages name it at (each sim's card has its own)
 const OG_REVISION = '20261111';
 let failures = 0;
 function check(name, ok, detail = '') {
@@ -183,6 +183,7 @@ for (const marker of ['blog-post-meta', 'blog-post-byline', 'blog-post-authors',
 }
 
 console.log('submodule about.md ↔ HTML metadata ↔ about-panel date');
+const SITEMAPS = readFileSync(join(DIST, 'sitemap.xml'), 'utf8');
 for (const p of PROJECTS.filter(p => !p.external && !p.planned)) {
   const slug = p.href.replace(/^\//, '').replace(/\/$/, '');
   const about = readFileSync(join(ROOT, 'projects', slug, 'about.md'), 'utf8');
@@ -195,14 +196,16 @@ for (const p of PROJECTS.filter(p => !p.external && !p.planned)) {
     .map(rel => join(DIST, slug, rel)).filter(existsSync);
   check(`${p.title} about panel date is current`, uiFiles.some(rel => readFileSync(rel, 'utf8').includes(`lastUpdated: '${meta.updated}'`)));
 
-  // Every sim owns a social card, and its page names it at the card's revision
-  const expectedImage = `https://a9l.im/${slug}/og-image.webp?v=${OG_REVISION}`;
+  // Every sim owns a social card at its own revision (a repainted card bumps its ?v=):
+  // both of its page's image tags name it, and the sitemap lists that same URL
   const ogImage = index.match(/<meta property="og:image" content="([^"]+)">/)?.[1];
   const twitterImage = index.match(/<meta name="twitter:image" content="([^"]+)">/)?.[1];
   const ogAlt = index.match(/<meta property="og:image:alt" content="([^"]+)">/)?.[1];
   const twitterAlt = index.match(/<meta name="twitter:image:alt" content="([^"]+)">/)?.[1];
   check(`${p.title} uses its own social card`,
-    ogImage === expectedImage && twitterImage === expectedImage);
+    new RegExp(`^https://a9l\\.im/${slug}/og-image\\.webp\\?v=\\d{8}$`).test(ogImage ?? '') && twitterImage === ogImage);
+  check(`${p.title} sitemap lists its social card at that revision`,
+    SITEMAPS.includes(`<image:loc>${ogImage}</image:loc>`));
   check(`${p.title} social card alt metadata agrees`,
     Boolean(ogAlt) && ogAlt === twitterAlt);
   // The stager copies tracked files only, so a card that isn't committed doesn't deploy
