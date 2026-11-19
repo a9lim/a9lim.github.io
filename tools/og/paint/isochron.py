@@ -1,5 +1,8 @@
 """Isochron — the asymptote.
 
+FROZEN (a9, 2026-11-19): the card stays as painted however the sim changes. It's a
+painting of the project's idea, not a record of the model: never repaint it.
+
 A camp on a kopje before sunrise, and the plain it looks across. Along the
 horizon time runs from left to right: the card's left edge is the first
 hominins, and the spire stands where the dial runs out. The night is still

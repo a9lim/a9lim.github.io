@@ -1,3 +1,7 @@
+// FROZEN (a9, 2026-11-19): Isochron's card stays as painted however the sim changes, so this isn't run
+// again. It's kept as the record of how the card's run was made, against the model of 2026-11-16 (it reads
+// `lineages`, which the model no longer has).
+//
 // The run Isochron's card is painted from: a seeded history of the people's model
 // (projects/isochron/tools/people-run.mjs), laid on the follow dial's axis, as
 // isochron-run.json beside this file. The painting reads only that.
