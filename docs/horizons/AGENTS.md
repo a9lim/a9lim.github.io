@@ -71,6 +71,7 @@ update" and "Beside the public rulers".
     python metr_q4.py; python metr_q4_plot.py   # METR's 20 November update against the fit (see "METR's capability update"), metr-q4.png
     python metr_rulers.py    # those measurements beside ECI, its subsets and OECI (see "Beside the public rulers")
     python regimes.py; python regimes_plot.py   # double exponential against one and two drops in the doubling time (see "Regimes or smooth acceleration"), regimes.png
+    python rulers_plot.py    # each ruler on its own, the conversions between them, every ruler in pooled hours: ruler-*.png (see "Beside the public rulers")
 
 numpy, pyyaml, matplotlib and Pillow, all in the shared venv, and node, which
 runs the site's fit. `data/` is local and ignored by git: copies of METR's,
@@ -890,6 +891,23 @@ for GPT-6 Luna and Haiku 5.5 comes from METR's Figure 39.
   clears GPT-6 Astra and the fit stays at 2028.85, tied. The date moved out
   0.84 to 0.97 years since December 2025; 5% to 11% of hyperbolic
   histories move that far, and 22% to 40% of double-exponential ones.
+
+**Plots** (`rulers_plot.py`, added the same day at a9's request). Each
+ruler has a plot of its own: `ruler-metr.png`, `ruler-eci.png` (with the
+software and agentic abilities), `ruler-oeci.png` and `ruler-aeci.png`.
+`ruler-conversions.png` plots every pair of rulers. `ruler-hours.png` puts
+each ruler's frontier in pooled hours through its own map. It shows the
+section in one picture: ECI, OECI and AECI through the pooled map run with
+METR's measurements, while AECI through the figure's v1.1 map pulls away
+after Mythos Preview. The script prints three numbers of its own:
+- AECI's records climb 15.4 points a year before October 2025 and 29.3
+  after (chart dates, internal checkpoints included). That is the 1.9x METR
+  reports.
+- On OECI, Anthropic's records climb 21.4 points a year against OpenAI's
+  16.4.
+- OECI moves 0.87 points per ECI point for OpenAI and 1.01 for Anthropic.
+  These use ECI with the 19 November pages, which add GPT-6.2 Astra; the
+  OECI section, written before them, has 0.89 for OpenAI.
 
 **Reading** (synthesis): METR's new measurements and the public rulers
 agree with each other. A week ago the public rulers alone, calibrated on
