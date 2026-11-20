@@ -14,23 +14,18 @@ import numpy as np
 HERE = os.path.dirname(os.path.abspath(__file__)); sys.path.insert(0, HERE)
 with contextlib.redirect_stdout(io.StringIO()):
     import oeci as O
-from series import TH, PAIR, ON_CHART, AECI
+from series import TH, PAIR, ON_CHART, AECI, PAGE_SCORES, PAGE_ECI
 edi, C, sc, DOM = O.G['edi'], O.G['C'], O.sc, O.DOM
 A = {a[0]: a for a in AECI}
 
 # ---- fresh model pages: implied capability per benchmark, D_b + logit(p) / slope_b, away from floor and ceiling
-P = json.load(open(os.path.join(HERE, 'data', 'epoch-2026-11-19', 'model_pages.json')))
-SLUG = {'arc_agi_2': 'ARC-AGI-2', 'arc_agi': 'ARC-AGI', 'rli': 'Remote Labor Index', 'simplebench': 'SimpleBench', 'weirdml': 'WeirdML',
-        'weirdml_v3': 'WeirdML v3', 'frontierswe': 'FrontierSWE', 'gso': 'GSO-Bench', 'balrog': 'Balrog', 'apex_agents': 'APEX-Agents',
-        'posttrainbench': 'PostTrainBench', 'frontiercode': 'FrontierCode', 'proofbench': 'ProofBench', 'dtbench': 'DTBench'}
 FRESH = {}
-for m, s in P['scores'].items():
+for m, s in PAGE_SCORES.items():
     d = {}
-    for k, p in s.items():
-        b = SLUG.get(k, k)
+    for b, p in s.items():
         if b in edi and 0.03 < p < 0.97: D, a = edi[b]; d[b] = (D + math.log(p / (1 - p)) / a, a)
     FRESH[m] = d
-ECI_NOW = {m: v[0] for m, v in P['eci'].items()}
+ECI_NOW = {m: v[0] for m, v in PAGE_ECI.items()}
 
 GROUPS = {'agentic': DOM['SWE/agentic coding'] + DOM['other agentic'], 'math+science': DOM['math'] + DOM['science/knowledge'],
           'games+reasoning': DOM['reasoning/puzzles/games']}
@@ -125,7 +120,7 @@ if __name__ == '__main__':
         if aeci is not None: l2 = HA[0] + HA[1] * (aeci - 150)
         a = aeci_eq(l2); print(f"    {label:58s} AECI-eq {a:6.1f}   {2 ** l2:6.0f} h   {note}")
         return a
-    print('\nRoutes onto AECI. Model 4 is 178.6 (240 h on the hours view); Fable 5.2 runs as a control.')
+    m4 = A['Model 4'][2]; print(f'\nRoutes onto AECI. Model 4 is {m4:.1f} ({2 ** (HA[0] + HA[1] * (m4 - 150)):.0f} h on the hours view); Fable 5.2 runs as a control.')
     out = {}
     for m in ('GPT-6.2 Astra', 'Claude Fable 5.2', 'GPT-6 Astra'):
         claude = m.startswith('Claude'); o = O.OECI[m]['v']; e = ECI_NOW[m]; ce = caps(m, FRESH)

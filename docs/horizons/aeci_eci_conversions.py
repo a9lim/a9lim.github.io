@@ -1,9 +1,12 @@
-"""Four AECI-to-ECI conversions through the 14 public Claude models on both scales. Opus 5.5, 2026-11-12."""
-import sys, os; sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+"""Four AECI-to-ECI conversions through the 14 public Claude models on both scales: conversions.py's maps, drawn.
+Opus 5.5, 2026-11-12."""
+import sys, os, io, contextlib; sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import numpy as np, matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt, matplotlib.patheffects as pe
 from series import AECI, ECI, PUBLIC
+with contextlib.redirect_stdout(io.StringIO()):
+    from conversions import FORMS
 INK, MUTED, BORDER, GROUND, ACCENT = '#161514', '#666463', '#E2E1E0', '#FCFCFB', '#983432'
 C = {'linear': '#3473A3', 'above150': '#2A7976', 'hinge': '#7D60A6', 'quad': '#8B681B'}
 plt.rcParams.update({'font.family': 'serif', 'font.serif': ['Georgia', 'DejaVu Serif'], 'font.size': 11, 'axes.edgecolor': MUTED,
@@ -11,21 +14,18 @@ plt.rcParams.update({'font.family': 'serif', 'font.serif': ['Georgia', 'DejaVu S
 halo = [pe.withStroke(linewidth=3.5, foreground=GROUND)]
 A = {a[0]: a for a in AECI}
 P = [(k, A[k][2], ECI[v][1]) for k, v in PUBLIC.items() if k != 'Model 3']
-def fit(rows, feat):
-    X = np.array([feat(a) for _, a, _ in rows]); y = np.array([e for *_, e in rows]); b, *_ = np.linalg.lstsq(X, y, rcond=None)
-    return lambda a: np.array([feat(v) for v in np.atleast_1d(a)]) @ b
-F = {'linear': ('linear, all 14 pairs (scatter 0.97)', fit(P, lambda a: [1, a - 150]), 120),
-     'quad': ('quadratic (0.70)', fit(P, lambda a: [1, a - 150, (a - 150) ** 2]), 120),
-     'hinge': ('two lines joined at 156.5 (0.55)', fit(P, lambda a: [1, a - 150, max(0, a - 156.5)]), 120),
-     'above150': ('linear, the 8 pairs above 150 (0.35)', fit([p for p in P if p[1] >= 150], lambda a: [1, a - 150]), 150)}
+def drawn(M):
+    return lambda a: np.array([M.feat(v, None) for v in np.atleast_1d(a)]) @ M.b
+F = {k: (f"{FORMS[f].label} (scatter {FORMS[f].s:.2f})", drawn(FORMS[f]), FORMS[f].lo) for k, f in
+     (('linear', 'linear'), ('quad', 'quadratic'), ('hinge', 'hinge'), ('above150', 'top'))}
 fig, ax = plt.subplots(figsize=(10, 6.4))
 x0, x1 = 140, 182
 ax.plot([x0, x1], [x0, x1], ls=(0, (2, 3)), lw=1, color=MUTED); ax.text(166.5, 168, 'AECI = ECI', fontsize=9, color=MUTED, rotation=33)
 f52 = ECI['Claude Fable 5.2'][1:]
 ax.axhspan(f52[1], f52[2], color=ACCENT, alpha=0.06, lw=0); ax.axhline(f52[0], color=ACCENT, lw=1.2, ls=(0, (5, 3)))
-ax.text(140.6, f52[0] + 0.4, 'Fable 5.2, ECI 174.2 (95%: 170.1–178.8)', fontsize=9, color=ACCENT)
+ax.text(140.6, f52[0] + 0.4, f'Fable 5.2, ECI {f52[0]:.1f} (95%: {f52[1]:.1f}–{f52[2]:.1f})', fontsize=9, color=ACCENT)
 for k, (lab, f, start) in F.items():
-    g = np.linspace(max(x0, start), 174.64, 100); ge = np.linspace(174.64, 180, 30)
+    g = np.linspace(max(x0, start if start >= 150 else x0), 174.64, 100); ge = np.linspace(174.64, 180, 30)
     ax.plot(g, f(g), color=C[k], lw=2, label=lab); ax.plot(ge, f(ge), color=C[k], lw=2, ls=(0, (2, 2)))
 ax.scatter([p[1] for p in P], [p[2] for p in P], s=40, color=INK, edgecolor=GROUND, linewidth=1.5, zorder=5)
 for k, a, e in P:

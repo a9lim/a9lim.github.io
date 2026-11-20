@@ -1,55 +1,29 @@
 """Curve fits for record time horizons, the score-to-horizon map, and the bootstrap around both.
 
-fit_horizons is the fit behind the figure at a9l.im/#fits, ported from a9lim.github.io tools/horizon-fit.mjs
-(Opus 5.5) with its seeded generator, so both places draw the same replicates. parity.py compares them.
+The figure's fit has one implementation, the site's tools/horizon-fit.mjs. fit_horizons, hyp and dexp call it through
+bridge.mjs (one node process per Python session, JSON lines); the rest of this file is analysis built on them: the
+other simple curves, AICc, leave-one-out, the drift test.
 
 Units: t is a decimal year; horizons are log2 hours; a score is AECI (or Epoch's ECI, where a caller says so).
 
-fable, 2026-11-11 (claude-fable-5-2)
+fable, 2026-11-11 (claude-fable-5-2); the bridge in place of the port, Opus 5.5 (claude-opus-5-5), 2026-11-20.
 """
 import math, os, sys
 import numpy as np
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+HERE = os.path.dirname(os.path.abspath(__file__)); sys.path.insert(0, HERE)
 from series import ECI, AECI, TH, PAIR, PUBLIC, eci_frontier, row, day
+from bridge import js
 
 T0 = 2019.0
 
-# ---------- one-parameter profiles: a line in a transformed date, the transform's parameter found by search
-def _line(X, Y):
-    """Least squares of each row of Y on the matching row of X: intercept, slope, squared error."""
-    mx, my = X.mean(-1, keepdims=True), Y.mean(-1, keepdims=True); dx, dy = X - mx, Y - my
-    b1 = (dx * dy).sum(-1, keepdims=True) / (dx * dx).sum(-1, keepdims=True)
-    r = dy - b1 * dx
-    return (my - b1 * mx)[..., 0], b1[..., 0], (r * r).sum(-1)
-
-def profile(design, Y, lo, hi, n):
-    """For each row of Y, the p that minimises the squared error of a line in design(p):
-    a log-spaced grid, then golden section between the grid neighbours of the best point."""
-    B, f = len(Y), lambda p: _line(design(p[:, None]), Y)[2]
-    g = lo * (hi / lo) ** (np.arange(n) / (n - 1))
-    X = design(g[:, None]); dx = X - X.mean(1, keepdims=True); dy = Y - Y.mean(1, keepdims=True)
-    bi = ((dy * dy).sum(1)[:, None] - (dy @ dx.T) ** 2 / (dx * dx).sum(1)).argmin(1)
-    a, b = np.log(g[np.maximum(bi - 1, 0)]), np.log(g[np.minimum(bi + 1, n - 1)])
-    r = (math.sqrt(5) - 1) / 2
-    c, d = b - r * (b - a), a + r * (b - a); fc, fd = f(np.exp(c)), f(np.exp(d))
-    for _ in range(40):
-        left = fc < fd
-        a, b = np.where(left, a, c), np.where(left, d, b)
-        new = np.where(left, b - r * (b - a), a + r * (b - a)); fn = f(np.exp(new))
-        c, d, fc, fd = np.where(left, new, d), np.where(left, c, new), np.where(left, fn, fd), np.where(left, fc, fn)
-    x = np.exp((a + b) / 2)
-    return np.where(f(x) <= f(g[bi]), x, g[bi])
-
-def hyp(t, Y):
-    """y = a - alpha * log2(ts - t), a singularity at ts. Rows of Y -> (a, alpha, ts, sse)."""
-    design = lambda gap: -np.log2(t.max() + gap - t)
-    gap = profile(design, Y, 0.003, 60, 160); a, alpha, sse = _line(design(gap[:, None]), Y)
-    return a, alpha, t.max() + gap, sse
+def hyp(t, Y, max_gap=60):
+    """y = a - alpha * log2(ts - t), a singularity at ts, fitted to each row of Y -> (a, alpha, ts, sse)."""
+    r = js('hyp', t=np.asarray(t, float), Y=np.atleast_2d(np.asarray(Y, float)), maxGap=max_gap)
+    return tuple(np.array(r[k], float) for k in ('a', 'alpha', 'ts', 'sse'))
 def dexp(t, Y):
-    """y = d0 + d1 * exp(c * (t - 2019)), a double exponential in the horizon. Rows of Y -> (d0, d1, c, sse)."""
-    design = lambda c: np.exp(c * (t - T0))
-    c = profile(design, Y, 0.02, 2, 120); d0, d1, sse = _line(design(c[:, None]), Y)
-    return d0, d1, c, sse
+    """y = d0 + d1 * exp(c * (t - 2019)), a double exponential in the horizon, fitted to each row of Y -> (d0, d1, c, sse)."""
+    r = js('dexp', t=np.asarray(t, float), Y=np.atleast_2d(np.asarray(Y, float)))
+    return tuple(np.array(r[k], float) for k in ('d0', 'd1', 'c', 'sse'))
 def hyp_at(s, a, alpha, ts):
     """The hyperbola at dates s (last axis); infinite from the singularity on."""
     a, alpha, ts = (np.asarray(v, float)[..., None] for v in (a, alpha, ts)); s = np.asarray(s, float)
@@ -58,29 +32,6 @@ def dexp_at(s, d0, d1, c):
     d0, d1, c = (np.asarray(v, float)[..., None] for v in (d0, d1, c))
     return d0 + d1 * np.exp(c * (np.asarray(s, float) - T0))
 
-# ---------- the bootstrap
-class Rng:
-    """The site's generator: mulberry32, polar normals, chi-squared as a sum of squares."""
-    def __init__(self, seed): self.s, self.spare = seed & 0xFFFFFFFF, None
-    def u(self):
-        s = self.s = (self.s + 0x6D2B79F5) & 0xFFFFFFFF
-        r = ((s ^ (s >> 15)) * (1 | s)) & 0xFFFFFFFF
-        r = ((r + (((r ^ (r >> 7)) * (61 | r)) & 0xFFFFFFFF)) & 0xFFFFFFFF) ^ r
-        return (r ^ (r >> 14)) / 4294967296
-    def normal(self):
-        if self.spare is not None:
-            v, self.spare = self.spare, None; return v
-        while True:
-            a, b = 2 * self.u() - 1, 2 * self.u() - 1; q = a * a + b * b
-            if 0 < q < 1: break
-        f = math.sqrt(-2 * math.log(q) / q); self.spare = b * f
-        return a * f
-    def chi2(self, df):
-        x = 0.0
-        for _ in range(df): z = self.normal(); x += z * z
-        return x
-    def int(self, n): return int(self.u() * n)
-
 def quantile(S, q):
     """Linear-interpolated quantile down the first axis of a sorted array; infinite once it reaches an infinity."""
     i = (len(S) - 1) * q; lo, hi = math.floor(i), math.ceil(i)
@@ -88,70 +39,21 @@ def quantile(S, q):
         return np.where(np.isinf(S[hi]), np.inf, S[lo] + (S[hi] - S[lo]) * (i - lo))
 
 def fit_horizons(series, calibration=(), B=2000, seed=20261111, views=('hours', 'aeci')):
-    """The map, then in each view a hyperbola and a double exponential with 95% bootstrap bands.
-
-    1. The score-horizon map: least squares of log2 horizon on score through every model with both,
-       log2 h = b0 + b1 * (score - 150).
-    2. Two views of the record series. 'hours' takes each model's measured horizon and converts score-only
-       models through the map; 'aeci' takes each model's score and converts horizon-only models back.
-    3. Each replicate draws the map's parameters from their sampling distribution (multivariate t), moves the
-       converted points accordingly, resamples the fit's residuals, and refits. The points' own intervals are
-       not resampled: METR's share one task suite (horizons) or one benchmark set (AECI) across models, so
-       independent draws would overstate the noise.
-    4. Point intervals: a model's own where it has them; for a converted point, Monte Carlo over the source
-       interval, the map's parameters, and the map's residual scatter.
-    """
-    R, t, n = Rng(seed), np.array([m['t'] for m in series]), len(series)
-    pairs = [m for m in [*series, *calibration] if m['th'] and m['aeci']]
-    out = dict(map=None, views={})
-    if len(pairs) > 2:
-        x, y = np.array([m['aeci'][0] - 150 for m in pairs]), np.array([m['th'][0] for m in pairs])
-        mx, sxx = x.mean(), ((x - x.mean()) ** 2).sum(); (b0,), (b1,), (sse,) = _line(x[None], y[None])
-        df = len(pairs) - 2; s2 = sse / df
-        v11 = s2 / sxx; c00 = math.sqrt(s2 / len(pairs) + mx * mx * v11); c10 = -mx * v11 / c00; c11 = math.sqrt(v11 - c10 * c10)
-        out.update(map=(float(b0), float(b1)), map_sd=math.sqrt(s2), map_n=len(pairs), map_slope_sd=math.sqrt(v11))
-        def draw():
-            z0, z1 = R.normal(), R.normal(); k = math.sqrt(R.chi2(df) / df)
-            return b0 + c00 * z0 / k, b1 + (c10 * z0 + c11 * z1) / k
-    value = {'hours': lambda m, mp: m['th'][0] if m['th'] else mp[0] + mp[1] * (m['aeci'][0] - 150),
-             'aeci': lambda m, mp: m['aeci'][0] if m['aeci'] else 150 + (m['th'][0] - mp[0]) / mp[1]}
-    for view in views:
-        own, src = ('th', 'aeci') if view == 'hours' else ('aeci', 'th')
-        y = np.array([value[view](m, out['map']) for m in series]); conv = [not m[own] for m in series]
-
-        points = []
-        for m, yi in zip(series, y):
-            if m[own]:
-                points.append((*m[own], False)); continue
-            v, lo, hi = m[src]; d = np.empty(4000)
-            for k in range(4000):
-                mp = draw(); e = math.sqrt(s2) * R.normal() / math.sqrt(R.chi2(df) / df)
-                if lo is None: sv = v
-                else: z = R.normal(); sv = v + z * ((v - lo) if z < 0 else (hi - v)) / 1.96      # a split normal
-                d[k] = mp[0] + mp[1] * (sv - 150) + e if view == 'hours' else 150 + (sv - e - mp[0]) / mp[1]
-            d.sort(); points.append((float(yi), float(quantile(d, 0.025)), float(quantile(d, 0.975)), True))
-
-        H, D = hyp(t, y[None]), dexp(t, y[None])
-        grid = np.sort(np.r_[T0 + 9 * np.arange(160) / 159, H[2] - 10 ** (1 - 1.61 * np.arange(160) / 159)])
-        fitted = hyp_at(t, *H[:3])[0], dexp_at(t, *D[:3])[0]
-        Y = np.empty((2, B, n))
-        for b in range(B):
-            shift = np.zeros(n)
-            if out['map']:
-                mp = draw(); shift = np.array([value[view](m, mp) - yi if c else 0.0 for m, yi, c in zip(series, y, conv)])
-            for j in (0, 1):
-                Y[j, b] = fitted[j] + shift + (y - fitted[j])[[R.int(n) for _ in range(n)]]
-        Hb, Db = hyp(t, Y[0]), dexp(t, Y[1])
-        ts = np.sort(Hb[2])
-        band = {k: np.c_[quantile(S, 0.025), quantile(S, 0.975)] for k, S in
-                (('hyp', np.sort(hyp_at(grid, *Hb[:3]), 0)), ('dexp', np.sort(dexp_at(grid, *Db[:3]), 0)))}
-        a, alpha, t_s, sse = (float(v[0]) for v in H); d0, d1, c, dsse = (float(v[0]) for v in D)
+    """tools/horizon-fit.mjs fitRaw on these rows: the map, then in each view a hyperbola and a double exponential with
+    95% bootstrap bands, point intervals for converted models, every number unrounded. (Its header describes the fit.)"""
+    obj = lambda v: None if v is None else dict(v=float(v[0]), lo=None if v[1] is None else float(v[1]), hi=None if v[2] is None else float(v[2]))
+    rows = lambda ms: [dict(name=m['name'], t=float(m['t']), th=obj(m['th']), aeci=obj(m['aeci'])) for m in ms]
+    r = js('fit', series=rows(series), calibration=rows(calibration), B=B, seed=seed, views=list(views), asOf=False)
+    m = r['map']
+    out = dict(map=None if m is None else (m['b0'], m['b1']), views={})
+    if m: out.update(map_sd=m['s'], map_n=m['n'], map_slope_sd=m['slopeSd'])
+    for view, V in r['views'].items():
+        h, d = V['hyperbolic'], V['doubleExponential']
         out['views'][view] = dict(
-            y=y, points=points, band=dict(t=grid, **band),
-            # exponent: doublings of horizon per halving of the time left
-            hyp=dict(a=a, alpha=alpha, ts=t_s, low=float(quantile(ts, 0.025)), high=float(quantile(ts, 0.975)), sse=sse,
-                     exponent=alpha if view == 'hours' else alpha * out['map'][1]),
-            dexp=dict(d0=d0, d1=d1, c=c, sse=dsse))
+            y=np.array(V['y'], float), points=[(p[0], p[1], p[2], bool(p[3])) for p in V['points']],
+            band=dict(t=np.array(V['band']['t'], float), hyp=np.array(V['band']['hyp'], float), dexp=np.array(V['band']['dexp'], float)),
+            hyp=dict(a=h['a'], alpha=h['alpha'], ts=h['ts'], low=h['low'], high=h['high'], sse=h['sse'], exponent=h['exponent']),
+            dexp=dict(d0=d['d0'], d1=d['d1'], c=d['c'], sse=d['sse']))
     return out
 
 # ---------- the simple curves side by side
@@ -264,9 +166,9 @@ def drift(t, y, kmin=10, since=2025.95, n=1500):
 if __name__ == '__main__':
     b = eci_map(verbose=True)
     to_th = lambda x: 2 ** (b[0] + b[1] * np.asarray(x, float))          # minutes
-    for nm, x in (('Mythos Preview Early (AECI 162.3; measured 1045 min)', 162.3), ('GPT-5 (150)', 150), ('Fable 5.2 (ECI 174.2)', 174.24), ('Model 4 (AECI 178.6)', 178.6)):
+    A = {a[0]: a for a in AECI}; mp = A['Mythos Preview Early'][2]; f52 = ECI['Claude Fable 5.2'][1]; m4 = A['Model 4'][2]
+    for nm, x in ((f'Mythos Preview Early at its AECI, {mp:.1f}', mp), ('GPT-5 (ECI 150)', 150), (f'Fable 5.2 (ECI {f52:.1f})', f52), (f'Model 4 at its AECI, {m4:.1f}', m4)):
         print(f'  {nm}: {to_th(x):.0f} min = {to_th(x) / 60:.1f} h')
-    A = {a[0]: a for a in AECI}
     print('AECI vs Epoch ECI, same or sibling model, and how far the AECI chart dates it ahead of the public release:')
     for k, v in PUBLIC.items():
         print(f'   {k:15s} AECI {A[k][2]:6.1f}  ECI {ECI[v][1]:6.1f}  diff {A[k][2] - ECI[v][1]:+.1f}   {(day(ECI[v][0]) - day(A[k][1])).days:3d} days')

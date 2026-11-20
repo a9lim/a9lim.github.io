@@ -15,16 +15,12 @@ today: today
 singularity: fitted singularity
 caption: fitted singularity {date} (95%: {low} – {high})
 captionLeft: {left} before the fitted singularity (95%: {low} – {high})
-# The build fits everything from the two tables below (tools/horizon-fit.mjs):
-# the AECI–horizon map through every model that has both values (it comes out
-# as Nikola Jurkovic's, x.com/nikolaj2030/status/2118777653981507716), then a hyperbola and a double exponential in each y view,
-# with 95% bands from 2,000 bootstrap replicates that redraw the map and
-# resample each fit's residuals.
-#
-# The second chart refits the hyperbola in hours with only the models released
-# by each date, back to the fifth model, and plots the singularity each refit
-# puts, or the time it then left until it. Near starts at the first refit
-# after which none puts the singularity 4 years away or more.
+# The build reads the two tables below and fits them: tools/horizon-fit.mjs
+# describes the fit, and site/src/horizon.js draws both charts. The
+# AECI–horizon map comes out as Nikola Jurkovic's
+# (x.com/nikolaj2030/status/2118777653981507716). The analysis behind the
+# figure is in docs/horizons/; `python docs/horizons/series.py` checks this
+# table against METR's file and the AECI readings it was made from.
 #
 # Intervals are METR's 95%: horizons from METR's file, AECI read off the
 # whiskers of METR's chart (3.5 Sonnet is the AECI anchor and has none).

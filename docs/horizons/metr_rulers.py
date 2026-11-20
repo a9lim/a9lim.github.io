@@ -23,23 +23,21 @@ import numpy as np
 HERE = os.path.dirname(os.path.abspath(__file__)); sys.path.insert(0, HERE)
 with contextlib.redirect_stdout(io.StringIO()):
     import metr_q4 as Q, oeci as O, aeci_subset as S, aeci_imitation as I
-from series import yr, row, day, TH, PAIR
+from series import yr, row, day, TH, PAIR, PAGE_ECI, METR, EPOCH as EPOCHCOL, V11 as V11KEY, names
 from fit import compare, drift
 
 # ---------------------------------------------------------------------------------------------------- names and values
-EP = {'Claude 3.5 Sonnet (New)': 'Claude 3.5 Sonnet (October 2024)', 'Claude 3.5 Sonnet (Old)': 'Claude 3.5 Sonnet',
-      'GPT-4 0314': 'GPT-4 (Mar 2023)', 'GPT-4 1106': 'GPT-4 Turbo (Nov 2023)', 'GPT-4 Turbo': 'GPT-4 Turbo (Apr 2024)',
-      'GPT-4o': 'GPT-4o (May 2024)'}
+EP = names(METR, EPOCHCOL)                                         # METR's names -> Epoch's, from the registry
 ep = lambda m: EP.get(m, m)
 MCI = dict(Q.MCI)                                                   # Figure 12, plus the two only Figure 39 scores
 for r in Q.panels('1c31ba739b02e62d')[0][1]['models']:
     MCI.setdefault(r['model'], (yr(r['released']), r['mci'], r['mci_low_95'], r['mci_high_95']))
 sc = O.sc
 ECI = {m: float(sc[m]['eci']) for m in sc}
-ECI.update({m: v[0] for m, v in S.R.P['eci'].items()})            # 19 November pages
+ECI.update({m: v[0] for m, v in PAGE_ECI.items()})                # 19 November pages
 DATE = {m: d['t'] for m, d in O.OECI.items()}
 DATE.update({m: yr(sc[m]['date']) for m in sc})                   # Epoch's date where it has one, as everywhere here
-MODELS = sorted(set(sc) | set(O.OECI) | set(S.R.P['eci']))
+MODELS = sorted(set(sc) | set(O.OECI) | set(PAGE_ECI))
 P = np.array([S.vec(m) for m in MODELS])
 def mle(idx, nmin):
     th, n = S.theta(P, idx)
@@ -102,8 +100,7 @@ for g in ('Anthropic', 'OpenAI'):
 print("\n=== 2. Each ruler against METR's pooled horizons: log2 h = c + (R - 150) / ppd + offset x Claude")
 print('    The same regression on the v1.1 file\'s horizons (to GPT-5.4 and the early Mythos Preview checkpoint) beside it.')
 COMB = Q.COMB
-V11H = {PAIR[k]: (t, (math.log2(v / 60),)) for t, v, k, *_ in TH if k in PAIR}
-V11H.update({Q.ON_CHART_M[k]: (t, (math.log2(v / 60),)) for t, v, k, *_ in TH if k in Q.ON_CHART_M})
+V11H = {names(V11KEY, METR)[k]: (t, (math.log2(v / 60),)) for t, v, k, *_ in TH if k in names(V11KEY, METR)}
 def fitmap(R, H):
     ms = [m for m in H if val(R, m) is not None]
     x = np.array([val(R, m) - 150 for m in ms]); y = np.array([H[m][1][0] for m in ms]); c = np.array([LAB(m) == 'Anthropic' for m in ms], float)

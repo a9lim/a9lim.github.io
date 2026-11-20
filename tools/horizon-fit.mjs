@@ -1,9 +1,13 @@
-// Fits for the home-page time-horizon figure (content/home/horizons.md),
-// run by tools/build.mjs. Deterministic: a seeded generator drives every
-// draw, so `build.mjs --check` reproduces the output exactly.
+// The fit behind the home-page time-horizon figure (content/home/horizons.md),
+// and the only implementation of it: tools/build.mjs runs it for the site, and
+// the analysis in docs/horizons/ calls it through docs/horizons/bridge.mjs.
+// Deterministic: a seeded generator drives every draw, so `build.mjs --check`
+// reproduces the output exactly.
 //
 // Units: t is a decimal year; horizons are log2 hours; AECI is AECI.
 //
+// 0. readHorizons reads the content file's two tables (the record series and
+//    the calibration-only models) into rows for the fit.
 // 1. The AECI–horizon map: least squares of log2 horizon on AECI through
 //    every model with both values, log2 h = b0 + b1·(AECI − 150).
 // 2. Two views of the record series. "hours" takes each model's measured
@@ -28,6 +32,10 @@
 //    it reports a tight interval around a meaningless fit). Its profile runs
 //    to 1,000 years; an interval that reaches that far has no top, and its
 //    high is null.
+//
+// fitRaw returns every number unrounded; fitHorizons rounds it for the site.
+
+import { mdBlocksOf, parseTableBlock } from './md-table.mjs';
 
 const T0 = 2019;
 
@@ -85,7 +93,7 @@ function profile(f, lo, hi, n) {
     return f(x) <= bv ? x : g[bi];
 }
 
-function fitHyp(t, y, maxGap = 60) {
+export function fitHyp(t, y, maxGap = 60) {
     const tmax = Math.max(...t);
     const x = new Float64Array(t.length);
     const at = (gap) => { for (let i = 0; i < t.length; i++) x[i] = -Math.log2(tmax + gap - t[i]); return line(x, y); };
@@ -95,7 +103,7 @@ function fitHyp(t, y, maxGap = 60) {
     return { a: b0, alpha: b1, ts, sse, f: (s) => (s < ts ? b0 - b1 * Math.log2(ts - s) : Infinity) };
 }
 
-function fitDexp(t, y) {
+export function fitDexp(t, y) {
     const x = new Float64Array(t.length);
     const at = (c) => { for (let i = 0; i < t.length; i++) x[i] = Math.exp(c * (t[i] - T0)); return line(x, y); };
     const c = profile((k) => at(k).sse, 0.02, 2, 120);
@@ -124,7 +132,7 @@ function fitMap(pairs, R) {
     const s2 = L.sse / df;
     const v11 = s2 / L.sxx, v01 = -L.mx * v11, v00 = s2 / n + L.mx * L.mx * v11;
     const c00 = Math.sqrt(v00), c10 = v01 / c00, c11 = Math.sqrt(v11 - c10 * c10);
-    const map = { b0: L.b0, b1: L.b1, s: Math.sqrt(s2), n, df };
+    const map = { b0: L.b0, b1: L.b1, s: Math.sqrt(s2), n, df, slopeSd: Math.sqrt(v11) };
     const drawMap = () => {
         const z0 = R.normal(), z1 = R.normal(), k = Math.sqrt(R.chi2(df) / df);
         return { b0: L.b0 + (c00 * z0) / k, b1: L.b1 + (c10 * z0 + c11 * z1) / k };
@@ -138,33 +146,104 @@ const VIEWS = {
     aeci: (m, mp) => (m.aeci ? m.aeci.v : toAeci(m.th.v, mp)),
 };
 
-const r4 = (v) => (Number.isFinite(v) ? Math.round(v * 1e4) / 1e4 : null);
-const r3 = (v) => (Number.isFinite(v) ? Math.round(v * 1e3) / 1e3 : null);
+// ---------------------------------------------------------------- 0. the table
+// Decimal year, as the fits use it: year + elapsed days / days in the year.
+function decimalYear(iso, where) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(iso) || Number.isNaN(Date.parse(iso + 'T00:00:00Z'))) {
+        throw new Error(`${where}: bad date "${iso}"`);
+    }
+    const y = Number(iso.slice(0, 4));
+    const a = Date.UTC(y, 0, 1), b = Date.UTC(y + 1, 0, 1);
+    return y + (Date.parse(iso + 'T00:00:00Z') - a) / (b - a);
+}
+const NUM = /^\d+(?:\.\d+)?$/;
+// A value with an optional 95% interval "lo–hi"; horizons become log2 hours.
+function reading(v, ci, where, what, toUnits) {
+    if (v === '') {
+        if (ci !== '') throw new Error(`${where}: ${what} interval without a value`);
+        return null;
+    }
+    if (!NUM.test(v)) throw new Error(`${where}: bad ${what} "${v}"`);
+    const out = { v: toUnits(Number(v)), lo: null, hi: null };
+    if (ci !== '') {
+        const m = ci.match(/^(\d+(?:\.\d+)?)\s*[–-]\s*(\d+(?:\.\d+)?)$/);
+        if (!m || !(Number(m[1]) <= Number(v) && Number(v) <= Number(m[2]))) throw new Error(`${where}: bad ${what} interval "${ci}"`);
+        out.lo = toUnits(Number(m[1]));
+        out.hi = toUnits(Number(m[2]));
+    }
+    return out;
+}
+const log2h = (min) => Math.log2(min / 60);
 
 /**
+ * The body of content/home/horizons.md (frontmatter removed): its source note,
+ * the record series table and the calibration-only table.
+ * @returns {{series, calibration, notes: string[]}}
+ */
+export function readHorizons(body, rel) {
+    const blocks = mdBlocksOf(body);
+    const isTable = (b) => b.trimStart().startsWith('|');
+    const tables = blocks.filter(isTable);
+    const notes = blocks.filter((b) => !isTable(b));
+    if (tables.length !== 2) throw new Error(`${rel}: expected the series table and the calibration table, got ${tables.length} tables`);
+    if (notes.length !== 1) throw new Error(`${rel}: expected one source note, got ${notes.length}`);
+    const parseRows = (block, first) => {
+        const t = parseTableBlock(block, rel);
+        const want = [first, 'Date', 'Horizon (min)', 'Horizon 95%', 'AECI', 'AECI 95%'];
+        if (t.header.join('|') !== want.join('|')) throw new Error(`${rel}: table header must be ${want.join(' | ')}`);
+        return t.rows.map(([name, date, th, thCi, aeci, aeciCi], i) => {
+            const where = `${rel}: ${first} row ${i + 1}`;
+            if (!name) throw new Error(`${where}: missing model`);
+            const m = {
+                name,
+                date,
+                t: decimalYear(date, where),
+                th: reading(th, thCi, where, 'horizon', log2h),
+                aeci: reading(aeci, aeciCi, where, 'AECI', (x) => x),
+            };
+            if (!m.th && !m.aeci) throw new Error(`${where}: needs a horizon or an AECI`);
+            return m;
+        });
+    };
+    const series = parseRows(tables[0], 'Model');
+    const calibration = parseRows(tables[1], 'Calibration only');
+    for (let i = 1; i < series.length; i++) {
+        if (series[i].t < series[i - 1].t) throw new Error(`${rel}: series rows must be in date order (${series[i].name})`);
+    }
+    return { series, calibration, notes };
+}
+
+// ---------------------------------------------------------------- 1–6. the fit
+/**
+ * Every number unrounded. The analysis passes views: ['hours'] and asOf: false
+ * when it needs only the main fit; a series with no converted models in the
+ * requested views and fewer than three map pairs runs without a map.
  * @param {Array<{name, t, th: {v, lo, hi}|null, aeci: {v, lo, hi}|null}>} series  plotted models (th in log2 hours)
  * @param {Array<{th, aeci}>} calibration  extra models used only for the map
  */
-export function fitHorizons(series, calibration, { B = 2000, seed = 20261111 } = {}) {
+export function fitRaw(series, calibration, { B = 2000, seed = 20261111, views = ['hours', 'aeci'], asOf = true } = {}) {
     const R = rng(seed);
 
     // 1. map
     const pairs = [...series, ...calibration].filter((m) => m.th && m.aeci);
-    const { map, drawMap } = fitMap(pairs, R);
-    const df = map.df;
+    const needsMap = views.some((view) => series.some((m) => !(view === 'hours' ? m.th : m.aeci)));
+    if (needsMap && pairs.length < 3) throw new Error('horizon fit: converted models need a map with three pairs');
+    const M = pairs.length > 2 ? fitMap(pairs, R) : null;
+    const map = M && M.map, drawMap = M ? M.drawMap : () => null;
+    const df = map && map.df;
 
     // 2. views
     const t = series.map((m) => m.t);
-
-    const out = { map: { b0: r4(map.b0), b1: r4(map.b1), s: r4(map.s), n: map.n }, views: {} };
-    for (const [view, value] of Object.entries(VIEWS)) {
+    const out = { map, views: {}, asOf: null };
+    for (const view of views) {
+        const value = VIEWS[view];
         const y = series.map((m) => value(m, map));
         const converted = series.map((m) => (view === 'hours' ? !m.th : !m.aeci));
 
         // 5. point intervals
-        const pts = series.map((m, i) => {
+        const points = series.map((m, i) => {
             const own = view === 'hours' ? m.th : m.aeci;
-            if (own) return [r4(own.v), r4(own.lo), r4(own.hi), 0];
+            if (own) return [own.v, own.lo, own.hi, 0];
             const src = view === 'hours' ? m.aeci : m.th;
             const N = 4000, d = new Float64Array(N);
             for (let k = 0; k < N; k++) {
@@ -174,7 +253,7 @@ export function fitHorizons(series, calibration, { B = 2000, seed = 20261111 } =
                 d[k] = view === 'hours' ? toHours(v, mp) + e : toAeci(v - e, mp);
             }
             d.sort();
-            return [r4(y[i]), r4(quantile(d, 0.025)), r4(quantile(d, 0.975)), 1];
+            return [y[i], quantile(d, 0.025), quantile(d, 0.975), 1];
         });
 
         // 3. central fits
@@ -205,25 +284,25 @@ export function fitHorizons(series, calibration, { B = 2000, seed = 20261111 } =
             }
         }
         ts.sort();
-        const band = {};
+        const band = { t: grid };
         for (const name of ['hyp', 'dexp']) {
             const col = new Float64Array(B);
             band[name] = grid.map((_, g) => {
                 for (let b = 0; b < B; b++) col[b] = curves[name][b * G + g];
                 col.sort();
-                return [r3(quantile(col, 0.025)), r3(quantile(col, 0.975))];
+                return [quantile(col, 0.025), quantile(col, 0.975)];
             });
         }
 
-        // exponent in doublings of horizon per halving of the time left
-        const exponent = view === 'hours' ? hyp.alpha : hyp.alpha * map.b1;
         out.views[view] = {
-            points: pts,
-            hyperbolic: { a: r4(hyp.a), alpha: r4(hyp.alpha), ts: r4(hyp.ts), low: r4(quantile(ts, 0.025)), high: r4(quantile(ts, 0.975)), exponent: r4(exponent) },
-            doubleExponential: { d0: r4(dex.d0), d1: r4(dex.d1), c: r4(dex.c) },
-            band: { t: grid.map(r4), hyp: band.hyp, dexp: band.dexp },
+            y, converted, points, band,
+            // exponent: doublings of horizon per halving of the time left
+            hyperbolic: { a: hyp.a, alpha: hyp.alpha, ts: hyp.ts, sse: hyp.sse, low: quantile(ts, 0.025), high: quantile(ts, 0.975),
+                          exponent: view === 'hours' ? hyp.alpha : hyp.alpha * map.b1 },
+            doubleExponential: { d0: dex.d0, d1: dex.d1, c: dex.c, sse: dex.sse },
         };
     }
+    if (!asOf) return out;
 
     // 6. the singularity as of each release, on a stream of its own so the
     //    fits above don't move; the refit with every model is the full fit,
@@ -241,20 +320,41 @@ export function fitHorizons(series, calibration, { B = 2000, seed = 20261111 } =
         const converted = S.map((m) => !m.th);
         const P = pairs.filter((m) => m.t <= asof);
         if (converted.some(Boolean) && P.length < 3) throw new Error(`horizon fit: as of ${S[k - 1].name}, converted models need a map with three pairs`);
-        const M = converted.some(Boolean) ? fitMap(P, RA) : null;
+        const MK = converted.some(Boolean) ? fitMap(P, RA) : null;
         const tk = S.map((m) => m.t);
-        const y = S.map((m) => VIEWS.hours(m, M && M.map));
+        const y = S.map((m) => VIEWS.hours(m, MK && MK.map));
         const hyp = fitHyp(tk, y, 1000);
         const fitted = tk.map((s) => hyp.f(s)), res = y.map((v, i) => v - fitted[i]);
         const ts = new Float64Array(B), yb = new Float64Array(k);
         for (let b = 0; b < B; b++) {
-            const mp = M && M.drawMap();
+            const mp = MK && MK.drawMap();
             for (let i = 0; i < k; i++) yb[i] = fitted[i] + (converted[i] ? VIEWS.hours(S[i], mp) - y[i] : 0) + res[RA.int(k)];
             ts[b] = fitHyp(tk, yb, 1000).ts;
         }
         ts.sort();
         const high = quantile(ts, 0.975);
-        out.asOf.push([k - 1, r4(hyp.ts), r4(quantile(ts, 0.025)), high > asof + 999 ? null : r4(high)]);
+        out.asOf.push([k - 1, hyp.ts, quantile(ts, 0.025), high > asof + 999 ? null : high]);
     }
+    return out;
+}
+
+const r4 = (v) => (Number.isFinite(v) ? Math.round(v * 1e4) / 1e4 : null);
+const r3 = (v) => (Number.isFinite(v) ? Math.round(v * 1e3) / 1e3 : null);
+
+/** The fit as the site carries it (src/horizon-data.js): fitRaw, rounded. */
+export function fitHorizons(series, calibration, { B = 2000, seed = 20261111 } = {}) {
+    const raw = fitRaw(series, calibration, { B, seed });
+    const m = raw.map;
+    const out = { map: { b0: r4(m.b0), b1: r4(m.b1), s: r4(m.s), n: m.n }, views: {} };
+    for (const [view, v] of Object.entries(raw.views)) {
+        const h = v.hyperbolic, d = v.doubleExponential;
+        out.views[view] = {
+            points: v.points.map(([a, lo, hi, c]) => [r4(a), r4(lo), r4(hi), c]),
+            hyperbolic: { a: r4(h.a), alpha: r4(h.alpha), ts: r4(h.ts), low: r4(h.low), high: r4(h.high), exponent: r4(h.exponent) },
+            doubleExponential: { d0: r4(d.d0), d1: r4(d.d1), c: r4(d.c) },
+            band: { t: v.band.t.map(r4), hyp: v.band.hyp.map((p) => p.map(r3)), dexp: v.band.dexp.map((p) => p.map(r3)) },
+        };
+    }
+    out.asOf = raw.asOf.map(([k, ts, lo, hi]) => [k, r4(ts), r4(lo), hi == null ? null : r4(hi)]);
     return out;
 }

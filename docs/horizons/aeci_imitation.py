@@ -109,9 +109,9 @@ if __name__ == '__main__':
     # GPT-6.2 Astra: one agentic benchmark, carried from GPT-6 Astra on it (aeci_subset.py, section 5)
     g6 = next(r for r in rows if r['m'] == 'GPT-6 Astra'); P2 = np.array([S.vec('GPT-6.2 Astra'), S.vec('GPT-6 Astra')])
     sh = [i for i in AG if not np.isnan(P2[:, i]).any()]; tt, _ = S.theta(P2, sh); v62 = g6['v'] + B[1] * float(tt[0] - tt[1])
-    ax.scatter([D(yr('2026-11-17'))], [v62], marker='o', s=40, facecolor='white', edgecolor=COL['OpenAI'], lw=1.5, zorder=5,
+    ax.scatter([D(O.OECI['GPT-6.2 Astra']['t'])], [v62], marker='o', s=40, facecolor='white', edgecolor=COL['OpenAI'], lw=1.5, zorder=5,
                label='GPT-6.2 Astra, carried from GPT-6 Astra on MirrorCode alone')
-    ax.annotate('GPT-6.2 Astra', (D(yr('2026-11-17')), v62), xytext=(4, -12), textcoords='offset points', ha='center', fontsize=7.5, color=COL['OpenAI'])
+    ax.annotate('GPT-6.2 Astra', (D(O.OECI['GPT-6.2 Astra']['t']), v62), xytext=(4, -12), textcoords='offset points', ha='center', fontsize=7.5, color=COL['OpenAI'])
     ax.set_xlim(D(2024.0), D(2026.97)); ax.set_ylim(118, 186); ax.grid(alpha=0.25, lw=0.6)
     ax.xaxis.set_major_locator(mdates.MonthLocator(bymonth=(1, 7))); ax.xaxis.set_major_formatter(mdates.DateFormatter('%b %Y'))
     ax.set_ylabel('approximated AECI (agentic ability through the Claude line)')

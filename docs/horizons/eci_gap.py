@@ -12,11 +12,8 @@
 import sys, csv, math, collections
 import os; HERE = os.path.dirname(os.path.abspath(__file__)); sys.path.insert(0, HERE)
 import numpy as np
-from series import TH, PAIR
-D = os.path.join(HERE, 'data', 'epoch-2026-11-12')
-edi = {r['benchmark_name']: (float(r['edi']), float(r['estimated_slope_scaled'])) for r in csv.DictReader(open(f'{D}/edi_scores.csv'))}
-sc = {r['Model']: r for r in csv.DictReader(open(f'{D}/eci_scores.csv')) if r['eci']}
-rows = [r for r in csv.DictReader(open(f'{D}/eci_benchmarks.csv')) if r['Model'] in sc]
+from series import TH, PAIR, EDI as edi, EPOCH_SCORES as sc, EPOCH_ROWS
+rows = [r for r in EPOCH_ROWS if r['Model'] in sc]
 lab = lambda m: {'Anthropic': 'Anthropic', 'OpenAI': 'OpenAI', 'Google DeepMind': 'Google'}.get(sc[m]['Organization'], 'other')
 DOM = {
   'SWE/agentic coding': ['Aider polyglot', 'WeirdML', 'WeirdML v3', 'Terminal Bench', 'Cybench', 'GSO-Bench', 'MirrorCode', 'FrontierCode', 'FrontierSWE', 'PostTrainBench', 'ExploitBench'],

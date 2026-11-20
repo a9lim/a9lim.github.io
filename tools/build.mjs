@@ -5,8 +5,9 @@ import { execFileSync, spawnSync } from 'node:child_process';
 import { dirname, join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createHash } from 'node:crypto';
-import { parseMarkdown, mdEsc, splitMarkdownTableRow } from '../site/src/markdown.js';
-import { fitHorizons } from './horizon-fit.mjs';
+import { parseMarkdown, mdEsc } from '../site/src/markdown.js';
+import { mdBlocksOf, parseTableBlock } from './md-table.mjs';
+import { fitHorizons, readHorizons } from './horizon-fit.mjs';
 import { convertTex, renderPaperBody } from './tex-to-post.mjs';
 import { buildFontSubsets } from './subset-fonts.mjs';
 
@@ -550,26 +551,6 @@ for (const req of ['site', 'bio', 'contact', 'now', 'hyperfixation', 'prediction
   if (!homeCards[req]) throw new Error(`content/home/${req}.md missing`);
 }
 
-function mdBlocksOf(body) {
-  return body.split(/\n{2,}/).map(b => b.replace(/^\n+|\n+$/g, '')).filter(b => b.trim());
-}
-
-function parseTableBlock(block, rel) {
-  const lines = block.split('\n').filter(l => l.trim());
-  if (!/^\|.*\|\s*$/.test(lines[0]) || !/^\|[\s:|-]+\|\s*$/.test(lines[1] || '')) {
-    throw new Error(rel + ': expected a pipe table, got: ' + lines[0]);
-  }
-  const header = splitMarkdownTableRow(lines[0]);
-  const rows = lines.slice(2).map((line, index) => {
-    const row = splitMarkdownTableRow(line);
-    if (row.length !== header.length) {
-      throw new Error(`${rel}:${index + 3}: expected ${header.length} table cells, got ${row.length}`);
-    }
-    return row;
-  });
-  return { header, rows };
-}
-
 function parseListBlock(block, rel) {
   return block.split('\n').filter(l => l.trim()).map(l => {
     const m = l.match(/^[-*+]\s+(.*)$/);
@@ -764,8 +745,8 @@ let homeChips, homeChipsJa;
 // horizons — the time-horizon figure (site/src/horizon.js). Copy goes to the
 // i18n dictionary and three index.html regions (heading, key, source note).
 // The EN body is the source note, the record series table, and a table of
-// calibration-only models; tools/horizon-fit.mjs fits the AECI map and both
-// curves from them, and src/horizon-data.js carries the result.
+// calibration-only models; tools/horizon-fit.mjs reads them, fits the AECI map
+// and both curves, and src/horizon-data.js carries the result.
 {
   const c = homeCards['horizons'];
   const rel = c.enRel;
@@ -776,64 +757,9 @@ let homeChips, homeChipsJa;
     i18nScalar(`c.hz.${k}`, c.meta[k], c.ja?.meta[k]);
   }
 
-  const blocks = mdBlocksOf(c.body);
-  const isTable = b => b.trimStart().startsWith('|');
-  const tables = blocks.filter(isTable);
-  const notes = blocks.filter(b => !isTable(b));
+  const { series, calibration, notes } = readHorizons(c.body, rel);
   const notesJa = c.ja ? mdBlocksOf(c.ja.body) : [];
-  if (tables.length !== 2) throw new Error(`${rel}: expected the series table and the calibration table, got ${tables.length} tables`);
-  if (notes.length !== 1) throw new Error(`${rel}: expected one source note, got ${notes.length}`);
   if (c.ja && notesJa.length !== 1) throw new Error(`${c.jaRel}: expected one source note, got ${notesJa.length}`);
-
-  // Decimal year, as the fits use it: year + elapsed days / days in the year.
-  const decimalYear = (iso, where) => {
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(iso) || Number.isNaN(Date.parse(iso + 'T00:00:00Z'))) {
-      throw new Error(`${where}: bad date "${iso}"`);
-    }
-    const y = Number(iso.slice(0, 4));
-    const a = Date.UTC(y, 0, 1), b = Date.UTC(y + 1, 0, 1);
-    return y + (Date.parse(iso + 'T00:00:00Z') - a) / (b - a);
-  };
-  const NUM = /^\d+(?:\.\d+)?$/;
-  // A value with an optional 95% interval "lo–hi"; horizons become log2 hours.
-  const reading = (v, ci, where, what, toUnits) => {
-    if (v === '') {
-      if (ci !== '') throw new Error(`${where}: ${what} interval without a value`);
-      return null;
-    }
-    if (!NUM.test(v)) throw new Error(`${where}: bad ${what} "${v}"`);
-    const out = { v: toUnits(Number(v)), lo: null, hi: null };
-    if (ci !== '') {
-      const m = ci.match(/^(\d+(?:\.\d+)?)\s*[–-]\s*(\d+(?:\.\d+)?)$/);
-      if (!m || !(Number(m[1]) <= Number(v) && Number(v) <= Number(m[2]))) throw new Error(`${where}: bad ${what} interval "${ci}"`);
-      out.lo = toUnits(Number(m[1]));
-      out.hi = toUnits(Number(m[2]));
-    }
-    return out;
-  };
-  const log2h = (min) => Math.log2(min / 60);
-  const parseRows = (block, first) => {
-    const t = parseTableBlock(block, rel);
-    const want = [first, 'Date', 'Horizon (min)', 'Horizon 95%', 'AECI', 'AECI 95%'];
-    if (t.header.join('|') !== want.join('|')) throw new Error(`${rel}: table header must be ${want.join(' | ')}`);
-    return t.rows.map(([name, date, th, thCi, aeci, aeciCi], i) => {
-      const where = `${rel}: ${first} row ${i + 1}`;
-      if (!name) throw new Error(`${where}: missing model`);
-      const m = {
-        name,
-        t: decimalYear(date, where),
-        th: reading(th, thCi, where, 'horizon', log2h),
-        aeci: reading(aeci, aeciCi, where, 'AECI', (x) => x),
-      };
-      if (!m.th && !m.aeci) throw new Error(`${where}: needs a horizon or an AECI`);
-      return m;
-    });
-  };
-  const series = parseRows(tables[0], 'Model');
-  const calibration = parseRows(tables[1], 'Calibration only');
-  for (let i = 1; i < series.length; i++) {
-    if (series[i].t < series[i - 1].t) throw new Error(`${rel}: series rows must be in date order (${series[i].name})`);
-  }
 
   const glyphs = {
     keyHyperbolic: '<svg width="22" height="12" aria-hidden="true"><rect class="hz-band-hyp" x="0" y="2" width="22" height="8"/><line class="hz-hyp" x1="1" y1="6" x2="21" y2="6"/></svg>',

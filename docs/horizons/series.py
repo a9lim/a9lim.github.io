@@ -1,10 +1,16 @@
-"""The three inputs: Epoch ECI (public), AECI read off METR's chart, METR measured time horizons.
-Then the record series built from them, which is also the table behind the figure at a9l.im/#fits.
+"""The inputs, each read in one place: Epoch's data, AECI read off METR's chart, METR's v1.1 horizons, and the
+figure's own table (content/home/horizons.md, read by the site's reader). One registry names every model across them.
+
+    python series.py      # checks the figure's table against the sources it was made from, then prints the inputs
+
+The figure's series is the table: models() reads it. from_sources() rebuilds it from METR's file and the AECI
+readings, as a check on the table, not a second copy of it.
 
 fable, 2026-11-11 (claude-fable-5-2). The AECI intervals and the chart dating of the early Mythos Preview
-checkpoint are Opus 5.5's, from building that figure the same day.
+checkpoint are Opus 5.5's, from building that figure the same day; the registry, the Epoch loader and reading the
+table, Opus 5.5 (claude-opus-5-5), 2026-11-20.
 """
-import csv, datetime as dt, os, re
+import csv, datetime as dt, json, os, re
 import numpy as np, yaml
 
 D = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'data') + os.sep
@@ -14,13 +20,25 @@ def yr(d):
     y0 = dt.date(d.year, 1, 1); y1 = dt.date(d.year + 1, 1, 1)
     return d.year + (d - y0).days / (y1 - y0).days
 
-# ---- Epoch ECI
+# ---- Epoch: the 12 November snapshot of benchmark_data.zip (scores, every benchmark result, fitted difficulties and
+# slopes), and Epoch's model pages for three models on 19 November, a later and partial source that the analyses
+# layer on where they say so
+EPOCH_DIR = D + 'epoch-2026-11-12' + os.sep
+EPOCH_SCORES = {r['Model']: r for r in csv.DictReader(open(EPOCH_DIR + 'eci_scores.csv')) if r['eci']}
+EPOCH_ROWS = list(csv.DictReader(open(EPOCH_DIR + 'eci_benchmarks.csv')))
+EDI = {r['benchmark_name']: (float(r['edi']), float(r['estimated_slope_scaled'])) for r in csv.DictReader(open(EPOCH_DIR + 'edi_scores.csv'))}
+_PAGES = json.load(open(D + os.path.join('epoch-2026-11-19', 'model_pages.json')))
+SLUG = {'arc_agi_2': 'ARC-AGI-2', 'arc_agi': 'ARC-AGI', 'rli': 'Remote Labor Index', 'simplebench': 'SimpleBench', 'weirdml': 'WeirdML',
+        'weirdml_v3': 'WeirdML v3', 'frontierswe': 'FrontierSWE', 'gso': 'GSO-Bench', 'balrog': 'Balrog', 'apex_agents': 'APEX-Agents',
+        'posttrainbench': 'PostTrainBench', 'frontiercode': 'FrontierCode', 'proofbench': 'ProofBench', 'dtbench': 'DTBench'}
+PAGE_SCORES = {m: {SLUG.get(k, k): p for k, p in v.items()} for m, v in _PAGES['scores'].items()}
+PAGE_ECI = {m: tuple(v) for m, v in _PAGES['eci'].items()}       # (ECI, low, high)
+
 ECI = {}
-for r in csv.DictReader(open(D + 'eci_scores.csv')):
-    if r['eci']:
-        lo = float(r['eci_ci_low']) if r['eci_ci_low'] else float(r['eci'])
-        hi = float(r['eci_ci_high']) if r['eci_ci_high'] else float(r['eci'])
-        ECI[r['Model']] = (yr(r['date']), float(r['eci']), lo, hi)
+for m, r in EPOCH_SCORES.items():
+    lo = float(r['eci_ci_low']) if r['eci_ci_low'] else float(r['eci'])
+    hi = float(r['eci_ci_high']) if r['eci_ci_high'] else float(r['eci'])
+    ECI[m] = (yr(r['date']), float(r['eci']), lo, hi)
 
 def eci_frontier(since=2023.0):
     rows = sorted((v[0], v[1], k, v[2], v[3]) for k, v in ECI.items() if v[0] >= since)
@@ -64,16 +82,6 @@ for k, v in yaml.safe_load(open(D + 'benchmark_results_1_1.yaml'))['results'].it
                m['p50_horizon_length']['ci_low'], m['p50_horizon_length']['ci_high']))
 TH.sort()
 
-# METR model -> Epoch ECI model (public models that have both)
-PAIR = {'gpt_4': 'GPT-4 (Mar 2023)', 'gpt_4_1106_inspect': 'GPT-4 Turbo (Nov 2023)', 'claude_3_opus_inspect': 'Claude 3 Opus',
-        'gpt_4_turbo_inspect': 'GPT-4 Turbo (Apr 2024)', 'gpt_4o_inspect': 'GPT-4o (May 2024)',
-        'claude_3_5_sonnet_20240620_inspect': 'Claude 3.5 Sonnet', 'o1_preview': 'o1-preview',
-        'claude_3_5_sonnet_20241022_inspect': 'Claude 3.5 Sonnet (October 2024)', 'o1_inspect': 'o1',
-        'claude_3_7_sonnet_inspect': 'Claude 3.7 Sonnet', 'o3_inspect': 'o3', 'claude_4_opus_inspect': 'Claude Opus 4',
-        'claude_4_1_opus_inspect': 'Claude Opus 4.1', 'gpt_5_2025_08_07_inspect': 'GPT-5', 'gemini_3_pro': 'Gemini 3 Pro',
-        'claude_opus_4_5_inspect': 'Claude Opus 4.5', 'gpt_5_2': 'GPT-5.2', 'claude_opus_4_6_inspect': 'Claude Opus 4.6',
-        'gemini_3_1_pro': 'Gemini 3.1 Pro', 'gpt_5_4': 'GPT-5.4'}
-
 # ---- the record series, as a9l.im's figure carries it (a9lim.github.io content/home/horizons.md)
 # AECI 95% intervals: the whiskers on METR's chart (bootstrap over benchmarks), as aeci_whiskers.py reads them.
 # 3.5 Sonnet is the scale's anchor and has none.
@@ -82,24 +90,65 @@ WHISKER = {'3 Opus': (117.8, 127.5), '3.5 Sonnet New': (127.4, 136.9), '3.7 Sonn
            'Mythos Preview Early': (154.3, 169.5), 'Mythos Preview': (159.9, 172.7), 'Mythos 5': (162.5, 177.1),
            'Model 2 Early': (165.0, 181.9), 'Model 2': (166.7, 185.7), 'Model 3 Early': (169.0, 188.9),
            'Model 3': (169.2, 190.6), 'Model 4': (170.6, 192.8)}
-# METR's keys: the name the figure shows, and the model's point on the AECI chart where it has one
-NAME = {'gpt2': 'GPT-2', 'davinci_002': 'davinci-002', 'gpt_3_5_turbo_instruct': 'GPT-3.5 Turbo Instruct', 'gpt_4': 'GPT-4',
-        'gpt_4_1106_inspect': 'GPT-4 Turbo', 'gpt_4o_inspect': 'GPT-4o', 'claude_3_5_sonnet_20240620_inspect': 'Claude 3.5 Sonnet',
-        'o1_preview': 'o1-preview', 'claude_3_5_sonnet_20241022_inspect': 'Claude 3.5 Sonnet (Oct 2024)', 'o1_inspect': 'o1',
-        'claude_3_7_sonnet_inspect': 'Claude 3.7 Sonnet', 'o3_inspect': 'o3', 'gpt_5_2025_08_07_inspect': 'GPT-5',
-        'gemini_3_pro': 'Gemini 3 Pro', 'claude_opus_4_5_inspect': 'Claude Opus 4.5', 'gpt_5_2': 'GPT-5.2',
-        'claude_opus_4_6_inspect': 'Claude Opus 4.6', 'claude_mythos_preview_early_inspect': 'Mythos Preview (early)',
-        'claude_3_opus_inspect': 'Claude 3 Opus', 'claude_4_opus_inspect': 'Claude Opus 4'}
-ON_CHART = {'claude_3_opus_inspect': '3 Opus', 'claude_3_5_sonnet_20240620_inspect': '3.5 Sonnet',
-            'claude_3_5_sonnet_20241022_inspect': '3.5 Sonnet New', 'claude_3_7_sonnet_inspect': '3.7 Sonnet',
-            'claude_4_opus_inspect': 'Opus 4', 'claude_opus_4_5_inspect': 'Opus 4.5', 'claude_opus_4_6_inspect': 'Opus 4.6',
-            'claude_mythos_preview_early_inspect': 'Mythos Preview Early'}
+# ---- one registry of names. A row per model the analyses name, in the spelling of each source:
+#   the figure's (and this check's) name | METR v1.1 key | METR's 20 November name | Epoch's name | AECI chart label
+REGISTRY = [
+    ('GPT-2', 'gpt2', None, None, None),
+    ('davinci-002', 'davinci_002', None, None, None),
+    ('GPT-3.5 Turbo Instruct', 'gpt_3_5_turbo_instruct', None, None, None),
+    ('GPT-4', 'gpt_4', 'GPT-4 0314', 'GPT-4 (Mar 2023)', None),
+    ('GPT-4 Turbo', 'gpt_4_1106_inspect', 'GPT-4 1106', 'GPT-4 Turbo (Nov 2023)', None),
+    ('Claude 3 Opus', 'claude_3_opus_inspect', 'Claude 3 Opus', 'Claude 3 Opus', '3 Opus'),
+    ('GPT-4 Turbo (Apr 2024)', 'gpt_4_turbo_inspect', 'GPT-4 Turbo', 'GPT-4 Turbo (Apr 2024)', None),
+    ('GPT-4o', 'gpt_4o_inspect', 'GPT-4o', 'GPT-4o (May 2024)', None),
+    ('Claude 3.5 Sonnet', 'claude_3_5_sonnet_20240620_inspect', 'Claude 3.5 Sonnet (Old)', 'Claude 3.5 Sonnet', '3.5 Sonnet'),
+    ('o1-preview', 'o1_preview', 'o1-preview', 'o1-preview', None),
+    ('Claude 3.5 Sonnet (Oct 2024)', 'claude_3_5_sonnet_20241022_inspect', 'Claude 3.5 Sonnet (New)', 'Claude 3.5 Sonnet (October 2024)', '3.5 Sonnet New'),
+    ('o1', 'o1_inspect', 'o1', 'o1', None),
+    ('Claude 3.7 Sonnet', 'claude_3_7_sonnet_inspect', 'Claude 3.7 Sonnet', 'Claude 3.7 Sonnet', '3.7 Sonnet'),
+    ('o3', 'o3_inspect', 'o3', 'o3', None),
+    ('Claude Opus 4', 'claude_4_opus_inspect', 'Claude Opus 4', 'Claude Opus 4', 'Opus 4'),
+    ('Claude Opus 4.1', 'claude_4_1_opus_inspect', 'Claude Opus 4.1', 'Claude Opus 4.1', None),
+    ('GPT-5', 'gpt_5_2025_08_07_inspect', 'GPT-5', 'GPT-5', None),
+    ('Claude Sonnet 4.5', None, None, 'Claude Sonnet 4.5', 'Sonnet 4.5'),
+    ('Gemini 3 Pro', 'gemini_3_pro', 'Gemini 3 Pro', 'Gemini 3 Pro', None),
+    ('GPT-5.1-Codex-Max', 'gpt_5_1_codex_max_inspect', 'GPT-5.1-Codex-Max', None, None),
+    ('Claude Opus 4.5', 'claude_opus_4_5_inspect', 'Claude Opus 4.5', 'Claude Opus 4.5', 'Opus 4.5'),
+    ('GPT-5.2', 'gpt_5_2', 'GPT-5.2', 'GPT-5.2', None),
+    ('GPT-5.3-Codex', 'gpt_5_3_codex', 'GPT-5.3-Codex', None, None),
+    ('Claude Opus 4.6', 'claude_opus_4_6_inspect', 'Claude Opus 4.6', 'Claude Opus 4.6', 'Opus 4.6'),
+    ('Gemini 3.1 Pro', 'gemini_3_1_pro', 'Gemini 3.1 Pro', 'Gemini 3.1 Pro', None),
+    ('GPT-5.4', 'gpt_5_4', 'GPT-5.4', 'GPT-5.4', None),
+    ('Mythos Preview (early)', 'claude_mythos_preview_early_inspect', 'Claude Mythos Preview (early)', None, 'Mythos Preview Early'),
+    ('Mythos Preview', None, None, None, 'Mythos Preview'),
+    ('Claude Opus 4.7', None, 'Claude Opus 4.7', 'Claude Opus 4.7', 'Opus 4.7'),
+    ('GPT-5.5', None, 'GPT-5.5', 'GPT-5.5', None),
+    ('Claude Opus 4.8', None, 'Claude Opus 4.8', 'Claude Opus 4.8', 'Opus 4.8'),
+    ('Claude Fable 5', None, 'Claude Fable 5', 'Claude Fable 5', 'Mythos 5'),
+    ('GPT-5.6 Sol', None, 'GPT-5.6 Sol', 'GPT-5.6 Sol', None),
+    ('Model 2 Early', None, None, None, 'Model 2 Early'),
+    ('Claude Opus 5', None, 'Claude Opus 5', 'Claude Opus 5', 'Opus 5'),
+    ('Model 2', None, None, None, 'Model 2'),
+    ('Claude Fable 5.1', None, 'Claude Fable 5.1', 'Claude Fable 5.1', 'Mythos 5.1'),
+    ('GPT-6 Astra', None, 'GPT-6 Astra', 'GPT-6 Astra', None),
+    ('Model 3 Early', None, None, None, 'Model 3 Early'),
+    ('Claude Opus 5.5', None, 'Claude Opus 5.5', 'Claude Opus 5.5', 'Opus 5.5'),
+    ('GPT-6 Luna', None, 'GPT-6 Luna', 'GPT-6 Luna', None),
+    ('Model 3', None, None, None, 'Model 3'),
+    ('Model 4', None, None, None, 'Model 4'),
+    ('Claude Haiku 5.5', None, 'Claude Haiku 5.5', 'Claude Haiku 5.5', None),
+]
+FIG, V11, METR, EPOCH, CHART = range(5)
+def names(a, b):
+    """{name in source a: name in source b} over the registry rows that have both."""
+    return {r[a]: r[b] for r in REGISTRY if r[a] and r[b]}
+NAME = names(V11, FIG)                  # v1.1 key -> the figure's name
+PAIR = names(V11, EPOCH)                # the 20 v1.1 models Epoch also scores
+ON_CHART = names(V11, CHART)            # the 8 v1.1 models on METR's AECI chart
+# AECI chart point -> the same or sibling public model in Epoch's index; Model 3 as Fable 5.2 is a guess (by score and
+# timing) that METR's post doesn't make, and analyses that want only confirmed pairs drop it
+PUBLIC = {**names(CHART, EPOCH), 'Model 3': 'Claude Fable 5.2'}
 EARLY = 'claude_mythos_preview_early_inspect'
-# AECI chart point -> the same or sibling public model in Epoch's index
-PUBLIC = {'3 Opus': 'Claude 3 Opus', '3.5 Sonnet': 'Claude 3.5 Sonnet', '3.5 Sonnet New': 'Claude 3.5 Sonnet (October 2024)',
-          '3.7 Sonnet': 'Claude 3.7 Sonnet', 'Opus 4': 'Claude Opus 4', 'Sonnet 4.5': 'Claude Sonnet 4.5', 'Opus 4.5': 'Claude Opus 4.5',
-          'Opus 4.6': 'Claude Opus 4.6', 'Opus 4.7': 'Claude Opus 4.7', 'Opus 4.8': 'Claude Opus 4.8', 'Mythos 5': 'Claude Fable 5',
-          'Opus 5': 'Claude Opus 5', 'Mythos 5.1': 'Claude Fable 5.1', 'Opus 5.5': 'Claude Opus 5.5', 'Model 3': 'Claude Fable 5.2'}
 
 def day(t):
     """The date of a decimal year, to the nearest day."""
@@ -111,18 +160,29 @@ def row(name, t, th=None, aeci=None):
     return dict(name=name, t=float(t), th=th, aeci=aeci)
 
 def models(early='chart'):
-    """(record series, calibration-only models), rounded as the figure's table prints them.
+    """(record series, calibration-only models): the figure's two tables, read by the site's reader (bridge.mjs).
 
     Measured record holders take their public release date. Internal checkpoints take the date METR's AECI
     chart gives them (when most Anthropic staff could use them). The early Mythos Preview checkpoint is one;
     early='file' dates it as METR's horizon file and the tweet do, by the public Mythos Preview release."""
+    from bridge import js
+    r = js('read'); tup = lambda v: None if v is None else (v['v'], v['lo'], v['hi'])
+    series, calibration = ([row(m['name'], m['t'], tup(m['th']), tup(m['aeci'])) for m in r[k]] for k in ('series', 'calibration'))
+    if early == 'file':
+        t = next(t for t, _, k, *_ in TH if k == EARLY)
+        series = sorted((row(m['name'], t, m['th'], m['aeci']) if m['name'] == NAME[EARLY] else m for m in series), key=lambda m: m['t'])
+    return series, calibration
+
+def from_sources():
+    """The figure's two tables rebuilt from METR's v1.1 file and the AECI readings above, rounded as the table prints
+    them. A check on the table (python series.py), not a second source of it."""
     A = {a[0]: a for a in AECI}
     score = lambda n: (round(A[n][2], 2), *WHISKER.get(n, (None, None)))
     series, calibration = [], []
     for t, v, k, sota, lo, hi in TH:
         n = ON_CHART.get(k)
         if not (sota or n): continue
-        if k == EARLY and early == 'chart': t = yr(day(A[n][1]))
+        if k == EARLY: t = yr(day(A[n][1]))
         th = tuple(float(np.log2(float(f'{x:.4g}') / 60)) for x in (v, lo, hi))
         (series if sota else calibration).append(row(NAME.get(k, k), t, th, score(n) if n else None))
     last = A[ON_CHART[EARLY]][1]            # AECI record holders after the last measured one
@@ -130,10 +190,10 @@ def models(early='chart'):
     return sorted(series, key=lambda r: r['t']), calibration
 
 def table():
-    """The figure's two tables, as lines of content/home/horizons.md."""
+    """The figure's two tables as from_sources() makes them, as lines of content/home/horizons.md."""
     cells = lambda r, fv, fc: ('', '') if r is None else (fv(r[0]), '' if r[1] is None else f'{fc(r[1])}–{fc(r[2])}')
     g4, out = lambda x: f'{x:.4g}', []
-    for head, rows in zip(('Model', 'Calibration only'), models()):
+    for head, rows in zip(('Model', 'Calibration only'), from_sources()):
         out += [f'| {head} | Date | Horizon (min) | Horizon 95% | AECI | AECI 95% |', '| --- | --- | --- | --- | --- | --- |']
         for r in rows:
             th = r['th'] and tuple(60 * 2 ** x for x in r['th'])
@@ -142,7 +202,11 @@ def table():
     return out
 
 if __name__ == '__main__':
-    print('\n'.join(table()) + '\n')
+    here = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', 'content', 'home', 'horizons.md')
+    theirs = [l.rstrip() for l in open(here) if l.startswith('|')]; mine = table()
+    print('the figure\'s table against its sources:', 'identical' if mine == theirs else 'DIFFERENT')
+    for a, b in zip(mine, theirs):
+        if a != b: print('  sources:', a, '\n  table:  ', b)
     print('AECI (digitised):')
     for a in AECI: print(f'  {a[0]:22s} {a[1]:.3f}  {a[2]:6.1f}  {a[3]:8s} {"frontier" if a[4] else ""}')
     print('check: Model 4 should be 178.6; 3.5 Sonnet 130')

@@ -14,19 +14,17 @@ HERE = os.path.dirname(os.path.abspath(__file__)); sys.path.insert(0, HERE)
 with contextlib.redirect_stdout(io.StringIO()):
     import oeci as O
     import oeci_routes as R
-from series import TH, PAIR, PUBLIC, AECI, ON_CHART, yr
+from series import TH, PAIR, PUBLIC, AECI, ON_CHART, yr, EPOCH_ROWS, PAGE_SCORES
 edi, sc = O.G['edi'], O.sc
 A = {a[0]: a for a in AECI}
-D = os.path.join(HERE, 'data', 'epoch-2026-11-12')
 BENCH = sorted(b for b in edi if b != 'METR Time Horizons')          # horizon itself is the thing we convert into
 BI = {b: i for i, b in enumerate(BENCH)}
 DIFF = np.array([edi[b][0] for b in BENCH]); SLOPE = np.array([edi[b][1] for b in BENCH])
 PERF = collections.defaultdict(dict)
-for r in csv.DictReader(open(f'{D}/eci_benchmarks.csv')):
+for r in EPOCH_ROWS:
     if r['benchmark'] in BI: PERF[r['Model']][r['benchmark']] = float(r['performance'])
-for m, s in R.P['scores'].items():                                    # 19 November model pages override
-    for k, p in s.items():
-        b = R.SLUG.get(k, k)
+for m, s in PAGE_SCORES.items():                                      # 19 November model pages override
+    for b, p in s.items():
         if b in BI and p <= 1: PERF[m][b] = p
 def vec(m):
     v = np.full(len(BENCH), np.nan)

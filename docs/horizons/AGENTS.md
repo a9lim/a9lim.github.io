@@ -28,7 +28,7 @@ the line straight. On the tweet's own series the hyperbola is still the best
 of the simple curves; that edge shrinks or goes away when the seven points
 that are not measurements are removed, replaced or redated. The fitted date
 is 2027.65 (95%: 2027.40 to 2028.00). Choices that interval does not cover,
-which scores and which dates, move it as far as 2028.6. In a rolling backtest
+which scores and which dates, move it as far as 2028.8. In a rolling backtest
 the hyperbola forecasts this series best and is the only curve that does not
 run low, again because of those seven points.
 
@@ -54,11 +54,10 @@ update" and "Beside the public rulers".
 
 ## Run it
 
-    python replicate.py      # tables to stdout, writes result.json (about 8 s)
+    python series.py         # the figure's table checked against its sources, then the inputs as read
+    python replicate.py      # tables to stdout, writes result.json (about 15 s)
     python chart.py          # horizon-singularity-check.png
     python fit.py            # Epoch's score-to-horizon map, and each series on its own
-    python series.py         # the figure's table, then the inputs as read
-    python parity.py         # this fit against the site's build
     python aeci_whiskers.py  # re-read the AECI intervals off the chart
     python three_scales.py   # Epoch's ECI as a third scale (see "ECI as a third scale")
     python conversions.py    # its ECI view under each AECI-to-ECI conversion
@@ -72,32 +71,48 @@ update" and "Beside the public rulers".
     python metr_q4.py; python metr_q4_plot.py   # METR's 20 November update against the fit (see "METR's capability update"), metr-q4.png
     python metr_rulers.py    # those measurements beside ECI, its subsets and OECI (see "Beside the public rulers")
 
-numpy, pyyaml, matplotlib and Pillow, all in the shared venv. `parity.py` also
-needs node and a built `dist/` in this repo (`npm run build` at the root).
-`run.log` is the output of `replicate.py` on 11 November; on 20 November,
-after the move and after `drift` moved into `fit.py`, it still reproduced
-line for line.
+numpy, pyyaml, matplotlib and Pillow, all in the shared venv, and node, which
+runs the site's fit. `data/` is local and ignored by git: copies of METR's,
+Epoch's and OpenAI's files, whose sources each section's inputs list.
 
-## One fit, two places
+## One source for each thing
 
-The series, the map and the intervals here are the ones behind the figure at
-a9l.im/#fits. `series.py` builds that figure's table from the data files, and
-`python series.py` prints it as it stands in `content/home/horizons.md`. `fit.fit_horizons` is a port of the site's
-`tools/horizon-fit.mjs`, including its seeded generator, so both draw the
-same 2,000 replicates.
+Since 2026-11-20 nothing here keeps a second copy of the figure or its fit.
 
-`parity.py` checks both halves. On 2026-11-11 the table was identical line
-for line, and all 3,368 numbers the site's build emits (map, points, both
-curves, bands, in both views) agreed with this fit to the last digit the site
-prints. They still did on 2026-11-20, from here.
+- **The fit** is `tools/horizon-fit.mjs`, and only that; its header
+  describes it. `fit.fit_horizons`, `fit.hyp` and `fit.dexp` call it through
+  `bridge.py` and `bridge.mjs`: one node process per Python session, JSON
+  lines, numbers unrounded. Until then `fit.py` carried a Python port,
+  generator and all, and `parity.py` checked that it agreed with the build
+  to the last digit the site prints (it did, on all 3,368 numbers); both are
+  gone. Switching to the bridge left `replicate.py`'s output unchanged line
+  for line, and the site's `horizon-data.js` byte for byte.
+- **The figure's series** is the table in `content/home/horizons.md`.
+  `series.models()` reads it with the build's own reader
+  (`readHorizons` in `tools/horizon-fit.mjs`). `series.from_sources()`
+  rebuilds the table from METR's v1.1 file and the AECI readings, and
+  `python series.py` checks the two agree. To change the series, edit the
+  table; if the change comes from a new source, add the source here so the
+  check still holds.
+- **Model names** are `series.REGISTRY`: a row per model, in the spelling
+  of each source (the figure, METR's v1.1 keys, METR's 20 November names,
+  Epoch, the AECI chart). Every name map the scripts use comes from it.
+- **Epoch's data** is the 12 November snapshot, read once in `series.py`;
+  Epoch's 19 November pages for three models are a later layer, read there
+  too, and used only where a section says so. The 11 November copy of
+  Epoch's scores that `series.py` used to read is gone; the sections that
+  used it were rerun on the 12 November snapshot the same day, and the
+  numbers below are those reruns.
+- **Plot labels** are computed, not typed: a number on a plot comes from the
+  script that prints it.
+- **The method** is described in `tools/horizon-fit.mjs`, the series and its
+  dating rules in the content file's comment, and the analysis here.
 
-If METR updates a source: change the data here, rerun, paste the table into
-the site, build it, and run `parity.py`.
+## Inputs (retrieved 2026-11-11 unless marked; local copies in `data/`)
 
-## Inputs (all retrieved 2026-11-11, copies in `data/`)
-
-- `eci_scores.csv`: Epoch Capabilities Index per model, from
-  `https://epoch.ai/data/benchmark_data.zip`.
+- `epoch-2026-11-12/`: Epoch's `https://epoch.ai/data/benchmark_data.zip`
+  as of 12 November (scores, every benchmark result, fitted difficulties
+  and slopes). The check first ran on Epoch's scores of 11 November.
 - `benchmark_results_1_1.yaml`: METR measured time horizons, v1.1, from
   `https://metr.org/assets/benchmark_results_1_1.yaml`. The last measured
   record holder is an early Mythos Preview checkpoint, 17.4 h (CI 8.5 to 55).
@@ -124,12 +139,12 @@ tweet itself.
 
 ## What was fitted
 
-**The series** is 25 record holders: 18 measured (GPT-2 in 2019 to the early
-Mythos Preview checkpoint) and 7 internal Anthropic models that have only an
-AECI score (Mythos Preview to Model 4). Measured models take their public
-release date and AECI-only models the chart's date. The early checkpoint
-takes the chart's date, 2026-02-24, which puts it before Mythos Preview
-(2026-04-01) and not after it as the file's date does.
+**The series** is the figure's table (`content/home/horizons.md`; its
+comment gives the dating rules): 25 record holders, 18 measured (GPT-2 in
+2019 to the early Mythos Preview checkpoint) and 7 internal Anthropic models
+that have only an AECI score (Mythos Preview to Model 4). The chart's date
+for the early checkpoint, 2026-02-24, puts it before Mythos Preview
+(2026-04-01), not after it as the file's date does.
 
 **The map** from AECI to horizon is the least-squares line through the eight
 Claude models that have both (3 Opus to the early checkpoint; 3 Opus and
@@ -137,16 +152,12 @@ Opus 4 are not record holders and serve only here): 4.68 points per doubling
 (95%: 4.36 to 5.06), 3.46 h at AECI 150, residual 0.23 doublings. That is
 Jurkovic's map to the digits he gave.
 
-**Two views.** "Hours" takes measured horizons and converts the seven
-AECI-only models through the map. "AECI" takes AECI where a model has it and
-converts the twelve horizon-only models back. Each view gets a hyperbola
-`a - alpha*log2(t_c - t)` and a double exponential.
-
-**Intervals** come from 2,000 bootstrap replicates. Each one redraws the
-map's two parameters from their sampling distribution, moves the converted
-points accordingly, resamples the fit's residuals, and refits. The points'
-own intervals are not resampled, because METR's are correlated across models
-(one task suite, one benchmark set).
+**The fit** is the site's (`tools/horizon-fit.mjs`, whose header describes
+it): two views, hours and AECI, each with a hyperbola
+`a - alpha*log2(t_c - t)` and a double exponential, and intervals from
+2,000 bootstrap replicates that redraw the map and resample the residuals.
+The points' own intervals are not resampled, because METR's are correlated
+across models (one task suite, one benchmark set).
 
 | View | Fitted singularity (95%) | Doublings per halving of the time left |
 |---|---|---|
@@ -170,8 +181,8 @@ quadratic, and exponential with one change of slope.
 | GPT-4 onward | 2027.60 (2027.29 to 2028.23) | behind by 3 |
 | A flatter map past the last measured model (5.26 points per doubling) | 2027.89 (2027.65 to 2028.20) | ahead by 4.5 |
 | Public release dates throughout | 2027.98 (2027.66 to 2028.48) | ahead by 2 |
-| Late AECI rescaled onto Epoch's scale | 2028.11 (2027.74 to 2028.65) | tied |
-| Public Epoch ECI after April 2026 instead of AECI | 2028.56 (2028.04 to 2029.34) | behind by 5 |
+| Late AECI rescaled onto Epoch's scale | 2028.15 (2027.77 to 2028.71) | tied |
+| Public Epoch ECI after April 2026 instead of AECI | 2028.77 (2028.19 to 2029.69) | behind by 9 |
 
 Other results:
 
@@ -201,16 +212,17 @@ Other results:
   | The figure's | 0.00 | 1.5% | 18% | 47% |
   | A flatter map | +0.17 | 2.9% | 29% | 58% |
   | Public release dates | +0.13 | 4.3% | 30% | 53% |
-  | Late AECI on Epoch's scale | +0.40 | 9% | 33% | 72% |
-  | Public Epoch ECI after April 2026 | +0.64 | 33% | 64% | 85% |
+  | Late AECI on Epoch's scale | +0.42 | 11% | 32% | 73% |
+  | Public Epoch ECI after April 2026 | +0.68 | 43% | 64% | 86% |
 
   The slope change is not separated over the whole window, because its
   early dates are erratic. It is over 2026: on the first four series fewer
   than 1% of its histories have the date move as little since December 2025
-  as it did. On public Epoch ECI the date did slide, by 0.56 yr, as the
+  as it did. On public Epoch ECI the date did slide, by 0.76 yr, as the
   double exponential expects. This is the strongest evidence for the
   hyperbolic form in the check, and it leans on the same converted points as
-  the rest.
+  the rest. (The two Epoch rows are the 20 November reruns on Epoch's 12
+  November data, which adds Gemini 4 Carbon to the public record.)
 - **Range.** The x-axis covers 0.97 orders of magnitude, 0.69 since GPT-4.
 - **Backtest.** Rolling: fit the first k record holders, then predict the
   next point and every point within half a year, from each of 17 origins
@@ -228,8 +240,8 @@ Other results:
   2027.65 since. Every origin's 95% interval covered every later estimate
   bar one, so the intervals have been honest about how far the date moves.
   Leaving out any one point moves it by at most 0.04 yr.
-- **Scale.** AECI runs ahead of Epoch's ECI for the same public models: +0.5
-  at Opus 4.5, +6.0 at Opus 5.5. Above ECI 150, AECI is about 1.18 x ECI - 26.
+- **Scale.** AECI runs ahead of Epoch's ECI for the same public models: +0.4
+  at Opus 4.5, +6.1 at Opus 5.5. Above ECI 150, AECI is about 1.22 x ECI - 32.
   The map is calibrated only up to AECI 162 and used up to 179.
 - **Dates.** The series mixes two dating rules: public release for the
   measured models, internal availability for the AECI ones. The gap between
@@ -387,26 +399,30 @@ slope (the link reproduces the scores, r = 0.96).
 Other results:
 
 - The horizon and AECI views fit 2027.70 with the Pro models added. The ECI
-  view fits 2028.4 to 2028.7, depending on the conversion and the pairings,
-  with the hyperbola 4 to 12 AICc behind and the drift test failing (tau
-  about +0.9; 70% to 94% of double-exponential histories drift as little). On
-  ECI's scale the evidence for the hyperbola goes away.
+  view fits 2028.3 to 2028.8, depending on the conversion and the pairings,
+  with the hyperbola 2 to 14 AICc behind and the drift test failing (tau
+  about +0.9; 70% to 95% of double-exponential histories drift as little). On
+  ECI's scale the evidence for the hyperbola goes away. (Rerun 20 November on
+  Epoch's 12 November data; on the 11 November scores it was 2028.4 to
+  2028.7, 4 to 12 behind.)
 - The AECI-to-ECI relation bends (`aeci-eci-conversions.png`). Through the 14
-  public Claude pairs, a straight line leaves 0.97 ECI of scatter, a quadratic
-  0.70, two lines joined at AECI 156.5 leave 0.55, and a line through the 8
-  pairs above 150 leaves 0.35. The curved maps put the late checkpoints about
-  1.5 ECI lower (Model 4 at 171.5 to 172.0, against 173.2).
+  public Claude pairs, a straight line leaves 1.00 ECI of scatter, a quadratic
+  0.71, two lines joined at AECI 156.0 leave 0.56, and a line through the 8
+  pairs above 150 leaves 0.36. The curved maps put the late checkpoints about
+  1.5 ECI lower (Model 4 at 171.4 to 172.0, against 173.1).
 - Internal checkpoints paired with public releases, all unconfirmed: Model 2
   Early as Fable 5.1 and Model 2 as Opus 5.5 sit within 0.6 ECI of their
-  projections. Fable 5.2 (ECI 174.2, released 2026-11-09) fits no charted
-  checkpoint once the map bends: it sits 2.7 above the prediction at Model 4,
-  3.9 at Model 3 and 4.4 at Model 3 Early, each outside the 95% band. Its ECI
-  corresponds to an AECI near 182, past the end of METR's chart. On the
-  straight map Model 4 looked consistent (+1.1), but that didn't survive the
-  bend. The Model 3 Early pairing came from outside speculation.
+  projections. Fable 5.2 (released 2026-11-09) sits above every charted
+  checkpoint once the map bends: by 2.0 ECI at Model 4, 3.2 at Model 3 and
+  3.6 at Model 3 Early. Its ECI corresponds to an AECI near 181.4, past the
+  end of METR's chart. On the straight map it is level with Model 4 (+0.3).
+  Those are on Epoch's 12 November value, 173.4. The first run had its 11
+  November value, 174.2, with gaps of 2.7, 3.9 and 4.4, each outside the
+  map's 95% band; the band wasn't rechecked at the smaller gaps. The Model 3
+  Early pairing came from outside speculation.
 - Converting AECI to ECI by way of horizon, not directly, gives the hours
   answer back (2027.77). But it contradicts the direct pairs: it would put
-  Opus 5.5 near ECI 176, where Epoch has 168.7.
+  Opus 5.5 near ECI 176, where Epoch has 168.5.
 
 ## OECI
 
@@ -830,15 +846,17 @@ for GPT-6 Luna and Haiku 5.5 comes from METR's Figure 39.
   | Ruler | Pooled: points per doubling (95%) | Claude offset | v1.1 | v1.1 map's miss since April 2026 |
   |---|---|---|---|---|
   | ECI (15 models) | 5.02 (4.73 to 5.36) | +0.25 (0.13) | 4.74, +0.42 | −0.49 (Opus 5.5 −0.51) |
-  | Software (13) | 5.34 (4.74 to 6.11) | −0.47 (0.16) | 4.28, +0.05 | −0.68 (Opus 5.5 −1.00) |
-  | Agentic (13) | 5.33 (4.76 to 6.06) | −0.39 (0.15) | 4.37, −0.13 | −0.60 (Opus 5.5 −0.76) |
+  | Software (13) | 5.34 (4.74 to 6.11) | −0.47 (0.16) | 4.59, +0.08 | −0.52 (Opus 5.5 −0.76) |
+  | Agentic (13) | 5.33 (4.76 to 6.06) | −0.39 (0.15) | 4.66, −0.09 | −0.45 (Opus 5.5 −0.54) |
   | OECI (12) | 4.69 (4.31 to 5.13) | +0.81 (0.09) | too few (5) | – |
   | AECI (8, Claude) | 7.32 (6.54 to 8.30) | – | 4.68 | −1.48 (Opus 5.5 −1.77) |
   | MCI (15) | 106 MCI per doubling, one line for every lab | – | – | – |
 
   Every route calibrated on v1.1 overshoots the pooled measurements since
   April 2026: the public ones by about half a doubling, AECI by one and a
-  half. So about a third of AECI's miss is a change of ruler that every
+  half. (The v1.1 column was first printed with the two Claude 3.5 Sonnets
+  counted twice, once under each source's spelling; the registry fixed that
+  the same day, and these are the corrected numbers.) So about a third of AECI's miss is a change of ruler that every
   index shares (v1.1 saturating at the top, and TH2 harder per hour than
   TH1.1). The rest, about a doubling, is AECI's own. On the pooled ruler the
   Claude offset shrinks on ECI and turns negative on the agentic subsets:
@@ -874,7 +892,7 @@ for GPT-6 Luna and Haiku 5.5 comes from METR's Figure 39.
 
 **Reading** (synthesis): METR's new measurements and the public rulers
 agree with each other. A week ago the public rulers alone, calibrated on
-v1.1, put the singularity at 2028.0 to 2028.7 ("ECI as a third scale",
+v1.1, put the singularity at 2028.0 to 2028.8 ("ECI as a third scale",
 "OECI"); on METR's pooled ruler they put it at 2028.7 to 2028.9, and so do
 METR's own records. The one input that says mid-2027 is AECI's scale above
 Opus 4.5, and no public ruler, nor METR's index, shows that bend. The
@@ -931,3 +949,9 @@ the internal checkpoints themselves, which only AECI scores.
   `fit.py` so other scripts can use it, then `metr_q4.py`, `metr_q4_plot.py`,
   `metr-q4.png` and `data/metr-2026-11-20/`; see "METR's capability update".
   Then `metr_rulers.py`, for a9's question about the public rulers.
+- **One source for each thing** (Opus 5.5, with a9, 2026-11-20). The
+  Python port of the fit and `parity.py` replaced by the bridge to
+  `tools/horizon-fit.mjs`; the figure's series read from the content table;
+  one registry of names; one Epoch snapshot, with the sections that used the
+  11 November copy rerun; plot labels computed. See "One source for each
+  thing".

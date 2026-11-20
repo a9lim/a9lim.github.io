@@ -4,6 +4,7 @@ import numpy as np, matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt, matplotlib.patheffects as pe
 from series import AECI, ECI, TH, PAIR, ON_CHART, NAME, WHISKER
+from fit import t975
 
 INK, MUTED, BORDER, GROUND, FIT, OTHER = '#161514', '#666463', '#E2E1E0', '#FCFCFB', '#3473A3', '#8B681B'
 plt.rcParams.update({'font.family': 'serif', 'font.serif': ['Georgia', 'DejaVu Serif'], 'font.size': 11, 'axes.edgecolor': MUTED,
@@ -11,25 +12,29 @@ plt.rcParams.update({'font.family': 'serif', 'font.serif': ['Georgia', 'DejaVu S
 halo = [pe.withStroke(linewidth=3.5, foreground=GROUND)]
 A = {a[0]: a for a in AECI}
 th = {k: tuple(np.log2(x / 60) for x in (v, lo, hi)) for t, v, k, s, lo, hi in TH}
-short = lambda k: NAME.get(k, {'claude_4_1_opus_inspect': 'Claude Opus 4.1', 'gemini_3_1_pro': 'Gemini 3.1 Pro', 'gpt_5_4': 'GPT-5.4',
-                              'gpt_4_turbo_inspect': 'GPT-4 Turbo (Apr 2024)'}.get(k, k)).replace('Claude ', '')
+short = lambda k: NAME.get(k, k).replace('Claude ', '')
 # rows: key, score, score lo, score hi, horizon (log2 h), lo, hi, is Claude
 HA = [(k, A[c][2], *WHISKER.get(c, (None, None)), *th[k], True) for k, c in ON_CHART.items()]
 HE = [(k, *ECI[e][1:], *th[k], 'claude' in k) for k, e in PAIR.items()]
-TQ = {6: 2.447, 18: 2.101}
 
 def line(rows):
     x = np.array([r[1] for r in rows]); y = np.array([r[4] for r in rows]); n = len(x)
     X = np.c_[np.ones(n), x - 150]; b, *_ = np.linalg.lstsq(X, y, rcond=None); r = y - X @ b; s = np.sqrt(r @ r / (n - 2))
     Vi = np.linalg.inv(X.T @ X)
     loo = [y[i] - X[i] @ np.linalg.lstsq(X[np.arange(n) != i], y[np.arange(n) != i], rcond=None)[0] for i in range(n)]
-    pi = lambda g: TQ[n - 2] * s * np.sqrt(1 + Vi[0, 0] + 2 * Vi[0, 1] * (g - 150) + Vi[1, 1] * (g - 150) ** 2)
-    return dict(b=b, s=s, n=n, loo=np.sqrt(np.mean(np.square(loo))), f=lambda g: b[0] + b[1] * (g - 150), pi=pi, hi=x.max(), lo=x.min())
+    pi = lambda g: t975(n - 2) * s * np.sqrt(1 + Vi[0, 0] + 2 * Vi[0, 1] * (g - 150) + Vi[1, 1] * (g - 150) ** 2)
+    return dict(b=b, s=s, n=n, loo=np.sqrt(np.mean(np.square(loo))), errs=np.array(loo), f=lambda g: b[0] + b[1] * (g - 150), pi=pi, hi=x.max(), lo=x.min())
+
+# the Claude models with all three (horizon, AECI, ECI): which score predicts the horizon better, left out one at a time
+both = [k for k in ON_CHART if k in PAIR]
+LA = line([r for r in HA if r[0] in both]); LE = line([r for r in HE if r[0] in both])
+better = int((np.abs(LA['errs']) < np.abs(LE['errs'])).sum())
+print(f"{len(both)} Claude models with all three: leave-one-out {LA['loo']:.2f} doublings on AECI, {LE['loo']:.2f} on ECI; AECI closer on {better}")
 
 YT = [(-np.log2(60), '1 min'), (np.log2(10 / 60), '10 min'), (0, '1 hr'), (3, '1 day'), (np.log2(40), '1 wk'), (np.log2(200), '5 wk')]
 fig, axes = plt.subplots(1, 2, figsize=(13, 6.4), sharey=True)
 panels = [(axes[0], HA, 'AECI (METR)', (119, 181), 179, 'the 7 AECI-only checkpoints are converted up to here'),
-          (axes[1], HE, 'ECI (Epoch)', (116, 178), 174.24, 'ECI-only models are converted up to here')]
+          (axes[1], HE, 'ECI (Epoch)', (116, 178), ECI['Claude Fable 5.2'][1], 'ECI-only models are converted up to here')]
 for ax, rows, xl, (x0, x1), xmax, note in panels:
     L = line(rows)
     g = np.linspace(x0, L.hi if False else L['hi'], 200); ge = np.linspace(L['hi'], xmax, 50)
@@ -70,7 +75,7 @@ H = [plt.Line2D([], [], marker='o', ls='', color=INK, ms=6, label='Claude model'
      plt.Line2D([], [], color=FIT, lw=2, label='least squares, all models (95% prediction band)'),
      plt.Line2D([], [], color=MUTED, lw=1.1, ls=(0, (5, 3)), label='least squares within one lab')]
 fig.legend(handles=H, loc='lower center', ncol=4, frameon=False, fontsize=10, bbox_to_anchor=(0.5, -0.005))
-fig.text(0.5, 0.075, "On the 7 Claude models with all three, AECI tracks horizon a little closer: leave-one-out 0.23 vs 0.32 doublings, better on 4 of 7.",
+fig.text(0.5, 0.075, f"On the {len(both)} Claude models with all three, leave-one-out error: {LA['loo']:.2f} doublings on AECI, {LE['loo']:.2f} on ECI; AECI closer on {better} of {len(both)}.",
          ha='center', fontsize=10, color=MUTED, style='italic')
 fig.tight_layout(rect=(0, 0.1, 1, 1))
 fig.savefig(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'horizon-vs-scores.png'), dpi=160); print('ok')

@@ -15,7 +15,7 @@ opus, 2026-11-20 (claude-opus-5-5)
 import json, os, sys
 import numpy as np
 HERE = os.path.dirname(os.path.abspath(__file__)); sys.path.insert(0, HERE)
-from series import AECI, TH, WHISKER, models, row, yr, day
+from series import AECI, TH, WHISKER, REGISTRY, METR, V11 as V11KEY, CHART as CHARTCOL, names, models, row, yr, day
 from fit import compare, drift, fit_horizons, FITS, aicc, r2, loo, t975, hyp_at, dexp_at
 
 J = os.path.join(HERE, 'data', 'metr-2026-11-20', 'json')
@@ -44,24 +44,11 @@ MCI = {r['model']: (yr(r['released']), r['mci'], r['mci_low_95'], r['mci_high_95
        for r in panels('e401db69f8d499a7')[0][1]['models']}                         # Figure 12
 MCI_TREND = panels('e401db69f8d499a7')[0][1]['frontier trends'][0]
 
-# METR's names -> the AECI chart's (the public Fable 5 and 5.1 are the chart's Mythos 5 and 5.1) and the v1.1 file's keys
-CHART = {'Claude 3 Opus': '3 Opus', 'Claude 3.5 Sonnet (Old)': '3.5 Sonnet', 'Claude 3.5 Sonnet (New)': '3.5 Sonnet New',
-         'Claude 3.7 Sonnet': '3.7 Sonnet', 'Claude Opus 4': 'Opus 4', 'Claude Opus 4.5': 'Opus 4.5', 'Claude Opus 4.6': 'Opus 4.6',
-         'Claude Mythos Preview (early)': 'Mythos Preview Early', 'Claude Opus 4.7': 'Opus 4.7', 'Claude Opus 4.8': 'Opus 4.8',
-         'Claude Fable 5': 'Mythos 5', 'Claude Opus 5': 'Opus 5', 'Claude Fable 5.1': 'Mythos 5.1', 'Claude Opus 5.5': 'Opus 5.5'}
-V11 = {'Claude 3 Opus': 'claude_3_opus_inspect', 'GPT-4 Turbo': 'gpt_4_turbo_inspect', 'GPT-4o': 'gpt_4o_inspect',
-       'Claude 3.5 Sonnet (Old)': 'claude_3_5_sonnet_20240620_inspect', 'o1-preview': 'o1_preview',
-       'Claude 3.5 Sonnet (New)': 'claude_3_5_sonnet_20241022_inspect', 'o1': 'o1_inspect', 'Claude 3.7 Sonnet': 'claude_3_7_sonnet_inspect',
-       'o3': 'o3_inspect', 'Claude Opus 4': 'claude_4_opus_inspect', 'Claude Opus 4.1': 'claude_4_1_opus_inspect',
-       'GPT-5': 'gpt_5_2025_08_07_inspect', 'Gemini 3 Pro': 'gemini_3_pro', 'GPT-5.1-Codex-Max': 'gpt_5_1_codex_max_inspect',
-       'Claude Opus 4.5': 'claude_opus_4_5_inspect', 'GPT-5.2': 'gpt_5_2', 'GPT-5.3-Codex': 'gpt_5_3_codex',
-       'Claude Opus 4.6': 'claude_opus_4_6_inspect', 'Gemini 3.1 Pro': 'gemini_3_1_pro', 'GPT-5.4': 'gpt_5_4'}
+CHART = names(METR, CHARTCOL)                                                       # METR's names -> the AECI chart's
+V11 = names(METR, V11KEY)                                                           # METR's names -> the v1.1 file's keys
 TH11 = {k: (t, (L2(v), L2(lo), L2(hi))) for t, v, k, s, lo, hi in TH}
 A = {a[0]: a for a in AECI}                                                          # name, date, AECI, kind, record holder
-ON_CHART_M = {'claude_3_opus_inspect': 'Claude 3 Opus', 'claude_3_5_sonnet_20240620_inspect': 'Claude 3.5 Sonnet (Old)',
-              'claude_3_5_sonnet_20241022_inspect': 'Claude 3.5 Sonnet (New)', 'claude_3_7_sonnet_inspect': 'Claude 3.7 Sonnet',
-              'claude_4_opus_inspect': 'Claude Opus 4', 'claude_opus_4_5_inspect': 'Claude Opus 4.5', 'claude_opus_4_6_inspect': 'Claude Opus 4.6',
-              'claude_mythos_preview_early_inspect': 'Claude Mythos Preview (early)'}   # v1.1 keys -> METR's names, for AECI
+AE = {n: a[2] for n, a in A.items()}                                                # AECI by chart label
 score = lambda n: (round(A[n][2], 2), *WHISKER.get(n, (None, None)))
 
 def line(x, y):
@@ -75,8 +62,9 @@ print('=== 1. Three rulers on the same models, log2 of the ratio (doublings). v1
 print('    "TH1.1 now" is METR\'s rerun of the same tasks at xhigh effort; "pooled" adds TH2 (Figure 10).')
 print(f"  {'model':26s} {'v1.1':>8s} {'TH1.1 now':>10s} {'pooled':>8s}   now-v1.1  pooled-v1.1")
 for n, k in V11.items():
-    if k not in TH11: continue
-    v = TH11[k][1][0]; now = SEP['TH1.1'].get(n); p = COMB.get(n)
+    now = SEP['TH1.1'].get(n); p = COMB.get(n)
+    if k not in TH11 or not (now or p): continue
+    v = TH11[k][1][0]
     print(f"  {n:26s} {hrs(v):>8s} {hrs(now[1][0]) if now else '':>10s} {hrs(p[1][0]) if p else '':>8s}   "
           f"{(now[1][0] - v if now else float('nan')):+8.2f}  {(p[1][0] - v if p else float('nan')):+8.2f}")
 d = [COMB[n][1][0] - TH11[V11[n]][1][0] for n in ('GPT-4o', 'o1', 'GPT-5', 'Claude Opus 4.5')]
@@ -101,19 +89,21 @@ print(f"  pooled hours on AECI, these {len(x)}: {1 / c1:.2f} points per doubling
       f"{2 ** c0:.2f} h at 150, scatter {csd:.2f}")
 r0, r1, r1se, _ = line(x, [yy - (b0 + b1 * xx) for xx, yy in zip(x, y)])
 print(f"  residual on AECI: {r1 * 10:+.2f} doublings per 10 points (se {r1se * 10:.2f}); the map overstates the pooled ruler by "
-      f"{-(r0 + r1 * 12.3):.2f} doublings at AECI 162.3 and {-(r0 + r1 * 28.6):.2f} at 178.6")
+      f"{-(r0 + r1 * (AE['Mythos Preview Early'] - 150)):.2f} doublings at AECI {AE['Mythos Preview Early']:.1f} and "
+      f"{-(r0 + r1 * (AE['Model 4'] - 150)):.2f} at {AE['Model 4']:.1f}")
 V = SEP['TH2 (Verifiable)']; cv = [n for n in claude if n in V]
 v0, v1, v1se, vsd = line([A[CHART[n]][2] - 150 for n in cv], [V[n][1][0] for n in cv]); q = t975(len(cv) - 2) * v1se
 print(f"  TH2 verifiable on AECI ({len(cv)} models): {1 / v1:.2f} points per doubling (95% {1 / (v1 + q):.2f} to {1 / (v1 - q):.2f}), "
-      f"scatter {vsd:.2f}; {V['Claude Opus 5.5'][1][0] - (b0 + b1 * 24.6):+.2f} doublings against the map at Opus 5.5, "
-      f"{V['Claude Opus 4.6'][1][0] - (b0 + b1 * 7.3):+.2f} at Opus 4.6")
+      f"scatter {vsd:.2f}; {V['Claude Opus 5.5'][1][0] - (b0 + b1 * (AE['Opus 5.5'] - 150)):+.2f} doublings against the map at Opus 5.5, "
+      f"{V['Claude Opus 4.6'][1][0] - (b0 + b1 * (AE['Opus 4.6'] - 150)):+.2f} at Opus 4.6")
 # was the v1.1 map steep at its top because v1.1 saturates there? Refit it without the two models above 10 h
 low = [m for m in pairs if 2 ** m['th'][0] < 10]
 s0, s1_, s1se, ssd = line([m['aeci'][0] - 150 for m in low], [m['th'][0] for m in low]); q = t975(len(low) - 2) * s1se
 print(f"  the v1.1 map without Opus 4.6 and the early checkpoint ({len(low)} models to AECI {max(m['aeci'][0] for m in low):.1f}): "
       f"{1 / s1_:.2f} points per doubling (95% {1 / (s1_ + q):.2f} to {1 / (s1_ - q):.2f}); it puts Opus 5.5 at "
-      f"{hrs(s0 + s1_ * 24.6)} and Model 4 at {hrs(s0 + s1_ * 28.63)}")
-print(f"  the pooled map puts Model 4 at {hrs(c0 + c1 * 28.63)} and Model 3 at {hrs(c0 + c1 * 26.96)}; the v1.1 map {hrs(b0 + b1 * 28.63)} and {hrs(b0 + b1 * 26.96)}")
+      f"{hrs(s0 + s1_ * (AE['Opus 5.5'] - 150))} and Model 4 at {hrs(s0 + s1_ * (AE['Model 4'] - 150))}")
+x4, x3 = AE['Model 4'] - 150, AE['Model 3'] - 150
+print(f"  the pooled map puts Model 4 at {hrs(c0 + c1 * x4)} and Model 3 at {hrs(c0 + c1 * x3)}; the v1.1 map {hrs(b0 + b1 * x4)} and {hrs(b0 + b1 * x3)}")
 
 # MCI against AECI, Claude models: does AECI run ahead of METR's own index late on, as it runs ahead of ECI?
 cm = [n for n in MCI if n in CHART]
