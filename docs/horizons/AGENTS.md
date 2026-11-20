@@ -47,7 +47,10 @@ fitted singularity moves to 2028.70 (2028.14 to 2029.48), the hyperbola
 loses its AICc lead, and the drift test turns against it: the date slides
 out about as fast as the calendar. The figure's 2027.65 now holds only if
 AECI's scale, or METR's narrow verifiable subset, is the right ruler at the
-top. See "METR's capability update".
+top. Epoch's ECI, its software and agentic subsets and OpenAI's OECI agree
+with METR: none bends against METR's index, and through them the latest
+public models put the date at 2028.7 to 2028.9. See "METR's capability
+update" and "Beside the public rulers".
 
 ## Run it
 
@@ -67,6 +70,7 @@ top. See "METR's capability update".
     python aeci_subset.py    # speculative: Epoch benchmarks picked to imitate AECI (about 30 s)
     python aeci_imitation.py # that imitation against METR, and every lab on it: aeci-imitation.png
     python metr_q4.py; python metr_q4_plot.py   # METR's 20 November update against the fit (see "METR's capability update"), metr-q4.png
+    python metr_rulers.py    # those measurements beside ECI, its subsets and OECI (see "Beside the public rulers")
 
 numpy, pyyaml, matplotlib and Pillow, all in the shared venv. `parity.py` also
 needs node and a built `dist/` in this repo (`npm run build` at the root).
@@ -796,6 +800,88 @@ probably runs out before it separates the curves. On the AECI side the
 - METR dates models by public release; the internal checkpoints keep the AECI
   chart's dates, as in the figure.
 
+### Beside the public rulers
+
+Added the same day. a9 asked how METR's new measurements compare with
+Epoch's ECI, its software and agentic subsets, and OECI. `metr_rulers.py`
+answers. Software and agentic ability are the maximum-likelihood abilities
+of `aeci_subset.py` (saturated scores kept, 19 November model pages); MCI
+for GPT-6 Luna and Haiku 5.5 comes from METR's Figure 39.
+
+- **Against MCI only AECI bends.** One joined line per ruler, its slope
+  changing at Opus 4.5's MCI, points per 100 MCI before and after:
+
+  | Ruler | Every lab | Claude alone |
+  |---|---|---|
+  | ECI | 4.67 → 4.83 (×1.03, se 0.09) | 4.55 → 5.28 (×1.16, se 0.15) |
+  | Software | 4.71 → 4.88 (×1.04, se 0.21) | 4.83 → 5.25 (×1.09, se 0.30) |
+  | Agentic | 4.67 → 4.90 (×1.05, se 0.20) | 4.78 → 5.04 (×1.05, se 0.27) |
+  | AECI | – | 4.62 → 6.96 (×1.51, se 0.14; 4.4 se) |
+
+  OECI scores almost nothing before the kink. On the 15 later models every
+  public ruler scores, OECI moves 3.6 points per 100 MCI, against 4.4 to 4.7
+  for the others: it is the most compressed of them. Split by date at
+  October 2025 instead, the software and agentic subsets seem to stretch
+  (×1.4), but that split leaves them six early models; the joined line uses
+  every model below the kink and shows nothing.
+- **Against pooled hours** (log2 h on the ruler with a Claude offset), with
+  the same regression on the v1.1 file beside it:
+
+  | Ruler | Pooled: points per doubling (95%) | Claude offset | v1.1 | v1.1 map's miss since April 2026 |
+  |---|---|---|---|---|
+  | ECI (15 models) | 5.02 (4.73 to 5.36) | +0.25 (0.13) | 4.74, +0.42 | −0.49 (Opus 5.5 −0.51) |
+  | Software (13) | 5.34 (4.74 to 6.11) | −0.47 (0.16) | 4.28, +0.05 | −0.68 (Opus 5.5 −1.00) |
+  | Agentic (13) | 5.33 (4.76 to 6.06) | −0.39 (0.15) | 4.37, −0.13 | −0.60 (Opus 5.5 −0.76) |
+  | OECI (12) | 4.69 (4.31 to 5.13) | +0.81 (0.09) | too few (5) | – |
+  | AECI (8, Claude) | 7.32 (6.54 to 8.30) | – | 4.68 | −1.48 (Opus 5.5 −1.77) |
+  | MCI (15) | 106 MCI per doubling, one line for every lab | – | – | – |
+
+  Every route calibrated on v1.1 overshoots the pooled measurements since
+  April 2026: the public ones by about half a doubling, AECI by one and a
+  half. So about a third of AECI's miss is a change of ruler that every
+  index shares (v1.1 saturating at the top, and TH2 harder per hour than
+  TH1.1). The rest, about a doubling, is AECI's own. On the pooled ruler the
+  Claude offset shrinks on ECI and turns negative on the agentic subsets:
+  Claude's pooled horizons trail its agentic scores, relative to OpenAI's.
+  OECI's large offset is its non-agentic weighting (see "OECI").
+- **The 2026 pace agrees across every ruler once each is calibrated on
+  pooled hours.** Records from 1 January, in pooled doublings a year, to 22
+  September (METR's window):
+
+  | Lab | ECI | Software | Agentic | OECI | AECI | MCI | Pooled, measured |
+  |---|---|---|---|---|---|---|---|
+  | Anthropic | 4.1 | 3.8 | 4.1 | 4.0 | 3.7 | 3.5 | 4.3 ± 0.3 |
+  | OpenAI | 3.1 | 3.8 | 4.0 | 4.4 | – | 4.5 | 4.8 ± 1.5 |
+
+  That is a 2.5 to 3.9-month doubling everywhere, AECI included: its 27
+  points a year are 3.7 doublings through its pooled map. Through 17
+  November, with Fable 5.2 and GPT-6.2 Astra, Anthropic's pace is 4.5 (ECI)
+  to 4.6 (OECI) and OpenAI's 3.8 to 4.1. Every lab's measured pooled record
+  climbs 4.4 ± 0.4 doublings a year in 2026, against 3.3 for METR's line
+  since 2024: a speed-up of about 1.3x, the size of METR's Anthropic slope
+  change in MCI (1.26x) and of the MCI view with the checkpoints (1.28x).
+- **The public models METR hasn't measured,** on pooled hours: Fable 5.2
+  (9 November) 73 h through ECI, 76 h through OECI, 40 h through the agentic
+  subset and 29 h through software, which lacks MirrorCode for it; GPT-6.2
+  Astra (17 November) 67 h through ECI and 47 h through OECI; Gemini 4
+  Carbon 37 h through ECI.
+- **Refitted,** the pooled record extended by those models: through ECI
+  2028.74 (2028.21 to 2029.53), through OECI 2028.71 (2028.19 to 2029.47),
+  the hyperbola ahead by 1.5 and 1.8 AICc; through the subsets nothing
+  clears GPT-6 Astra and the fit stays at 2028.85, tied. The date moved out
+  0.84 to 0.97 years since December 2025; 5% to 11% of hyperbolic
+  histories move that far, and 22% to 40% of double-exponential ones.
+
+**Reading** (synthesis): METR's new measurements and the public rulers
+agree with each other. A week ago the public rulers alone, calibrated on
+v1.1, put the singularity at 2028.0 to 2028.7 ("ECI as a third scale",
+"OECI"); on METR's pooled ruler they put it at 2028.7 to 2028.9, and so do
+METR's own records. The one input that says mid-2027 is AECI's scale above
+Opus 4.5, and no public ruler, nor METR's index, shows that bend. The
+earlier finding that AECI's extra pace "comes from its ruler" (OECI
+section) now has a measurement behind it. What none of this can check is
+the internal checkpoints themselves, which only AECI scores.
+
 ## History
 
 - **First pass** (fable). The check, with the tweet's inputs: the file's date
@@ -844,3 +930,4 @@ probably runs out before it separates the curves. On the AECI side the
   into this repo, `drift` moved from `replicate.py` into
   `fit.py` so other scripts can use it, then `metr_q4.py`, `metr_q4_plot.py`,
   `metr-q4.png` and `data/metr-2026-11-20/`; see "METR's capability update".
+  Then `metr_rulers.py`, for a9's question about the public rulers.

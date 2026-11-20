@@ -58,6 +58,10 @@ V11 = {'Claude 3 Opus': 'claude_3_opus_inspect', 'GPT-4 Turbo': 'gpt_4_turbo_ins
        'Claude Opus 4.6': 'claude_opus_4_6_inspect', 'Gemini 3.1 Pro': 'gemini_3_1_pro', 'GPT-5.4': 'gpt_5_4'}
 TH11 = {k: (t, (L2(v), L2(lo), L2(hi))) for t, v, k, s, lo, hi in TH}
 A = {a[0]: a for a in AECI}                                                          # name, date, AECI, kind, record holder
+ON_CHART_M = {'claude_3_opus_inspect': 'Claude 3 Opus', 'claude_3_5_sonnet_20240620_inspect': 'Claude 3.5 Sonnet (Old)',
+              'claude_3_5_sonnet_20241022_inspect': 'Claude 3.5 Sonnet (New)', 'claude_3_7_sonnet_inspect': 'Claude 3.7 Sonnet',
+              'claude_4_opus_inspect': 'Claude Opus 4', 'claude_opus_4_5_inspect': 'Claude Opus 4.5', 'claude_opus_4_6_inspect': 'Claude Opus 4.6',
+              'claude_mythos_preview_early_inspect': 'Claude Mythos Preview (early)'}   # v1.1 keys -> METR's names, for AECI
 score = lambda n: (round(A[n][2], 2), *WHISKER.get(n, (None, None)))
 
 def line(x, y):
