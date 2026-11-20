@@ -70,7 +70,7 @@ update" and "Beside the public rulers".
     python aeci_imitation.py # that imitation against METR, and every lab on it: aeci-imitation.png
     python metr_q4.py; python metr_q4_plot.py   # METR's 20 November update against the fit (see "METR's capability update"), metr-q4.png
     python metr_rulers.py    # those measurements beside ECI, its subsets and OECI (see "Beside the public rulers")
-    python regimes.py        # double exponential against one and two drops in the doubling time (see "Regimes or smooth acceleration")
+    python regimes.py; python regimes_plot.py   # double exponential against one and two drops in the doubling time (see "Regimes or smooth acceleration"), regimes.png
 
 numpy, pyyaml, matplotlib and Pillow, all in the shared venv, and node, which
 runs the site's fit. `data/` is local and ignored by git: copies of METR's,
@@ -948,9 +948,12 @@ speed-up (2.9 → 4.9 → 2.2 months), not two drops.
   real series. Forecasts lean to the double exponential. On the pooled ruler
   its half-year errors are 0.21 to 0.40 doublings, against 0.32 to 0.55 for
   one break, which runs low (bias +0.13 to +0.19, against +0.03 to +0.12).
-  In 2026 alone METR's pooled records double every 2.7 months (4.4 ± 0.4 a
-  year). That is faster than one break's 3.4 to 3.5 months and about the
-  double exponential's 2.8 at the last point. On v1.1 alone, one break
+  Measured window by window, METR's records double every 8.5 months
+  from 2019 to 2023, 3.4 in 2024 and 2025, and 2.7 in 2026 (4.4 ± 0.4
+  doublings a year). The 2026 pace is faster than one break's 3.4 to 3.5
+  months and about the double exponential's 2.8 at the last point. Taken by
+  itself it is a step, but it is 1.9 standard errors from 2024–25's pace,
+  and none of the fits needs a knot for it. On v1.1 alone, one break
   forecasts best (0.52 against 0.74).
 - **Reading** (synthesis): smooth acceleration, or one regime change in
   2024 with 2026 running a little ahead of it; not two drops. The two
@@ -958,6 +961,11 @@ speed-up (2.9 → 4.9 → 2.2 months), not two drops.
   the double exponential is at 3,700 h (2.1-month doubling) and one break at
   960 h (3.4-month). By 2027.0 they are 106 h against 82 h, inside METR's
   200 h ceiling.
+- **The plot** (`regimes.png`). (a, b) are the figure's series and the
+  pooled one with the checkpoints, each with the three curves run on to
+  2028. (c) is each curve's doubling time against the measured windows. (d)
+  and (e) are the simulation tests, where the red diamond is the real
+  series. (f) is the half-year forecast errors.
 - **Limits:** knots count as one parameter each, which flatters the break
   models in AICc; the simulations and leave-one-out refit the knots and
   don't have that problem. Record holders are selected, and the splice at

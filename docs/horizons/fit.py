@@ -195,6 +195,7 @@ def rolling(label, t, y, eras, kmin=8, ahead=0.5, fitters=FITS):
             a, b = (np.concatenate([e for tt, e in d[name] if tt >= since]) for d in (one, half))
             print(f'    {name:19s} next point: rmse {np.sqrt(np.mean(a ** 2)):.2f}, bias {a.mean():+.2f} (n={len(a)})   next {ahead} yr: rmse {np.sqrt(np.mean(b ** 2)):.2f}, bias {b.mean():+.2f} (n={len(b)})')
     if past: print(f"  {past} forecasts fell past the hyperbola's own singularity and are left out")
+    return dict(one=one, half=half)
 
 # ---------- does the date hold still? Under a hyperbola the fitted date stays put as data arrives; without a singularity it slides later
 def drift(t, y, kmin=10, since=2025.95, n=1500):

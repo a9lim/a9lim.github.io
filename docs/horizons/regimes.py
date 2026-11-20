@@ -87,7 +87,24 @@ for label, (t, y) in SERIES.items():
 print('\n=== forecasts from rolling origins (doublings; + means the curve ran low)')
 for label in list(SERIES)[:5]:
     t, y = out[label]['t'], out[label]['y']; k0 = int(np.searchsorted(t, 2024.69)) + 1
-    rolling(label, t, y, (('all origins', 0), ('origins from 2025.5', 2025.5)), kmin=k0, fitters=FITTERS)
+    out[label]['rolling'] = rolling(label, t, y, (('all origins', 0), ('origins from 2025.5', 2025.5)), kmin=k0, fitters=FITTERS)
+
+# the measured pace in three windows, each a line through its record holders: what the curves' doubling times answer to
+WINDOWS = ((2019.0, 2024.0), (2024.0, 2026.0), (2026.0, 2027.0))
+def pace(t, y, a, b):
+    m = (t >= a) & (t < b)
+    if m.sum() < 3: return None
+    X = np.c_[np.ones(m.sum()), t[m] - t[m].mean()]; c, *_ = np.linalg.lstsq(X, y[m], rcond=None); r = y[m] - X @ c
+    se = float(np.sqrt(r @ r / (m.sum() - 2) / ((t[m] - t[m].mean()) ** 2).sum()))
+    return float(c[1]), se, int(m.sum()), float(t[m].min()), float(t[m].max())
+print('\n=== the measured pace by window, METR\'s records (v1.1 to GPT-4 Turbo, then the pooled suite): doublings a year (months)')
+PACES = []
+t_, y_ = out[list(SERIES)[2]]['t'], out[list(SERIES)[2]]['y']
+for a, b in WINDOWS:
+    p_ = pace(t_, y_, a, b)
+    if p_: PACES.append(p_); print(f"  {a:.0f} to {b:.0f}: {p_[0]:.2f} ± {p_[1]:.2f} ({months(p_[0]):.1f} months; 68%: {months(p_[0] + p_[1]):.1f} to {months(p_[0] - p_[1]):.1f}), n={p_[2]}")
+TREND = Q.panels('cad6b5d98261f80c')[0][1]['frontier trends'][0]
+print(f"  METR's own line, {TREND['from']} to {TREND['to']}: {TREND['doubling_months']:.2f} months (95% {TREND['doubling_months_low_95']:.2f} to {TREND['doubling_months_high_95']:.2f})")
 
 print('\n=== what each says next: record horizon (hours), with its doubling time then')
 for label in (list(SERIES)[0], list(SERIES)[3], list(SERIES)[4]):
