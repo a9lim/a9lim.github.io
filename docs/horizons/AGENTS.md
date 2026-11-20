@@ -70,6 +70,7 @@ update" and "Beside the public rulers".
     python aeci_imitation.py # that imitation against METR, and every lab on it: aeci-imitation.png
     python metr_q4.py; python metr_q4_plot.py   # METR's 20 November update against the fit (see "METR's capability update"), metr-q4.png
     python metr_rulers.py    # those measurements beside ECI, its subsets and OECI (see "Beside the public rulers")
+    python regimes.py        # double exponential against one and two drops in the doubling time (see "Regimes or smooth acceleration")
 
 numpy, pyyaml, matplotlib and Pillow, all in the shared venv, and node, which
 runs the site's fit. `data/` is local and ignored by git: copies of METR's,
@@ -900,6 +901,69 @@ earlier finding that AECI's extra pace "comes from its ruler" (OECI
 section) now has a measurement behind it. What none of this can check is
 the internal checkpoints themselves, which only AECI scores.
 
+## Regimes or smooth acceleration
+
+Added 2026-11-20 (Opus 5.5, with a9). a9 asked whether the evidence favors
+a double exponential or an exponential whose doubling time drops twice.
+`regimes.py` answers. The two-break curve is `fit.fit_pw2`: knots on a
+0.05-year grid, at least half a year apart, with at least two dates after
+each. It shares `fit.breaks` with the one-break curve. Both curves
+accelerate, in different ways. The double exponential's doubling time
+shrinks by the same factor every year, about 20% on the measured series.
+The breaks hold it, then drop it, and from the last knot on they predict no
+more acceleration.
+
+| Series | AICc: double exp. / one break / two | Simulated: double-exp. / two-break histories as uneven | A second drop by chance (one-break histories) | Half-year forecast rmse: double exp. / one / two |
+|---|---|---|---|---|
+| The figure's | −26.8 / −16.2 / **−38.7** | 2% / 24% | 0% | 0.88 / 1.05 / 1.19 (hyperbola 0.69) |
+| v1.1 measured only | −18.5 / **−20.1** / −14.1 | 32% / 18% | 55% | 0.74 / **0.52** / 0.88 |
+| v1.1, then pooled, measured | **−22.6** / −21.6 / −14.4 | 52% / 11% | 69% | **0.33** / 0.45 / 0.66 |
+| The same with the checkpoints (pooled map) | −26.8 / **−27.9** / −19.5 | 48% / 15% | 92% | **0.21** / 0.32 / 0.42 |
+| The same measured, then public models through ECI | **−24.0** / −20.9 / −18.9 | 31% / 17% | 21% | **0.40** / 0.55 / 0.74 |
+
+The second column is how often each model's own simulated histories fit at
+least as unevenly as the real series. A small share counts against that
+model. On METR's pooled suite alone (12 points, 2024 to 2026) a straight
+exponential is best by AICc. Its best two breaks are a slowdown and then a
+speed-up (2.9 → 4.9 → 2.2 months), not two drops.
+
+- **One drop is real and robust.** Every measured series puts it in spring
+  2024, from a doubling time of 8.5 to 8.6 months to one of 3.3 to 3.6. It
+  shows on v1.1 alone, so it isn't the change of ruler. Its knot sits in
+  the gap between GPT-4 Turbo (November 2023) and GPT-4o (May 2024), so its
+  date is good to a few months.
+- **A second drop is not in the measured data.** Adding a second break to
+  one is what one-break histories gain by chance (55% to 92% of them do as
+  well). On the pooled ruler with the checkpoints, the best two breaks put
+  nothing after 2024 at all (2021 and 2024, then 3.4 months). Through
+  public ECI the second drop is weak (21%), resting on four points after a
+  knot in July 2026 (Opus 5, Fable 5.1, GPT-6 Astra, Fable 5.2).
+- **Two drops win only on the figure's series** (2% of double-exponential
+  histories, 0% of one-break ones). There the second drop (December 2025,
+  3.5 → 1.9 months) is the internal checkpoints through the v1.1 map: the
+  stretch the METR sections found, and the same evidence the hyperbola
+  rests on.
+- **The data don't choose between smooth acceleration and one drop.** Their
+  AICc is within 1 to 3, and each model's histories routinely fit like the
+  real series. Forecasts lean to the double exponential. On the pooled ruler
+  its half-year errors are 0.21 to 0.40 doublings, against 0.32 to 0.55 for
+  one break, which runs low (bias +0.13 to +0.19, against +0.03 to +0.12).
+  In 2026 alone METR's pooled records double every 2.7 months (4.4 ± 0.4 a
+  year). That is faster than one break's 3.4 to 3.5 months and about the
+  double exponential's 2.8 at the last point. On v1.1 alone, one break
+  forecasts best (0.52 against 0.74).
+- **Reading** (synthesis): smooth acceleration, or one regime change in
+  2024 with 2026 running a little ahead of it; not two drops. The two
+  readings part quickly. On the pooled ruler with the checkpoints, by 2028.0
+  the double exponential is at 3,700 h (2.1-month doubling) and one break at
+  960 h (3.4-month). By 2027.0 they are 106 h against 82 h, inside METR's
+  200 h ceiling.
+- **Limits:** knots count as one parameter each, which flatters the break
+  models in AICc; the simulations and leave-one-out refit the knots and
+  don't have that problem. Record holders are selected, and the splice at
+  GPT-4o sits right where the 2024 knot lands. The v1.1-only rows, with one
+  ruler throughout, put the knot in the same place.
+
 ## History
 
 - **First pass** (fable). The check, with the tweet's inputs: the file's date
@@ -955,3 +1019,7 @@ the internal checkpoints themselves, which only AECI scores.
   one registry of names; one Epoch snapshot, with the sections that used the
   11 November copy rerun; plot labels computed. See "One source for each
   thing".
+- **Regimes or smooth acceleration** (Opus 5.5, with a9, 2026-11-20).
+  `fit.breaks` generalizes the one-break curve to any number of knots,
+  vectorized over histories; `fit.rolling` moved out of `replicate.py`; then
+  `regimes.py`.

@@ -10,7 +10,7 @@ fable, 2026-11-11 (claude-fable-5-2)
 import sys, os; sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import numpy as np, json
 from series import AECI, ECI, PUBLIC, WHISKER, models, row, eci_frontier, day
-from fit import FITS, fit_horizons, compare, fit_hyp, fit_dexp, fit_pw, hyp, hyp_at, dexp_at, epoch_pairs, aeci_on_eci, dedupe, t975, drift
+from fit import FITS, fit_horizons, compare, fit_hyp, fit_dexp, fit_pw, hyp, hyp_at, dexp_at, epoch_pairs, aeci_on_eci, dedupe, t975, drift, rolling
 HERE = os.path.dirname(os.path.abspath(__file__))
 hours = lambda v: f'{2 ** v:,.0f} h' if 2 ** v >= 100 else f'{2 ** v:.3g} h'
 never = lambda v, tmax: 'never' if v > tmax + 55 else f'{v:.2f}'
@@ -73,23 +73,6 @@ runs['public release dates throughout'] = compare('public release dates througho
 compare('the same, without Model 3 as Fable 5.2', [*[m for m in St if m['th']], *late[:-1]], CAL)
 
 # ---- backtest, rolling origin: fit the first k record holders, predict what came next
-def rolling(label, t, y, eras, kmin=8, ahead=0.5):
-    """Forecast errors of each curve from every origin, in doublings; + means the curve was too low."""
-    one, half, past = {}, {}, 0
-    for k in range(kmin, len(t)):
-        nxt = np.arange(k, len(t))[t[k:] <= t[k - 1] + ahead]
-        for fitter in FITS:
-            f = fitter(t[:k], y[:k]); e = lambda i: y[i] - f['pred'](t[i])
-            if f['name'] == 'hyperbolic': past += int((t[nxt] >= f['ts']).sum()); nxt_ = nxt[t[nxt] < f['ts']]
-            else: nxt_ = nxt
-            one.setdefault(f['name'], []).append((t[k - 1], e(np.array([k])))); half.setdefault(f['name'], []).append((t[k - 1], e(nxt_)))
-    print(f'\n=== rolling backtest, {label}: from each of {len(t) - kmin} origins, the next point and every point within {ahead} yr')
-    for era, since in eras:
-        print(f'  {era}:')
-        for name in one:
-            a, b = (np.concatenate([e for tt, e in d[name] if tt >= since]) for d in (one, half))
-            print(f'    {name:19s} next point: rmse {np.sqrt(np.mean(a ** 2)):.2f}, bias {a.mean():+.2f} (n={len(a)})   next {ahead} yr: rmse {np.sqrt(np.mean(b ** 2)):.2f}, bias {b.mean():+.2f} (n={len(b)})')
-    if past: print(f"  {past} forecasts fell past the hyperbola's own singularity and are left out")
 rolling("the figure's series", t, y, (('all origins', 0), ('origins from 2026', 2026.0)))
 meas = np.array([bool(m['th']) for m in S]); rolling('measured only', t[meas], y[meas], (('all origins', 0),))
 

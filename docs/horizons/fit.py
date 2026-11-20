@@ -8,7 +8,7 @@ Units: t is a decimal year; horizons are log2 hours; a score is AECI (or Epoch's
 
 fable, 2026-11-11 (claude-fable-5-2); the bridge in place of the port, Opus 5.5 (claude-opus-5-5), 2026-11-20.
 """
-import math, os, sys
+import itertools, math, os, sys
 import numpy as np
 HERE = os.path.dirname(os.path.abspath(__file__)); sys.path.insert(0, HERE)
 from series import ECI, AECI, TH, PAIR, PUBLIC, eci_frontier, row, day
@@ -77,13 +77,43 @@ def fit_dexp(t, y):
 def fit_hyp(t, y):
     a, alpha, ts, sse = (float(v[0]) for v in hyp(t, y[None]))      # pred stays finite past ts, so errors there are large, not infinite
     return dict(name='hyperbolic', p=3, sse=sse, ts=ts, b=(a, alpha), pred=lambda s: a - alpha * np.log2(np.maximum(ts - s, 1e-9)))
+def breaks(t, Y, k, grid, min_gap=0.0, min_pts=0, chunk=1500):
+    """An exponential whose doubling time changes k times: y = b0 + b1 t + sum_j b_{j+1} (t - c_j)+, a line in log
+    horizon with k joined kinks, the knots c_j searched over every k-subset of grid that keeps them min_gap apart with at
+    least min_pts dates after each knot (before the next). Fits each row of Y; returns (sse, knots, coefficients) by row,
+    with sse inf where no knots qualify."""
+    t = np.asarray(t, float); Y = np.atleast_2d(np.asarray(Y, float)); n = len(t)
+    def ok(c):
+        if any(c[i + 1] - c[i] < min_gap for i in range(k - 1)): return False
+        edges = (*c, np.inf)
+        return all(((t > edges[i]) & (t <= edges[i + 1])).sum() >= min_pts for i in range(k))
+    combos = [c for c in itertools.combinations(grid, k) if ok(c)]
+    if not combos: return np.full(len(Y), np.inf), np.full((len(Y), k), np.nan), np.full((len(Y), k + 2), np.nan)
+    C = np.array(combos)                                                    # (P, k)
+    X = np.concatenate([np.broadcast_to(np.c_[np.ones(n), t], (len(C), n, 2)), np.maximum(t[None, :, None] - C[:, None, :], 0)], 2)
+    Qb = np.linalg.qr(X)[0]                                                 # (P, n, k + 2), an orthonormal basis per knot set
+    yy = (Y * Y).sum(1); best, arg = np.full(len(Y), np.inf), np.zeros(len(Y), int)
+    for i in range(0, len(C), chunk):
+        sse = yy[:, None] - (np.einsum('bn,pnj->bpj', Y, Qb[i:i + chunk]) ** 2).sum(2)
+        j = sse.argmin(1); v = sse[np.arange(len(Y)), j]; better = v < best
+        best[better], arg[better] = v[better], (i + j)[better]
+    coef = np.array([np.linalg.lstsq(X[a], y, rcond=None)[0] for a, y in zip(arg, Y)])
+    sse = np.array([float(((y - X[a] @ c) ** 2).sum()) for a, y, c in zip(arg, Y, coef)])
+    return sse, C[arg], coef
+def _hinge_pred(knots, coef):
+    return lambda s: coef[0] + coef[1] * np.asarray(s, float) + sum(cj * np.maximum(np.asarray(s, float) - c, 0) for c, cj in zip(knots, coef[2:]))
 def fit_pw(t, y):
-    best = None
-    for c in np.linspace(t.min() + 0.25, t.max() - 0.15, 400):
-        b, sse = ols(np.c_[np.ones_like(t), t, np.maximum(t - c, 0)], y)
-        if best is None or sse < best[0]: best = (sse, c, b)
-    sse, c, b = best
-    return dict(name='one slope change', p=4, sse=sse, c=c, b=b, pred=lambda s: b[0] + b[1] * s + b[2] * np.maximum(s - c, 0))
+    sse, C, B = breaks(t, y, 1, np.linspace(t.min() + 0.25, t.max() - 0.15, 400))
+    c, b = float(C[0, 0]), B[0]
+    return dict(name='one slope change', p=4, sse=float(sse[0]), c=c, b=b, pred=_hinge_pred((c,), b))
+PW2_GRID = dict(step=0.05, min_gap=0.5, min_pts=2)
+def fit_pw2(t, y):
+    """Two changes of doubling time, knots 0.05 yr apart on the grid, at least half a year between them, and at least two
+    dates after each knot."""
+    g = np.arange(t.min() + 0.25, t.max() - 0.15 + 1e-9, PW2_GRID['step'])
+    sse, C, B = breaks(t, y, 2, g, PW2_GRID['min_gap'], PW2_GRID['min_pts'])
+    c, b = tuple(float(v) for v in C[0]), B[0]
+    return dict(name='two slope changes', p=6, sse=float(sse[0]), c=c, b=b, pred=_hinge_pred(c, b))
 FITS = (fit_lin, fit_dexp, fit_quad, fit_hyp, fit_pw)
 
 def loo(t, y, fitter):
@@ -146,6 +176,25 @@ def eci_map(verbose=False):
         hi = e >= 140
         bh, _ = ols(np.c_[np.ones(hi.sum()), e[hi]], l2[hi]); print(f'  ECI>=140 only: {1 / bh[1]:.2f} points per doubling (n={hi.sum()})')
     return b
+
+# ---------- forecasts from rolling origins
+def rolling(label, t, y, eras, kmin=8, ahead=0.5, fitters=FITS):
+    """Forecast errors of each curve from every origin, in doublings; + means the curve was too low."""
+    one, half, past = {}, {}, 0
+    for k in range(kmin, len(t)):
+        nxt = np.arange(k, len(t))[t[k:] <= t[k - 1] + ahead]
+        for fitter in fitters:
+            f = fitter(t[:k], y[:k]); e = lambda i: y[i] - f['pred'](t[i])
+            if f['name'] == 'hyperbolic': past += int((t[nxt] >= f['ts']).sum()); nxt_ = nxt[t[nxt] < f['ts']]
+            else: nxt_ = nxt
+            one.setdefault(f['name'], []).append((t[k - 1], e(np.array([k])))); half.setdefault(f['name'], []).append((t[k - 1], e(nxt_)))
+    print(f'\n=== rolling backtest, {label}: from each of {len(t) - kmin} origins, the next point and every point within {ahead} yr')
+    for era, since in eras:
+        print(f'  {era}:')
+        for name in one:
+            a, b = (np.concatenate([e for tt, e in d[name] if tt >= since]) for d in (one, half))
+            print(f'    {name:19s} next point: rmse {np.sqrt(np.mean(a ** 2)):.2f}, bias {a.mean():+.2f} (n={len(a)})   next {ahead} yr: rmse {np.sqrt(np.mean(b ** 2)):.2f}, bias {b.mean():+.2f} (n={len(b)})')
+    if past: print(f"  {past} forecasts fell past the hyperbola's own singularity and are left out")
 
 # ---------- does the date hold still? Under a hyperbola the fitted date stays put as data arrives; without a singularity it slides later
 def drift(t, y, kmin=10, since=2025.95, n=1500):
