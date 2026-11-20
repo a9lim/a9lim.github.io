@@ -45,3 +45,8 @@ draft/*
 # Social-card paintings: painted by tools/og/paint/*.py, reused by generate.js
 tools/og/art/
 __pycache__/
+
+# Horizon analysis (docs/horizons/AGENTS.md): copies of third-party data and regenerated outputs
+docs/horizons/data/
+docs/horizons/*.png
+docs/horizons/result.json
