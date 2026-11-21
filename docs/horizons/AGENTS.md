@@ -1035,7 +1035,12 @@ chart.
 - **What the card changes in the data.** The figure and every series here
   keep METR's chart. It is one fit with all 21 points, including the
   snapshots the card leaves out, and splicing the card's seven values in
-  would mix fits. The card is kept beside the chart as a check
+  would mix fits. It would also change nothing visible. Swapping the card's
+  values in for the four figure rows it covers (Mythos Preview, Mythos 5,
+  Model 3, Model 4) moves the fitted date from 2027.645 to 2027.639, two
+  days, with the same intervals and map. Rebuilding the late series from
+  the card alone, which drops Model 2 Early, Model 2 and Model 3 Early,
+  gives 2027.641. The card is kept beside the chart as a check
   (`series.CARD`). What it does change is what the checkpoints are, now in
   `series.PAIRINGS`, with a status for each:
 
