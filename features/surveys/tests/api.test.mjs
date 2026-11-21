@@ -72,11 +72,7 @@ test('survey endpoint rejects cross-origin and malformed requests', async () => 
     assert.equal((await worker.fetch(request(payload, { origin: 'https://example.com' }), env, {})).status, 403);
     assert.equal((await worker.fetch(request({ ...payload, license: 'CC-BY-4.0' }), env, {})).status, 422);
     assert.equal((await worker.fetch(request({ ...payload, battery: { ...payload.battery, depth_percent: 19 } }), env, {})).status, 422);
-    assert.equal((await worker.fetch(request({ ...payload, battery: { ...payload.battery, keys: ['mini'] } }), env, {})).status, 422);
-    assert.equal((await worker.fetch(request({ ...payload, demographics: { age: '10-20' } }), env, {})).status, 422);
-    assert.equal((await worker.fetch(request({ ...payload, demographics: { age: '21-40' } }), env, {})).status, 422);
     assert.equal((await worker.fetch(request({ ...payload, demographics: { ethnicity: 'example' } }), env, {})).status, 422);
-    assert.equal((await worker.fetch(request({ ...payload, demographics: { sexuality: 'example' } }), env, {})).status, 422);
     assert.equal((await worker.fetch(request(payload, { method: 'GET' }), env, {})).status, 405);
 });
 

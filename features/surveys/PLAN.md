@@ -173,7 +173,7 @@ verbal norms if verbal ships.
 - **Staging:** `src/data.js` fetches `/surveys/data/…` and rotation items reference
   `/surveys/assets/rotation/…`, so `tools/stage-assets.mjs` must copy the page, `src/`,
   `data/`, and `assets/` into `dist/surveys/` and keep `build/`, `tests/`, and the docs
-  out. `tests/deploy-layout/run.mjs` currently forbids both `surveys/` and `features/`
+  out. `tests/site.test.mjs` currently forbids both `surveys/` and `features/`
   in `dist/`; the `surveys/` rule changes with the staging.
 - **Serving:** `/surveys/` is a plain static page (`html_handling:
   auto-trailing-slash`) and stays out of `run_worker_first`. The Worker already routes

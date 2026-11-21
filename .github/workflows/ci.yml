@@ -1,0 +1,30 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          submodules: true
+      - uses: actions/setup-node@v7
+        with:
+          node-version: lts/*
+          cache: npm
+      # Pandoc, Tectonic and the source fonts bootstrap into .build/ (pinned and
+      # checksum-verified); Tectonic fetches its TeX bundle into ~/.cache.
+      - uses: actions/cache@v6
+        with:
+          path: |
+            .build/pandoc-*
+            .build/tectonic-*
+            .build/fonts
+            ~/.cache/Tectonic
+          key: tools-${{ hashFiles('tools/pandoc.sh', 'content/resume/build.sh', 'tools/subset-fonts.mjs') }}
+      - run: npm ci
+      - run: npm test
+      - run: npm exec -- wrangler deploy --dry-run --outdir .build/wrangler-dry-run

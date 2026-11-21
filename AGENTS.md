@@ -12,13 +12,12 @@ Root site for **a9l.im**: a hand-written SPA, a content pipeline, a Cloudflare W
 - `papers/ogdoad/` — submodule holding the LaTeX writeups that paper posts are generated from. The build reads `writeups/{name}.{tex,bib,pdf}`; nothing else from it is staged.
 - `worker/` — `index.js` (routing, SSR, SEO/JSON-LD), `http.js` (response policy), `surveys.js` (`POST /api/surveys`), `analytics.js` (Analytics Engine writes).
 - `static/` — copied as-is to the deploy root: `_headers`, fonts, icons, blog assets, `.well-known/security.txt` (its `Expires` date needs renewing yearly).
-- `features/surveys/` — data, scoring, local storage, and generator for the planned `/surveys/` page. The frontend isn't built, so nothing here is staged, and `tests/deploy-layout` rejects `surveys/` and `features/` in `dist/` until it ships. Its `AGENTS.md` covers what exists; `PLAN.md` covers the design and remaining work.
+- `features/surveys/` — data, scoring, local storage, and generator for the planned `/surveys/` page. The frontend isn't built, so nothing here is staged, and `tests/site.test.mjs` rejects `surveys/` and `features/` in `dist/` until it ships. Its `AGENTS.md` covers what exists; `PLAN.md` covers the design and remaining work.
 - `docs/sim-overhaul/` — the ratified plan for rebuilding the four sims' visuals (`PLAN.md`) and its reference sketches. Not staged.
 - `docs/horizons/` — the analysis behind the home page's time-horizon figure: the check of the chart that prompted it, and the comparisons with ECI, OECI and METR's later measurements. It runs the site's own fit and reads the figure's own table through `bridge.mjs`, so it keeps no copy of either. Its `AGENTS.md` is the record. Scripts are tracked; copied data and plots are ignored. Not staged.
 - `db/migrations/` — D1 migrations for the `SURVEYS_DB` binding (`a9lim-surveys`).
-- `lib/wgsl/` — WGSL→JavaScript transpiler and runner, kept but not wired into anything (see `tests/wgsl-transpile/README.md`).
 - `tools/` — `stage-assets.mjs`, `build.mjs`, `md-table.mjs`, `horizon-fit.mjs`, `subset-fonts.mjs`, `tex-to-post.mjs`, `pandoc.sh`, `og/` (the social cards, each a painting made as a program; see Social cards), `purge-cache.mjs`, `verify-deploy.mjs`.
-- `tests/` — `content-pipeline/`, `deploy-layout/`, `wgsl-transpile/`.
+- `tests/site.test.mjs` — what the build can't check itself: the markdown parser's nested state, nothing private in `dist/`, the Worker's and `_headers`' security policy agreeing, and the shell's i18n keys. The build throws on everything else (frontmatter, links, tags, EN/JA mismatches, missed project-metadata sync). The survey tests live in `features/surveys/tests/`.
 - `dist/` and `.build/` — ignored, fully regenerated build output.
 
 ## Build, test, deploy
@@ -26,7 +25,7 @@ Root site for **a9l.im**: a hand-written SPA, a content pipeline, a Cloudflare W
 ```bash
 npm install
 npm run build                          # stage dist/, then derive content outputs
-npm test                               # build + --check + content/deploy-layout tests + survey tests
+npm test                               # build, then tests/ and the survey tests (node:test)
 npm exec -- wrangler deploy --dry-run  # bundle check
 ./dev.sh                               # build with drafts, then pinned wrangler dev
 ./deploy.sh                            # production deploy
@@ -40,6 +39,8 @@ npm exec -- wrangler deploy --dry-run  # bundle check
 Generated files exist only in `dist/` and `.build/`; a normal build leaves `git status` clean. The build needs `papers/ogdoad` checked out (`git submodule update --init`). External tools bootstrap themselves into `.build/`: `tools/pandoc.sh` uses a local Pandoc or downloads a pinned, checksum-verified release; `content/resume/build.sh` does the same for Tectonic; `tools/subset-fonts.mjs` for the STIX Two and Shippori Mincho source fonts.
 
 The Worker imports `.build/content.generated.mjs`, so any Wrangler command that bundles it needs a completed build. `wrangler.jsonc` serves only `dist/`, and existing files are served before the Worker except for the `run_worker_first` paths. Keep `html_handling: "auto-trailing-slash"`: `drop-trailing-slash` broke project pages in production, and that failure doesn't reproduce locally.
+
+CI (`.github/workflows/ci.yml`) runs `npm test` and the Wrangler dry run on every push, with the submodules at their pinned commits; each sim's own repository runs its suite the same way. A test earns its place only where a failure would be silent: one check per mechanism, nothing that restates the code or snapshots a tuned value.
 
 Deployment is manual; Cloudflare Workers Builds is disabled. `./deploy.sh` clears `DRAFTS`, builds **from the working tree** (uncommitted edits ship too), deploys with the pinned Wrangler, purges the `a9l.im` hostname cache, and checks that the new `home-data.json` `generatedAt` marker is live. The purge token has only Zone Cache Purge permission and comes from the macOS Keychain item `a9l.im-cloudflare-cache-purge`, or `CLOUDFLARE_CACHE_PURGE_TOKEN` elsewhere. The marker check doesn't prove that pages, projects, and fonts load, so after changes to response policy, routing, or assets, load the live site and check for console errors and 404s.
 
@@ -59,7 +60,7 @@ Deployment is manual; Cloudflare Workers Builds is disabled. `./deploy.sh` clear
 
 **Outputs.** `posts.json`, `src/projects.js`, `src/route-meta.js`, `src/horizon-data.js`, the generated regions of `index.html` and `i18n.js`, `home-data.json`, `README.md` (with the project table), feeds, sitemaps, `llms.txt`/`llms-full.txt`/`about.md`, font subsets, `resume.pdf`, synchronized project HTML/UI copies, and `.build/content.generated.mjs`.
 
-**Drafts.** `draft/` mirrors `content/` and is read only when `DRAFTS=1`, which `./dev.sh` and `npm run dev` set. `./deploy.sh`, `npm run check`, and `npm test` clear it, and `build.mjs --check` refuses to run with drafts on. A draft shadows the `content/` file with the same slug; draft posts render through the normal client and SSR paths with a `draft` badge. Everything in `draft/` except its README is gitignored, so drafts exist only on this machine. Publishing means moving the file into `content/`.
+**Drafts.** `draft/` mirrors `content/` and is read only when `DRAFTS=1`, which `./dev.sh` and `npm run dev` set. `./deploy.sh` and `npm test` clear it. A draft shadows the `content/` file with the same slug; draft posts render through the normal client and SSR paths with a `draft` badge. Everything in `draft/` except its README is gitignored, so drafts exist only on this machine. Publishing means moving the file into `content/`.
 
 ### Markdown
 
@@ -91,7 +92,7 @@ Apart from `tokens.js`, these are deferred plain scripts that publish globals on
 
 `worker/index.js` SSRs and injects SEO/JSON-LD for the SPA routes (`/sims`, `/projects`, `/blog/*`), redirects `/about` → `/`, `/resume` → `/resume.pdf`, and the renamed sims' old paths `/geon/*` → `/worldline/*` and `/cyano/*` → `/lumen/*` (308), returns secure 404s, and rejects methods other than GET/HEAD, with `POST /api/surveys` as the one exception. The survey endpoint accepts only same-origin, schema-valid JSON, rate-limits by an in-memory IP-derived key without storing IP or request metadata, and fails closed when D1 is unavailable.
 
-Security policy is set in two places that must agree: `worker/http.js` for Worker responses and `static/_headers` for static assets, which also carries Early Hints, COEP, and per-path cache rules. Keep CSP, HSTS, COOP, robots, and `Vary` aligned between them. `_headers` has a 100-rule limit. The CSP has no `unsafe-eval`, so runtime `Function`/`eval` is unavailable in production, and KaTeX needs jsDelivr in `script-src`, `style-src`, and `font-src`.
+Security policy is set in two places that must agree: `worker/http.js` for Worker responses and `static/_headers` for static assets, which also carries Early Hints, COEP, and per-path cache rules. `tests/site.test.mjs` checks that `SECURITY_HEADERS` matches `_headers`' global block. `_headers` has a 100-rule limit. The CSP has no `unsafe-eval`, so runtime `Function`/`eval` is unavailable in production, and KaTeX needs jsDelivr in `script-src`, `style-src`, and `font-src`.
 
 Caching: public URLs are stable, not content-hashed. Browsers always revalidate (`Cache-Control: max-age=0, must-revalidate`), while `Cloudflare-CDN-Cache-Control`, which Cloudflare strips before delivery, sets the edge lifetime separately. The Worker cache is version-scoped (`cross_version_cache: false`), but the zone cache has kept canonical URLs across deployments, which is why `deploy.sh` purges. Browser revalidation and the purge each cover a different cache, so both are needed. On 2026-11-18 a page loaded ~15 s after a deploy left three of Isochron's files at the edge in their old versions (`cf-cache-status: HIT`, aged from that load); neither the host purge nor a purge of their URLs evicted them, and a second deploy did. Wait a minute after a deploy before loading pages, and if a file is stale, deploy again.
 
@@ -184,7 +185,7 @@ Each card is a painting made as a program, with the site's type set over it. No 
 - `tools/og/paint/brush.py` is a small bristle-brush engine (numpy, scipy, Pillow): a stroke is a path and a width, laid down bristle by bristle, with a frisket and a glaze layer beside it. `tools/og/paint/{name}.py` paints one card by calling it a few thousand times; each file's docstring says what the picture shows and what each mark reads. Paintings are 1200 × 630 nominal, painted at twice that and reduced, and are seeded, so the same program gives the same picture. Isochron's is painted from a seeded run of the sim's people, kept beside it as `paint/isochron-run.json` (written by `paint/isochron-run.mjs` from the sim's headless runner). **Isochron's card is frozen** (a9, 2026-11-19): it stays as painted however the sim changes. It's a painting of the project's idea, not a record of the model, so its run is never re-exported and the card never repainted, even where the model has moved on (its run begins with the first hominins, which the model no longer has).
 - `tools/og/{name}.html` and `card.css` set the type over the painting in Newsreader: the seal with a9l.im, and on a sim's card its name. Nothing else is set; a card carries no tagline or rule. `body.dark` is light type for a dark painting, and a template may move its type in a `<style>` of its own (Shoals and Isochron do).
 - `cd tools/og && npm install && npm run generate` paints and writes every card; `node generate.js worldline --repaint` does one, and `--preview DIR` writes PNGs elsewhere for looking at. Paintings are kept in `tools/og/art/` (ignored) and reused until `--repaint`. Painting needs Python with numpy, scipy and Pillow (`PYTHON`, or `python3`); the cards are committed, so the site build needs neither Python nor Puppeteer.
-- The root card (`static/og-image.webp`) serves every root route and post. Each sim owns its card (`projects/{slug}/og-image.webp`), which its `index.html` names with a `?v=` revision that the build copies into the sitemap. After repainting, bump the revision so caches refetch: the sim's two image tags, or for the root card `site/index.html`, `worker/index.js`, `static/manifest.json` and `OG_REVISION` in `tools/build.mjs` and `tests/content-pipeline/run.mjs`.
+- The root card (`static/og-image.webp`) serves every root route and post. Each sim owns its card (`projects/{slug}/og-image.webp`), which its `index.html` names with a `?v=` revision that the build copies into the sitemap. After repainting, bump the revision so caches refetch: the sim's two image tags, or for the root card `site/index.html`, `worker/index.js`, `static/manifest.json` and `OG_REVISION` in `tools/build.mjs`.
 
 The pictures follow the scenes' rules: every mark reads something in the model, and each card spends one red, on what its sim spends it on.
 

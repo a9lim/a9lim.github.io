@@ -20,8 +20,7 @@
 // declares the matching unicode-range faces; the ranges below must match it.
 // Sources are pinned to google/fonts commits and checksum-verified into
 // .build/fonts/, the same pattern as tools/pandoc.sh. Output is a pure function
-// of the source fonts and the scanned text, so `build.mjs --check` can compare
-// it byte for byte.
+// of the source fonts and the scanned text.
 
 import { createHash } from 'node:crypto';
 import { execFileSync } from 'node:child_process';

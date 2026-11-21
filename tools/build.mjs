@@ -16,62 +16,35 @@ const DIST = join(ROOT, 'dist');
 const BUILD = join(ROOT, '.build');
 const SITE = 'https://a9l.im';
 
-// --check: verify the deterministic content-derived artifacts are current
-// instead of writing them, then exit (nothing is modified in this mode).
-const CHECK = process.argv.includes('--check');
-const checkFailures = [];
-
 // draft/ mirrors content/ (draft/posts/, draft/projects/, draft/home/) and is
-// read only when DRAFTS=1 — ./dev.sh sets it, ./deploy.sh and `npm run check`
+// read only when DRAFTS=1 — ./dev.sh sets it, ./deploy.sh and `npm test`
 // clear it. A draft file shadows the content/ file with the same slug, so a
 // draft is either a new entry or a preview of a revision. Nothing under draft/
 // ever reaches a deploy.
 const DRAFTS = process.env.DRAFTS === '1';
-if (DRAFTS && CHECK) {
-  throw new Error('DRAFTS=1 is incompatible with --check: draft content is not deployable');
-}
 if (DRAFTS) console.log('drafts: ENABLED — dist/ mixes draft/ into content/ and must not be deployed');
 
-// Write a content-derived artifact — or, under --check, diff it against disk.
-function emit(rel, content) {
-  const output = join(DIST, rel);
-  if (!CHECK) {
-    mkdirSync(dirname(output), { recursive: true });
-    writeFileSync(output, content);
-    return;
-  }
-  let current = null;
-  try { current = readFileSync(output, 'utf8'); } catch { /* missing counts as stale */ }
-  if (current !== content) checkFailures.push(rel);
+function writeOut(output, content) {
+  mkdirSync(dirname(output), { recursive: true });
+  writeFileSync(output, content);
 }
 
-// Copy a binary artifact into dist/ — or, under --check, compare bytes.
+// A content-derived artifact in dist/
+function emit(rel, content) {
+  writeOut(join(DIST, rel), content);
+}
+
 function emitBinary(rel, srcPath) {
   emitBytes(rel, readFileSync(srcPath));
 }
 
 function emitBytes(rel, content) {
-  const output = join(DIST, rel);
-  if (!CHECK) {
-    mkdirSync(dirname(output), { recursive: true });
-    writeFileSync(output, content);
-    return;
-  }
-  let current = null;
-  try { current = readFileSync(output); } catch { /* missing counts as stale */ }
-  if (!current || !current.equals(content)) checkFailures.push(rel);
+  writeOut(join(DIST, rel), content);
 }
 
+// Worker data in .build/
 function emitInternal(rel, content) {
-  const output = join(BUILD, rel);
-  if (!CHECK) {
-    mkdirSync(dirname(output), { recursive: true });
-    writeFileSync(output, content);
-    return;
-  }
-  let current = null;
-  try { current = readFileSync(output, 'utf8'); } catch { /* missing counts as stale */ }
-  if (current !== content) checkFailures.push(`.build/${rel}`);
+  writeOut(join(BUILD, rel), content);
 }
 
 // --- helpers ---
@@ -1308,16 +1281,6 @@ console.log('llms-full.txt: generated');
 // --- Shippori Mincho subsets for Japanese text and arrows ---
 
 for (const { rel, bytes } of await buildFontSubsets({ root: ROOT, drafts: DRAFTS })) emitBytes(rel, bytes);
-
-if (CHECK) {
-  if (checkFailures.length) {
-    console.error('STALE generated artifacts — canonical content was not followed by `node tools/build.mjs`:');
-    for (const f of [...new Set(checkFailures)]) console.error('  ' + f);
-    process.exit(1);
-  }
-  console.log('--check: all deterministic content and SEO artifacts are current');
-  process.exit(0);
-}
 
 // --- generate home-data.json (content fields + last-deploy marker) ---
 

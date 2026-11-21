@@ -1,8 +1,8 @@
 // The fit behind the home-page time-horizon figure (content/home/horizons.md),
 // and the only implementation of it: tools/build.mjs runs it for the site, and
 // the analysis in docs/horizons/ calls it through docs/horizons/bridge.mjs.
-// Deterministic: a seeded generator drives every draw, so `build.mjs --check`
-// reproduces the output exactly.
+// Deterministic: a seeded generator drives every draw, so a rebuild reproduces
+// the output exactly.
 //
 // Units: t is a decimal year; horizons are log2 hours; AECI is AECI.
 //
