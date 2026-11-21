@@ -115,7 +115,7 @@ const _FONT = {
 //
 // The inks are the data hues: eleven pigments fitted in OKLCH at chroma
 // 0.05–0.12, each paired per theme so it clears 4.5:1 on canvas and panel in
-// both, and any ink can set text (docs/sim-overhaul/sketches/inks.py). Red is
+// both, and any ink can set text. Red is
 // not an ink: the accent is the one red. Graphite, the neutral data hue, is
 // textMuted. Inks differ per theme, so canvas and WebGPU code reads them from
 // _themePalette() on every theme change, as it reads the accent.

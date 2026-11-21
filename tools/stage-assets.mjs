@@ -45,7 +45,8 @@ function copyPath(source, destination) {
 function copyTrackedTree(cwd, pathspec, destinationRoot, filter = () => true) {
   let count = 0;
   for (const rel of trackedFiles(cwd, pathspec)) {
-    if (!filter(rel)) continue;
+    // A tracked file deleted in the working tree doesn't ship: deploys build the working tree
+    if (!filter(rel) || !existsSync(join(cwd, rel))) continue;
     const outputRel = pathspec === '.' ? rel : rel.slice(pathspec.length + 1);
     copyPath(join(cwd, rel), join(destinationRoot, outputRel));
     count += 1;

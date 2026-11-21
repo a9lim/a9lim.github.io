@@ -1,5 +1,5 @@
 // A static server for working on the sims without the parent build.
-// usage: node docs/sim-overhaul/serve.mjs [port=8790]
+// usage: node tools/sims/serve.mjs [port=8790]
 //
 // /shared/* and /<project>/* come live from the working tree (untracked files
 // included); everything else (fonts, logo, favicon) from dist/, which one

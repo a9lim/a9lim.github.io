@@ -152,7 +152,8 @@ function scannedFiles(root, drafts) {
 /** One pass over the scanned text, bucketing code points by slice. */
 function scannedText(root, drafts) {
   const sets = { ja: new Set(ALWAYS_JA), text: new Set(ALWAYS_TEXT), math: new Set(ALWAYS_MATH), arrows: new Set(ALWAYS_ARROWS) };
-  for (const path of scannedFiles(root, drafts)) {
+  // Tracked files deleted in the working tree are skipped, as the stager skips them
+  for (const path of scannedFiles(root, drafts).filter(existsSync)) {
     for (const ch of readFileSync(path, 'utf8')) {
       const cp = ch.codePointAt(0);
       if (cp < 0x0300) continue;

@@ -3,7 +3,7 @@
    Every sim sets its seal and name at the top left, in the same size and
    place, with play, step, theme and help beside them; everything else is the
    sim's own. Under its scene each sim keeps a live figure caption that says
-   what you are looking at, with current values (docs/sim-overhaul/PLAN.md).
+   what you are looking at, with current values.
 
    Markup (the sim writes it; icons fill in from shared/icons.js):
      <header class="colophon">

@@ -1,6 +1,6 @@
 // Headless check of the sims: screenshot, console errors, failed requests, overflow, frame rate.
-// usage: node docs/sim-overhaul/check.mjs BASE OUTDIR path1,path2 [scheme=light] [width=1280] [waitMs=3000] [evalJS]
-//   BASE   e.g. http://localhost:8790 (docs/sim-overhaul/serve.mjs) or http://localhost:8787 (wrangler dev)
+// usage: node tools/sims/check.mjs BASE OUTDIR path1,path2 [scheme=light] [width=1280] [waitMs=3000] [evalJS]
+//   BASE   e.g. http://localhost:8790 (tools/sims/serve.mjs) or http://localhost:8787 (wrangler dev)
 //   width  < 600 emulates a phone (touch, DPR 2)
 //   evalJS evaluated in the page after the wait; its value is printed as "ev"
 // Env: REDUCED_MOTION=1 emulates reduced motion; DPR=2 a retina pixel ratio at any width.
