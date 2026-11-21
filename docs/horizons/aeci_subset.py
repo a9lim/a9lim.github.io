@@ -45,8 +45,8 @@ def line(x, y):
     return b, float(r @ r)
 
 # the 14 public Claude models with an AECI, in date order
-CL = sorted([e for k, e in PUBLIC.items() if k != 'Model 3' and e in sc], key=lambda e: sc[e]['date'])
-AE = {e: A[k][2] for k, e in PUBLIC.items() if k != 'Model 3'}
+CL = sorted([e for k, e in PUBLIC.items() if e in sc], key=lambda e: sc[e]['date'])
+AE = {e: A[k][2] for k, e in PUBLIC.items()}
 PC = np.array([vec(m) for m in CL]); YC = np.array([AE[m] for m in CL])
 CAND = [i for i in range(len(BENCH)) if (~np.isnan(PC[:, i])).sum() >= 3]
 

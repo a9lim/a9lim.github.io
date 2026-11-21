@@ -24,7 +24,7 @@ def line(x, y, label):
 hs_rows = [(k, e, swe(e)) for k, e in PAIR.items() if e in sc and swe(e)]
 HS = line([s[0] for _, _, s in hs_rows], [th[k] for k, _, _ in hs_rows], 'log2 h on SWE-ECI')
 # A-S: software ECI on AECI, public Claude models
-as_rows = [(k, e, swe(e)) for k, e in PUBLIC.items() if k != 'Model 3' and e in sc and swe(e)]
+as_rows = [(k, e, swe(e)) for k, e in PUBLIC.items() if e in sc and swe(e)]
 AS = line([A[k][2] for k, _, _ in as_rows], [s[0] for _, _, s in as_rows], 'SWE-ECI on AECI')
 AS7 = line([A[k][2] for k, _, _ in as_rows if A[k][2] >= 157], [s[0] for k, _, s in as_rows if A[k][2] >= 157], 'SWE-ECI on AECI, from Opus 4.6')
 HA = line([A[c][2] for c in ['3 Opus', '3.5 Sonnet', '3.5 Sonnet New', '3.7 Sonnet', 'Opus 4', 'Opus 4.5', 'Opus 4.6', 'Mythos Preview Early']],
@@ -44,7 +44,7 @@ print('\nimplied 50% horizons: public frontier models METR has not measured (sof
 recent = sorted([m for m in sc if sc[m]['date'] >= '2026-02-01' and float(sc[m]['eci']) >= 158 and swe(m)], key=lambda m: sc[m]['date'])
 for m in recent:
     s = swe(m)[0]; y = f(HS, s); p = pi(HS, s)
-    aeci = next((A[k][2] for k, e in PUBLIC.items() if e == m and k != 'Model 3'), None)
+    aeci = next((A[k][2] for k, e in PUBLIC.items() if e == m), None)
     via_a = f"   via AECI {aeci:.1f} (H-A): {hrs(f(HA, aeci))}" if aeci else ''
     print(f"   {sc[m]['date']} {m:24s} SWE {s:6.1f}  -> {hrs(y)} (95% {2 ** (y - p):.0f}-{2 ** (y + p):.0f} h){via_a}")
 print('\ninternal checkpoints: AECI -> software ECI -> horizon, against the hours view (AECI -> horizon)')

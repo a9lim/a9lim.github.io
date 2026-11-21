@@ -90,7 +90,7 @@ A = {a[0]: a for a in AECI}
 print('\npublic Claude models: AECI minus each Epoch measure (ECI points)')
 print(f"{'model':16s} {'AECI':>6s} {'ECI':>6s} {'A-ECI':>6s} {'A-SWE':>6s} {'A-agent':>7s} {'A-math':>6s} {'A-sci':>6s}")
 for k, e in PUBLIC.items():
-    if k == 'Model 3' or e not in sc: continue
+    if e not in sc: continue
     a = A[k][2]; vals = [float(sc[e]['eci']), cap(e, swe), cap(e, ag), cap(e, DOM['math']), cap(e, DOM['science/knowledge'])]
     print(f"{k:16s} {a:6.1f} " + ' '.join(f"{a - v:+6.1f}" if v is not None else f"{'-':>6s}" for v in vals))
 

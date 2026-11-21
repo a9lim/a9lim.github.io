@@ -1,6 +1,6 @@
 """ECI view of the three-scale fit under different AECI -> ECI conversions, for one pairing setting (argv as three_scales).
 
-    python conversions.py --f52=model4 --m2=internal     # the dropped branch's pairings
+    python conversions.py --f52=model3 --m2=internal     # Fable 5.2 = Model 3; the Model 2s paired (speculative)
     python conversions.py                                # no internal pairings; Fable 5.2 its own ECI-only point
     python conversions.py --nof52                        # no internal pairings, Fable 5.2 left out
 

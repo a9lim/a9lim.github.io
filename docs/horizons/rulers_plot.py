@@ -22,7 +22,9 @@ HERE = os.path.dirname(os.path.abspath(__file__)); sys.path.insert(0, HERE)
 with contextlib.redirect_stdout(io.StringIO()):
     import metr_rulers as RU, conversions as CV
 Q, O = RU.Q, RU.O
-from series import AECI, WHISKER, TH, NAME, ECI as ECI_SNAP, PAGE_ECI, yr, day
+from series import AECI, WHISKER, TH, NAME, ECI as ECI_SNAP, PAGE_ECI, PAIRINGS, yr, day
+# what an internal checkpoint is, where a source says or supports it (series.PAIRINGS); speculative pairings go unlabelled
+IS = {k: f"{k} ({m.replace('Claude ', '')}{' before release' if m.startswith('Claude') else ''})" for k, (m, s, _) in PAIRINGS.items() if s in ('stated', 'supported')}
 
 INK, MUTED, BORDER, GROUND, RED = '#161514', '#666463', '#E2E1E0', '#FCFCFB', '#983432'
 LABS = {'Anthropic': ('#9F5D31', 'o'), 'OpenAI': ('#586AB2', 's'), 'Google': ('#8B681B', '^'), 'other': ('#8F8D8B', '.')}
@@ -135,9 +137,9 @@ col = LABS['Anthropic'][0]
 for n, t, v, kind, front in AECI:
     if n in WHISKER: a.plot([t, t], WHISKER[n], color=col, lw=0.8, alpha=0.5)
     a.scatter([t], [v], s=30, marker='o' if kind == 'public' else 'D', color=col if kind == 'public' else GROUND, edgecolor=col, lw=1.2, zorder=4)
-    if n in ('Model 4', 'Opus 5.5', 'Mythos Preview Early', 'Opus 4.5', '3.7 Sonnet'):
-        a.annotate(n, (t, v), xytext=(8, -12) if n == 'Opus 5.5' else (-6, 6), textcoords='offset points', fontsize=7.5, color=INK,
-                   ha='left' if n == 'Opus 5.5' else 'right')
+    if n in ('Model 4', 'Model 3', 'Opus 5.5', 'Mythos Preview Early', 'Opus 4.5', '3.7 Sonnet'):
+        off, ha = {'Opus 5.5': ((8, -12), 'left'), 'Model 3': ((9, -3), 'left')}.get(n, ((-6, 6), 'right'))
+        a.annotate(IS.get(n, n), (t, v), xytext=off, textcoords='offset points', fontsize=7.5, color=INK, ha=ha)
 rec = [(t, v, n) for n, t, v, k, f in AECI if f]
 print('AECI record lines (chart dates):')
 for lo_, hi_, ls in ((2024.0, 2025.75, (0, (5, 3))), (2025.75, 2027, '-')):
@@ -229,7 +231,7 @@ for t, y, n in pool:
 a.scatter([p[0] for p in pool], H2([p[1] for p in pool]), s=34, color=INK, zorder=5, label="METR's pooled records, measured (95%)")
 for n in ('Model 4', 'Mythos Preview'):
     t, v = next((t, v) for nn, t, v, *_ in AECI if nn == n)
-    a.annotate(n, (t, H2(Q.b0 + Q.b1 * (v - 150))), xytext=(-6, 4), textcoords='offset points', fontsize=7.5, color=INK, ha='right')
+    a.annotate(IS.get(n, n), (t, H2(Q.b0 + Q.b1 * (v - 150))), xytext=(-6, 4), textcoords='offset points', fontsize=7.5, color=INK, ha='right')
 for m, R, dy in (('Claude Fable 5.2', 'OECI', 5), ('GPT-6.2 Astra', 'ECI', -12)):
     a.annotate(m.replace('Claude ', ''), (RU.DATE[m], H2(to_hours(R, m))), xytext=(-4, dy), textcoords='offset points', fontsize=7.5, color=INK, ha='right')
 a.axhline(200, color=MUTED, lw=0.7, ls=(0, (1, 2))); a.text(2024.32, 240, "200 h: the pooled suite's longest threshold", fontsize=8, color=MUTED)

@@ -99,7 +99,7 @@ if __name__ == '__main__':
         for t, v, m in rec:
             if m in LABELS: ax.annotate(m.replace('Claude ', ''), (D(t), v), xytext=LABELS[m], textcoords='offset points', ha='right', fontsize=7.5, color=COL[lab])
     # real AECI: public Claude by release date, internal checkpoints by METR's chart date
-    pub = [(yr(sc[e]['date']), A[k][2]) for k, e in S.PUBLIC.items() if k != 'Model 3' and e in sc and sc[e]['date'] >= '2024-01-01']
+    pub = [(yr(sc[e]['date']), A[k][2]) for k, e in S.PUBLIC.items() if e in sc and sc[e]['date'] >= '2024-01-01']
     ax.scatter([D(t) for t, _ in pub], [v for _, v in pub], marker='s', s=26, facecolor='none', edgecolor='k', lw=1, zorder=4,
                label="Anthropic's AECI, public Claude models")
     it = [(a[1], a[2], a[0]) for a in AECI if a[3] == 'internal']

@@ -13,7 +13,7 @@ plt.rcParams.update({'font.family': 'serif', 'font.serif': ['Georgia', 'DejaVu S
                      'axes.labelcolor': MUTED, 'xtick.color': MUTED, 'ytick.color': MUTED, 'figure.facecolor': GROUND, 'axes.facecolor': GROUND})
 halo = [pe.withStroke(linewidth=3.5, foreground=GROUND)]
 A = {a[0]: a for a in AECI}
-P = [(k, A[k][2], ECI[v][1]) for k, v in PUBLIC.items() if k != 'Model 3']
+P = [(k, A[k][2], ECI[v][1]) for k, v in PUBLIC.items()]
 def drawn(M):
     return lambda a: np.array([M.feat(v, None) for v in np.atleast_1d(a)]) @ M.b
 F = {k: (f"{FORMS[f].label} (scatter {FORMS[f].s:.2f})", drawn(FORMS[f]), FORMS[f].lo) for k, f in

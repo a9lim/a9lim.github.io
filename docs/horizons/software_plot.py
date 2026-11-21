@@ -26,7 +26,7 @@ for k, e in PAIR.items():
     ax.scatter([s[0]], [th[k]], s=40, zorder=5, color=INK if cl else GROUND, edgecolor=GROUND if cl else OTHER, linewidth=1.5 if cl else 1.6)
 lab = {}
 for k, e in PUBLIC.items():
-    if k == 'Model 3' or A[k][2] < 160 or not swe(e): continue
+    if A[k][2] < 160 or not swe(e): continue
     s = swe(e)[0]; y = f(HA, A[k][2])
     ax.scatter([s], [y], marker='D', s=44, facecolor=GROUND, edgecolor=ACCENT, linewidth=1.7, zorder=6)
     off = {'Mythos 5': (8, -13), 'Opus 5.5': (8, -13)}.get(k, (-8, 5))
@@ -43,7 +43,7 @@ bx.plot([122, 181], [122, 181], ls=(0, (2, 3)), lw=1, color=MUTED); bx.text(170.
 bx.fill_between(g, [f(AS, x) - pi(AS, x) for x in g], [f(AS, x) + pi(AS, x) for x in g], color=FIT, alpha=0.1, lw=0)
 bx.plot(g[g <= AS['hi']], [f(AS, x) for x in g[g <= AS['hi']]], color=FIT, lw=2); bx.plot(g[g >= AS['hi']], [f(AS, x) for x in g[g >= AS['hi']]], color=FIT, lw=2, ls=(0, (2, 2)))
 for k, e in PUBLIC.items():
-    if k == 'Model 3' or not swe(e): continue
+    if not swe(e): continue
     s, se, nb = swe(e); a = A[k][2]
     bx.plot([a, a], [s - se, s + se], color=INK, lw=0.8, alpha=0.4); bx.scatter([a], [s], s=40, color=INK, edgecolor=GROUND, linewidth=1.5, zorder=5)
     if a >= 157 or k in ('3 Opus', '3.7 Sonnet'):

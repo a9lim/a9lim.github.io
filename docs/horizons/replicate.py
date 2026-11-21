@@ -9,7 +9,7 @@ fable, 2026-11-11 (claude-fable-5-2)
 """
 import sys, os; sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import numpy as np, json
-from series import AECI, ECI, PUBLIC, WHISKER, models, row, eci_frontier, day
+from series import AECI, ECI, PUBLIC, WHISKER, models, row, eci_frontier, day, paired
 from fit import FITS, fit_horizons, compare, fit_hyp, fit_dexp, fit_pw, hyp, hyp_at, dexp_at, epoch_pairs, aeci_on_eci, dedupe, t975, drift, rolling
 HERE = os.path.dirname(os.path.abspath(__file__))
 hours = lambda v: f'{2 ** v:,.0f} h' if 2 ** v >= 100 else f'{2 ** v:.3g} h'
@@ -64,7 +64,7 @@ runs['a flatter map past the last measured model'] = compare('5.26 points per do
 # and the record is taken over those.
 A = {a[0]: a for a in AECI}; early = next(m for m in St if m['name'] == 'Mythos Preview (early)')
 score = lambda k: (round(A[k][2], 2), *WHISKER.get(k, (None, None)))
-rel = sorted([(early['t'], 'Mythos Preview'), *((ECI[e][0], k) for k, e in PUBLIC.items() if ECI[e][0] > early['t'])])
+rel = sorted([(early['t'], 'Mythos Preview'), *((ECI[e][0], k) for k, e in {**PUBLIC, **paired('supported')}.items() if ECI[e][0] > early['t'])])
 best, late = early['aeci'][0], []
 for tt_, k in rel:
     if A[k][2] > best: best = A[k][2]; late.append(row(k, tt_, aeci=score(k)))

@@ -100,7 +100,7 @@ if __name__ == '__main__':
     weights('OECI (OpenAI models)', oa, lambda m: O.OECI[m]['v'])
     weights('OECI (Claude models)', [m for m in both if O.lab(m) == 'Anthropic'], lambda m: O.OECI[m]['v'])
     from series import PUBLIC
-    cl = {e: A[k][2] for k, e in PUBLIC.items() if k != 'Model 3' and e in sc}
+    cl = {e: A[k][2] for k, e in PUBLIC.items() if e in sc}
     weights('AECI (public Claude models)', list(cl), lambda m: cl[m])
     ag = [m for m in cl if caps(m)['agentic'] is not None]
     for g in GROUPS:

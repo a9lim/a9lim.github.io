@@ -30,7 +30,7 @@ def lab(m):
 
 # ---- AECI for public Claude models (by public release date) and the internal checkpoints (by METR's chart date)
 A = {a[0]: a for a in AECI}
-AECI_PUB = {e: A[k][2] for k, e in PUBLIC.items() if k != 'Model 3'}               # Model 3 = Fable 5.2 is unconfirmed
+AECI_PUB = {e: A[k][2] for k, e in PUBLIC.items()}                  # released models only (series.PAIRINGS has Model 3)
 AECI_INT = [(a[0], a[1], a[2]) for a in AECI if a[3] == 'internal']
 
 def swe(m): return cap(m, SWE, 2) if m in sc else None
@@ -169,7 +169,8 @@ if __name__ == '__main__':
     pa = [m for m in cl if m in AECI_PUB]
     ba, sea, sa = line_fit([OECI[m]['v'] for m in pa], [AECI_PUB[m] for m in pa])
     print(f"  AECI on OECI, {len(pa)} public Claude pairs: slope {ba[1]:.3f} ({sea:.3f}), AECI {ba[0]:.1f} at OECI 160, scatter {sa:.2f}")
-    print(f"  Fable 5.2: OECI 169.7 -> AECI {ba[0] + ba[1] * (169.7 - 160):.1f} on that line (Model 3 reads {A['Model 3'][2]:.1f}, Model 4 {A['Model 4'][2]:.1f})")
+    f52 = OECI['Claude Fable 5.2']['v']
+    print(f"  Fable 5.2: OECI {f52:.1f} -> AECI {ba[0] + ba[1] * (f52 - 160):.1f} on that line (Model 3 reads {A['Model 3'][2]:.1f}, Model 4 {A['Model 4'][2]:.1f})")
     po = [m for m in both if lab(m) == 'OpenAI' and swe(m) is not None]
     for g, ms in (('OpenAI', po), ('Anthropic', [m for m in cl if swe(m) is not None])):
         bs_, ses_, ss_ = line_fit([swe(m) for m in ms], [OECI[m]['v'] for m in ms])

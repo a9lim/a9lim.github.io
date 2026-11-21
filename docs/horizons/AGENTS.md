@@ -99,6 +99,9 @@ Since 2026-11-20 nothing here keeps a second copy of the figure or its fit.
 - **Model names** are `series.REGISTRY`: a row per model, in the spelling
   of each source (the figure, METR's v1.1 keys, METR's 20 November names,
   Epoch, the AECI chart). Every name map the scripts use comes from it.
+  What METR's internal checkpoints are is `series.PAIRINGS`, with a status
+  for each (stated, supported or speculative); `series.PUBLIC` holds
+  released models only.
 - **Epoch's data** is the 12 November snapshot, read once in `series.py`;
   Epoch's 19 November pages for three models are a later layer, read there
   too, and used only where a section says so. The 11 November copy of
@@ -183,7 +186,7 @@ quadratic, and exponential with one change of slope.
 | GPT-4 onward | 2027.60 (2027.29 to 2028.23) | behind by 3 |
 | A flatter map past the last measured model (5.26 points per doubling) | 2027.89 (2027.65 to 2028.20) | ahead by 4.5 |
 | Public release dates throughout | 2027.98 (2027.66 to 2028.48) | ahead by 2 |
-| Late AECI rescaled onto Epoch's scale | 2028.15 (2027.77 to 2028.71) | tied |
+| Late AECI rescaled onto Epoch's scale | 2028.30 (2027.85 to 2028.93) | behind by 3 |
 | Public Epoch ECI after April 2026 instead of AECI | 2028.77 (2028.19 to 2029.69) | behind by 9 |
 
 Other results:
@@ -214,7 +217,7 @@ Other results:
   | The figure's | 0.00 | 1.5% | 18% | 47% |
   | A flatter map | +0.17 | 2.9% | 29% | 58% |
   | Public release dates | +0.13 | 4.3% | 30% | 53% |
-  | Late AECI on Epoch's scale | +0.42 | 11% | 32% | 73% |
+  | Late AECI on Epoch's scale | +0.50 | 17% | 41% | 76% |
   | Public Epoch ECI after April 2026 | +0.68 | 43% | 64% | 86% |
 
   The slope change is not separated over the whole window, because its
@@ -224,7 +227,9 @@ Other results:
   double exponential expects. This is the strongest evidence for the
   hyperbolic form in the check, and it leans on the same converted points as
   the rest. (The two Epoch rows are the 20 November reruns on Epoch's 12
-  November data, which adds Gemini 4 Carbon to the public record.)
+  November data, which adds Gemini 4 Carbon to the public record; the
+  rescaled row also drops the pre-release Fable 5.2 pair, see "Fable 5.2's
+  system card".)
 - **Range.** The x-axis covers 0.97 orders of magnitude, 0.69 since GPT-4.
 - **Backtest.** Rolling: fit the first k record holders, then predict the
   next point and every point within half a year, from each of 17 origins
@@ -243,7 +248,8 @@ Other results:
   bar one, so the intervals have been honest about how far the date moves.
   Leaving out any one point moves it by at most 0.04 yr.
 - **Scale.** AECI runs ahead of Epoch's ECI for the same public models: +0.4
-  at Opus 4.5, +6.1 at Opus 5.5. Above ECI 150, AECI is about 1.22 x ECI - 32.
+  at Opus 4.5, +6.1 at Opus 5.5. Above ECI 150, AECI is about 1.35 x ECI - 53
+  over the released models.
   The map is calibrated only up to AECI 162 and used up to 179.
 - **Dates.** The series mixes two dating rules: public release for the
   measured models, internal availability for the AECI ones. The gap between
@@ -253,7 +259,8 @@ Other results:
   Model 4) and taking the record over public models: Mythos Preview, Mythos 5,
   Opus 5, Mythos 5.1, Opus 5.5, then Model 3 as Fable 5.2 (2026-11-09, 48
   days after the chart's date). That gives 2027.98. The Model 3 pairing is
-  the first pass's, by score and timing; METR's post does not name it.
+  the first pass's, by score and timing; METR's post does not name it, and
+  Fable 5.2's system card later bore it out.
   Without that point: 2027.86 (2027.53 to 2028.37).
 - **Common ground.** Every curve that fits reaches a one-work-year 50% horizon
   in 2027: hyperbola 2027.02, double exponential 2027.24, slope change
@@ -412,9 +419,10 @@ Other results:
   0.71, two lines joined at AECI 156.0 leave 0.56, and a line through the 8
   pairs above 150 leaves 0.36. The curved maps put the late checkpoints about
   1.5 ECI lower (Model 4 at 171.4 to 172.0, against 173.1).
-- Internal checkpoints paired with public releases, all unconfirmed: Model 2
-  Early as Fable 5.1 and Model 2 as Opus 5.5 sit within 0.6 ECI of their
-  projections. Fable 5.2 (released 2026-11-09) sits above every charted
+- Internal checkpoints paired with public releases: Model 2 Early as Fable
+  5.1 and Model 2 as Opus 5.5 sit within 0.6 ECI of their projections.
+  Both pairings are speculative (`series.PAIRINGS`), since each of those
+  public models has its own point on the chart. Fable 5.2 (released 2026-11-09) sits above every charted
   checkpoint once the map bends: by 2.0 ECI at Model 4, 3.2 at Model 3 and
   3.6 at Model 3 Early. Its ECI corresponds to an AECI near 181.4, past the
   end of METR's chart. On the straight map it is level with Model 4 (+0.3).
@@ -1019,9 +1027,35 @@ chart.
   The card's Fable 5.2 score is the snapshot Anthropic judged most capable
   on AI R&D, not necessarily the release snapshot. METR also says the
   snapshot it tested was stronger on AI R&D than the released model.
-- **The chart readings hold.** They run 0.06 to 0.16 below the card's
-  values, with the order and gaps intact. That is either reading error or
-  a slightly different fit; it moves nothing here.
+- **Two fits, not a misreading.** METR's text gives Model 4 as 178.6, and
+  the reading matches it (178.63); the card puts the same model at 178.78.
+  The card's 6 November fit is a later refit, as the card says of itself
+  ("each refit reestimates the whole scale"). That is why its values run
+  0.06 to 0.16 above METR's chart, with the order and gaps intact.
+- **What the card changes in the data.** The figure and every series here
+  keep METR's chart. It is one fit with all 21 points, including the
+  snapshots the card leaves out, and splicing the card's seven values in
+  would mix fits. The card is kept beside the chart as a check
+  (`series.CARD`). What it does change is what the checkpoints are, now in
+  `series.PAIRINGS`, with a status for each:
+
+  | Checkpoint | What it is | Status | Evidence |
+  |---|---|---|---|
+  | Model 3 Early | Fable 5.2 before release | stated | METR's note in the card |
+  | Model 3 | Fable 5.2 before release | supported | the card's Fable 5.2: 21 Sep, 177.12 (chart: 22 Sep, 176.96) |
+  | Model 4 | an unreleased internal research model | supported | the card: 25 Sep, 178.78 (chart: 25 Sep, 178.63) |
+  | Model 2 | Opus 5.5? | speculative | score only; Opus 5.5 has its own point a month later |
+  | Model 2 Early | Fable 5.1? | speculative | score only; Fable 5.1 has its own point |
+
+  `series.PUBLIC` holds the 14 released models only. Model 3 stays out of
+  it: its AECI is a pre-release snapshot's, which METR found stronger on AI
+  R&D than the release, so pairing it with the released model's ECI or
+  OECI would compare two snapshots. Until 20 November, `fit.aeci_on_eci`
+  included that pair while every other analysis dropped it. Without it,
+  late AECI rescales onto Epoch's scale as 1.35 x ECI − 53 rather than
+  1.22 x ECI − 32, which agrees with the 1.36 AECI points per ECI point the
+  OECI section found. The variant that uses it moves from 2028.15 to
+  2028.30 (see "Variants").
 - **Fable 5.2 against Model 4, on one fit:** 177.12 against 178.78, 1.7
   points below. Their local intervals, which compare a model with its
   predecessors, overlap slightly (175.8–178.5 against 177.1–180.6). In
@@ -1051,8 +1085,9 @@ chart.
   checkpoint once the map bends. On AECI itself it isn't; the gap there is
   ECI's domain mix, not Fable 5.2's lead.
 - **The figure doesn't change.** Its series already has Model 3 and Model
-  4. Analyses that dropped Model 3 as an unconfirmed pair still drop it.
-  Adding Fable 5.2 as a fifteenth public AECI pair is open.
+  4, under METR's labels; the content file's comment says what they are.
+  The plots label them from `series.PAIRINGS`, and leave the speculative
+  ones unlabelled.
 
 ## History
 
@@ -1115,3 +1150,8 @@ chart.
   `regimes.py`.
 - **Fable 5.2's system card** (Opus 5.5, with a9, 2026-11-20). `series.CARD`
   and the section of that name.
+- **Pairings with a status** (Opus 5.5, with a9, 2026-11-20).
+  `series.PAIRINGS` replaces the Model 3 filters written into nine scripts.
+  The contradicted `--f52=model4` option is gone. `fit.aeci_on_eci` now
+  uses released models only, like the rest; the plots label the
+  identified checkpoints.

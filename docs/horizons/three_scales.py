@@ -14,14 +14,14 @@ released the same day as a better one is not a record. Bootstrap as the site: ea
 maps, moves converted points, resamples residuals, refits.
 
     python three_scales.py                              # no internal pairings; Fable 5.2 is its own ECI-only point
-    python three_scales.py --f52=model4 --m2=internal   # Fable 5.2 = Model 4, Model 2 Early = Fable 5.1, Model 2 = Opus 5.5
+    python three_scales.py --f52=model3 --m2=internal   # Fable 5.2 = Model 3; Model 2 Early = Fable 5.1, Model 2 = Opus 5.5 (speculative)
 
 Opus 5.5 (claude-opus-5-5), 2026-11-12, for a branch of a9l.im's figure that a9 dropped. See AGENTS.md.
 """
 import sys, math
 import os; sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import numpy as np
-from series import ECI, AECI, PAIR, PUBLIC, NAME, models, day, yr, eci_frontier
+from series import ECI, AECI, PAIR, PUBLIC, PAIRINGS, NAME, models, day, yr, eci_frontier
 from fit import hyp, dexp, hyp_at, FITS, aicc, epoch_pairs, quantile, fit_dexp, fit_pw, fit_hyp
 
 DIRECT = '--direct' in sys.argv           # AECI view: ECI-only models through the AECI-ECI map instead of through hours
@@ -31,18 +31,18 @@ S, CAL = models()
 A = {a[0]: a for a in AECI}
 key = {v: k for k, v in NAME.items()}
 ecirow = lambda e: (ECI[e][1], ECI[e][2], ECI[e][3])
-# which internal checkpoint Fable 5.2 is: 'model3' (the first pass), 'early' (Model 3 Early), 'model4', or 'none' (its own public point)
+# which internal checkpoint takes Fable 5.2's ECI: 'model3' or 'early' (both Fable 5.2 before release; series.PAIRINGS), or 'none'
+# (Fable 5.2 its own public point). Model 4 was an option until Fable 5.2's system card showed it is another model.
 F52 = next((a.split('=')[1] for a in sys.argv if a.startswith('--f52=')), 'none')
 MODEL2 = '--model2' in sys.argv          # Model 2 takes Opus 5.5's ECI
 # Model 2 ~ Opus 5.5 and Model 2 Early ~ Fable 5.1: 'internal' (the internal rows carry the ECI and calibrate the map
 # in place of the public pairs) or 'public' (the internal rows carry it; the map keeps the public pairs)
 M2 = next((a.split('=')[1] for a in sys.argv if a.startswith('--m2=')), 'none')
 SAMEDAY = '--no-sameday' not in sys.argv   # a model dominated by a same-day release is not a record
-M2PAIR = {'Model 2': 'Claude Opus 5.5', 'Model 2 Early': 'Claude Fable 5.1'}
-PUB = {k: v for k, v in PUBLIC.items() if k != 'Model 3'}
-if F52 == 'model3': PUB['Model 3'] = 'Claude Fable 5.2'
-if F52 == 'early': PUB['Model 3 Early'] = 'Claude Fable 5.2'
-if F52 == 'model4': PUB['Model 4'] = 'Claude Fable 5.2'
+M2PAIR = {k: PAIRINGS[k][0] for k in ('Model 2', 'Model 2 Early')}      # speculative (series.PAIRINGS)
+PUB = dict(PUBLIC)
+if F52 in ('model3', 'early'): k = {'model3': 'Model 3', 'early': 'Model 3 Early'}[F52]; PUB[k] = PAIRINGS[k][0]
+elif F52 != 'none': raise SystemExit(f'--f52={F52}: model3, early or none')
 for m in S:
     e = PAIR.get(key.get(m['name'])) or PUB.get(m['name'])
     if MODEL2 and m['name'] == 'Model 2': e = 'Claude Opus 5.5'

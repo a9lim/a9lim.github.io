@@ -152,6 +152,7 @@ REGISTRY = [
     ('Model 3', None, None, None, 'Model 3'),
     ('Model 4', None, None, None, 'Model 4'),
     ('Claude Haiku 5.5', None, 'Claude Haiku 5.5', 'Claude Haiku 5.5', None),
+    ('Claude Fable 5.2', None, None, 'Claude Fable 5.2', None),      # before release: Model 3 Early and Model 3 (PAIRINGS)
 ]
 FIG, V11, METR, EPOCH, CHART = range(5)
 def names(a, b):
@@ -160,10 +161,22 @@ def names(a, b):
 NAME = names(V11, FIG)                  # v1.1 key -> the figure's name
 PAIR = names(V11, EPOCH)                # the 20 v1.1 models Epoch also scores
 ON_CHART = names(V11, CHART)            # the 8 v1.1 models on METR's AECI chart
-# AECI chart point -> the same or sibling public model in Epoch's index. Model 3 as Fable 5.2 began as a guess by score
-# and timing; Fable 5.2's system card bears it out (CARD above), though its AECI is a pre-release snapshot's. The
-# analyses written before the card drop it as unconfirmed.
-PUBLIC = {**names(CHART, EPOCH), 'Model 3': 'Claude Fable 5.2'}
+PUBLIC = names(CHART, EPOCH)            # the 14 released Claude models on METR's AECI chart, chart label -> Epoch's name
+# METR's internal checkpoints: what each is, or might be, and on what evidence. 'stated': a source says so. 'supported':
+# date and score match a source that names the model. 'speculative': a guess by score, which no source makes. Model 3
+# and Model 3 Early are Fable 5.2 before release; their AECI is not the released model's, so they stay out of PUBLIC.
+PAIRINGS = {   # chart label: (model, status, evidence)
+    'Model 3 Early': ('Claude Fable 5.2', 'stated', "METR's note in Fable 5.2's system card names the snapshot it tested Model 3 Early"),
+    'Model 3': ('Claude Fable 5.2', 'supported', "the card's most capable pre-release Fable 5.2 snapshot: 21 Sep, 177.12 on its refit; "
+                'the chart: 22 Sep, 176.96'),
+    'Model 4': ('internal research model', 'supported', "the card's unreleased internal research model: 25 Sep, 178.78 on its refit; "
+                'the chart: 25 Sep, 178.63. Not a public model'),
+    'Model 2': ('Claude Opus 5.5', 'speculative', 'score only; Opus 5.5 has its own point a month later (9 Sep, 174.6)'),
+    'Model 2 Early': ('Claude Fable 5.1', 'speculative', 'score only; Fable 5.1 has its own point (7 Aug, 172.5)'),
+}
+def paired(*status):
+    """Chart label -> Epoch's name for the pairings with one of these statuses (public models only)."""
+    return {k: m for k, (m, s, _) in PAIRINGS.items() if s in status and m.startswith('Claude')}
 EARLY = 'claude_mythos_preview_early_inspect'
 
 def day(t):
@@ -224,7 +237,9 @@ if __name__ == '__main__':
     for a, b in zip(mine, theirs):
         if a != b: print('  sources:', a, '\n  table:  ', b)
     A_ = {a[0]: a for a in AECI}
-    print("Fable 5.2's system card against the readings of METR's chart (AECI, then date):")
+    print("METR's internal checkpoints:")
+    for k, (m, st, ev) in PAIRINGS.items(): print(f'  {k:14s} {m:24s} {st:12s} {ev}')
+    print("Fable 5.2's system card against the readings of METR's chart (AECI, then date; the card is a later refit):")
     for n, (v, gl, gh, ll, lh, lab, d) in CARD.items():
         print(f"  {n:22s} card {v:6.2f} (global {gl:.1f}–{gh:.1f})  chart's {lab:15s} {A_[lab][2]:6.2f}  {v - A_[lab][2]:+.2f}"
               + (f"   dated {d}, chart {day(A_[lab][1])}" if d else ''))

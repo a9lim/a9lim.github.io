@@ -27,7 +27,10 @@ captionLeft: {left} before the fitted singularity (95%: {low} – {high})
 # Dates are public releases, except internal checkpoints, which take the date
 # METR's AECI chart gives them (when most Anthropic staff could use them). The
 # early Mythos Preview checkpoint is one: METR's horizon file gives it the
-# public Mythos Preview release, 7 April 2026.
+# public Mythos Preview release, 7 April 2026. Fable 5.2's system card shows
+# Model 3 is Fable 5.2 before release and Model 4 an unreleased internal
+# research model; Model 2 Early and Model 2 are unidentified
+# (docs/horizons/series.py, PAIRINGS).
 ---
 Measured: [METR v1.1](https://metr.org/time-horizons/), to April 2026. AECI: [METR’s 5 November 2026 scores](https://metr.org/blog/2026-11-05-anthropic-ai-rd-acceleration-assessment/). Inspired by [Benjamin Todd’s chart](https://x.com/ben_j_todd/status/2119787039210049930) of 9 November. Fits by Claude.
 
