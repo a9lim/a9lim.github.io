@@ -90,6 +90,21 @@ WHISKER = {'3 Opus': (117.8, 127.5), '3.5 Sonnet New': (127.4, 136.9), '3.7 Sonn
            'Mythos Preview Early': (154.3, 169.5), 'Mythos Preview': (159.9, 172.7), 'Mythos 5': (162.5, 177.1),
            'Model 2 Early': (165.0, 181.9), 'Model 2': (166.7, 185.7), 'Model 3 Early': (169.0, 188.9),
            'Model 3': (169.2, 190.6), 'Model 4': (170.6, 192.8)}
+# ---- Fable 5.2's system card (published under Claude Mythos 5.2), https://assets.claude.com/27d60918d218125e7504bc7354c4b4626ec56b11.pdf,
+# Table 2.3.5.3.A: AECI on Anthropic's 6 November fit, with global and local 95% intervals, and the internal dates its
+# Figure 2.3.5.3.B plots (read off the figure's ticks). Its Mythos 5.2 is METR's Model 3 and its unreleased internal
+# research model is METR's Model 4, by date and score; METR's own note in the card names its tested snapshot Model 3 Early.
+# The card's AECI is the snapshot Anthropic judged most capable on AI R&D, not necessarily the release snapshot.
+CARD = {   # name in the card: (AECI, global low, global high, local low, local high, the AECI chart's label, date plotted)
+    'Claude Mythos Preview': (165.71, 162.70, 169.65, 164.01, 168.00, 'Mythos Preview', None),
+    'Claude Mythos 5': (168.68, 165.24, 172.99, 167.72, 169.72, 'Mythos 5', None),
+    'Claude Opus 5': (169.40, 165.83, 173.89, 168.27, 170.73, 'Opus 5', None),
+    'Claude Mythos 5.1': (172.62, 168.51, 177.63, 171.41, 174.10, 'Mythos 5.1', '2026-08-07'),
+    'Claude Opus 5.5': (174.78, 170.33, 180.29, 173.47, 176.40, 'Opus 5.5', '2026-09-09'),
+    'Claude Mythos 5.2': (177.12, 172.42, 182.94, 175.75, 178.48, 'Model 3', '2026-09-21'),
+    'Internal model': (178.78, 173.75, 185.18, 177.08, 180.59, 'Model 4', '2026-09-25'),
+}
+
 # ---- one registry of names. A row per model the analyses name, in the spelling of each source:
 #   the figure's (and this check's) name | METR v1.1 key | METR's 20 November name | Epoch's name | AECI chart label
 REGISTRY = [
@@ -145,8 +160,9 @@ def names(a, b):
 NAME = names(V11, FIG)                  # v1.1 key -> the figure's name
 PAIR = names(V11, EPOCH)                # the 20 v1.1 models Epoch also scores
 ON_CHART = names(V11, CHART)            # the 8 v1.1 models on METR's AECI chart
-# AECI chart point -> the same or sibling public model in Epoch's index; Model 3 as Fable 5.2 is a guess (by score and
-# timing) that METR's post doesn't make, and analyses that want only confirmed pairs drop it
+# AECI chart point -> the same or sibling public model in Epoch's index. Model 3 as Fable 5.2 began as a guess by score
+# and timing; Fable 5.2's system card bears it out (CARD above), though its AECI is a pre-release snapshot's. The
+# analyses written before the card drop it as unconfirmed.
 PUBLIC = {**names(CHART, EPOCH), 'Model 3': 'Claude Fable 5.2'}
 EARLY = 'claude_mythos_preview_early_inspect'
 
@@ -207,6 +223,11 @@ if __name__ == '__main__':
     print('the figure\'s table against its sources:', 'identical' if mine == theirs else 'DIFFERENT')
     for a, b in zip(mine, theirs):
         if a != b: print('  sources:', a, '\n  table:  ', b)
+    A_ = {a[0]: a for a in AECI}
+    print("Fable 5.2's system card against the readings of METR's chart (AECI, then date):")
+    for n, (v, gl, gh, ll, lh, lab, d) in CARD.items():
+        print(f"  {n:22s} card {v:6.2f} (global {gl:.1f}–{gh:.1f})  chart's {lab:15s} {A_[lab][2]:6.2f}  {v - A_[lab][2]:+.2f}"
+              + (f"   dated {d}, chart {day(A_[lab][1])}" if d else ''))
     print('AECI (digitised):')
     for a in AECI: print(f'  {a[0]:22s} {a[1]:.3f}  {a[2]:6.1f}  {a[3]:8s} {"frontier" if a[4] else ""}')
     print('check: Model 4 should be 178.6; 3.5 Sonnet 130')

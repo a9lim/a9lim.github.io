@@ -990,6 +990,70 @@ speed-up (2.9 → 4.9 → 2.2 months), not two drops.
   GPT-4o sits right where the 2024 knot lands. The v1.1-only rows, with one
   ruler throughout, put the knot in the same place.
 
+## Fable 5.2's system card
+
+Added 2026-11-20 (Opus 5.5, with a9). a9 supplied Fable 5.2's system card,
+published under the name Claude Mythos 5.2,
+`https://assets.claude.com/27d60918d218125e7504bc7354c4b4626ec56b11.pdf`.
+A copy and its AECI figure are in `data/anthropic-2026-11-fable-5-2-card/`.
+Its Table 2.3.5.3.A gives AECI on Anthropic's 6 November fit, and its
+Figure 2.3.5.3.B plots the models at their internal dates. `series.CARD`
+holds both, and `python series.py` sets them beside the readings of METR's
+chart.
+
+| Card | AECI (global 95%) | METR's chart, as read | Card date / chart date |
+|---|---|---|---|
+| Mythos Preview | 165.71 (162.7–169.7) | 165.65 | – |
+| Mythos 5 (Fable 5) | 168.68 (165.2–173.0) | 168.60 | – |
+| Opus 5 | 169.40 (165.8–173.9) | 169.33 | – |
+| Mythos 5.1 (Fable 5.1) | 172.62 (168.5–177.6) | 172.48 | 7 Aug / 7 Aug |
+| Opus 5.5 | 174.78 (170.3–180.3) | 174.64 | 9 Sep / 9 Sep |
+| **Mythos 5.2 (Fable 5.2)** | **177.12 (172.4–182.9)** | Model 3, 176.96 | 21 Sep / 22 Sep |
+| Internal research model | 178.78 (173.8–185.2) | Model 4, 178.63 | 25 Sep / 25 Sep |
+
+- **Model 3 is Fable 5.2, and Model 4 is not.** The card's Fable 5.2 point
+  matches Model 3 by date and score. Its unreleased internal research
+  model, "somewhat more capable" than Fable 5.2 and scored on 15
+  benchmarks against Fable 5.2's 37, matches Model 4. METR's note in the
+  card names the snapshot it tested Model 3 Early (9 September, 176.36).
+  The card's Fable 5.2 score is the snapshot Anthropic judged most capable
+  on AI R&D, not necessarily the release snapshot. METR also says the
+  snapshot it tested was stronger on AI R&D than the released model.
+- **The chart readings hold.** They run 0.06 to 0.16 below the card's
+  values, with the order and gaps intact. That is either reading error or
+  a slightly different fit; it moves nothing here.
+- **Fable 5.2 against Model 4, on one fit:** 177.12 against 178.78, 1.7
+  points below. Their local intervals, which compare a model with its
+  predecessors, overlap slightly (175.8–178.5 against 177.1–180.6). In
+  pooled hours that is 43 h against 50 h; through the figure's v1.1 map it
+  is 192 h against 246 h.
+- **The agentic routes predicted it, and the broad indices didn't.**
+  Before the card, these routes estimated Fable 5.2's AECI as follows.
+  Agentic benchmarks matched against Opus 5.5 gave 177.1 ("Picking
+  benchmarks to imitate AECI"), within 0.02 of the card. The agentic
+  imitation gave 175.6 ± 3.0. ECI and OECI carried straight onto AECI gave
+  181.3 to 182.4, 4 to 5 points high. In pooled hours the agentic route
+  gave 40 h, against 43 h from the card's AECI. ECI and OECI gave 73 to
+  76 h. The broad indices overstate Fable 5.2 because its gains sit outside
+  agentic work, which is the domain-mix finding again. Where AECI goes,
+  the agentic benchmarks follow.
+- **The card's own trend:** 15.3 points a year, rising to 28.7 at a
+  breakpoint in October 2025, a 1.88x slope change (95% 1.62–2.28); 32 of
+  100 refits reach 2x. `ruler-aeci.png` gets 15.4 and 29.3 from the chart
+  readings. A slope change beats a one-time jump at Mythos Preview in 100
+  of 100 refits. Without the internal model it wins 84; without both the
+  internal model and Fable 5.2, 37. Anthropic's case for the late
+  acceleration rests on its two newest points, as the second drop does in
+  "Regimes or smooth acceleration".
+- **Earlier statements this settles.** The OECI section left open whether
+  Fable 5.2 is Model 4; it isn't. The first pass's pairing of Model 3 with
+  Fable 5.2 stands. The ECI section found Fable 5.2 above every charted
+  checkpoint once the map bends. On AECI itself it isn't; the gap there is
+  ECI's domain mix, not Fable 5.2's lead.
+- **The figure doesn't change.** Its series already has Model 3 and Model
+  4. Analyses that dropped Model 3 as an unconfirmed pair still drop it.
+  Adding Fable 5.2 as a fifteenth public AECI pair is open.
+
 ## History
 
 - **First pass** (fable). The check, with the tweet's inputs: the file's date
@@ -1049,3 +1113,5 @@ speed-up (2.9 → 4.9 → 2.2 months), not two drops.
   `fit.breaks` generalizes the one-break curve to any number of knots,
   vectorized over histories; `fit.rolling` moved out of `replicate.py`; then
   `regimes.py`.
+- **Fable 5.2's system card** (Opus 5.5, with a9, 2026-11-20). `series.CARD`
+  and the section of that name.
