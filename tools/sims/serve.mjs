@@ -40,7 +40,7 @@ createServer(async (req, res) => {
     if ((await stat(file)).isDirectory()) file = join(file, 'index.html');
     const body = await readFile(file);
     const headers = { 'Content-Type': TYPES[extname(file)] || 'application/octet-stream', 'Cache-Control': 'no-store' };
-    if (top[0] === 'worldline') headers['Cross-Origin-Embedder-Policy'] = 'credentialless';
+    if (top[0] === 'worldline' || top[0] === 'isochron') { headers['Cross-Origin-Embedder-Policy'] = 'credentialless'; headers['Cross-Origin-Opener-Policy'] = 'same-origin'; }
     res.writeHead(200, headers).end(body);
   } catch {
     res.writeHead(404, { 'Content-Type': 'text/plain' }).end('not found: ' + path);

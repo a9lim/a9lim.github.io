@@ -12,8 +12,11 @@
   Vary: Accept-Encoding
   Cache-Control: public, max-age=0, must-revalidate
 
-# Cross-origin isolation for worldline (enables SharedArrayBuffer / high-res timers for WebGPU)
+# Cross-origin isolation for worldline and isochron (enables SharedArrayBuffer / high-res timers for WebGPU;
+# isochron's engine shares its arrays with a pool of threads)
 /worldline/*
+  Cross-Origin-Embedder-Policy: credentialless
+/isochron/*
   Cross-Origin-Embedder-Policy: credentialless
 
 # Early Hints — preload critical resources for root SPA
@@ -50,7 +53,7 @@
   Link: </main.js>; rel=modulepreload
   Link: </fonts/newsreader-roman-latin.woff2>; rel=preload; as=font; crossorigin
 # Subapp Early Hints — shared resources + project-specific CSS and module entry
-# /worldline/* omitted: COEP: credentialless invalidates 103 preloads (fetched pre-policy)
+# /worldline/* and /isochron/* omitted: COEP: credentialless invalidates 103 preloads (fetched pre-policy)
 /worldline/*
   Link: <https://cdn.jsdelivr.net>; rel=preconnect; crossorigin
 /lumen/*
@@ -72,11 +75,6 @@
   Link: </shared/base.css>; rel=preload; as=style
   Link: </miasma/styles.css>; rel=preload; as=style
   Link: </miasma/main.js>; rel=modulepreload
-/isochron/*
-  Link: </shared/tokens.js>; rel=preload; as=script
-  Link: </shared/base.css>; rel=preload; as=style
-  Link: </isochron/styles.css>; rel=preload; as=style
-  Link: </isochron/main.js>; rel=modulepreload
 
 # Public asset names are stable, so browsers revalidate them on every use via
 # the global Cache-Control rule. The edge cache below is isolated per deploy.
