@@ -9,4 +9,4 @@ tags:
   - biology
   - epidemiology
 ---
-A spatial epidemiology sandbox for that implements a rich compartmental model with mutating strains on an arbitrary topology.
+A spatial epidemiology sandbox that implements a rich compartmental model with mutating strains on an arbitrary topology.
